@@ -16,8 +16,11 @@ enum AppCopy {
         /// Freestyle session without a day template — Programs tab only (not on Today v1).
         static let freestyleSession = "Freestyle session"
         static let nextExercise = "Next exercise"
-        /// Shown under the metric when there is no prior set to display — tap opens manual entry.
-        static let logMetricHint = "Log"
+        /// Shown in place of the metric numeric when there is no prior set to display
+        /// — tap opens manual entry. Reads as the starting-point on session 1 (first
+        /// set ever) and stays accurate when an established user adds a brand-new
+        /// exercise mid-session (first set for *this* exercise).
+        static let logMetricHint = "Log first set"
         /// Adjust-result sheet — label above the optional note field (same row as weight/reps captions).
         static let adjustSetNoteLabel = "Note"
         /// Grey placeholder hinting how the note is used (supersets, equipment, etc.).
@@ -29,8 +32,10 @@ enum AppCopy {
         /// First-set reminder shown above the command card before any working set lands.
         /// Disappears once the lifter logs a set for the current exercise.
         static let warmupReminder = "Don't forget to warm up."
-        /// Tap affordance suffix paired with `warmupReminder`. Opens the guidance sheet.
-        static let warmupReminderLink = "How?"
+        /// Tap-affordance second line paired with `warmupReminder`. Opens the guidance sheet.
+        /// Rendered in the same secondary tone as the reminder (no underline, no accent) so
+        /// the whole block reads as one quiet two-line caption, not a hyperlink.
+        static let warmupReminderLink = "Tap to learn how."
         /// Title of the warm-up guidance bottom sheet.
         static let warmupGuideTitle = "Warm-up sets"
         /// Body paragraphs of the warm-up guidance sheet — deliberately short so the
@@ -39,7 +44,7 @@ enum AppCopy {
         static let warmupGuideRepRule = "If your working set is 8–10 reps, do 3–4 reps per warm-up. For lower reps, do half of your working reps."
         static let warmupGuideLoadRule = "Stay light. Don't chase a pump. The warm-up is a primer, not part of the work."
         static let warmupGuideTempoRule = "Push explosive on the way up. Slow on the way down."
-        /// Empty-state title shown when a Quick Start session has no exercises yet.
+        /// Empty-state title shown when a freestyle session has no exercises yet.
         static let addFirstExerciseTitle = "Add your first exercise"
         /// Subtitle paired with `addFirstExerciseTitle`.
         static let addFirstExerciseHint = "Search the catalog or add your own."
@@ -47,6 +52,11 @@ enum AppCopy {
         static let setCountQuestion = "How many sets?"
         /// Supporting line in the set-count picker sheet.
         static func setCountPrompt(_ exerciseName: String) -> String { "Working sets for \(exerciseName)" }
+        /// Title for the reusable routine-target editor sheet.
+        static let editTarget = "Edit target"
+        /// Labels inside the routine-target editor sheet.
+        static let targetSetsLabel = "Sets"
+        static let targetRepsLabel = "Reps"
         /// Lineup tag — shown next to the currently selected exercise in the lineup sheet.
         static let exerciseCurrentTag = "Current"
         /// PR badge headline — paired with a Verde checkmark inside `WorkoutCommandCard`.
@@ -82,7 +92,7 @@ enum AppCopy {
         static let finishWorkoutTitle = "Finish workout?"
         static let finishWorkoutMessage = "Saves and ends your session."
 
-        /// Inline naming prompt shown after Quick Start finishes. Optional; the
+        /// Inline naming prompt shown after a freestyle session finishes. Optional; the
         /// secondary "Skip" preserves the auto-name.
         static let nameWorkoutTitle = "Name this workout"
         static let nameWorkoutFieldPlaceholder = "Workout name"
@@ -94,13 +104,19 @@ enum AppCopy {
         /// on the current lift).
         static let keepGoing = "Keep going"
         static let keepLogging = "Keep logging"
+
+        /// Single-fire toast surfaced after the user closes their first
+        /// `AdjustResultSheet` edit. The gesture (tap a logged set chip to
+        /// edit it) isn't visually labeled — the toast confirms the action
+        /// they just discovered and signals it's reusable on every set.
+        /// Persistence: `@AppStorage("hasSeenSetEditHint")`.
+        static let setEditHint = "Tap any set to edit it."
     }
 
     enum Nav {
         static let close = "Close"
         static let history = "History"
         static let exercises = "Exercises"
-        static let logs = "Logs"
         /// Generic dismiss for confirmations / form sheets. Pair with `role: .cancel`.
         static let cancel = "Cancel"
         /// Generic confirm-and-dismiss for sheet trailing toolbar buttons.
@@ -129,7 +145,7 @@ enum AppCopy {
     /// When there is no prior metric to show (ghost, in-session).
     enum EmptyState {
         /// No completed workouts in the app yet (Today card, lists).
-        static let noHistoryYet = "No history"
+        static let noHistoryYet = "No history yet"
         /// Per-exercise ghost when you've logged other work but not this lift (max 3 words).
         static let noPriorSets = "No prior sets"
         /// Active workout — no sessions completed yet (hint typography, not giant numbers).
@@ -162,6 +178,34 @@ enum AppCopy {
         }
         /// Message when the exercise isn't referenced by any template.
         static let deleteUnusedMessage = "This can't be undone."
+    }
+
+    /// Form-validation hints surfaced under disabled primary CTAs. Each hint
+    /// names the *unmet* gate, so a greyed `AppPrimaryButton` reads as a
+    /// diagnostic instead of a dead button. Direct voice, no pronouns.
+    enum FormHint {
+        /// `vm.exercisesAreValid` — every day must have at least one named exercise.
+        static let onboardingExercisesRequired = "Add at least one named exercise to every day."
+        /// `vm.splitIsValid` — every day slot needs a non-empty name.
+        static let onboardingSplitNamesRequired = "Name every day to continue."
+        /// `vm.scheduleIsValid` (fixed mode) — pick a weekday for each day-template.
+        static let onboardingScheduleRequired = "Pick a weekday for every workout."
+        /// `canParse` on the program-import step — paste field is empty.
+        static let onboardingImportPasteRequired = "Paste your program above to continue."
+    }
+
+    /// Shared transient-toast copy. The pill is narrow and time-bound, so the
+    /// action label stays terse. Body strings name the affected noun so the
+    /// undo target is never ambiguous.
+    enum Toast {
+        /// Trailing action label for an `AppToast` that supports a single
+        /// reversal step (currently used for exercise removal).
+        static let undo = "Undo"
+        /// Body for a non-destructive exercise removal.
+        static func removedExercise(_ name: String) -> String {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? "Removed exercise" : "Removed \(trimmed)"
+        }
     }
 
     enum Search {

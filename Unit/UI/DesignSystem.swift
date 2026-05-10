@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import UIKit
 
 // MARK: - Atoms
@@ -33,6 +34,11 @@ enum AppColor {
     static let textTertiary = Color(uiColor: uicolor(0x707070))
     /// Disabled primary/secondary buttons — softer than `textSecondary` so inactive reads clearly.
     static let textDisabled = Color(uiColor: uicolor(0x949494))
+    /// Placeholder hint for empty text fields and editors. Matches the iOS-native
+    /// `TextField` placeholder color (`UIColor.placeholderText`) so SwiftUI's built-in
+    /// placeholder rendering and the manual `AppTextEditor` overlay read identically
+    /// — single canonical placeholder gray across every input surface.
+    static let textPlaceholder = Color(uiColor: .placeholderText)
     static let border = Color(uiColor: uicolor(0xE5E5E5))
 
     /// Filled segment in multi-step progress (e.g. onboarding) — softer than `textPrimary` but reads clearly against `border` for inactive steps.
@@ -193,6 +199,10 @@ enum AppFont {
     case productAction
     /// 15pt mono semibold — set-result / PR rows in History (numeric).
     case performance
+    /// 15pt system — emoji glyphs concatenated inside `.caption` text. Geist has
+    /// no emoji coverage, so an inline emoji needs the system font to fall back
+    /// to Apple Color Emoji at the same visual size as `.caption`.
+    case emojiCaption
 
     var font: Font {
         switch self {
@@ -213,6 +223,11 @@ enum AppFont {
         case .stepIndicator:  return .geistMono(.semibold, size: 14, relativeTo: .footnote)
         case .productAction:  return .geist(.bold,         size: 17, relativeTo: .body)
         case .performance:    return .geistMono(.semibold, size: 15, relativeTo: .subheadline)
+        case .emojiCaption:
+            if let emoji = UIFont(name: "AppleColorEmoji", size: 15) {
+                return Font(emoji)
+            }
+            return .system(size: 15)
         }
     }
 
@@ -489,12 +504,11 @@ private struct AppWorkoutPanelChrome: ViewModifier {
 }
 
 /// SF Symbol catalog as role-named cases. Always invoke via `.image(size:weight:)`
-/// so icons across the app share the same stroke weight. `chevron.right` lives on
-/// `.forward` for platform-symmetric back/forward pairs — but **do not** apply it
-/// as a disclosure glyph on `AppListRow` content per the HIG + design-system rules.
+/// so icons across the app share the same stroke weight. Disclosure chevrons are
+/// intentionally not exposed here.
 enum AppIcon: String {
     case back = "chevron.left"
-    case forward = "chevron.right"
+    case forward = "arrow.right"
     case chevronDown = "chevron.down"
     case chevronUp = "chevron.up"
     case close = "xmark"
@@ -548,6 +562,123 @@ enum AppIcon: String {
 extension Double {
     var weightString: String {
         self == floor(self) ? "\(Int(self))" : String(format: "%.1f", self)
+    }
+}
+
+// MARK: - Haptics
+
+/// Single canonical haptic vocabulary for the app. Cases name **moments**
+/// (set logged, rest ready, PR, rejected tap…), not mechanisms (light impact,
+/// notification success). That keeps tactile intent paired with product intent
+/// — if the meaning of "PR" changes, one line moves.
+///
+/// HIG mapping:
+/// - `.success / .warning / .error` → notification class (state-of-task signals).
+/// - `.selection` → discrete change with no impact metaphor (tabs, picker reflow).
+/// - `.increase / .decrease` → stepper-native pair (iOS 17).
+/// - `.impact(weight:intensity:)` → physical metaphor (lift, PR celebration).
+///
+/// Two ways to fire:
+/// 1. **Declarative** — `.appHaptic(.setLogged, trigger: signal)` modifier on the
+///    view that owns the moment. Preferred — keeps haptic next to the state.
+/// 2. **Imperative** — `AppHaptic.reorderLift.fire()` from gesture/drop
+///    delegates that don't have a SwiftUI state to bind to.
+///
+/// New moments belong here, not as ad-hoc `.sensoryFeedback(...)` calls in
+/// feature views — that's how the taxonomy drifts.
+enum AppHaptic {
+    // Logging hot loop
+    case setLogged
+    case personalRecord
+    case setDeleted
+
+    // Rest timer
+    case restFinalCountdown
+    case restReady
+
+    // Workout-level
+    case workoutFinished
+
+    // CTAs / form
+    case rejectedTap
+    case validationError
+
+    // Steppers
+    case stepperIncrement
+    case stepperDecrement
+
+    // Navigation
+    case tabChange
+
+    // Reorder gesture
+    case reorderLift
+    case reorderSwap
+
+    // Purchase
+    case purchaseSuccess
+
+    var feedback: SensoryFeedback {
+        switch self {
+        case .setLogged, .restReady, .workoutFinished, .purchaseSuccess:
+            return .success
+        case .personalRecord:
+            return .impact(weight: .heavy, intensity: 1.0)
+        case .setDeleted:
+            return .impact(weight: .light, intensity: 0.7)
+        case .restFinalCountdown:
+            return .warning
+        case .rejectedTap, .validationError:
+            return .error
+        case .stepperIncrement:
+            return .increase
+        case .stepperDecrement:
+            return .decrease
+        case .tabChange, .reorderSwap:
+            return .selection
+        case .reorderLift:
+            return .impact(weight: .medium, intensity: 1.0)
+        }
+    }
+
+    /// Imperative trigger for sites without SwiftUI state to bind to —
+    /// `onDrag` closures, `DropDelegate` callbacks. Prefer the modifier.
+    func fire() {
+        switch self {
+        case .setLogged, .restReady, .workoutFinished, .purchaseSuccess:
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .restFinalCountdown:
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .rejectedTap, .validationError:
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .personalRecord:
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 1.0)
+        case .setDeleted:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+        case .reorderLift:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        case .stepperIncrement, .stepperDecrement, .tabChange, .reorderSwap:
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
+    }
+}
+
+extension View {
+    /// Fires `haptic` whenever `trigger` changes. Use on the view that owns the
+    /// moment so the haptic lives next to the state, not threaded through a
+    /// callback chain. Prefer this over inline `.sensoryFeedback(...)`.
+    func appHaptic<T: Equatable>(_ haptic: AppHaptic, trigger: T) -> some View {
+        sensoryFeedback(haptic.feedback, trigger: trigger)
+    }
+
+    /// Fires `haptic` only when the `(old, new)` transition matches `condition`.
+    /// Use for boolean edges where you want one direction (e.g. `false → true`)
+    /// without spamming on every tick: `.appHaptic(.restFinalCountdown, trigger: isFinal) { !$0 && $1 }`.
+    func appHaptic<T: Equatable>(
+        _ haptic: AppHaptic,
+        trigger: T,
+        condition: @escaping (T, T) -> Bool
+    ) -> some View {
+        sensoryFeedback(haptic.feedback, trigger: trigger, condition: condition)
     }
 }
 
@@ -610,8 +741,8 @@ struct AppListRow<Trailing: View>: View {
 
             trailing()
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.lg)
         .frame(minHeight: style == .display ? nil : 44, alignment: .leading)
         .contentShape(Rectangle())
     }
@@ -630,25 +761,61 @@ extension AppListRow where Trailing == EmptyView {
     }
 }
 
+/// Plain status/value accessory ("On this iPhone", "None", "kg") — renders
+/// the trailing label at the same scale as the title in secondary color,
+/// matching a native iOS Settings row. Use this in place of a hand-rolled
+/// `Text(...).font(AppFont.muted.font)` trailing closure, which lands at
+/// 13pt against the 17pt title and reads as undersized.
+extension AppListRow where Trailing == AppListRowValueLabel {
+    init(
+        title: String,
+        value: String,
+        subtitle: String? = nil,
+        leadingIcon: AppIcon? = nil,
+        style: AppListRowStyle = .tappable
+    ) {
+        self.init(title: title, subtitle: subtitle, leadingIcon: leadingIcon, style: style) {
+            AppListRowValueLabel(value)
+        }
+    }
+}
+
+struct AppListRowValueLabel: View {
+    private let value: String
+
+    init(_ value: String) {
+        self.value = value
+    }
+
+    var body: some View {
+        Text(value)
+            .font(AppFont.body.font)
+            .foregroundStyle(AppColor.textSecondary)
+            .monospacedDigit()
+    }
+}
+
 /// − / value / + stepper — compact rounded control with 44pt hit targets.
 /// Used for set counts, rest-duration seconds, reps, etc. Value is a pre-formatted
 /// string (monospaced digits) so callers own unit rendering ("12 reps" vs "12").
 struct AppStepper: View {
     let value: String
     var minimumValueWidth: CGFloat = 28
+    var isDecrementEnabled: Bool = true
+    var isIncrementEnabled: Bool = true
     let onDecrement: () -> Void
     let onIncrement: () -> Void
 
-    /// Phase counters drive `.sensoryFeedback` so every ± tap fires a haptic
-    /// without requiring callers to thread one through. `.increase` /
-    /// `.decrease` are the iOS-native semantic pair (introduced iOS 17) that
-    /// matches stepper interactions exactly.
+    /// Phase counters drive `AppHaptic` so every ± tap fires the canonical
+    /// stepper haptic without requiring callers to thread one through.
+    /// `stepperIncrement` / `stepperDecrement` map to iOS 17's native
+    /// `.increase` / `.decrease` semantic pair.
     @State private var incrementPhase: Int = 0
     @State private var decrementPhase: Int = 0
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            stepButton(icon: .remove) {
+            stepButton(icon: .remove, isEnabled: isDecrementEnabled) {
                 decrementPhase &+= 1
                 onDecrement()
             }
@@ -663,7 +830,7 @@ struct AppStepper: View {
                 .contentTransition(.numericText())
                 .animation(.appReveal, value: value)
 
-            stepButton(icon: .add) {
+            stepButton(icon: .add, isEnabled: isIncrementEnabled) {
                 incrementPhase &+= 1
                 onIncrement()
             }
@@ -672,18 +839,20 @@ struct AppStepper: View {
         .padding(.vertical, AppSpacing.xs)
         .background(AppColor.controlBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        .sensoryFeedback(.increase, trigger: incrementPhase)
-        .sensoryFeedback(.decrease, trigger: decrementPhase)
+        .appHaptic(.stepperIncrement, trigger: incrementPhase)
+        .appHaptic(.stepperDecrement, trigger: decrementPhase)
     }
 
-    private func stepButton(icon: AppIcon, action: @escaping () -> Void) -> some View {
+    private func stepButton(icon: AppIcon, isEnabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             icon.image(size: 14, weight: .semibold)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textDisabled)
                 .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(ScaleButtonStyle())
+        .disabled(!isEnabled)
+        .accessibilityLabel(icon == .remove ? "Decrease" : "Increase")
         .frame(minWidth: 44, minHeight: 44)
     }
 }
@@ -700,18 +869,29 @@ struct AppTextEditor: View {
     let placeholder: String
     var minHeight: CGFloat = 220
 
+    /// Bound to the underlying `TextEditor` so the entire card surface — not
+    /// just the inner UITextView's hit area — focuses on tap. Without this,
+    /// padding around the TextEditor + the placeholder overlay leave dead
+    /// zones where the user's tap visually lands on the input but does
+    /// nothing (the OnboardingProgramImportView "input doesn't work" bug).
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .scrollContentBackground(.hidden)
+                .focused($isFocused)
                 .padding(AppSpacing.md)
 
             if text.isEmpty {
                 Text(placeholder)
                     .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
+                    // `textPlaceholder` mirrors UIKit's `UIColor.placeholderText` so this
+                    // manual overlay matches every native `TextField` placeholder in the
+                    // app (single canonical placeholder gray).
+                    .foregroundStyle(AppColor.textPlaceholder)
                     // TextEditor's internal NSTextContainer inset is ~5pt horizontal,
                     // ~8pt vertical — offset the placeholder so it sits on the cursor.
                     .padding(.horizontal, AppSpacing.md + 5)
@@ -722,6 +902,17 @@ struct AppTextEditor: View {
         .frame(minHeight: minHeight, alignment: .topLeading)
         .background(AppColor.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        // Make the full card a hit target and route every tap to focus.
+        // `contentShape` matches the visible clipped surface so taps in the
+        // 16pt padding margin still register. Use `simultaneousGesture` (not
+        // `onTapGesture`) so the inner `TextEditor`'s own focus-on-tap is
+        // never pre-empted — when this card is nested inside a parent
+        // `ScrollView`, a parent `onTapGesture` can swallow taps before the
+        // underlying `UITextView` gets to claim them, leaving the field
+        // visually hit but never focused. Setting `isFocused = true` on top
+        // of `TextEditor`'s own focusing is idempotent.
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .simultaneousGesture(TapGesture().onEnded { isFocused = true })
         .appCardElevation()
     }
 }
@@ -735,6 +926,13 @@ struct AppPrimaryButton: View {
     var isLoading: Bool = false
     let action: () -> Void
 
+    /// Bumped each time a disabled (not loading) tap is absorbed so
+    /// `AppHaptic.rejectedTap` fires. A silently-rejected primary CTA is the
+    /// worst-of-both-worlds; a soft buzz tells the user the system saw the
+    /// tap but the gate isn't passable. Pair with `disabledReason` on
+    /// `PrimaryButtonConfig` to also explain *why*.
+    @State private var disabledTapTrigger: Int = 0
+
     init(_ label: String, isEnabled: Bool = true, isLoading: Bool = false, action: @escaping () -> Void) {
         self.label = label
         self.isEnabled = isEnabled
@@ -745,31 +943,45 @@ struct AppPrimaryButton: View {
     private var isInteractive: Bool { isEnabled && !isLoading }
 
     var body: some View {
-        Button(action: action) {
-            ZStack {
-                Text(label)
-                    .font(AppFont.productAction.font)
-                    .foregroundStyle(isEnabled ? AppColor.accentForeground : AppColor.textDisabled)
-                    .multilineTextAlignment(.center)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.7)
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-                    .opacity(isLoading ? 0 : 1)
-                if isLoading {
-                    ProgressView()
-                        .tint(AppColor.accentForeground)
+        ZStack {
+            Button(action: action) {
+                ZStack {
+                    Text(label)
+                        .font(AppFont.productAction.font)
+                        .foregroundStyle(isEnabled ? AppColor.accentForeground : AppColor.textDisabled)
+                        .multilineTextAlignment(.center)
+                        .truncationMode(.tail)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .opacity(isLoading ? 0 : 1)
+                    if isLoading {
+                        ProgressView()
+                            .tint(AppColor.accentForeground)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 60)
+                .background(isEnabled ? AppColor.accent : AppColor.controlBackground)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 60)
-            .background(isEnabled ? AppColor.accent : AppColor.controlBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .buttonStyle(ScaleButtonStyle())
+            .disabled(!isInteractive)
+            .accessibilityLabel(label)
+            .accessibilityValue(isLoading ? Text("loading") : Text(""))
+
+            // Disabled-tap absorber: present only when the button is disabled
+            // *and not loading*. Loading is a system-status state, not a user
+            // gate, so we don't fire an error haptic for it. AccessibilityHidden
+            // so VoiceOver still hears the underlying disabled button.
+            if !isEnabled && !isLoading {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { disabledTapTrigger &+= 1 }
+                    .accessibilityHidden(true)
+            }
         }
-        .buttonStyle(ScaleButtonStyle())
-        .disabled(!isInteractive)
-        .accessibilityLabel(label)
-        .accessibilityValue(isLoading ? Text("loading") : Text(""))
+        .appHaptic(.rejectedTap, trigger: disabledTapTrigger)
     }
 }
 
@@ -1000,23 +1212,61 @@ struct AppGhostButton: View {
     }
 }
 
-/// Capsule-shaped floating action — secondary, scroll-aware affordance that
-/// hovers above the page surface (e.g. "Add exercise" above the program-create
-/// CTA in onboarding). Ink fill on Milk page provides the lift; per the
-/// flat-card doctrine no shadow is added — color contrast carries elevation.
-/// Pair with `AppScreen(floatingAccessory:)` so the screen owns scroll-direction
-/// show/hide; the atom itself stays stateless.
+/// Capsule-shaped floating action — scroll-aware affordance that hovers above
+/// the page surface. Pair with `AppScreen(floatingAccessory:)` so the screen
+/// owns scroll-direction show/hide; the atom itself stays stateless.
+///
+/// Two styles:
+/// - `.accent` (default) — Ink fill, Paper text. Use when this is the page's
+///   primary action (e.g. "Continue" floating over scroll content). The black
+///   fill on a light surface carries its own contrast; no shadow needed.
+/// - `.elevated` — Paper fill (`AppColor.cardBackground`) with Ink text. Use
+///   when this is a secondary affordance that already sits above a primary
+///   `AppPrimaryButton` in the same chrome (e.g. "Add exercise" above "Start
+///   training" in onboarding) — keeps the black-fill weight unique to the
+///   primary CTA so the two pills don't compete. Paper-on-Mist alone is too
+///   close in value to read as detached, so this style picks up the canonical
+///   `appFloatingShadow()` — the same two-layer recipe the `AppToast` pill
+///   uses. The flat-card doctrine still applies to every non-floating surface;
+///   only views that genuinely hover over scroll content get the shadow.
 struct AppFloatingPillButton: View {
+    enum Style {
+        case accent
+        case elevated
+    }
+
     let label: String
     var icon: AppIcon? = nil
+    var style: Style = .accent
     var isEnabled: Bool = true
     let action: () -> Void
 
-    init(_ label: String, icon: AppIcon? = nil, isEnabled: Bool = true, action: @escaping () -> Void) {
+    init(
+        _ label: String,
+        icon: AppIcon? = nil,
+        style: Style = .accent,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
         self.label = label
         self.icon = icon
+        self.style = style
         self.isEnabled = isEnabled
         self.action = action
+    }
+
+    private var foregroundColor: Color {
+        switch style {
+        case .accent:   AppColor.accentForeground
+        case .elevated: AppColor.textPrimary
+        }
+    }
+
+    private var fillColor: Color {
+        switch style {
+        case .accent:   AppColor.accent
+        case .elevated: AppColor.cardBackground
+        }
     }
 
     var body: some View {
@@ -1024,21 +1274,37 @@ struct AppFloatingPillButton: View {
             HStack(spacing: AppSpacing.sm) {
                 if let icon {
                     icon.image(size: 14, weight: .semibold)
-                        .foregroundStyle(AppColor.accentForeground)
+                        .foregroundStyle(foregroundColor)
                 }
                 Text(label)
                     .font(AppFont.productAction.font)
-                    .foregroundStyle(AppColor.accentForeground)
+                    .foregroundStyle(foregroundColor)
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, AppSpacing.smd)
             .frame(minHeight: 48)
-            .background(AppColor.accent)
+            .background(fillColor)
             .clipShape(Capsule(style: .continuous))
+            .modifier(AppFloatingPillShadow(style: style))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(!isEnabled)
         .accessibilityLabel(label)
+    }
+}
+
+/// Per-style shadow gate for `AppFloatingPillButton`. `.elevated` picks up the
+/// canonical `appFloatingShadow()`; `.accent` stays flat (the Ink fill carries
+/// its own contrast). Lifted out so the body stays declarative and the per-
+/// style shadow rule lives next to the doc comment that explains it.
+private struct AppFloatingPillShadow: ViewModifier {
+    let style: AppFloatingPillButton.Style
+
+    func body(content: Content) -> some View {
+        switch style {
+        case .accent:   content
+        case .elevated: content.appFloatingShadow()
+        }
     }
 }
 
@@ -1450,6 +1716,20 @@ struct SetProgressIndicator: View {
     var setLoggedSignal: Int? = nil
 
     var body: some View {
+        // Most workouts (3-5 sets) fit the card width — render as a plain centered
+        // HStack so the strip lines up with the exercise name and metric hero. Long
+        // programs (6+ sets) overflow, so fall back to a horizontal scroll that
+        // keeps the leading edge anchored.
+        ViewThatFits(in: .horizontal) {
+            chipRow
+            ScrollView(.horizontal, showsIndicators: false) {
+                chipRow
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    private var chipRow: some View {
         HStack(spacing: AppSpacing.sm) {
             ForEach(steps) { step in
                 renderStep(step)
@@ -1498,7 +1778,7 @@ struct SetProgressIndicator: View {
                     AppIcon.remove.image(size: 10, weight: .bold)
                 }
                 Text(chipText)
-                    .font(.geistMono(.semibold, size: 12, relativeTo: .caption))
+                    .font(AppFont.stepIndicator.font)
                     .lineLimit(1)
             }
             .foregroundStyle(step.isPR ? AppColor.accentForeground : AppColor.textSecondary)
@@ -1588,7 +1868,11 @@ struct RestTimerControl: View {
     var body: some View {
         VStack(spacing: AppSpacing.xs) {
             HStack(spacing: AppSpacing.lg) {
-                adjustButton(icon: .remove, action: onDecrease)
+                adjustButton(
+                    icon: .remove,
+                    accessibilityLabel: "Decrease rest timer by 30 seconds",
+                    action: onDecrease
+                )
 
                 Button(action: { onToggle?() }) {
                     Group {
@@ -1606,7 +1890,11 @@ struct RestTimerControl: View {
                 .disabled(onToggle == nil || state == .disabled)
                 .accessibilityLabel(timerAccessibilityLabel)
 
-                adjustButton(icon: .add, action: onIncrease)
+                adjustButton(
+                    icon: .add,
+                    accessibilityLabel: "Increase rest timer by 30 seconds",
+                    action: onIncrease
+                )
             }
         }
         .opacity(state == .disabled ? 0.5 : 1)
@@ -1694,7 +1982,11 @@ struct RestTimerControl: View {
         }
     }
 
-    private func adjustButton(icon: AppIcon, action: (() -> Void)?) -> some View {
+    private func adjustButton(
+        icon: AppIcon,
+        accessibilityLabel: String,
+        action: (() -> Void)?
+    ) -> some View {
         Button(action: { action?() }) {
             icon.image(size: 26, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
@@ -1709,6 +2001,8 @@ struct RestTimerControl: View {
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(action == nil || state == .disabled)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(timeText)
     }
 }
 
@@ -1827,16 +2121,23 @@ struct AppCard<Content: View>: View {
 /// trailing status. No card chrome — use directly as a row inside `AppCardList`
 /// (history list of sessions) or compose into `AppSessionHighlightCard` when a
 /// single session needs its own elevated surface (missed-day card, earlier-week
-/// catch-up). Single source of truth for the session header layout.
+/// catch-up). The row owns text hierarchy only; card/list chrome owns vertical
+/// insets so captioned and non-captioned sessions share the same edge rhythm.
+/// Single source of truth for the session header layout.
 struct AppSessionHighlightRow<Trailing: View>: View {
     let eyebrow: String
     let title: String
     let caption: String?
     @ViewBuilder let trailing: () -> Trailing
 
+    private var hasCaption: Bool {
+        guard let caption else { return false }
+        return !caption.isEmpty
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            VStack(alignment: .leading, spacing: hasCaption ? AppSpacing.sm : AppSpacing.xs) {
                 Text(eyebrow)
                     .appCapsLabel(.overline)
                     .foregroundStyle(AppColor.textSecondary)
@@ -1885,8 +2186,12 @@ struct AppSessionHighlightRow<Trailing: View>: View {
 ///   each row. Dividers will then run full-width with uniform 16pt breathing
 ///   above and below every row.
 ///
-/// Header rhythm: 24pt above the row, 16pt below it (collapses to 24pt when
-/// `BelowContent == EmptyView`).
+/// Header rhythm: the highlight row uses the canonical `.appCardRowChrome()`
+/// recipe (24pt horizontal, 16pt vertical, 52pt floor) so a lone session card
+/// (e.g. the earlier-week catch-up row in History) and a session row inside
+/// `AppCardList` (the History month list) share an identical vertical rhythm.
+/// Forking padding here (e.g. 24pt vertical for the lone-card variant only)
+/// produces the kind of parallel-implementation drift CLAUDE.md §4 bans.
 struct AppSessionHighlightCard<Trailing: View, BelowContent: View>: View {
     let eyebrow: String
     let title: String
@@ -1907,9 +2212,7 @@ struct AppSessionHighlightCard<Trailing: View, BelowContent: View>: View {
                     caption: caption,
                     trailing: trailing
                 )
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.top, AppSpacing.lg)
-                .padding(.bottom, hasBelowContent ? AppSpacing.md : AppSpacing.lg)
+                .appCardRowChrome()
 
                 if hasBelowContent {
                     AppDivider()
@@ -1935,43 +2238,121 @@ extension AppSessionHighlightCard where BelowContent == EmptyView {
     }
 }
 
-/// Transient pill-shaped notification anchored to the bottom safe area.
+/// Optional trailing action on a transient `AppToast` — single reversible step
+/// (e.g. "Undo" after a non-destructive deletion). The handler is responsible
+/// for the actual reversal; the toast dismisses automatically when tapped.
+struct AppToastAction {
+    let label: String
+    let handler: () -> Void
+}
+
+/// Transient pill-shaped notification mounted as a top overlay (not a
+/// `safeAreaInset`) so showing or hiding it does **not** reflow layout — sticky
+/// CTAs stay pinned, scroll content stays where it is. Sits at the top of the
+/// safe area, horizontally centered, on the same line as the host's
+/// navigation-bar leading button so the eye lands on it without leaving the
+/// "where I just acted" zone. The pill is the canonical Cupertino top toast:
+/// drop-shadowed white capsule that floats over content rather than docking to
+/// the home-indicator edge.
+///
 /// Bind `message` to a `String?` `@State`; setting non-nil shows the toast,
-/// which auto-dismisses after `duration` seconds.
+/// which auto-dismisses after `duration` seconds. When an `action` is set
+/// (e.g. `AppToastAction(label: AppCopy.Toast.undo, handler: ...)`), the pill
+/// gains a trailing tap target — same auto-dismiss timing whether or not the
+/// user taps it.
 struct AppToast: ViewModifier {
     @Binding var message: String?
     var duration: TimeInterval = 3.0
+    var action: AppToastAction? = nil
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .bottom) {
-                if let text = message {
-                    Text(text)
-                        .font(AppFont.body.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(AppColor.cardBackground)
-                        .clipShape(Capsule(style: .continuous))
-                        .overlay(Capsule(style: .continuous).stroke(AppColor.border, lineWidth: 1))
-                        .padding(.bottom, AppSpacing.xl)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+            .overlay(alignment: .top) {
+                ZStack {
+                    if let text = message {
+                        AppToastPill(
+                            text: text,
+                            action: action,
+                            onActionTap: { withAnimation(.appState) { message = nil } }
+                        )
+                        .transition(.move(edge: .top).combined(with: .opacity))
                         .task(id: text) {
                             try? await Task.sleep(for: .seconds(duration))
-                            withAnimation(.appState) {
-                                message = nil
-                            }
+                            withAnimation(.appState) { message = nil }
                         }
+                    }
                 }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.top, AppSpacing.xs)
+                .animation(.appState, value: message)
+                // Transparent overlay area must stay tap-through so the toast
+                // doesn't shadow taps on the navigation-bar back button or any
+                // top-of-screen affordance behind it.
+                .allowsHitTesting(message != nil)
             }
-            .animation(.appState, value: message)
+    }
+}
+
+/// Floating pill shell for `AppToast`. Light card fill on a soft drop-shadow
+/// pair (one large/diffuse for lift, one tight for edge definition) — the only
+/// shadowed surface in the system, justified by the pill needing to feel
+/// detached from whatever screen content sits beneath it.
+private struct AppToastPill: View {
+    let text: String
+    let action: AppToastAction?
+    let onActionTap: () -> Void
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            Text(text)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            if let action {
+                Button {
+                    action.handler()
+                    onActionTap()
+                } label: {
+                    Text(action.label)
+                        .font(AppFont.productAction.font)
+                        .foregroundStyle(AppColor.accent)
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel(action.label)
+            }
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.smd)
+        .frame(minHeight: 44)
+        .background(AppColor.cardBackground)
+        .clipShape(Capsule(style: .continuous))
+        .appFloatingShadow()
     }
 }
 
 extension View {
-    /// Show a transient bottom toast bound to a `String?` state.
-    func appToast(message: Binding<String?>, duration: TimeInterval = 3.0) -> some View {
-        modifier(AppToast(message: message, duration: duration))
+    /// Show a transient bottom toast bound to a `String?` state. Pass `action`
+    /// to add a single trailing tap target (e.g. "Undo"); the toast dismisses
+    /// after the user taps it or after `duration` elapses, whichever first.
+    func appToast(
+        message: Binding<String?>,
+        duration: TimeInterval = 3.0,
+        action: AppToastAction? = nil
+    ) -> some View {
+        modifier(AppToast(message: message, duration: duration, action: action))
+    }
+
+    /// Two-layer drop shadow applied to surfaces that genuinely float over
+    /// scroll content (the transient `AppToast` pill, the elevated
+    /// `AppFloatingPillButton`). One large/diffuse shadow for lift, one tight
+    /// shadow for edge definition. The flat-card doctrine still applies to
+    /// every other surface — only views that need to read as detached from the
+    /// page get this treatment.
+    func appFloatingShadow() -> some View {
+        self
+            .shadow(color: AppColor.textPrimary.opacity(0.14), radius: 20, x: 0, y: 10)
+            .shadow(color: AppColor.textPrimary.opacity(0.06), radius: 2, x: 0, y: 1)
     }
 }
 
@@ -2169,9 +2550,11 @@ extension AppDividedList where Data.Element: Identifiable, ID == Data.Element.ID
 /// Canonical "list inside its own card" molecule. The card runs full-bleed
 /// (`contentInset: 0`, `verticalInset: 0`) so the rows fully own their own
 /// inset and the 1pt `AppDivider` hairlines extend card-edge to card-edge —
-/// the documented full-width-of-container rule. Rows use the canonical 8/24
-/// recipe: `AppSpacing.sm` (8pt) vertically and `AppSpacing.lg` (24pt)
-/// horizontally. The molecule also enforces a 52pt minimum row height (matching
+/// the documented full-width-of-container rule. Rows use the canonical 16/24
+/// recipe by default: `AppSpacing.md` (16pt) vertically and `AppSpacing.lg`
+/// (24pt) horizontally. Pass `rowVerticalInset: AppSpacing.lg` for setup rows
+/// that contain stacked controls and need the same relaxed rhythm as Settings
+/// rows. The molecule also enforces a 52pt minimum row height (matching
 /// `PreviewListRow` / `AppCardListAddRow`) so single-line text rows never
 /// collapse to a 44pt tap-target floor. Use this anywhere you'd otherwise
 /// compose `AppCard` +
@@ -2192,6 +2575,7 @@ struct AppCardList<Data, ID, RowContent, Trailing>: View
 {
     private let data: Data
     private let id: KeyPath<Data.Element, ID>
+    private let rowVerticalInset: CGFloat
     private let row: (Data.Element) -> RowContent
     private let trailing: () -> Trailing
 
@@ -2205,13 +2589,13 @@ struct AppCardList<Data, ID, RowContent, Trailing>: View
         AppCard(contentInset: 0, verticalInset: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 AppDividedList(data: data, id: id) { item in
-                    row(item).appCardRowChrome()
+                    row(item).appCardRowChrome(verticalInset: rowVerticalInset)
                 }
                 if Trailing.self != EmptyView.self {
                     if !data.isEmpty {
                         AppDivider()
                     }
-                    trailing().appCardRowChrome()
+                    trailing().appCardRowChrome(verticalInset: rowVerticalInset)
                 }
             }
         }
@@ -2229,7 +2613,16 @@ struct AppCardList<Data, ID, RowContent, Trailing>: View
 ///   3. `frame(minHeight: 52, alignment: .leading)` enforces the canonical
 ///      tap-target floor and *vertically centers* row content within it —
 ///      single-line `Text` / `TextField` get a guaranteed center.
-///   4. Outer 8pt vertical padding adds the documented list-in-card breathing.
+///   4. Outer vertical padding adds the documented list-in-card breathing.
+///      Tuned in two passes: 8 → 12 first, to recover breathing for multi-line
+///      rows (the 52pt floor only centers single-line content; multi-line content
+///      flows past the floor and only sees the outer pad), then 12 → 16 once
+///      *taller* multi-line rows landed (header HStack + stepper HStack inside
+///      one card row, e.g. the onboarding exercise card). At 12pt the bottom
+///      edge of stacked controls visibly kissed the divider / card edge; at
+///      16pt the row reads as breathing room rather than packed cargo. Control-heavy
+///      setup rows can opt into 24pt via `AppCardList(rowVerticalInset:)`, matching
+///      the more generous Settings row cadence.
 ///
 /// Net visible spacing for any single-line row is identical above and below
 /// the content — first / last rows match mid rows whether the boundary is a
@@ -2238,23 +2631,26 @@ struct AppCardList<Data, ID, RowContent, Trailing>: View
 ///
 /// Use directly on row content inside an `AppDividedList` that runs full-bleed
 /// inside a card (e.g. `AppCardList`, `AppSessionHighlightCard.belowContent`).
-/// Never compose hand-rolled `.padding(.horizontal, .lg).padding(.vertical, .sm)`
+/// Never compose hand-rolled `.padding(.horizontal, .lg).padding(.vertical, .smd)`
 /// stacks instead — this is the single source of truth.
 private struct AppCardRowChrome: ViewModifier {
+    var verticalInset: CGFloat = AppSpacing.md
+
     func body(content: Content) -> some View {
         content
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, AppSpacing.lg)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .padding(.vertical, AppSpacing.sm)
+            .padding(.vertical, verticalInset)
     }
 }
 
 extension View {
-    /// Apply the canonical card-row recipe (24pt horizontal, 8pt vertical,
-    /// 52pt min-height). See `AppCardRowChrome` for layering rationale.
-    func appCardRowChrome() -> some View {
-        modifier(AppCardRowChrome())
+    /// Apply the canonical card-row recipe (24pt horizontal, 16pt vertical by default,
+    /// 52pt min-height). Use `AppSpacing.lg` for relaxed setup rows with stacked controls.
+    /// See `AppCardRowChrome` for layering rationale.
+    func appCardRowChrome(verticalInset: CGFloat = AppSpacing.md) -> some View {
+        modifier(AppCardRowChrome(verticalInset: verticalInset))
     }
 }
 
@@ -2262,19 +2658,26 @@ extension AppCardList where Trailing == EmptyView {
     init(
         data: Data,
         id: KeyPath<Data.Element, ID>,
+        rowVerticalInset: CGFloat = AppSpacing.md,
         @ViewBuilder row: @escaping (Data.Element) -> RowContent
     ) {
         self.data = data
         self.id = id
+        self.rowVerticalInset = rowVerticalInset
         self.row = row
         self.trailing = { EmptyView() }
     }
 }
 
 extension AppCardList where Data.Element: Identifiable, ID == Data.Element.ID, Trailing == EmptyView {
-    init(_ data: Data, @ViewBuilder row: @escaping (Data.Element) -> RowContent) {
+    init(
+        _ data: Data,
+        rowVerticalInset: CGFloat = AppSpacing.md,
+        @ViewBuilder row: @escaping (Data.Element) -> RowContent
+    ) {
         self.data = data
         self.id = \.id
+        self.rowVerticalInset = rowVerticalInset
         self.row = row
         self.trailing = { EmptyView() }
     }
@@ -2283,11 +2686,13 @@ extension AppCardList where Data.Element: Identifiable, ID == Data.Element.ID, T
 extension AppCardList where Data.Element: Identifiable, ID == Data.Element.ID {
     init(
         _ data: Data,
+        rowVerticalInset: CGFloat = AppSpacing.md,
         @ViewBuilder row: @escaping (Data.Element) -> RowContent,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.data = data
         self.id = \.id
+        self.rowVerticalInset = rowVerticalInset
         self.row = row
         self.trailing = trailing
     }
@@ -2385,22 +2790,11 @@ private struct AppReorderableRow<Preview: View>: ViewModifier {
             .appAnimation(.appConfirm, value: isDragged, reduceMotion: reduceMotion)
             .onDrag {
                 draggedID = id
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                AppHaptic.reorderLift.fire()
                 return NSItemProvider(object: id.uuidString as NSString)
             } preview: {
                 preview()
             }
-    }
-}
-
-/// Tick-haptic for a successful reorder swap. Call from a `DropDelegate`'s
-/// `dropEntered` after the indices change — pairs with `appReorderable`'s
-/// lift haptic so the user feels a confident "pluck → tick → settle" sequence
-/// as rows reflow under the floating preview. Lighter than the lift on
-/// purpose: the tick is a confirmation, not a reannouncement of the gesture.
-enum AppReorderHaptic {
-    static func swap() {
-        UISelectionFeedbackGenerator().selectionChanged()
     }
 }
 
@@ -2490,9 +2884,9 @@ struct WorkoutCommandCard: View {
     var primaryLabel: String = AppCopy.Workout.completeSet
     var onPrimaryAction: (() -> Void)? = nil
     var onSecondaryAction: (() -> Void)? = nil
-    /// Bumped by the parent each time a set is logged. Drives the success
-    /// haptic on this card so the feedback lives at the atom layer instead of
-    /// being threaded through `UIImpactFeedbackGenerator` at the call site.
+    /// Bumped by the parent each time a set is logged. Drives `AppHaptic.setLogged`
+    /// on this card so the feedback lives at the atom layer instead of being
+    /// threaded through a generator at the call site.
     /// Pass `nil` for non-active surfaces (previews) — feedback is a no-op then.
     var setLoggedSignal: Int? = nil
     /// Bumped by the parent only when the just-logged set beat the prior all-time best
@@ -2518,7 +2912,6 @@ struct WorkoutCommandCard: View {
     /// Source-of-truth logic for *what* to suggest lives in `SetSuggestion`
     /// (Features/Today/ActiveWorkoutView.swift) — this card is presentation only.
     var suggestionActions: [SuggestionAction] = []
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Toggles for ~800ms each time `setPRSignal` increments — replaces the quiet
     /// `metricSupportingText` line ("Last session …") with a Verde "Personal record"
@@ -2578,8 +2971,8 @@ struct WorkoutCommandCard: View {
         }
         .frame(maxWidth: .infinity)
         .appWorkoutPanelChrome()
-        .sensoryFeedback(.success, trigger: setLoggedSignal)
-        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: setPRSignal)
+        .appHaptic(.setLogged, trigger: setLoggedSignal)
+        .appHaptic(.personalRecord, trigger: setPRSignal)
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
         }
@@ -2697,7 +3090,7 @@ struct WorkoutCommandCard: View {
         Text(metricValue)
             .font(AppFont.numericDisplay.font)
             .tracking(AppFont.numericDisplay.tracking)
-            .foregroundStyle(metricIsGhost ? AppColor.textSecondary : AppColor.textPrimary)
+            .foregroundStyle(metricIsGhost ? AppColor.textDisabled : AppColor.textPrimary)
             .monospacedDigit()
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.55)
@@ -2892,13 +3285,13 @@ extension AppSectionHeader where Trailing == EmptyView {
 /// Titled group: section-header text above an `AppCard` body. Default
 /// `contentInset: AppSpacing.lg` (24pt) matches `AppCard`'s default chrome and is
 /// right for plain content (single buttons, free-form copy, custom layouts) where
-/// the body owns no horizontal padding of its own. For list content where the
-/// inner row already pads itself by `AppSpacing.md` (16pt) — `AppListRow`,
-/// `AppDividedList`, or any row with explicit `.padding(.horizontal, .md)` — pass
-/// `contentInset: AppSpacing.sm` (8pt) so the outer 8 + inner 16 composes to the
-/// canonical 24pt visual offset from card edge to row content. Passing
-/// `contentInset: 0` is reserved for surfaces where rows must run card-edge to
-/// card-edge (e.g. dividers spanning the full card width, full-bleed media).
+/// the body owns no horizontal padding of its own. Pass `contentInset: AppSpacing.sm`
+/// (8pt) for **list mode**: list content where the inner row already pads itself
+/// (`AppListRow`, `AppDividedList`). In list mode the card collapses to 0/0
+/// so the 1pt `AppDivider` hairlines run card-edge to card-edge — same
+/// full-bleed rule as `AppCardList`. Passing `contentInset: 0` is reserved for
+/// surfaces where rows must run card-edge to card-edge (e.g. full-bleed media)
+/// without any list semantics.
 struct SettingsSection<Content: View>: View {
     let title: String
     var contentInset: CGFloat = AppSpacing.lg
@@ -2918,23 +3311,20 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             AppSectionHeader(title)
 
-            AppCard(contentInset: contentInset, verticalInset: resolvedVerticalInset) {
-                VStack(alignment: .leading, spacing: contentInset == 0 ? 0 : AppSpacing.sm) {
+            AppCard(contentInset: cardHorizontalInset, verticalInset: cardVerticalInset) {
+                VStack(alignment: .leading, spacing: isListMode ? 0 : AppSpacing.sm) {
                     content()
                 }
             }
         }
     }
 
-    /// In documented "list mode" (`contentInset == .sm`), the inner row already
-    /// pads itself vertically by `AppSpacing.sm` (8pt — both `.tappable` and
-    /// `.display` `AppListRow` styles). Match the card's vertical inset to that
-    /// same 8pt so 8 + 8 = 16pt edges align with 8 + divider + 8 = 17pt between
-    /// rows — the divider hairline absorbs the 1pt asymmetry. For non-list
-    /// modes, keep symmetric padding (`nil` → uses `contentInset`).
-    private var resolvedVerticalInset: CGFloat? {
-        contentInset == AppSpacing.sm ? AppSpacing.sm : nil
-    }
+    /// List mode: rows own their own padding (24pt via `AppListRow`), so the
+    /// card runs full-bleed (0/0) and `AppDivider` hairlines extend card-edge
+    /// to card-edge — matching `AppCardList`'s documented rule.
+    private var isListMode: Bool { contentInset == AppSpacing.sm }
+    private var cardHorizontalInset: CGFloat { isListMode ? 0 : contentInset }
+    private var cardVerticalInset: CGFloat? { isListMode ? 0 : nil }
 }
 
 // MARK: - Template
@@ -2942,10 +3332,16 @@ struct SettingsSection<Content: View>: View {
 /// Configures the sticky primary CTA baked into `AppScreen(primaryButton:)`.
 /// Pass via `AppScreen(primaryButton: .init(label:action:))` — the screen renders
 /// it inside a `.safeAreaInset(edge: .bottom)` so it floats above scroll content.
+///
+/// `disabledReason` is rendered as a single-line caption (`AppFont.muted`,
+/// `AppColor.textSecondary`) directly above the button when the button is
+/// disabled and not loading. Use it to turn a silent grey CTA into a
+/// diagnostic — pair with strings under `AppCopy.FormHint`.
 struct PrimaryButtonConfig {
     let label: String
     var isEnabled: Bool = true
     var isLoading: Bool = false
+    var disabledReason: String? = nil
     let action: () -> Void
 }
 
@@ -3045,6 +3441,265 @@ struct AppSheetScreen<Content: View>: View {
     }
 }
 
+/// Reusable bottom sheet for editing a routine's working set target. Keeps
+/// template-edit and onboarding-style set/reps controls on the same sheet,
+/// type, spacing, range, and stepper behavior.
+struct AppSetRepEditorSheet: View {
+    static let defaultSets: Int = 3
+    static let defaultReps: Int = 8
+    static let defaultSetRange: ClosedRange<Int> = 1...10
+    static let defaultRepRange: ClosedRange<Int> = 1...30
+
+    let title: String
+    var subtitle: String? = nil
+    let setRange: ClosedRange<Int>
+    let repRange: ClosedRange<Int>
+    let onSave: (_ sets: Int, _ reps: Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var sets: Int
+    @State private var reps: Int
+
+    init(
+        title: String = AppCopy.Workout.editTarget,
+        subtitle: String? = nil,
+        initialSets: Int = Self.defaultSets,
+        initialReps: Int = Self.defaultReps,
+        setRange: ClosedRange<Int> = Self.defaultSetRange,
+        repRange: ClosedRange<Int> = Self.defaultRepRange,
+        onSave: @escaping (_ sets: Int, _ reps: Int) -> Void
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.setRange = setRange
+        self.repRange = repRange
+        self.onSave = onSave
+        _sets = State(initialValue: Self.clamped(initialSets, to: setRange))
+        _reps = State(initialValue: Self.clamped(initialReps, to: repRange))
+    }
+
+    var body: some View {
+        AppSheetScreen(
+            title: title,
+            primaryButton: PrimaryButtonConfig(label: AppCopy.Workout.saveChanges, action: commit),
+            dismissLabel: AppCopy.Nav.cancel,
+            dismissActionPlacement: .cancellation,
+            onDismissAction: { dismiss() }
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(AppFont.body.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        targetStepper(label: AppCopy.Workout.targetSetsLabel, value: $sets, range: setRange)
+                        targetStepper(label: AppCopy.Workout.targetRepsLabel, value: $reps, range: repRange)
+                    }
+
+                    VStack(spacing: AppSpacing.sm) {
+                        targetStepper(label: AppCopy.Workout.targetSetsLabel, value: $sets, range: setRange)
+                        targetStepper(label: AppCopy.Workout.targetRepsLabel, value: $reps, range: repRange)
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .appBottomSheetChrome()
+    }
+
+    @ViewBuilder
+    private func targetStepper(
+        label: String,
+        value: Binding<Int>,
+        range: ClosedRange<Int>
+    ) -> some View {
+        let currentValue = value.wrappedValue
+
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(label)
+                .appCapsLabel(.smallLabel)
+                .foregroundStyle(AppColor.textSecondary)
+
+            AppStepper(
+                value: "\(currentValue)",
+                minimumValueWidth: AppSpacing.xl,
+                isDecrementEnabled: currentValue > range.lowerBound,
+                isIncrementEnabled: currentValue < range.upperBound,
+                onDecrement: {
+                    value.wrappedValue = Self.clamped(currentValue - 1, to: range)
+                },
+                onIncrement: {
+                    value.wrappedValue = Self.clamped(currentValue + 1, to: range)
+                }
+            )
+        }
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func commit() {
+        onSave(sets, reps)
+        dismiss()
+    }
+
+    private static func clamped(_ value: Int, to range: ClosedRange<Int>) -> Int {
+        min(range.upperBound, max(range.lowerBound, value))
+    }
+}
+
+/// Canonical exercise picker sheet — search-driven catalog list with optional
+/// "Create …" affordance for a brand-new exercise. Replaces the parallel
+/// `AddExerciseToTemplateView` / `AddExerciseSheet` / `ExerciseSearchSheet`
+/// implementations that drifted on detents, toolbar slot, separators, and row
+/// layout. One canonical chrome — large detent, trailing **Done**, visible
+/// hairlines, alias subtitle row, prepended create-new affordance.
+///
+/// Drop into a `.sheet { ... }`; the primitive owns its own
+/// `appBottomSheetChrome` and `presentationDetents`. Caller wires the
+/// `onSelect` callback to append the chosen `Exercise` to its target
+/// (template, session, …). Create-new persists the new `Exercise` into the
+/// shared `modelContext` then forwards it through `onSelect`.
+struct AppExercisePickerSheet: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
+
+    let title: String
+    let existingIds: Set<UUID>
+    var allowsCreatingNew: Bool
+    let onSelect: (Exercise) -> Void
+
+    @State private var query = ""
+
+    init(
+        title: String = AppCopy.Workout.addExercise,
+        existingIds: Set<UUID>,
+        allowsCreatingNew: Bool = true,
+        onSelect: @escaping (Exercise) -> Void
+    ) {
+        self.title = title
+        self.existingIds = existingIds
+        self.allowsCreatingNew = allowsCreatingNew
+        self.onSelect = onSelect
+    }
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var filteredExercises: [Exercise] {
+        let available = exercises.filter { !existingIds.contains($0.id) }
+        guard !trimmedQuery.isEmpty else { return available }
+        let needle = trimmedQuery.lowercased()
+        return available.filter { exercise in
+            exercise.displayName.lowercased().contains(needle) ||
+            exercise.aliases.contains { $0.lowercased().contains(needle) }
+        }
+    }
+
+    private var canCreateNew: Bool {
+        guard allowsCreatingNew, !trimmedQuery.isEmpty else { return false }
+        return !exercises.contains {
+            $0.displayName.compare(
+                trimmedQuery,
+                options: [.caseInsensitive, .diacriticInsensitive]
+            ) == .orderedSame
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if canCreateNew {
+                    Button {
+                        createAndSelect(name: trimmedQuery)
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            AppIcon.addCircle.image()
+                                .foregroundStyle(AppColor.accent)
+                            Text("Create \"\(trimmedQuery)\"")
+                                .font(AppFont.body.font)
+                                .foregroundStyle(AppColor.textPrimary)
+                        }
+                        .frame(minHeight: 44, alignment: .leading)
+                    }
+                    .appPlainListRowChrome()
+                }
+
+                ForEach(filteredExercises, id: \.id) { exercise in
+                    Button {
+                        onSelect(exercise)
+                        dismiss()
+                    } label: {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                            HStack(spacing: AppSpacing.sm) {
+                                Text(exercise.displayName)
+                                    .font(AppFont.body.font)
+                                    .foregroundStyle(AppColor.textPrimary)
+                                if exercise.isBodyweight {
+                                    Text(AppCopy.Workout.bodyweightAbbrev)
+                                        .font(AppFont.caption.font)
+                                        .foregroundStyle(AppColor.textSecondary)
+                                }
+                            }
+                            if !exercise.aliases.isEmpty {
+                                Text(exercise.aliases.joined(separator: " · "))
+                                    .font(AppFont.caption.font)
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                        }
+                        .frame(minHeight: 44, alignment: .leading)
+                    }
+                    .appPlainListRowChrome()
+                }
+
+                if filteredExercises.isEmpty && !canCreateNew {
+                    Text(trimmedQuery.isEmpty
+                         ? AppCopy.Search.noExercisesYet
+                         : AppCopy.Search.noMatchingExercises)
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(minHeight: 44, alignment: .leading)
+                        .appPlainListRowChrome(separator: .hidden)
+                }
+            }
+            .listSectionSpacing(0)
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(AppColor.sheetBackground.ignoresSafeArea())
+            .scrollDismissesKeyboard(.immediately)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .appExerciseSearchable(text: $query)
+            .onSubmit(of: .search) {
+                guard canCreateNew else { return }
+                createAndSelect(name: trimmedQuery)
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(AppCopy.Nav.done) { dismiss() }
+                        .appToolbarTextStyle()
+                }
+            }
+            .appNavigationBarChrome()
+            .tint(AppColor.accent)
+        }
+        .presentationDetents([.large])
+        .appBottomSheetChrome()
+    }
+
+    private func createAndSelect(name: String) {
+        let exercise = Exercise(displayName: name)
+        modelContext.insert(exercise)
+        try? modelContext.save()
+        onSelect(exercise)
+        dismiss()
+    }
+}
+
 /// Page-level template: horizontal padding, optional `customHeader` (typically
 /// `ProductTopBar` for root tabs) or system `NavigationStack` chrome, scrollable
 /// body, optional sticky primary CTA. **Every full screen in the app composes
@@ -3075,6 +3730,12 @@ struct AppScreen<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @State private var floatingAccessoryHidden: Bool = false
+    /// True only when scroll content is actually under the chrome — either because
+    /// content overflows the viewport or the user has scrolled past the top. Gates
+    /// the manual chrome backdrop + soft-edge gradient so non-scrolling screens
+    /// (e.g. a 2-card onboarding step) don't show a decorative fade band above
+    /// content that never moves. Mirrors iOS-native nav-bar appearance behavior.
+    @State private var chromeBackdropVisible: Bool = false
 
     init(
         primaryButton: PrimaryButtonConfig? = nil,
@@ -3108,15 +3769,8 @@ struct AppScreen<Content: View>: View {
 
     /// Safe-area chrome always needs a real backdrop because scroll content can
     /// pass underneath it. `surface == nil` only means the page fill is owned by
-    /// a parent (OnboardingFlow); the pinned header / CTA bar still resolve to
-    /// Milk so `appScrollEdgeSoft` has an opaque system-colored edge to fade into.
+    /// a parent; the pinned header / CTA bar still resolve to Milk.
     private var chromeSurface: Color { surface ?? AppColor.background }
-
-    /// Amount fixed chrome overlaps the scroll view. This gives iOS'
-    /// `scrollEdgeEffectStyle(.soft)` real space to fade content behind pinned
-    /// bars; a zero-spacing safe-area inset clips content at the bar edge and
-    /// reads as a hard block.
-    private var scrollChromeOverlap: CGFloat { AppSpacing.lg }
 
     @ViewBuilder
     private var scrollContent: some View {
@@ -3126,6 +3780,12 @@ struct AppScreen<Content: View>: View {
                     paddedMainContent
                 }
                 .scrollDismissesKeyboard(.interactively)
+                // Bounce only when content actually overflows. Without this,
+                // a short screen (e.g. the unit picker — 2 cards) over-scrolls
+                // on rubber-band drag and exposes content sliding behind the
+                // header chrome. iOS-native bars do this automatically;
+                // `safeAreaInset` doesn't, so we opt in explicitly.
+                .scrollBounceBehavior(.basedOnSize)
                 .appScrollEdgeSoft(
                     top: customHeader != nil || !hidesNavigationBar || showsNativeNavigationBar,
                     bottom: hasBottomChrome
@@ -3150,6 +3810,27 @@ struct AppScreen<Content: View>: View {
                         }
                     }
                 }
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    // Show chrome backdrop the instant the user scrolls past
+                    // the natural top edge — iOS-native nav-bar behavior.
+                    //
+                    // With nested safe-area insets (the host
+                    // `NavigationStack`'s nav bar + this AppScreen's
+                    // `safeAreaInset` for `customHeader`), `contentOffset.y`
+                    // at natural top is `-contentInsets.top` — a *negative*
+                    // value matching the total inset height (often 100–150pt).
+                    // A naive `contentOffset.y > 0` trigger only fires once
+                    // content has scrolled all the way past the visible top,
+                    // leaving the customHeader's backdrop off while body
+                    // rows are already overlapping its progress + title text
+                    // (the bug visible on the training-split screen).
+                    // `contentOffset.y + contentInsets.top > 0` is the
+                    // iOS-native "scrolled past edge" condition.
+                    geometry.contentOffset.y + geometry.contentInsets.top > 1
+                } action: { _, shouldShow in
+                    guard chromeBackdropVisible != shouldShow else { return }
+                    chromeBackdropVisible = shouldShow
+                }
             } else {
                 paddedMainContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -3170,7 +3851,12 @@ struct AppScreen<Content: View>: View {
 
     @ViewBuilder
     private var topChrome: some View {
-        if !showsNativeNavigationBar, let customHeader {
+        // `customHeader` renders even when `showsNativeNavigationBar: true`
+        // (used by `OnboardingShell` to layer a progress + title + subtitle
+        // chrome below the iOS-native nav bar that hosts the real back-button
+        // `ToolbarItem`). When the caller doesn't provide one, this branch
+        // simply produces nothing.
+        if let customHeader {
             customHeader
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppSpacing.md)
@@ -3178,87 +3864,124 @@ struct AppScreen<Content: View>: View {
                 .padding(.bottom, AppSpacing.md)
                 .frame(maxWidth: maxContentWidth)
                 .frame(maxWidth: .infinity)
-                .background {
-                    AppScreenChromeBackground(surface: chromeSurface)
-                }
+                .background(AppScreenChromeBackground(surface: chromeSurface))
+                // Opaque always: the chrome is a VStack sibling above the
+                // ScrollView, so scroll content can't pass behind it. The
+                // soft fade where scroll content meets this chrome's bottom
+                // edge is handled by `.scrollEdgeEffectStyle(.soft, for: .top)`
+                // on the ScrollView via `appScrollEdgeSoft`.
         }
     }
 
     @ViewBuilder
     private var bottomChrome: some View {
-        if hasBottomChrome {
-            VStack(spacing: 0) {
-                // Floating accessory hovers above the CTA: rendered without the
-                // chrome backdrop so scroll content fades behind it via
-                // `appScrollEdgeSoft`. Toggled via scroll direction in
-                // `scrollContent`'s `onScrollGeometryChange`.
-                if let floatingAccessory, !floatingAccessoryHidden {
-                    floatingAccessory
-                        .padding(.top, AppSpacing.sm)
-                        .padding(.bottom, hasBottomBar ? AppSpacing.sm : 0)
-                        .frame(maxWidth: maxContentWidth)
-                        .frame(maxWidth: .infinity)
-                        .transition(
-                            .opacity.combined(with: .offset(y: 12))
-                        )
+        if hasBottomBar {
+            VStack(spacing: AppSpacing.xs) {
+                if let primaryButton {
+                    // Diagnostic caption above the disabled CTA. Hidden
+                    // while loading (the spinner is the status) and while
+                    // enabled (no gate to explain). Caption is single-line
+                    // muted text so it never competes with the button.
+                    if !primaryButton.isEnabled,
+                       !primaryButton.isLoading,
+                       let reason = primaryButton.disabledReason,
+                       !reason.isEmpty {
+                        Text(reason)
+                            .font(AppFont.muted.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityLabel(reason)
+                    }
+                    AppPrimaryButton(
+                        primaryButton.label,
+                        isEnabled: primaryButton.isEnabled,
+                        isLoading: primaryButton.isLoading,
+                        action: primaryButton.action
+                    )
                 }
-
-                if hasBottomBar {
-                    VStack(spacing: AppSpacing.xs) {
-                        if let primaryButton {
-                            AppPrimaryButton(
-                                primaryButton.label,
-                                isEnabled: primaryButton.isEnabled,
-                                isLoading: primaryButton.isLoading,
-                                action: primaryButton.action
-                            )
-                        }
-                        if let secondaryButton {
-                            AppGhostButton(
-                                secondaryButton.label,
-                                isEnabled: secondaryButton.isEnabled,
-                                action: secondaryButton.action
-                            )
-                        }
-                    }
-                    .padding(.top, AppSpacing.md)
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.sm)
-                    .frame(maxWidth: maxContentWidth)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        AppScreenChromeBackground(surface: chromeSurface)
-                    }
+                if let secondaryButton {
+                    AppGhostButton(
+                        secondaryButton.label,
+                        isEnabled: secondaryButton.isEnabled,
+                        action: secondaryButton.action
+                    )
                 }
             }
+            .padding(.top, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.bottom, AppSpacing.sm)
+            .frame(maxWidth: maxContentWidth)
+            .frame(maxWidth: .infinity)
+            .background(AppScreenChromeBackground(surface: chromeSurface))
+            // Opaque always: VStack-sibling chrome sits below the
+            // ScrollView, scroll content never passes behind it. The
+            // soft fade above this CTA bar is handled by
+            // `.scrollEdgeEffectStyle(.soft, for: .bottom)` on the
+            // ScrollView via `appScrollEdgeSoft`.
+        }
+    }
+
+    /// Floating accessory rendered as an overlay on the scroll content (not as
+    /// a sibling row in `bottomChrome`). The pill genuinely floats above scroll
+    /// content — the chrome backdrop stays unique to the primary CTA below, so
+    /// the two pills don't read as one shared chrome panel. Scroll content
+    /// fades behind the pill via the ScrollView's `appScrollEdgeSoft` bottom
+    /// fade.
+    @ViewBuilder
+    private var floatingAccessoryOverlay: some View {
+        if let floatingAccessory, !floatingAccessoryHidden {
+            floatingAccessory
+                .padding(.bottom, AppSpacing.sm)
+                .frame(maxWidth: maxContentWidth)
+                .frame(maxWidth: .infinity)
+                .transition(
+                    .opacity.combined(with: .offset(y: 12))
+                )
         }
     }
 
     @ViewBuilder
     private var contentWithChrome: some View {
-        if #available(iOS 26.0, *) {
+        // VStack-based chrome layout instead of `safeAreaInset`/`safeAreaBar`.
+        // Both inset modifiers ship a layout bug on iOS 26 where short
+        // ScrollView content (content height < viewport) shifts the bottom
+        // inset chrome to the natural content bottom rather than the frame
+        // bottom — visible on the onboarding split-builder screen, which
+        // floated the disabled-reason caption + Continue button mid-screen
+        // with day rows continuing below them. Forcing `scrollContent` to
+        // claim full height *before* the inset is applied did not propagate
+        // through the inner `ScrollView`'s own content sizing on iOS 26.
+        //
+        // VStack siblings remove the ambiguity: each chrome is a real layout
+        // child pinned to its edge, the ScrollView fills the remaining space,
+        // and `appScrollEdgeSoft` still fades content at the ScrollView's
+        // top/bottom frame edges (where scroll content meets the chromes).
+        VStack(spacing: 0) {
+            if customHeader != nil {
+                topChrome
+            }
             scrollContent
-                .safeAreaBar(edge: .top, spacing: customHeader == nil ? 0 : -scrollChromeOverlap) {
-                    topChrome
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(alignment: .bottom) {
+                    floatingAccessoryOverlay
                 }
-                .safeAreaBar(edge: .bottom, spacing: hasBottomChrome ? -scrollChromeOverlap : 0) {
-                    bottomChrome
-                }
-        } else {
-            scrollContent
-                .safeAreaInset(edge: .top, spacing: customHeader == nil ? 0 : -scrollChromeOverlap) {
-                    topChrome
-                }
-                .safeAreaInset(edge: .bottom, spacing: hasBottomChrome ? -scrollChromeOverlap : 0) {
-                    bottomChrome
-                }
+            if hasBottomBar {
+                bottomChrome
+            }
         }
     }
 
     var body: some View {
         contentWithChrome
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background((surface ?? Color.clear).ignoresSafeArea())
         .toolbar(showsNativeNavigationBar ? .automatic : .hidden, for: .navigationBar)
+        .toolbarBackground(chromeSurface, for: .navigationBar)
+        .toolbarBackground(
+            showsNativeNavigationBar && chromeBackdropVisible ? .visible : .hidden,
+            for: .navigationBar
+        )
         .toolbar {
             if showsKeyboardDismissToolbar {
                 ToolbarItemGroup(placement: .keyboard) {
@@ -3279,15 +4002,15 @@ struct AppScreen<Content: View>: View {
     }
 }
 
+/// Backdrop for fixed chrome (sticky header / sticky CTA). It is deliberately
+/// opaque: scroll content must never be readable through the header or CTA
+/// chrome while moving beneath it.
 private struct AppScreenChromeBackground: View {
     let surface: Color
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            surface.backgroundExtensionEffect()
-        } else {
-            surface
-        }
+        Rectangle()
+            .fill(surface)
     }
 }
 
@@ -3417,12 +4140,22 @@ extension View {
     /// Canonical exercise-picker `.searchable` wiring. Uses iOS 26's native
     /// bottom-toolbar search placement so picker sheets keep search reachable
     /// near the thumb while the exercise list stays directly under the header.
+    /// On iOS 18 the `.searchToolbarBehavior(.minimize)` minimize-on-scroll
+    /// affordance is unavailable; the field still appears in the toolbar.
+    @ViewBuilder
     func appExerciseSearchable(text: Binding<String>) -> some View {
-        self
-            .searchable(text: text, placement: .toolbar, prompt: AppCopy.Search.exercises)
-            .searchToolbarBehavior(.minimize)
-            .textInputAutocapitalization(.words)
-            .autocorrectionDisabled()
+        if #available(iOS 26.0, *) {
+            self
+                .searchable(text: text, placement: .toolbar, prompt: AppCopy.Search.exercises)
+                .searchToolbarBehavior(.minimize)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+        } else {
+            self
+                .searchable(text: text, placement: .toolbar, prompt: AppCopy.Search.exercises)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+        }
     }
 
     /// Canonical style for text-label toolbar buttons (e.g. "History", "Browse").
@@ -3443,7 +4176,7 @@ extension View {
     /// parallel LinearGradient/mask-based fade; extend this instead.
     @ViewBuilder
     func appScrollEdgeSoft(top: Bool = true, bottom: Bool = true) -> some View {
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             switch (top, bottom) {
             case (true, true):   self.scrollEdgeEffectStyle(.soft, for: .all)
             case (true, false):  self.scrollEdgeEffectStyle(.soft, for: .top)
@@ -3451,6 +4184,12 @@ extension View {
             case (false, false): self
             }
         } else {
+            // iOS 18 fallback: `scrollEdgeEffectStyle` is iOS 26-only. Sharp
+            // scroll edges; acceptable degradation per CLAUDE.md §7 (don't
+            // grow the design system without explicit justification). To
+            // restore the soft fade on iOS 18, extend this branch with a
+            // centralized LinearGradient mask here — never fork into a
+            // parallel modifier in feature code.
             self
         }
     }
@@ -3537,28 +4276,52 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         var verticalPadding: CGFloat {
             switch self {
             case .compact: return AppSpacing.smd
-            case .tall:    return AppSpacing.lg
+            case .tall:    return AppSpacing.xl
             }
         }
 
         var minHeight: CGFloat { 44 }
     }
 
+    /// Visual treatment of the selected pill. `.light` (default) keeps the
+    /// historical white-on-grey look used by mode toggles. `.dark` flips to a
+    /// black pill with white text — used when the picker doubles as a primary
+    /// commitment (e.g. onboarding weekday assignment) and needs more weight.
+    enum SelectionStyle {
+        case light
+        case dark
+    }
+
     @Binding var selection: Item
     let items: [Item]
     var size: Size = .compact
+    var selectionStyle: SelectionStyle = .light
     let title: (Item) -> String
+    /// Optional VoiceOver label override per segment. Use when `title` is a
+    /// glyph or single-letter abbreviation that wouldn't read clearly out loud
+    /// (e.g. "M / T / W" weekday picker should announce "Monday / Tuesday /
+    /// Wednesday"). When nil, `title` is used for both visual and accessibility.
+    let accessibilityLabel: ((Item) -> String)?
+    /// Optional per-item disabled predicate. Disabled items render with
+    /// `textDisabled` and ignore taps — the selection cannot land on them.
+    let isDisabled: ((Item) -> Bool)?
 
     init(
         selection: Binding<Item>,
         items: [Item],
         size: Size = .compact,
-        title: @escaping (Item) -> String
+        selectionStyle: SelectionStyle = .light,
+        title: @escaping (Item) -> String,
+        accessibilityLabel: ((Item) -> String)? = nil,
+        isDisabled: ((Item) -> Bool)? = nil
     ) {
         self._selection = selection
         self.items = items
         self.size = size
+        self.selectionStyle = selectionStyle
         self.title = title
+        self.accessibilityLabel = accessibilityLabel
+        self.isDisabled = isDisabled
     }
 
     /// Vertical breathing room above and below each label. `.compact` keeps
@@ -3571,11 +4334,26 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     /// Using a single value keeps the pill visually centered inside the track.
     private let trackPadding: CGFloat = AppSpacing.xs
 
-    private var pillFill: Color { AppColor.cardBackground }
+    private var pillFill: Color {
+        switch selectionStyle {
+        case .light: return AppColor.cardBackground
+        case .dark:  return AppColor.textPrimary
+        }
+    }
 
     /// Track fill — `controlBackground` is a step darker than `AppColor.background`
     /// so the track reads as a separated surface via contrast alone.
     private var trackFill: Color { AppColor.controlBackground }
+
+    private func foreground(isSelected: Bool, isDisabled: Bool) -> Color {
+        if isDisabled { return AppColor.textDisabled }
+        switch selectionStyle {
+        case .light:
+            return isSelected ? AppColor.textPrimary : AppColor.textSecondary
+        case .dark:
+            return isSelected ? AppColor.accentForeground : AppColor.textSecondary
+        }
+    }
 
     var body: some View {
         let trackShape = RoundedRectangle(cornerRadius: trackRadius, style: .continuous)
@@ -3609,19 +4387,22 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
             HStack(spacing: 0) {
                 ForEach(items) { item in
                     let isSelected = item == selection
+                    let disabled = isDisabled?(item) ?? false
                     Button {
-                        if !isSelected {
+                        if !isSelected && !disabled {
                             selection = item
                         }
                     } label: {
                         Text(title(item))
                             .font(.geist(.semibold, size: 16, relativeTo: .body))
-                            .foregroundStyle(isSelected ? AppColor.textPrimary : AppColor.textSecondary)
+                            .foregroundStyle(foreground(isSelected: isSelected, isDisabled: disabled))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, verticalPadding)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(disabled)
+                    .accessibilityLabel(accessibilityLabel?(item) ?? title(item))
                 }
             }
             .padding(.horizontal, trackPadding)
@@ -3643,13 +4424,24 @@ extension AppSegmentedControl {
         selection: Binding<Item.ID>,
         items: [Item],
         size: Size = .compact,
-        title: @escaping (Item) -> String
+        selectionStyle: SelectionStyle = .light,
+        title: @escaping (Item) -> String,
+        accessibilityLabel: ((Item) -> String)? = nil,
+        isDisabled: ((Item) -> Bool)? = nil
     ) {
         let proxy = Binding<Item>(
             get: { items.first(where: { $0.id == selection.wrappedValue }) ?? items[0] },
             set: { selection.wrappedValue = $0.id }
         )
-        self.init(selection: proxy, items: items, size: size, title: title)
+        self.init(
+            selection: proxy,
+            items: items,
+            size: size,
+            selectionStyle: selectionStyle,
+            title: title,
+            accessibilityLabel: accessibilityLabel,
+            isDisabled: isDisabled
+        )
     }
 }
 
