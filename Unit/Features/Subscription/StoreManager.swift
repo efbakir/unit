@@ -39,11 +39,14 @@ final class StoreManager {
     var isLoading = false
     var isPurchased = false
     var purchaseError: String?
+    /// Non-error notice shown via the same `.alert` channel — e.g.
+    /// "No purchases to restore." after a benign restore call.
+    var infoMessage: String?
 
     /// Currently selected tier in the paywall. Default = Annual (recommended).
     var selectedTier: Tier = .annual
 
-    private let logger = Logger(subsystem: "com.unit.app", category: "StoreManager")
+    private let logger = Logger(subsystem: "com.unitlift.app", category: "StoreManager")
     @ObservationIgnored nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
 
     // MARK: - Init
@@ -103,10 +106,17 @@ final class StoreManager {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
-                isPurchased = true
+                // Re-derive entitlement from `currentEntitlements` rather than
+                // assuming success implies isPurchased = true. Keeps a single
+                // source of truth and matches the transaction-listener path.
+                await checkEntitlement()
             case .userCancelled:
                 break
             case .pending:
+                // Ask-to-buy / SCA / parental approval. The entitlement will
+                // arrive via the transaction listener once the parent approves;
+                // we don't need to surface anything here. Phase 2: revisit
+                // with a "Pending approval" message if support requests it.
                 break
             @unknown default:
                 break
@@ -122,14 +132,27 @@ final class StoreManager {
     @MainActor
     func restore() async {
         guard !isLoading else { return }
+        purchaseError = nil
+        infoMessage = nil
         isLoading = true
         defer { isLoading = false }
         do {
             try await AppStore.sync()
             await checkEntitlement()
+            if !isPurchased {
+                infoMessage = "No purchases to restore."
+            }
+        } catch StoreKitError.userCancelled {
+            // User dismissed the Apple ID sign-in prompt. Intentional back-out,
+            // not an error — surfacing an alert here punishes the user for
+            // declining to authenticate.
+            return
+        } catch StoreKitError.networkError(_) {
+            logger.error("Restore failed: network error")
+            purchaseError = "Couldn't reach the App Store. Check your connection and try again."
         } catch {
             logger.error("Restore failed: \(error.localizedDescription)")
-            purchaseError = "Could not restore purchases. Please try again."
+            purchaseError = "Couldn't restore purchases. Try again in a moment."
         }
     }
 
@@ -137,17 +160,15 @@ final class StoreManager {
 
     @MainActor
     func checkEntitlement() async {
+        var hasEntitlement = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
                Self.allProductIDs.contains(transaction.productID) {
-                isPurchased = true
-                return
+                hasEntitlement = true
+                break
             }
         }
-    }
-
-    private func notePurchaseVerified() {
-        isPurchased = true
+        isPurchased = hasEntitlement
     }
 
     // MARK: - Transaction Listener
@@ -155,10 +176,17 @@ final class StoreManager {
     private func listenForTransactions() -> Task<Void, Never> {
         Task.detached { [weak self] in
             for await result in Transaction.updates {
+                // Always finish verified transactions so they don't replay on
+                // next launch. Then re-derive entitlement from
+                // `currentEntitlements`, which excludes revoked / refunded /
+                // expired transactions — never assume "verified update =
+                // isPurchased true". A refund arrives here as a verified
+                // transaction with a revocationDate; without re-checking, the
+                // user would keep Pro until the next cold launch.
                 if case .verified(let transaction) = result,
                    Self.allProductIDs.contains(transaction.productID) {
                     await transaction.finish()
-                    await self?.notePurchaseVerified()
+                    await self?.checkEntitlement()
                 }
             }
         }

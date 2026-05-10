@@ -17,6 +17,7 @@ struct PaywallView: View {
         AppScreen(
             primaryButton: PrimaryButtonConfig(
                 label: ctaTitle,
+                isEnabled: !store.products.isEmpty,
                 isLoading: store.isLoading,
                 action: { Task { await store.purchase() } }
             ),
@@ -32,10 +33,8 @@ struct PaywallView: View {
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("Your plan is ready")
-                        .font(AppFont.stepIndicator.font)
+                        .appCapsLabel(.smallLabel)
                         .foregroundStyle(AppColor.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(AppFont.smallLabel.tracking)
 
                     Text("Unlock Unit")
                         .font(AppFont.numericDisplay.font)
@@ -58,9 +57,6 @@ struct PaywallView: View {
                 // — those stay free forever per docs/claude/scope.md.
 
                 VStack(spacing: 0) {
-                    benefitRow("CSV + Markdown export of your training data")
-                    benefitRow("Apple Health workout sync")
-                    benefitRow("Custom app icons")
                     benefitRow("Custom template accent colors")
                     benefitRow("Founding supporter badge")
                 }
@@ -71,10 +67,20 @@ struct PaywallView: View {
                 tierSelector
                     .padding(.top, AppSpacing.xl)
 
+                // MARK: - Disclosure
+
+                subscriptionDisclosure
+                    .padding(.top, AppSpacing.lg)
+
                 // MARK: - Footer
 
                 footer
                     .padding(.top, AppSpacing.xl)
+
+                if store.products.isEmpty && !store.isLoading {
+                    loadFailureBanner
+                        .padding(.top, AppSpacing.lg)
+                }
             }
             .appScreenEnter()
         }
@@ -84,6 +90,41 @@ struct PaywallView: View {
         .onChange(of: store.isPurchased) { _, purchased in
             if purchased { onDismiss() }
         }
+        .appHaptic(.purchaseSuccess, trigger: store.isPurchased) { old, new in
+            !old && new
+        }
+        .alert(
+            "Something went wrong",
+            isPresented: errorAlertBinding,
+            presenting: store.purchaseError
+        ) { _ in
+            Button("OK", role: .cancel) { store.purchaseError = nil }
+        } message: { error in
+            Text(error)
+        }
+        .alert(
+            "Restore",
+            isPresented: infoAlertBinding,
+            presenting: store.infoMessage
+        ) { _ in
+            Button("OK", role: .cancel) { store.infoMessage = nil }
+        } message: { message in
+            Text(message)
+        }
+    }
+
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { store.purchaseError != nil },
+            set: { if !$0 { store.purchaseError = nil } }
+        )
+    }
+
+    private var infoAlertBinding: Binding<Bool> {
+        Binding(
+            get: { store.infoMessage != nil },
+            set: { if !$0 { store.infoMessage = nil } }
+        )
     }
 
     // MARK: - CTA title
@@ -157,11 +198,19 @@ struct PaywallView: View {
                     AppTag(text: badge, style: .accent, layout: .compactCapsule)
                 }
 
-                Text(label(for: tier))
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .textCase(.uppercase)
-                    .tracking(AppFont.smallLabel.tracking)
+                HStack(spacing: AppSpacing.xs) {
+                    Text(label(for: tier))
+                        .appCapsLabel(.smallLabel)
+                        .foregroundStyle(AppColor.textSecondary)
+
+                    Spacer(minLength: 0)
+
+                    if isSelected {
+                        AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
+                            .foregroundStyle(AppColor.accent)
+                            .accessibilityHidden(true)
+                    }
+                }
 
                 Text(priceText(for: tier))
                     .font(AppFont.productHeading.font)
@@ -185,6 +234,7 @@ struct PaywallView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Tier copy
@@ -223,6 +273,52 @@ struct PaywallView: View {
         }
     }
 
+    // MARK: - Subscription Disclosure
+    //
+    // Apple Guideline 3.1.2(b): the purchase surface must disclose
+    // subscription title, period, free-trial terms, auto-renewal language,
+    // and how to cancel. Per-tier copy keeps the Lifetime variant accurate
+    // (one-time purchase, not auto-renewing).
+
+    private var subscriptionDisclosure: some View {
+        Text(disclosureCopy)
+            .font(AppFont.muted.font)
+            .foregroundStyle(AppColor.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var disclosureCopy: String {
+        switch store.selectedTier {
+        case .monthly:
+            return "Monthly subscription. Includes a 7-day free trial that converts to a paid subscription unless cancelled at least 24 hours before it ends. The subscription auto-renews monthly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
+        case .annual:
+            return "Annual subscription. Includes a 7-day free trial that converts to a paid subscription unless cancelled at least 24 hours before it ends. The subscription auto-renews yearly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
+        case .lifetime:
+            return "Lifetime access. One-time purchase, not a subscription. Does not auto-renew."
+        }
+    }
+
+    // MARK: - Load failure banner
+    //
+    // Shown when StoreKit product loading has finished but products are empty
+    // (network failure, App Store outage). Without this, the CTA renders with
+    // hardcoded fallback prices but `purchase()` silently no-ops because
+    // `product(for:)` returns nil — a guaranteed App Store reject. The CTA
+    // is also disabled in this state via `PrimaryButtonConfig.isEnabled`.
+
+    private var loadFailureBanner: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Text("Couldn't load subscriptions.")
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+            AppGhostButton("Try again") {
+                Task { await store.loadProducts() }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Footer
 
     private var footer: some View {
@@ -245,9 +341,6 @@ struct PaywallView: View {
                     privacyLink
                 }
             }
-
-            Text("Cancelable at any time.")
-                .foregroundStyle(AppColor.textSecondary)
         }
         .font(AppFont.caption.font)
         .foregroundStyle(AppColor.textSecondary)
@@ -262,14 +355,14 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var termsLink: some View {
-        if let termsURL = URL(string: "https://unit.app/terms") {
+        if let termsURL = URL(string: "https://unitlift.app/terms") {
             Link("Terms", destination: termsURL)
         }
     }
 
     @ViewBuilder
     private var privacyLink: some View {
-        if let privacyURL = URL(string: "https://unit.app/privacy") {
+        if let privacyURL = URL(string: "https://unitlift.app/privacy") {
             Link("Privacy", destination: privacyURL)
         }
     }
