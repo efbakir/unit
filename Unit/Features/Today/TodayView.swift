@@ -95,7 +95,7 @@ struct TodayView: View {
                 }
             }
             .navigationDestination(isPresented: $showsHistory) {
-                RecentSessionsView(showsCloseButton: true, initialMode: .list)
+                RecentSessionsView(showsCloseButton: true)
             }
             .navigationDestination(isPresented: Binding(
                 get: { completedSessionDetail != nil },
@@ -109,7 +109,7 @@ struct TodayView: View {
             .tint(AppColor.accent)
             .onAppear {
                 checkStaleSession()
-                QuickStartSupport.cleanupOrphanedTemplates(
+                FreestyleSessionSupport.cleanupOrphanedTemplates(
                     modelContext: modelContext,
                     templates: templates,
                     sessions: sessions
@@ -294,15 +294,7 @@ struct TodayView: View {
     }
 
     private func startWorkout(_ template: DayTemplate) {
-        let session = WorkoutSession(
-            date: Date(),
-            templateId: template.id,
-            isCompleted: false
-        )
-
-        modelContext.insert(session)
-        template.lastPerformedDate = session.date
-        try? modelContext.save()
+        template.startWorkoutSession(in: modelContext)
     }
 
     private func checkStaleSession() {
@@ -627,10 +619,10 @@ final class TodayDashboardViewModel {
                 ?? "\(representative.reps)"
 
             let lastPerformanceLabel: String
-            if exercise.isBodyweight {
-                lastPerformanceLabel = "Last BW"
-            } else {
+            if representative.weight > 0 {
                 lastPerformanceLabel = "Last \(WorkoutTargetFormatter.weightCompact(representative.weight))"
+            } else {
+                lastPerformanceLabel = "Last BW"
             }
 
             return ExerciseTarget(

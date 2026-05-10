@@ -36,26 +36,26 @@ enum WorkoutTargetFormatter {
     }
 
     /// Canonical inline load: `setxrepxkg` when set count is known (`> 0`), else `kgxrep` or `BWxrep`.
+    /// Weight wins when present — including on bodyweight exercises (e.g. weighted pull-ups).
     static func compactLoadText(sets: Int?, reps: Int?, weightKg: Double?, isBodyweight: Bool) -> String? {
         guard let reps, reps > 0 else { return nil }
 
         let setCount = sets ?? 0
         let w = weightKg ?? 0
-        let hasWeight = w > 0 && !isBodyweight
 
-        if isBodyweight {
+        if w > 0 {
             if setCount > 0 {
-                return "\(setCount)x\(reps)xBW"
+                return "\(setCount)x\(reps)x\(weightCompact(w))"
             }
-            return "BWx\(reps)"
+            return "\(weightCompact(w))x\(reps)"
         }
 
-        guard hasWeight else { return nil }
+        guard isBodyweight else { return nil }
 
         if setCount > 0 {
-            return "\(setCount)x\(reps)x\(weightCompact(w))"
+            return "\(setCount)x\(reps)xBW"
         }
-        return "\(weightCompact(w))x\(reps)"
+        return "BWx\(reps)"
     }
 
     /// Single logged set or ghost row: no set index, `kgxrep` / `BWxrep`.
@@ -113,10 +113,12 @@ enum WorkoutTargetFormatter {
     /// since the milestone line gets one quiet beat of attention before fading.
     static func milestoneText(weightKg: Double, reps: Int, isBodyweight: Bool) -> String? {
         guard reps > 0 else { return nil }
+        if weightKg > 0 {
+            return "\(weightDisplay(weightKg)) × \(reps)"
+        }
         if isBodyweight {
             return "BW × \(reps)"
         }
-        guard weightKg > 0 else { return nil }
-        return "\(weightDisplay(weightKg)) × \(reps)"
+        return nil
     }
 }

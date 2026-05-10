@@ -22,7 +22,6 @@ struct ActiveWorkoutView: View {
     @State private var restTimer = RestTimerManager()
     @State private var restDurationSeconds = 30
     @State private var showLineup = false
-    @State private var showLogs = false
     @State private var adjustResultPayload: AdjustResultPayload?
     @State private var selectedExerciseIndex = 0
     @State private var showsReadyState = false
@@ -39,10 +38,10 @@ struct ActiveWorkoutView: View {
     /// above the command card. The reminder itself only renders for an exercise's first
     /// set; the sheet is informational and dismissible at any time.
     @State private var showsWarmupGuide: Bool = false
-    /// Bumped on every successful `completeSet`. Drives the
-    /// `.sensoryFeedback(.success, trigger:)` on `WorkoutCommandCard`, so the
-    /// haptic lives at the atom layer instead of being fired imperatively
-    /// from the view-model. Wraps via `&+=` to stay non-monotonic-safe.
+    /// Bumped on every successful `completeSet`. Drives `AppHaptic.setLogged`
+    /// on `WorkoutCommandCard`, so the haptic lives at the atom layer instead
+    /// of being fired imperatively from the view-model. Wraps via `&+=` to
+    /// stay non-monotonic-safe.
     @State private var setLoggedPhase: Int = 0
     /// Re-entrancy guard. Two ultra-fast "Done" taps inside the same runloop
     /// could fire `completeSet` twice → duplicate `SetEntry` insert, double
@@ -71,11 +70,17 @@ struct ActiveWorkoutView: View {
     /// `SetProgressIndicator`). Drives `.sheet(item:)` for `AdjustResultSheet` in
     /// edit mode — same atom as new-set logging, just seeded from the existing entry.
     @State private var editingSetPayload: EditSetPayload? = nil
+    /// One-shot reinforcement toast surfaced after the user dismisses their
+    /// first set-edit sheet — confirms the just-discovered tap-to-edit gesture
+    /// is reusable on every set. Persisted across launches so it never repeats.
+    @AppStorage("hasSeenSetEditHint") private var hasSeenSetEditHint: Bool = false
+    /// Bound to `appToast(message:)` on the screen root; the watcher on
+    /// `editingSetPayload` sets it to the hint copy and clears the AppStorage flag.
+    @State private var setEditHintToast: String? = nil
     /// Active when the lifter has just tapped a "+ 1 rep" / "+ 2.5 kg" suggestion
     /// chip — drives the metric-hero numeric cross-fade to the bumped target while
     /// the AdjustResultSheet opens. Cleared on sheet dismiss; never persisted.
     @State private var pendingSuggestionPreview: PendingSuggestionPreview? = nil
-
     /// Plus / minus on the rest timer adjust by this many seconds (minimum rest stays 30s).
     private static let restTimerAdjustStepSeconds = 30
 
@@ -87,8 +92,8 @@ struct ActiveWorkoutView: View {
         (template?.name ?? "Workout").truncatedForNavigationTitle(maxGlyphCount: 34)
     }
 
-    private var isQuickStartSession: Bool {
-        template?.name == "Quick Start"
+    private var isFreestyleSession: Bool {
+        template?.name == FreestyleSessionSupport.templateName
     }
 
     private var orderedExercises: [Exercise] {
@@ -255,11 +260,11 @@ struct ActiveWorkoutView: View {
     }
 
     /// True while the rest timer is running and ≤ 3 seconds remain.
-    /// Drives the final-3s warning haptic on the screen — bound to
-    /// `.sensoryFeedback(.warning, trigger:)` with a `false → true` filter so
-    /// the haptic fires once when the lifter enters the heads-up window, not
-    /// on every tick. Visual treatment is intentionally absent (numeric
-    /// countdown already cross-fades; pulse / ring fill is decorative motion).
+    /// Drives `AppHaptic.restFinalCountdown` on the screen — with a
+    /// `false → true` filter so the haptic fires once when the lifter
+    /// enters the heads-up window, not on every tick. Visual treatment
+    /// is intentionally absent (numeric countdown already cross-fades;
+    /// pulse / ring fill is decorative motion).
     private var isRestFinalCountdown: Bool {
         restTimer.isRunning && restTimer.secondsRemaining > 0 && restTimer.secondsRemaining <= 3
     }
@@ -295,24 +300,19 @@ struct ActiveWorkoutView: View {
     }
 
     /// Inline reminder rendered above the command card before the lifter logs the
-    /// first working set for an exercise. Quiet caption-sized copy with an
-    /// accent-tinted "How?" link that opens `WarmupGuideSheet` — centered,
-    /// secondary tone so it never competes with the metric hero or "Complete
-    /// set" CTA. Disappears once a working set is logged.
+    /// first working set for an exercise. Two-line muted caption — reminder on top,
+    /// tap affordance below — both in `textSecondary` so the block reads as one quiet
+    /// note rather than a hyperlink. Disappears once a working set is logged.
     private var warmupReminderText: some View {
         Button {
             showsWarmupGuide = true
         } label: {
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                Text(AppCopy.Workout.warmupReminder)
-                    .foregroundStyle(AppColor.textSecondary)
-                Text(AppCopy.Workout.warmupReminderLink)
-                    .foregroundStyle(AppColor.accent)
-                    .underline()
-            }
-            .font(AppFont.caption.font)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .contentShape(Rectangle())
+            Text("\(AppCopy.Workout.warmupReminder)\n\(AppCopy.Workout.warmupReminderLink)")
+                .appFont(.muted)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens warm-up guidance")
@@ -353,7 +353,7 @@ struct ActiveWorkoutView: View {
                 suggestionActions: suggestionActions(for: section)
             )
 
-            if isQuickStartSession {
+            if isFreestyleSession {
                 addExerciseButton
             }
         }
@@ -473,7 +473,7 @@ struct ActiveWorkoutView: View {
                 Button {
                     showsCancelConfirmation = true
                 } label: {
-                    Label(AppCopy.Nav.close, systemImage: "xmark")
+                    Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
                         .labelStyle(.iconOnly)
                 }
                 .accessibilityLabel(AppCopy.Nav.close)
@@ -483,7 +483,7 @@ struct ActiveWorkoutView: View {
                     Button {
                         showLineup = true
                     } label: {
-                        Label(AppCopy.Nav.exercises, systemImage: "list.bullet")
+                        Label(AppCopy.Nav.exercises, systemImage: AppIcon.list.systemName)
                             .labelStyle(.iconOnly)
                     }
                     .accessibilityLabel(AppCopy.Nav.exercises)
@@ -492,7 +492,7 @@ struct ActiveWorkoutView: View {
                     Button {
                         showsFinishConfirmation = true
                     } label: {
-                        Label(AppCopy.Workout.finishWorkout, systemImage: "checkmark")
+                        Label(AppCopy.Workout.finishWorkout, systemImage: AppIcon.checkmark.systemName)
                             .labelStyle(.iconOnly)
                     }
                     .accessibilityLabel(AppCopy.Workout.finishWorkout)
@@ -507,18 +507,19 @@ struct ActiveWorkoutView: View {
         // and the haptic survives Reduce Motion (it is permitted tactile
         // feedback). The closure filter fires only on `false → true` so we
         // don't haptic-spam every tick.
-        .sensoryFeedback(.warning, trigger: isRestFinalCountdown) { old, new in
+        .appHaptic(.restFinalCountdown, trigger: isRestFinalCountdown) { old, new in
             !old && new
         }
         // Rest finished → soft success on transition to ready. Distinct from
         // the warning above so the lifter can hear/feel "now". Filter mirrors
         // the heads-up: only `false → true`.
-        .sensoryFeedback(.success, trigger: showsReadyState) { old, new in
+        .appHaptic(.restReady, trigger: showsReadyState) { old, new in
             !old && new
         }
-        // Workout finished → notification-style success haptic (replaces the
-        // imperative `UINotificationFeedbackGenerator` in `finishWorkout`).
-        .sensoryFeedback(.success, trigger: workoutFinishedPhase)
+        // Workout finished → success haptic, fired from the screen rather
+        // than imperatively in `finishWorkout` so it survives Reduce Motion
+        // gating identically to the in-flow haptics.
+        .appHaptic(.workoutFinished, trigger: workoutFinishedPhase)
         .sheet(isPresented: $showsWarmupGuide) {
             WarmupGuideSheet()
                 .presentationDetents([.medium])
@@ -526,11 +527,6 @@ struct ActiveWorkoutView: View {
         }
         .sheet(isPresented: $showLineup) {
             exerciseListSheet
-                .presentationDetents([.medium, .large])
-                .appBottomSheetChrome()
-        }
-        .sheet(isPresented: $showLogs) {
-            logsSheet
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()
         }
@@ -581,14 +577,22 @@ struct ActiveWorkoutView: View {
             .presentationDetents([.medium, .large])
             .appBottomSheetChrome()
         }
+        // Fires the set-edit hint once, the first time the user *closes* an
+        // edit sheet — by then the toast is no longer occluded by the sheet,
+        // and the user has just successfully discovered the gesture, so the
+        // copy reads as reinforcement ("you can do that on any set anytime").
+        .onChange(of: editingSetPayload != nil) { wasShowing, isShowing in
+            guard wasShowing, !isShowing, !hasSeenSetEditHint else { return }
+            hasSeenSetEditHint = true
+            setEditHintToast = AppCopy.Workout.setEditHint
+        }
+        .appToast(message: $setEditHintToast)
         .sheet(isPresented: $showsAddExercise) {
-            AddExerciseSheet(
+            AppExercisePickerSheet(
                 existingIds: Set(template?.orderedExerciseIds ?? [])
             ) { exercise in
                 addExerciseToWorkout(exercise)
             }
-            .presentationDetents([.medium, .large])
-            .appBottomSheetChrome()
         }
         .sheet(item: $pendingExerciseForSetup) { exercise in
             SetCountPickerSheet(exerciseName: exercise.displayName) { count in
@@ -619,7 +623,7 @@ struct ActiveWorkoutView: View {
         .alert(AppCopy.Workout.finishWorkoutTitle, isPresented: $showsFinishConfirmation) {
             Button(AppCopy.Workout.finishWorkout) {
                 finishWorkout()
-                if template?.name == "Quick Start" {
+                if template?.name == FreestyleSessionSupport.templateName {
                     renameDraft = ""
                     showsRenamePrompt = true
                 }
@@ -840,75 +844,6 @@ struct ActiveWorkoutView: View {
         return name
     }
 
-    private var logsSheet: some View {
-        NavigationStack {
-            Group {
-                if let currentSection {
-                    ScrollView {
-                        AppCardList(data: Array(0..<currentSection.plannedSetCount), id: \.self) { index in
-                            logsSheetRow(index: index, section: currentSection)
-                        }
-                    }
-                    .appScrollEdgeSoft()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(AppColor.background.ignoresSafeArea())
-            .navigationTitle(AppCopy.Nav.logs)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) {
-                        showLogs = false
-                    }
-                    .appToolbarTextStyle()
-                }
-            }
-            .appNavigationBarChrome()
-        }
-    }
-
-    @ViewBuilder
-    private func logsSheetRow(index: Int, section: WorkoutExerciseSectionModel) -> some View {
-        let entry = index < section.entries.count ? section.entries[index] : nil
-        let isCurrent = !section.hasReachedPlannedSetGoal && index == section.entries.count
-        let isDone = entry != nil
-
-        HStack {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Set \(index + 1)")
-                    .font(AppFont.productAction.font)
-                    .foregroundStyle(isDone ? AppColor.textSecondary : AppColor.textPrimary)
-
-                if let entry {
-                    Text(logEntrySubtitle(for: entry, exercise: section.exercise))
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textDisabled)
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            if isDone {
-                AppIconCircle(diameter: 32) {
-                    AppIcon.checkmark.image(size: 14, weight: .semibold)
-                        .foregroundStyle(AppColor.textPrimary)
-                }
-            } else if isCurrent {
-                AppTag(text: AppCopy.Workout.exerciseCurrentTag, style: .accent)
-            }
-        }
-        .contentShape(Rectangle())
-    }
-
-    private func logEntrySubtitle(for entry: SetEntry, exercise: Exercise) -> String {
-        WorkoutTargetFormatter.setMetricText(
-            weightKg: entry.weight,
-            reps: entry.reps,
-            isBodyweight: exercise.isBodyweight
-        ) ?? "\(entry.reps)"
-    }
-
     private func lastLoggedValues(for exerciseID: UUID) -> (weight: Double, reps: Int)? {
         let entries = currentEntries(for: exerciseID).filter { !$0.isWarmup }
         guard let last = entries.last else { return nil }
@@ -933,10 +868,10 @@ struct ActiveWorkoutView: View {
                 let entry = section.entries[index]
                 state = .completed
                 reps = entry.reps
-                if section.exercise.isBodyweight {
-                    weightText = "BW"
-                } else if entry.weight > 0 {
+                if entry.weight > 0 {
                     weightText = WorkoutTargetFormatter.weightCompact(entry.weight)
+                } else if section.exercise.isBodyweight {
+                    weightText = "BW"
                 }
                 isPR = prSetEntryIDs.contains(entry.id)
                 onTap = {
@@ -1086,7 +1021,7 @@ struct ActiveWorkoutView: View {
         isLoggingSet = true
         DispatchQueue.main.async { isLoggingSet = false }
 
-        let setIndex = currentEntries(for: exercise.id).count
+        let setIndex = (currentEntries(for: exercise.id).map(\.setIndex).max() ?? -1) + 1
 
         let entry = SetEntry(
             sessionId: session.id,
@@ -1145,7 +1080,11 @@ struct ActiveWorkoutView: View {
         let plannedCount = plannedSetCount(for: exercise.id)
 
         if completedWorkingSetCount >= plannedCount {
-            restTimer.stop()
+            if nextSection == nil {
+                restTimer.stop()
+            } else {
+                startRestTimer(seconds: restDurationSeconds)
+            }
         } else {
             startRestTimer(seconds: restDurationSeconds)
         }
@@ -1188,6 +1127,7 @@ struct ActiveWorkoutView: View {
             try? modelContext.save()
         }
         prSetEntryIDs.remove(entry.id)
+        AppHaptic.setDeleted.fire()
     }
 
     /// Re-evaluate just the edited entry's PR flag against the current baseline.
@@ -1290,11 +1230,13 @@ private struct WorkoutExerciseSectionModel: Identifiable {
     let prefill: SetPrefill?
     let plannedSetCount: Int
     /// Non-nil only when `prefill.source == .priorSession` — i.e. there's a
-    /// prior-session anchor to bump off. Hidden once an in-session set lands.
+    /// prior-session anchor to bump from. Drives the `+ 1 rep` / `+ 2.5 kg`
+    /// chips rendered in `WorkoutCommandCard.metricSupportingSlot`.
     let suggestion: SetSuggestion?
-    /// Set count from the most recent completed prior session. Drives the
-    /// "3×N×Wkg" component of the metric hero so chip-tap previews keep the
-    /// same set-count digits and only the reps or weight change.
+    /// Number of working sets the lifter logged for this exercise in their most
+    /// recent completed session — feeds the `pendingSuggestionPreview` cross-fade
+    /// so a chip tap keeps the same set-count component (only weight or reps
+    /// changes).
     let priorSessionSetCount: Int?
 
     var id: UUID { exercise.id }
@@ -1302,378 +1244,6 @@ private struct WorkoutExerciseSectionModel: Identifiable {
     var hasReachedPlannedSetGoal: Bool {
         entries.count >= plannedSetCount
     }
-}
-
-private struct AdjustResultPayload: Identifiable {
-    let exercise: Exercise
-    let prefill: SetPrefill?
-
-    var id: UUID { exercise.id }
-}
-
-/// Tap a logged chip in `SetProgressIndicator` to seed this. Carries both the
-/// exercise (for the title + bodyweight flag) and the entry being edited (so the
-/// sheet can seed weight × reps × note from the existing values, not from prefill).
-private struct EditSetPayload: Identifiable {
-    let entry: SetEntry
-    let exercise: Exercise
-    /// 1-based number shown on the chip the user tapped — drives the sheet title.
-    let setNumber: Int
-
-    var id: UUID { entry.id }
-}
-
-private struct AdjustResultSheet: View {
-    /// Drives the sheet's seed values, primary CTA, and trailing destructive action.
-    /// `.log` is the original new-set flow (prefill from prior session). `.edit` is
-    /// the new chip-tap flow (seed from the existing entry, expose Delete set).
-    enum Mode {
-        case log(prefill: SetPrefill?)
-        case edit(weight: Double, reps: Int, note: String, setNumber: Int)
-    }
-
-    let exerciseName: String
-    let isBodyweight: Bool
-    let mode: Mode
-    let onSave: (_ weight: Double, _ reps: Int, _ note: String) -> Void
-    /// Edit mode only — when non-nil, a destructive "Delete set" secondary appears
-    /// beneath "Save changes". Log mode passes nil.
-    var onDelete: (() -> Void)? = nil
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var weightText = ""
-    @State private var repsText = ""
-    @State private var noteText = ""
-    @State private var seeded = false
-
-    private var parsedWeight: Double {
-        Double(weightText.replacingOccurrences(of: ",", with: ".")) ?? 0
-    }
-
-    private var parsedReps: Int {
-        Int(repsText) ?? 0
-    }
-
-    private var effectiveIsBodyweight: Bool {
-        isBodyweight || (!isBodyweight && parsedWeight == 0 && !weightText.isEmpty)
-    }
-
-    private var canSave: Bool {
-        parsedReps > 0
-    }
-
-    private var isEditMode: Bool {
-        if case .edit = mode { return true }
-        return false
-    }
-
-    private var primaryLabel: String {
-        isEditMode ? AppCopy.Workout.saveChanges : AppCopy.Workout.completeSet
-    }
-
-    private var navigationTitle: String {
-        if case .edit(_, _, _, let setNumber) = mode {
-            return AppCopy.Workout.editSet(setNumber)
-        }
-        return exerciseName
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack(spacing: AppSpacing.sm) {
-                        manualInputField(
-                            title: isBodyweight ? "Weight" : "Weight (kg)",
-                            text: $weightText,
-                            keyboardType: .decimalPad,
-                            suffix: effectiveIsBodyweight ? "BW" : nil
-                        )
-
-                        manualInputField(
-                            title: "Reps",
-                            text: $repsText,
-                            keyboardType: .numberPad
-                        )
-                    }
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(AppCopy.Workout.adjustSetNoteLabel)
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-
-                        TextField(
-                            AppCopy.Workout.adjustSetNotePlaceholder,
-                            text: $noteText,
-                            axis: .vertical
-                        )
-                        .font(AppFont.body.font)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(3...5)
-                        .appInputFieldStyleMultiline(
-                            minHeight: 96,
-                            horizontalPadding: AppSpacing.md,
-                            verticalPadding: AppSpacing.smd,
-                            elevated: true
-                        )
-                    }
-                    .padding(.top, AppSpacing.md)
-
-                    AppPrimaryButton(primaryLabel, isEnabled: canSave) {
-                        onSave(effectiveIsBodyweight ? 0 : parsedWeight, parsedReps, noteText)
-                        dismiss()
-                    }
-                    .padding(.top, AppSpacing.md)
-
-                    if isEditMode, let onDelete {
-                        AppSecondaryButton(
-                            AppCopy.Workout.deleteSet,
-                            tone: .destructive,
-                            action: {
-                                onDelete()
-                                dismiss()
-                            }
-                        )
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.Nav.cancel, role: .cancel) {
-                        dismiss()
-                    }
-                }
-            }
-            .appNavigationBarChrome()
-        }
-        .onAppear {
-            guard !seeded else { return }
-            seeded = true
-            switch mode {
-            case .log(let prefill):
-                guard let prefill else { return }
-                if !isBodyweight, prefill.weight > 0 {
-                    weightText = prefill.weight.weightString
-                }
-                repsText = "\(prefill.reps)"
-            case .edit(let weight, let reps, let note, _):
-                if !isBodyweight, weight > 0 {
-                    weightText = weight.weightString
-                }
-                repsText = "\(reps)"
-                noteText = note
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func manualInputField(
-        title: String,
-        text: Binding<String>,
-        keyboardType: UIKeyboardType,
-        suffix: String? = nil
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(title)
-                .font(AppFont.sectionHeader.font)
-                .foregroundStyle(AppColor.textPrimary)
-
-            HStack(spacing: AppSpacing.xs) {
-                TextField("0", text: text)
-                    .keyboardType(keyboardType)
-                    .font(AppFont.numericInput.font)
-                    .tracking(AppFont.numericInput.tracking)
-                    .multilineTextAlignment(.center)
-
-                if let suffix {
-                    Text(suffix)
-                        .font(AppFont.productAction.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-            }
-            .appInputFieldStyle(height: 64, horizontalPadding: AppSpacing.sm, elevated: true)
-        }
-    }
-}
-
-private struct SetCountOption: Hashable, Identifiable {
-    let value: Int
-    var id: Int { value }
-}
-
-private struct SetCountPickerSheet: View {
-    let exerciseName: String
-    let onSelect: (Int) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var selection: SetCountOption = SetCountOption(value: 3)
-
-    private static let options: [SetCountOption] = (1...6).map { SetCountOption(value: $0) }
-
-    var body: some View {
-        AppSheetScreen(
-            title: AppCopy.Workout.setCountQuestion,
-            primaryButton: PrimaryButtonConfig(label: AppCopy.Nav.done, action: commitSelection),
-            onDismissAction: { dismiss() },
-            usesOuterScroll: false
-        ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text(AppCopy.Workout.setCountPrompt(exerciseName))
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                AppSegmentedControl(
-                    selection: $selection,
-                    items: Self.options,
-                    size: .tall,
-                    title: { "\($0.value)" }
-                )
-            }
-        }
-    }
-
-    private func commitSelection() {
-        onSelect(selection.value)
-        dismiss()
-    }
-}
-
-private struct AddExerciseSheet: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
-
-    let existingIds: Set<UUID>
-    let onSelect: (Exercise) -> Void
-
-    @State private var query = ""
-
-    private var filteredExercises: [Exercise] {
-        let available = exercises.filter { !existingIds.contains($0.id) }
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return available }
-        let needle = trimmed.lowercased()
-        return available.filter { exercise in
-            exercise.displayName.lowercased().contains(needle) ||
-            exercise.aliases.contains { $0.lowercased().contains(needle) }
-        }
-    }
-
-    private var canCreateNew: Bool {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        return !exercises.contains { $0.displayName.lowercased() == trimmed.lowercased() }
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if canCreateNew {
-                    Button {
-                        createAndSelect(name: query.trimmingCharacters(in: .whitespacesAndNewlines))
-                    } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            AppIcon.addCircle.image()
-                                .foregroundStyle(AppColor.accent)
-                            Text("Create \"\(query.trimmingCharacters(in: .whitespacesAndNewlines))\"")
-                                .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.textPrimary)
-                        }
-                        .frame(minHeight: 44, alignment: .leading)
-                    }
-                    .appPlainListRowChrome()
-                }
-
-                ForEach(filteredExercises, id: \.id) { exercise in
-                    Button {
-                        onSelect(exercise)
-                        dismiss()
-                    } label: {
-                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                            HStack(spacing: AppSpacing.sm) {
-                                Text(exercise.displayName)
-                                    .font(AppFont.body.font)
-                                    .foregroundStyle(AppColor.textPrimary)
-                                if exercise.isBodyweight {
-                                    Text(AppCopy.Workout.bodyweightAbbrev)
-                                        .font(AppFont.caption.font)
-                                        .foregroundStyle(AppColor.textSecondary)
-                                }
-                            }
-                            if !exercise.aliases.isEmpty {
-                                Text(exercise.aliases.joined(separator: " · "))
-                                    .font(AppFont.caption.font)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                        }
-                        .frame(minHeight: 44, alignment: .leading)
-                    }
-                    .appPlainListRowChrome()
-                }
-
-                // Empty-row hint when neither the create-new affordance nor the
-                // filtered library has anything to show — covers cold start
-                // (library empty), all-already-added, and zero-match search.
-                if filteredExercises.isEmpty && !canCreateNew {
-                    Text(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                         ? AppCopy.Search.noExercisesYet
-                         : AppCopy.Search.noMatchingExercises)
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(minHeight: 44, alignment: .leading)
-                        .appPlainListRowChrome(separator: .hidden)
-                }
-            }
-            .listSectionSpacing(0)
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(AppColor.sheetBackground.ignoresSafeArea())
-            .scrollDismissesKeyboard(.immediately)
-            .navigationTitle(AppCopy.Workout.addExercise)
-            .navigationBarTitleDisplayMode(.inline)
-            .appExerciseSearchable(text: $query)
-            .onSubmit(of: .search) {
-                guard canCreateNew else { return }
-                createAndSelect(name: query.trimmingCharacters(in: .whitespacesAndNewlines))
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) { dismiss() }
-                        .appToolbarTextStyle()
-                }
-            }
-            .appNavigationBarChrome()
-            .tint(AppColor.accent)
-        }
-    }
-
-    private func createAndSelect(name: String) {
-        let exercise = Exercise(displayName: name)
-        modelContext.insert(exercise)
-        try? modelContext.save()
-        onSelect(exercise)
-        dismiss()
-    }
-}
-
-struct SetPrefill {
-    enum Source {
-        case currentSession
-        case priorSession
-        case planned
-    }
-
-    let weight: Double
-    let reps: Int
-    let source: Source
 }
 
 /// Presentation-only progressive-overload nudge — derived from the most recent
@@ -1757,6 +1327,266 @@ private struct PendingSuggestionPreview: Equatable {
     let bumpedReps: Int
 }
 
+private struct AdjustResultPayload: Identifiable {
+    let exercise: Exercise
+    let prefill: SetPrefill?
+
+    var id: UUID { exercise.id }
+}
+
+/// Tap a logged chip in `SetProgressIndicator` to seed this. Carries both the
+/// exercise (for the title + bodyweight flag) and the entry being edited (so the
+/// sheet can seed weight × reps × note from the existing values, not from prefill).
+private struct EditSetPayload: Identifiable {
+    let entry: SetEntry
+    let exercise: Exercise
+    /// 1-based number shown on the chip the user tapped — drives the sheet title.
+    let setNumber: Int
+
+    var id: UUID { entry.id }
+}
+
+private struct AdjustResultSheet: View {
+    /// Drives the sheet's seed values, primary CTA, and trailing destructive action.
+    /// `.log` is the original new-set flow (prefill from prior session). `.edit` is
+    /// the new chip-tap flow (seed from the existing entry, expose Delete set).
+    enum Mode {
+        case log(prefill: SetPrefill?)
+        case edit(weight: Double, reps: Int, note: String, setNumber: Int)
+    }
+
+    let exerciseName: String
+    let isBodyweight: Bool
+    let mode: Mode
+    let onSave: (_ weight: Double, _ reps: Int, _ note: String) -> Void
+    /// Edit mode only — when non-nil, a destructive "Delete set" secondary appears
+    /// beneath "Save changes". Log mode passes nil.
+    var onDelete: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var weightText = ""
+    @State private var repsText = ""
+    @State private var noteText = ""
+    @State private var seeded = false
+
+    private var parsedWeight: Double {
+        Double(weightText.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
+
+    private func seedWeightText(_ value: Double) -> String {
+        let separator = Locale.current.decimalSeparator ?? "."
+        return value.weightString.replacingOccurrences(of: ".", with: separator)
+    }
+
+    private var parsedReps: Int {
+        Int(repsText) ?? 0
+    }
+
+    private var effectiveIsBodyweight: Bool {
+        guard parsedWeight == 0 else { return false }
+        return isBodyweight ? weightText.isEmpty : !weightText.isEmpty
+    }
+
+    private var canSave: Bool {
+        parsedReps > 0
+    }
+
+    private var isEditMode: Bool {
+        if case .edit = mode { return true }
+        return false
+    }
+
+    private var primaryLabel: String {
+        isEditMode ? AppCopy.Workout.saveChanges : AppCopy.Workout.completeSet
+    }
+
+    private var navigationTitle: String {
+        if case .edit(_, _, _, let setNumber) = mode {
+            return AppCopy.Workout.editSet(setNumber)
+        }
+        return exerciseName
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.sm) {
+                        manualInputField(
+                            title: isBodyweight ? "Weight" : "Weight (kg)",
+                            text: $weightText,
+                            keyboardType: .decimalPad,
+                            suffix: effectiveIsBodyweight ? "BW" : nil
+                        )
+
+                        manualInputField(
+                            title: "Reps",
+                            text: $repsText,
+                            keyboardType: .numberPad
+                        )
+                    }
+
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text(AppCopy.Workout.adjustSetNoteLabel)
+                            .font(AppFont.sectionHeader.font)
+                            .foregroundStyle(AppColor.textPrimary)
+
+                        TextField(
+                            AppCopy.Workout.adjustSetNotePlaceholder,
+                            text: $noteText,
+                            axis: .vertical
+                        )
+                        .font(AppFont.body.font)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(3...5)
+                        .appInputFieldStyleMultiline(
+                            minHeight: 96,
+                            horizontalPadding: AppSpacing.md,
+                            verticalPadding: AppSpacing.smd,
+                            elevated: true
+                        )
+                    }
+                    .padding(.top, AppSpacing.md)
+
+                    AppPrimaryButton(primaryLabel, isEnabled: canSave) {
+                        onSave(parsedWeight, parsedReps, noteText)
+                        dismiss()
+                    }
+                    .padding(.top, AppSpacing.md)
+
+                    if isEditMode, let onDelete {
+                        AppSecondaryButton(
+                            AppCopy.Workout.deleteSet,
+                            tone: .destructive,
+                            action: {
+                                onDelete()
+                                dismiss()
+                            }
+                        )
+                    }
+                }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.md)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(AppCopy.Nav.cancel, role: .cancel) {
+                        dismiss()
+                    }
+                }
+            }
+            .appNavigationBarChrome()
+        }
+        .onAppear {
+            guard !seeded else { return }
+            seeded = true
+            switch mode {
+            case .log(let prefill):
+                guard let prefill else { return }
+                if prefill.weight > 0 {
+                    weightText = seedWeightText(prefill.weight)
+                }
+                repsText = "\(prefill.reps)"
+            case .edit(let weight, let reps, let note, _):
+                if weight > 0 {
+                    weightText = seedWeightText(weight)
+                }
+                repsText = "\(reps)"
+                noteText = note
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func manualInputField(
+        title: String,
+        text: Binding<String>,
+        keyboardType: UIKeyboardType,
+        suffix: String? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(AppFont.sectionHeader.font)
+                .foregroundStyle(AppColor.textPrimary)
+
+            HStack(spacing: AppSpacing.xs) {
+                TextField("0", text: text)
+                    .keyboardType(keyboardType)
+                    .font(AppFont.numericInput.font)
+                    .tracking(AppFont.numericInput.tracking)
+                    .multilineTextAlignment(.center)
+
+                if let suffix {
+                    Text(suffix)
+                        .font(AppFont.productAction.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            .appInputFieldStyle(height: 64, horizontalPadding: AppSpacing.sm, elevated: true)
+        }
+    }
+}
+
+private struct SetCountOption: Hashable, Identifiable {
+    let value: Int
+    var id: Int { value }
+}
+
+private struct SetCountPickerSheet: View {
+    let exerciseName: String
+    let onSelect: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection: SetCountOption = SetCountOption(value: 3)
+
+    private static let options: [SetCountOption] = (1...6).map { SetCountOption(value: $0) }
+
+    var body: some View {
+        AppSheetScreen(
+            title: AppCopy.Workout.setCountQuestion,
+            primaryButton: PrimaryButtonConfig(label: AppCopy.Nav.done, action: commitSelection),
+            onDismissAction: { dismiss() },
+            usesOuterScroll: false
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                Text(AppCopy.Workout.setCountPrompt(exerciseName))
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                AppSegmentedControl(
+                    selection: $selection,
+                    items: Self.options,
+                    size: .tall,
+                    title: { "\($0.value)" }
+                )
+            }
+        }
+    }
+
+    private func commitSelection() {
+        onSelect(selection.value)
+        dismiss()
+    }
+}
+
+struct SetPrefill {
+    enum Source {
+        case currentSession
+        case priorSession
+        case planned
+    }
+
+    let weight: Double
+    let reps: Int
+    let source: Source
+}
+
 @MainActor
 @Observable
 final class ActiveWorkoutViewModel {
@@ -1811,7 +1641,7 @@ final class ActiveWorkoutViewModel {
         }
 
         return session.setEntries
-            .filter { $0.exerciseId == exerciseID && $0.isCompleted }
+            .filter { $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup }
             .sorted { $0.setIndex < $1.setIndex }
             .last
     }
@@ -1824,7 +1654,7 @@ final class ActiveWorkoutViewModel {
         sessions.first { session in
             session.id != currentSession.id &&
             session.isCompleted &&
-            session.setEntries.contains(where: { $0.exerciseId == exerciseID && $0.isCompleted })
+            session.setEntries.contains(where: { $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup })
         }
     }
 }
