@@ -164,4 +164,22 @@ final class DayTemplate {
         }
         return result
     }
+
+    /// Inserts a fresh in-progress `WorkoutSession` for this template, stamps
+    /// `lastPerformedDate`, and saves. Single source of truth for the
+    /// start-of-session sequence — both `TodayView` and `TemplatesView`'s
+    /// sticky CTAs go through here so the two paths can never drift.
+    @MainActor
+    @discardableResult
+    func startWorkoutSession(in modelContext: ModelContext) -> WorkoutSession {
+        let session = WorkoutSession(
+            date: Date(),
+            templateId: id,
+            isCompleted: false
+        )
+        modelContext.insert(session)
+        lastPerformedDate = session.date
+        try? modelContext.save()
+        return session
+    }
 }
