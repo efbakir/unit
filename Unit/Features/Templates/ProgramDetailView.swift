@@ -36,10 +36,26 @@ struct ProgramDetailView: View {
     var body: some View {
         AppScreen(showsNativeNavigationBar: true) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                if isActive {
+                    AppTag(text: "Active", style: .muted, layout: .compactCapsule)
+                }
                 routineDaysCard
                 if !isActive {
                     AppPrimaryButton("Use this program") {
                         showingActivateConfirmation = true
+                    }
+                    .confirmationDialog(
+                        "Switch to \(displayName)?",
+                        isPresented: $showingActivateConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Use this program") {
+                            ActiveSplitStore.setCurrent(split.id)
+                            activeSplitIdString = split.id.uuidString
+                        }
+                        Button(AppCopy.Nav.cancel, role: .cancel) {}
+                    } message: {
+                        Text("Switches Today and your schedule to this program.")
                     }
                 }
             }
@@ -48,11 +64,6 @@ struct ProgramDetailView: View {
         .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if isActive {
-                ToolbarItem(placement: .principal) {
-                    AppTag(text: "Active", style: .muted, layout: .compactCapsule)
-                }
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingEdit = true } label: {
                     Label("Edit program", systemImage: AppIcon.program.systemName)
@@ -66,34 +77,34 @@ struct ProgramDetailView: View {
         .navigationDestination(isPresented: $showingEdit) {
             EditProgramView(split: split)
         }
-        .confirmationDialog(
-            "Switch to \(displayName)?",
-            isPresented: $showingActivateConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Use this program") {
-                ActiveSplitStore.setCurrent(split.id)
-                activeSplitIdString = split.id.uuidString
-            }
-            Button(AppCopy.Nav.cancel, role: .cancel) {}
-        } message: {
-            Text("Switches Today and your schedule to this program.")
-        }
         .tint(AppColor.accent)
     }
 
     // MARK: - Routine Days
 
     private var routineDaysCard: some View {
-        AppCardList(orderedTemplates) { template in
-            let index = orderedTemplates.firstIndex(where: { $0.id == template.id }) ?? 0
-            NavigationLink(value: template) {
-                PreviewListRow(
-                    title: template.displayName,
-                    subtitle: routineSubtitle(dayIndex: index, template: template)
-                )
+        Group {
+            if orderedTemplates.isEmpty {
+                EmptyStateCard(
+                    eyebrow: "Routines",
+                    title: "No days yet.",
+                    message: "Add the first training day before using this program.",
+                    buttonLabel: "Add day"
+                ) {
+                    showingEdit = true
+                }
+            } else {
+                AppCardList(orderedTemplates) { template in
+                    let index = orderedTemplates.firstIndex(where: { $0.id == template.id }) ?? 0
+                    NavigationLink(value: template) {
+                        PreviewListRow(
+                            title: template.displayName,
+                            subtitle: routineSubtitle(dayIndex: index, template: template)
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                }
             }
-            .buttonStyle(ScaleButtonStyle())
         }
     }
 

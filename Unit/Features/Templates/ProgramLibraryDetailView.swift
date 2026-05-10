@@ -33,12 +33,11 @@ struct ProgramLibraryDetailView: View {
                 ForEach(program.days) { day in
                     SettingsSection(title: day.name, contentInset: AppSpacing.sm) {
                         AppDividedList(day.items) { item in
-                            AppListRow(title: item.exerciseName, style: .display) {
-                                Text(WorkoutTargetFormatter.setRepCompact(setCount: item.setCount, reps: item.repTarget) ?? "")
-                                    .font(AppFont.muted.font)
-                                    .foregroundStyle(AppFont.muted.color)
-                                    .monospacedDigit()
-                            }
+                            AppListRow(
+                                title: item.exerciseName,
+                                value: WorkoutTargetFormatter.setRepCompact(setCount: item.setCount, reps: item.repTarget) ?? "",
+                                style: .display
+                            )
                         }
                     }
                 }
@@ -77,7 +76,9 @@ struct ProgramLibraryDetailView: View {
     }
 
     private func importProgram() {
-        _ = ProgramImporter.importProgram(program, into: modelContext)
+        let split = ProgramImporter.importProgram(program, into: modelContext)
+        ActiveSplitStore.setCurrent(split.id)
+        appTabSelection(.program)
         dismiss()
     }
 }

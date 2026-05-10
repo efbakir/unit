@@ -31,9 +31,58 @@ struct TemplatesView: View {
         return splits.filter { $0.id != active.id }
     }
 
+    private var activeSession: WorkoutSession? {
+        sessions.first(where: { !$0.isCompleted })
+    }
+
+    /// Sticky bottom CTA when an active program exists. Three states:
+    ///   • In-progress session  → "Continue workout", switches to Today.
+    ///   • Today's scheduled template (with exercises, not yet completed)
+    ///                          → "Start workout", inserts a session and
+    ///                            switches to Today. Reuses the canonical
+    ///                            `DayTemplate.startWorkoutSession(in:)` so
+    ///                            the two entry paths share insert + stamp +
+    ///                            save semantics (one canonical path).
+    ///   • Rest day / completed / unscheduled → nil (no sticky CTA; the
+    ///                            existing in-card affordances stay).
+    private var programsCTA: PrimaryButtonConfig? {
+        guard let split = activeSplit else { return nil }
+
+        if activeSession != nil {
+            return PrimaryButtonConfig(
+                label: AppCopy.Workout.continueWorkout,
+                action: { appTabSelection(.today) }
+            )
+        }
+
+        let calendar = Calendar.current
+        let todayWeekday = calendar.component(.weekday, from: Date())
+        let ordered = orderedTemplates(for: split)
+        guard let scheduled = ordered.first(where: { $0.scheduledWeekday == todayWeekday }),
+              !scheduled.orderedExerciseIds.isEmpty else {
+            return nil
+        }
+        let completedToday = sessions.contains { session in
+            session.templateId == scheduled.id
+                && session.isCompleted
+                && calendar.isDateInToday(session.date)
+        }
+        if completedToday { return nil }
+
+        let template = scheduled
+        return PrimaryButtonConfig(
+            label: AppCopy.Workout.startWorkout,
+            action: {
+                template.startWorkoutSession(in: modelContext)
+                appTabSelection(.today)
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             AppScreen(
+                primaryButton: programsCTA,
                 showsNativeNavigationBar: true,
                 usesOuterScroll: false
             ) {
@@ -87,7 +136,7 @@ struct TemplatesView: View {
             }
             .tint(AppColor.accent)
             .onAppear {
-                QuickStartSupport.cleanupOrphanedTemplates(
+                FreestyleSessionSupport.cleanupOrphanedTemplates(
                     modelContext: modelContext,
                     templates: templates,
                     sessions: sessions
@@ -104,7 +153,7 @@ struct TemplatesView: View {
             activeProgramCard(split: split, days: days)
 
             Button {
-                QuickStartSupport.startEmptyWorkout(modelContext: modelContext, activeSplit: split)
+                FreestyleSessionSupport.startEmptyWorkout(modelContext: modelContext, activeSplit: split)
                 appTabSelection(.today)
             } label: {
                 AppGhostButtonLabel(title: AppCopy.Workout.freestyleSession)
@@ -168,7 +217,7 @@ struct TemplatesView: View {
         return AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 NavigationLink(value: split) {
-                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                    HStack(alignment: .center, spacing: AppSpacing.sm) {
                         Text(displayName)
                             .appFont(.largeTitle)
                             .foregroundStyle(AppColor.textPrimary)
