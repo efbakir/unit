@@ -37,6 +37,7 @@ struct OnboardingSplitBuilderView: View {
             title: "Your training split",
             ctaLabel: "Continue",
             ctaEnabled: vm.splitIsValid,
+            ctaDisabledReason: vm.splitIsValid ? nil : AppCopy.FormHint.onboardingSplitNamesRequired,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onContinue: onContinue,
@@ -52,6 +53,8 @@ struct OnboardingSplitBuilderView: View {
                         Spacer()
                         AppStepper(
                             value: "\(vm.dayCount)",
+                            isDecrementEnabled: vm.dayCount > 2,
+                            isIncrementEnabled: vm.dayCount < 6,
                             onDecrement: { vm.updateDayCount(vm.dayCount - 1) },
                             onIncrement: { vm.updateDayCount(vm.dayCount + 1) }
                         )

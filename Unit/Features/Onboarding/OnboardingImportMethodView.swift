@@ -11,6 +11,7 @@ struct OnboardingImportMethodView: View {
     var progressStep: Int
     var progressTotal: Int
     var onSelect: (OnboardingViewModel.ImportMethod) -> Void
+    var hasHistory: Bool = false
     var onBack: () -> Void
 
     var body: some View {
@@ -27,6 +28,15 @@ struct OnboardingImportMethodView: View {
                     title: "Paste program"
                 ) {
                     onSelect(.paste)
+                }
+
+                if hasHistory {
+                    OnboardingOptionCard(
+                        icon: .calendarClock,
+                        title: "Use past workout"
+                    ) {
+                        onSelect(.history)
+                    }
                 }
 
                 OnboardingOptionCard(icon: .edit, title: "Build manually") {

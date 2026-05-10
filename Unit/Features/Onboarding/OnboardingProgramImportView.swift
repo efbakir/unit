@@ -16,13 +16,17 @@ private enum ProgramPasteFormatGuide {
         "Paste from Notes, chat, or a document. One day per line, exercises below."
 
     /// Placeholder is examples only — short, by design (long rules live in the format examples sheet).
+    /// Bare numbers (no `kg` / `lb`) are easier for the user to type; the parser
+    /// reads any trailing number after `setsxreps` as a weight in the user's
+    /// chosen unit (set in step 1, the unit picker). `BW` stays for
+    /// bodyweight-only moves where no number applies.
     static let placeholderExamples = [
         "Push",
-        "Bench press 4x8 60kg",
-        "Incline DB press 3x10 22kg",
+        "Bench press 4x8 60",
+        "Incline DB press 3x10 22",
         "",
         "Pull",
-        "Deadlift 3x5 100kg",
+        "Deadlift 3x5 100",
         "Pull-up 4x8 BW",
     ].joined(separator: "\n")
 }
@@ -38,7 +42,17 @@ struct OnboardingProgramImportView: View {
     @State private var pastedText = ""
     @State private var isParsing = false
     @State private var errorMessage: String?
-    @State private var showingFormatExamples = false
+    /// Drives the format-examples sheet. Inline disclosure was replaced with a
+    /// sheet so the screen body stays a single fixed-height stack — TextEditor
+    /// flexes, ghost button + CTA pin to the bottom safe area. An inline
+    /// expansion would push the sticky CTA past the screen edge and force the
+    /// outer ScrollView the editor never plays nicely with.
+    @State private var showingFormatSheet = false
+    /// Bumped on parse failure so `AppHaptic.validationError` fires —
+    /// silent rejection of a "Read program" tap is the worst-of-both-worlds.
+    /// Pair with the auto-presented format sheet so the buzz lands alongside
+    /// a visible path forward.
+    @State private var parseErrorTrigger: Int = 0
 
     private var canParse: Bool {
         !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -50,12 +64,36 @@ struct OnboardingProgramImportView: View {
             subtitle: ProgramPasteFormatGuide.subtitle,
             ctaLabel: parseLabel,
             ctaEnabled: canParse && !isParsing,
+            // No gate caption: the placeholder ("Push / Bench press 4x8 60 /
+            // …") + the disabled "Read program" label make the requirement
+            // self-evident; the extra line just doubles the chrome above the
+            // CTA.
             progressStep: progressStep,
             progressTotal: progressTotal,
             onContinue: { Task { await parseProgram() } },
-            onBack: onBack
+            onBack: onBack,
+            // Editor screens own their own scroll (the `TextEditor` is a
+            // UITextView underneath). Wrapping in `AppScreen`'s outer
+            // `ScrollView` was breaking tap-to-focus and letting the disclosure
+            // push the sticky CTA past the safe-area bottom.
+            usesOuterScroll: false
+            // Note: deliberately *not* opting into `showsKeyboardDismissToolbar`.
+            // iOS 26 renders `ToolbarItemGroup(placement: .keyboard)` content as
+            // a persistent floating Liquid Glass accessory pill at the bottom
+            // safe area — even when the keyboard is dismissed. That pill not
+            // only pollutes the layout but also steals bottom-inset space,
+            // shoving the sticky "Read program" CTA mid-screen. Users dismiss
+            // the keyboard with the system swipe-down gesture or by tapping
+            // "Read program" (which submits and removes focus).
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
+                // No `.frame(maxHeight: .infinity)` — the editor card stays at
+                // its natural `minHeight: 220` and the inner `TextEditor`
+                // (a UITextView) scrolls internally once pasted content
+                // exceeds 220pt. Letting the card flex to fill the full
+                // vertical area made a 3-line paste look like a giant empty
+                // text field; iOS-native paste UX is a fixed-height card with
+                // internal scroll.
                 AppTextEditor(
                     text: $pastedText,
                     placeholder: ProgramPasteFormatGuide.placeholderExamples
@@ -64,7 +102,7 @@ struct OnboardingProgramImportView: View {
                 .autocorrectionDisabled()
 
                 AppGhostButton("Show format examples") {
-                    showingFormatExamples = true
+                    showingFormatSheet = true
                 }
 
                 if isParsing {
@@ -77,9 +115,10 @@ struct OnboardingProgramImportView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .sheet(isPresented: $showingFormatExamples) {
-            FormatExamplesSheet()
+        .sheet(isPresented: $showingFormatSheet) {
+            ProgramFormatGuideSheet()
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()
         }
@@ -91,6 +130,7 @@ struct OnboardingProgramImportView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .appHaptic(.validationError, trigger: parseErrorTrigger)
     }
 
     private var parseLabel: String {
@@ -103,9 +143,15 @@ struct OnboardingProgramImportView: View {
         isParsing = true
         defer { isParsing = false }
 
-        let parsed = ProgramImportParser.parse(pastedText)
+        let parsed = ProgramImportParser.parse(pastedText, defaultUnit: vm.unitSystem)
         guard !parsed.isEmpty else {
             errorMessage = "Couldn't find exercises. Put each day on its own line, then list each exercise below it."
+            // Auto-present the format sheet so the user sees a valid template
+            // the moment the alert is dismissed — beats an alert with no path
+            // forward. Idempotent: tapping "Read program" again on still-bad
+            // input just keeps the sheet flagged for next show.
+            showingFormatSheet = true
+            parseErrorTrigger &+= 1
             return
         }
         vm.applyImportedProgram(parsed)
@@ -113,52 +159,32 @@ struct OnboardingProgramImportView: View {
     }
 }
 
-// MARK: - Format Examples Sheet
-
-private struct FormatExamplesSheet: View {
+private struct ProgramFormatGuideSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            HStack {
-                Text("Format examples")
-                    .font(AppFont.largeTitle.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    AppIcon.close.image(size: 14, weight: .semibold)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
+        AppSheetScreen(
+            title: "Format examples",
+            dismissLabel: AppCopy.Nav.done,
+            dismissActionPlacement: .confirmation,
+            onDismissAction: { dismiss() },
+            usesOuterScroll: false
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                ruleSection(
+                    title: "Day names",
+                    body: "One day name per line: Push, Pull, Legs, Upper, Lower, Full body, Arms, Chest, Back, Shoulders, Day 1–6, or a weekday."
+                )
+                ruleSection(
+                    title: "Exercises",
+                    body: "Below each day, one exercise per line: name, then setsxreps, then weight. Example: Bench press 4x8 60."
+                )
+                ruleSection(
+                    title: "Weight",
+                    body: "Plain numbers use your chosen unit. Add kg or lb to override per line. Use BW for bodyweight moves."
+                )
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.top, AppSpacing.lg)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    ruleSection(
-                        title: "Day names",
-                        body: "One day name per line: Push, Pull, Legs, Upper, Lower, Full body, Arms, Chest, Back, Shoulders, Day 1–6, or a weekday."
-                    )
-
-                    ruleSection(
-                        title: "Exercises",
-                        body: "Below each day, one exercise per line: name, then setsxreps, then weight. Example: Bench press 4x8 60kg."
-                    )
-
-                    ruleSection(
-                        title: "Weight units",
-                        body: "Use kg, lb, or BW for bodyweight. We convert to your app unit automatically."
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.bottom, AppSpacing.xl)
-            }
-            .appScrollEdgeSoft()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -171,6 +197,7 @@ private struct FormatExamplesSheet: View {
             Text(body)
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -209,7 +236,11 @@ enum ProgramImportParser {
         }
     }
 
-    static func parse(_ rawText: String) -> [ImportedProgramDay] {
+    /// `defaultUnit` is the user's chosen unit (`"kg"` or `"lb"`) from step 1,
+    /// applied to any number on a line that has *no* explicit `kg` / `lb`
+    /// suffix. Lets the user type `Bench press 4x8 60` and have `60` parsed
+    /// as their unit instead of being silently dropped.
+    static func parse(_ rawText: String, defaultUnit: String = "kg") -> [ImportedProgramDay] {
         let lines = rawText
             .components(separatedBy: .newlines)
             .map { sanitizeLine($0) }
@@ -238,7 +269,7 @@ enum ProgramImportParser {
                 continue
             }
 
-            if let exercise = parsedExercise(from: line) {
+            if let exercise = parsedExercise(from: line, defaultUnit: defaultUnit) {
                 currentExercises.append(exercise)
             }
         }
@@ -246,7 +277,7 @@ enum ProgramImportParser {
         flushCurrentDay()
 
         if days.isEmpty {
-            let exercises = lines.compactMap(parsedExercise(from:))
+            let exercises = lines.compactMap { parsedExercise(from: $0, defaultUnit: defaultUnit) }
             if !exercises.isEmpty {
                 days = [ImportedProgramDay(name: "Workout 1", exercises: exercises)]
             }
@@ -278,7 +309,7 @@ enum ProgramImportParser {
             .capitalized
     }
 
-    private static func parsedExercise(from line: String) -> ImportedProgramExercise? {
+    private static func parsedExercise(from line: String, defaultUnit: String = "kg") -> ImportedProgramExercise? {
         var remaining = line
         guard remaining.rangeOfCharacter(from: .letters) != nil else { return nil }
 
@@ -287,6 +318,11 @@ enum ProgramImportParser {
         let repsPattern = #"(?i)\breps?\s*[:\-]?\s*(\d{1,3})\b"#
         let weightPattern = #"(?i)\b(\d{1,3}(?:[.,]\d+)?)\s*(kg|kgs|lb|lbs)\b"#
         let bodyweightPattern = #"(?i)\b(bodyweight|bw)\b"#
+        // Bare-number fallback for users who type `Bench press 4x8 60` without
+        // a unit suffix. Runs *after* setsxreps + explicit-weight matches are
+        // stripped, so `4x8` and `60kg` don't double-count. Treated as the
+        // user's chosen unit.
+        let implicitWeightPattern = #"\b(\d{1,3}(?:[.,]\d+)?)\b"#
 
         var sets: Int?
         var reps: Int?
@@ -318,6 +354,13 @@ enum ProgramImportParser {
             remaining = remaining.replacingOccurrences(of: match[0], with: " ")
         } else if firstMatch(in: remaining, pattern: bodyweightPattern) != nil {
             remaining = replacingMatches(in: remaining, pattern: bodyweightPattern, with: " ")
+        } else if let match = firstMatch(in: remaining, pattern: implicitWeightPattern) {
+            // Bare number → user's chosen unit. Convert to kg for storage.
+            let numericString = match[1].replacingOccurrences(of: ",", with: ".")
+            if let value = Double(numericString) {
+                weightKg = defaultUnit == "lb" ? value / 2.20462 : value
+            }
+            remaining = remaining.replacingOccurrences(of: match[0], with: " ")
         }
 
         remaining = replacingMatches(in: remaining, pattern: #"(?i)\b\d+\b"#, with: " ")

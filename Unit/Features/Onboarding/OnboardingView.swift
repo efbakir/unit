@@ -10,12 +10,15 @@
 //  instead, the commit writes real data (Split, DayTemplate, etc.) and
 //  ContentView derives the next screen from that data.
 //
-//  Step swapping uses `OnboardingFlow` (defined below) instead of
-//  `NavigationStack`. NavigationStack push slides the whole view as one
-//  opaque rect, so the Milk page appears to slide between steps even
-//  though every step shares the same surface. `OnboardingFlow` owns one
-//  fixed Milk surface and slides only the step content (header + body +
-//  sticky CTA) over it via the canonical `.appEnter` curve.
+//  Step **swapping** uses `OnboardingFlow` (defined below) — never a
+//  `NavigationStack` push, which would slide the whole view as one opaque
+//  rect and make the Milk page appear to translate between steps.
+//  `OnboardingFlow` owns one fixed Milk surface and slides only the step
+//  content (header + body + sticky CTA) over it via the canonical `.appEnter`
+//  curve. The single `NavigationStack` at this view's root is a *chrome*
+//  host only — it gives every step's `OnboardingShell` a real
+//  `UINavigationBar` to render its iOS-native back-button `ToolbarItem`
+//  into. No `.navigationDestination` push ever happens.
 //
 
 import SwiftUI
@@ -26,14 +29,29 @@ enum OnboardingPreferencesKeys {
     static let dayNames = "onboarding.dayNames"
     static let startOption = "onboarding.startOption"
     static let customStartDate = "onboarding.customStartDate"
+    static let dayWeekdays = "onboarding.dayWeekdays"
+    static let useFlexibleSchedule = "onboarding.useFlexibleSchedule"
+    static let importMethod = "onboarding.importMethod"
+    static let dayExercises = "onboarding.dayExercises"
 }
 
+/// Persists the in-flight onboarding state to UserDefaults so a quit-and-relaunch
+/// (notably mid-paste, after the Vision OCR parse has populated the viewmodel)
+/// doesn't reset the user to the splash with empty hands. `OnboardingView` writes
+/// a snapshot on every step transition and on commit success.
 enum OnboardingPreferences {
     static func save(from viewModel: OnboardingViewModel, defaults: UserDefaults = .standard) {
         defaults.set(viewModel.dayCount, forKey: OnboardingPreferencesKeys.dayCount)
         defaults.set(viewModel.dayNames, forKey: OnboardingPreferencesKeys.dayNames)
         defaults.set(rawStartOption(from: viewModel.startOption), forKey: OnboardingPreferencesKeys.startOption)
         defaults.set(viewModel.customDate.timeIntervalSince1970, forKey: OnboardingPreferencesKeys.customStartDate)
+        defaults.set(viewModel.dayWeekdays, forKey: OnboardingPreferencesKeys.dayWeekdays)
+        defaults.set(viewModel.useFlexibleSchedule, forKey: OnboardingPreferencesKeys.useFlexibleSchedule)
+        defaults.set(rawImportMethod(from: viewModel.importMethod), forKey: OnboardingPreferencesKeys.importMethod)
+
+        if let exercisesData = try? JSONEncoder().encode(viewModel.dayExercises) {
+            defaults.set(exercisesData, forKey: OnboardingPreferencesKeys.dayExercises)
+        }
     }
 
     static func load(into viewModel: OnboardingViewModel, defaults: UserDefaults = .standard) {
@@ -47,6 +65,36 @@ enum OnboardingPreferences {
             for index in viewModel.dayNames.indices {
                 if index < names.count {
                     viewModel.dayNames[index] = names[index]
+                }
+            }
+        }
+
+        if let weekdays = defaults.array(forKey: OnboardingPreferencesKeys.dayWeekdays) as? [Int],
+           !weekdays.isEmpty {
+            for index in viewModel.dayWeekdays.indices {
+                if index < weekdays.count {
+                    viewModel.dayWeekdays[index] = weekdays[index]
+                }
+            }
+        }
+
+        if defaults.object(forKey: OnboardingPreferencesKeys.useFlexibleSchedule) != nil {
+            viewModel.useFlexibleSchedule = defaults.bool(forKey: OnboardingPreferencesKeys.useFlexibleSchedule)
+        }
+
+        if let rawMethod = defaults.string(forKey: OnboardingPreferencesKeys.importMethod) {
+            viewModel.importMethod = importMethod(from: rawMethod)
+        }
+
+        if let exercisesData = defaults.data(forKey: OnboardingPreferencesKeys.dayExercises),
+           let decoded = try? JSONDecoder().decode([[OnboardingExercise]].self, from: exercisesData),
+           !decoded.isEmpty {
+            // Stored shape wins: dayCount may have been bumped after exercises
+            // were arranged on a smaller split, so resize first then drop in.
+            viewModel.updateDayCount(max(2, min(6, decoded.count)))
+            for index in viewModel.dayExercises.indices {
+                if index < decoded.count {
+                    viewModel.dayExercises[index] = decoded[index]
                 }
             }
         }
@@ -82,6 +130,22 @@ enum OnboardingPreferences {
             return .today
         }
     }
+
+    private static func rawImportMethod(from method: OnboardingViewModel.ImportMethod) -> String {
+        switch method {
+        case .paste: return "paste"
+        case .history: return "history"
+        case .manual: return "manual"
+        }
+    }
+
+    private static func importMethod(from raw: String) -> OnboardingViewModel.ImportMethod {
+        switch raw {
+        case "paste": return .paste
+        case "history": return .history
+        default: return .manual
+        }
+    }
 }
 
 // MARK: - Step
@@ -92,42 +156,41 @@ enum OnboardingStep: Hashable {
     case importMethod
     case programImport
     case splitBuilder
+    case schedule
     case exercises
 }
 
 // MARK: - Root View
 
 struct OnboardingView: View {
-    /// When true, this onboarding was triggered from Settings → "Start onboarding again".
-    /// The flow protects existing data by requiring explicit confirmation before replacing.
-    let isRestart: Bool
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
+    @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
+    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
 
     @AppStorage("unitSystem") private var storedUnitSystem: String = "kg"
-    @AppStorage("showOnboardingRestart") private var showOnboardingRestart = false
 
-    @State private var vm: OnboardingViewModel = {
-        let vm = OnboardingViewModel()
-        vm.seedSampleData()
-        return vm
-    }()
-    @State private var step: OnboardingStep = .exercises
+    @State private var vm = OnboardingViewModel()
+    @State private var step: OnboardingStep = .splash
     @State private var history: [OnboardingStep] = []
     @State private var direction: OnboardingSlideDirection = .none
     @State private var commitError: Bool = false
-    @State private var showReplaceConfirmation: Bool = false
     @State private var didLoadPreferences = false
     @State private var isCommitting: Bool = false
 
-    init(isRestart: Bool = false) {
-        self.isRestart = isRestart
-    }
-
     var body: some View {
-        OnboardingFlow(step: step, direction: direction) { current in
-            stepView(current)
+        // Single `NavigationStack` wraps the whole flow so each step's
+        // `.toolbar { ToolbarItem(.topBarLeading) { Back } }` (declared inside
+        // `OnboardingShell`) registers with the same long-lived
+        // `UINavigationBar`. iOS swaps the toolbar items in place on step
+        // change — no per-step UIKit nav-controller mount/unmount fighting
+        // `OnboardingFlow`'s slide transition. The page surface still lives
+        // on `OnboardingFlow` so step swaps slide only the content layer.
+        NavigationStack {
+            OnboardingFlow(step: step, direction: direction) { current in
+                stepView(current)
+            }
         }
         .tint(AppColor.accent)
         .environment(vm)
@@ -135,19 +198,6 @@ struct OnboardingView: View {
             Button(AppCopy.Nav.tryAgain, role: .cancel) { }
         } message: {
             Text("Try again in a moment.")
-        }
-        .confirmationDialog(
-            "Replace current program?",
-            isPresented: $showReplaceConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Replace program", role: .destructive) {
-                guard !isCommitting else { return }
-                performCommit(replacingExisting: true)
-            }
-            Button(AppCopy.Nav.cancel, role: .cancel) { }
-        } message: {
-            Text("Replaces your current program. Workout history is kept.")
         }
         .onAppear {
             guard !didLoadPreferences else { return }
@@ -163,10 +213,7 @@ struct OnboardingView: View {
     private func stepView(_ step: OnboardingStep) -> some View {
         switch step {
         case .splash:
-            OnboardingSplashView(
-                showsDismiss: isRestart,
-                onDismiss: dismissOnboarding
-            ) {
+            OnboardingSplashView {
                 push(.unitPicker)
             }
 
@@ -190,10 +237,14 @@ struct OnboardingView: View {
                     switch method {
                     case .manual:
                         push(.splitBuilder)
-                    case .photo, .paste:
+                    case .history:
+                        applyMostRecentSessionAsProgram()
+                        push(.exercises)
+                    case .paste:
                         push(.programImport)
                     }
                 },
+                hasHistory: mostRecentReusableSession != nil,
                 onBack: pop
             )
 
@@ -201,7 +252,7 @@ struct OnboardingView: View {
             OnboardingProgramImportView(
                 progressStep: 3,
                 progressTotal: totalRequiredSteps,
-                onContinue: { push(.exercises) },
+                onContinue: { push(.schedule) },
                 onBack: pop
             )
 
@@ -209,13 +260,21 @@ struct OnboardingView: View {
             OnboardingSplitBuilderView(
                 progressStep: 3,
                 progressTotal: totalRequiredSteps,
+                onContinue: { push(.schedule) },
+                onBack: pop
+            )
+
+        case .schedule:
+            OnboardingScheduleView(
+                progressStep: 4,
+                progressTotal: totalRequiredSteps,
                 onContinue: { push(.exercises) },
                 onBack: pop
             )
 
         case .exercises:
             OnboardingExercisesView(
-                progressStep: 4,
+                progressStep: exercisesProgressStep,
                 progressTotal: totalRequiredSteps,
                 isCommitting: isCommitting,
                 onContinue: commitProgram,
@@ -224,7 +283,15 @@ struct OnboardingView: View {
         }
     }
 
-    private var totalRequiredSteps: Int { 4 }
+    /// History fast-track skips the schedule step (single template auto-takes
+    /// rotation), so the bar caps at 4 steps for that flow and 5 elsewhere.
+    private var totalRequiredSteps: Int {
+        vm.importMethod == .history ? 4 : 5
+    }
+
+    private var exercisesProgressStep: Int {
+        vm.importMethod == .history ? 4 : 5
+    }
 
     // MARK: - Step navigation
 
@@ -232,67 +299,80 @@ struct OnboardingView: View {
         history.append(step)
         direction = .forward
         step = next
+        // Snapshot on every transition: a quit-and-relaunch (notably mid-paste,
+        // after the Vision OCR parse populated the viewmodel) restores the
+        // user's work on the next entry instead of dropping them at splash.
+        OnboardingPreferences.save(from: vm)
     }
 
     private func pop() {
-        // From the splash, "Back" dismisses the whole onboarding (only
-        // reachable on restart from Settings — first-run users see no Back).
-        guard let previous = history.popLast() else {
-            dismissOnboarding()
-            return
-        }
+        // The splash is the root step, so an empty history means we're already
+        // there and there is nowhere to go back to.
+        guard let previous = history.popLast() else { return }
         direction = .back
         step = previous
+        OnboardingPreferences.save(from: vm)
     }
 
     // MARK: - Commit
 
     private func commitProgram() {
         guard !isCommitting else { return }
-        if isRestart {
-            // Check for existing programs — require explicit confirmation to replace
-            let descriptor = FetchDescriptor<Split>()
-            let existingSplits = (try? modelContext.fetch(descriptor)) ?? []
-            if !existingSplits.isEmpty {
-                showReplaceConfirmation = true
-                return
-            }
-        }
-        performCommit(replacingExisting: false)
+        performCommit()
     }
 
-    private func performCommit(replacingExisting: Bool) {
+    private func performCommit() {
         isCommitting = true
         do {
-            if replacingExisting {
-                try deleteExistingProgramData()
-            }
             try vm.commit(modelContext: modelContext)
             storedUnitSystem = vm.unitSystem
             OnboardingPreferences.save(from: vm)
-            finishOnboarding()
+            dismiss()
         } catch {
             isCommitting = false
             commitError = true
         }
     }
 
-    private func deleteExistingProgramData() throws {
-        let splits = try modelContext.fetch(FetchDescriptor<Split>())
-        let templates = try modelContext.fetch(FetchDescriptor<DayTemplate>())
-
-        for item in templates { modelContext.delete(item) }
-        for item in splits { modelContext.delete(item) }
+    private var mostRecentReusableSession: WorkoutSession? {
+        sessions.first { session in
+            session.setEntries.contains { $0.isCompleted && !$0.isWarmup }
+        }
     }
 
-    private func finishOnboarding() {
-        showOnboardingRestart = false
-        dismiss()
-    }
+    private func applyMostRecentSessionAsProgram() {
+        guard let session = mostRecentReusableSession else { return }
 
-    private func dismissOnboarding() {
-        showOnboardingRestart = false
-        dismiss()
+        let exerciseByID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        let entries = session.setEntries
+            .filter { $0.isCompleted && !$0.isWarmup }
+            .sorted { $0.setIndex < $1.setIndex }
+        let grouped = Dictionary(grouping: entries, by: \.exerciseId)
+
+        let importedExercises = grouped.compactMap { exerciseID, sets -> (index: Int, exercise: ImportedProgramExercise)? in
+            guard let firstIndex = sets.map(\.setIndex).min(),
+                  let last = sets.sorted(by: { $0.setIndex < $1.setIndex }).last else {
+                return nil
+            }
+            let fallbackName = exerciseByID[exerciseID]?.displayName ?? "Exercise \(firstIndex + 1)"
+            return (
+                firstIndex,
+                ImportedProgramExercise(
+                    name: fallbackName,
+                    sets: sets.count,
+                    reps: max(last.reps, OnboardingExercise.defaultPlannedReps),
+                    weightKg: last.weight
+                )
+            )
+        }
+        .sorted { $0.index < $1.index }
+        .map(\.exercise)
+
+        guard !importedExercises.isEmpty else { return }
+        let templateName = templates.first(where: { $0.id == session.templateId })?.displayName ?? "Workout 1"
+        vm.applyImportedProgram([
+            ImportedProgramDay(name: templateName, exercises: importedExercises)
+        ])
     }
 }
 
@@ -334,13 +414,16 @@ struct OnboardingFlow<StepContent: View>: View {
             AppColor.background.ignoresSafeArea()
 
             stepContent(step)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .id(step)
                 .transition(stepTransition)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(reduceMotion ? .appReveal : .appEnter, value: step)
-        // Hide any ambient nav bar (e.g. when this whole flow is pushed onto
-        // TemplatesView's `NavigationStack` via "Start onboarding again").
-        .toolbar(.hidden, for: .navigationBar)
+        // No `.toolbar(.hidden)` here: each `OnboardingShell` step wants the
+        // host `NavigationStack`'s nav bar visible to host its real back-
+        // button `ToolbarItem`. Steps that don't use `OnboardingShell` (the
+        // splash) hide the nav bar at their own level.
     }
 
     private var stepTransition: AnyTransition {

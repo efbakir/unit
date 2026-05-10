@@ -10,7 +10,6 @@ import UIKit
 
 struct ContentView: View {
     @AppStorage(wrappedValue: false, "hasSeenPaywall") private var hasSeenPaywall
-    @AppStorage(wrappedValue: false, "showOnboardingRestart") private var showOnboardingRestart
 
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
@@ -22,7 +21,6 @@ struct ContentView: View {
     /// Uses `UserDefaults.standard` in the app; pass an isolated suite in `#Preview` so canvas state does not touch real onboarding flags.
     init(userDefaults: UserDefaults = .standard) {
         _hasSeenPaywall = AppStorage(wrappedValue: false, "hasSeenPaywall", store: userDefaults)
-        _showOnboardingRestart = AppStorage(wrappedValue: false, "showOnboardingRestart", store: userDefaults)
         _splits = Query(sort: \Split.name)
         _sessions = Query(sort: \WorkoutSession.date, order: .reverse)
         _store = State(initialValue: StoreManager())
@@ -32,9 +30,10 @@ struct ContentView: View {
         sessions.contains { !$0.isCompleted }
     }
 
-    /// True new user: no program and no workout sessions at all.
+    /// Any user without a program still needs setup, even if they have
+    /// historical/freestyle sessions that onboarding can convert.
     private var needsOnboarding: Bool {
-        splits.isEmpty && sessions.isEmpty
+        splits.isEmpty
     }
 
     var body: some View {
@@ -47,9 +46,6 @@ struct ContentView: View {
             if needsOnboarding {
                 OnboardingView()
                     .transition(.opacity)
-            } else if showOnboardingRestart {
-                OnboardingView(isRestart: true)
-                    .transition(.opacity)
             } else {
                 // Paywall deferred — ship v1 free to validate retention
                 // without price as a confound. Monetize after proving habit.
@@ -58,7 +54,6 @@ struct ContentView: View {
             }
         }
         .appAnimation(.appEnter, value: needsOnboarding, reduceMotion: reduceMotion)
-        .appAnimation(.appEnter, value: showOnboardingRestart, reduceMotion: reduceMotion)
         .background(AppColor.background.ignoresSafeArea())
         .onAppear {
             configureNavigationBarAppearance()
@@ -87,7 +82,8 @@ struct ContentView: View {
         }
         .tint(AppColor.accent)
         .toolbar(hasActiveSession ? .hidden : .visible, for: .tabBar)
-        .sensoryFeedback(.selection, trigger: selectedTab)
+        .appHaptic(.tabChange, trigger: selectedTab)
+        .environment(store)
         .environment(\.appTabSelection, AppTabSelection { tab in
             selectedTab = tab
         })
@@ -197,7 +193,6 @@ private enum ContentViewPreviewDefaults {
     static var userDefaults: UserDefaults {
         let suite = UserDefaults(suiteName: "unit.preview.ContentView")!
         suite.set(true, forKey: "hasSeenPaywall")
-        suite.set(false, forKey: "showOnboardingRestart")
         return suite
     }
 }

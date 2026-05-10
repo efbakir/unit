@@ -96,6 +96,10 @@ struct OnboardingSplashView: View {
                 .padding(.trailing, AppSpacing.md)
             }
         }
+        // The host `NavigationStack` (added in `OnboardingView`) shows its nav
+        // bar by default for every step; splash has its own dismiss affordance
+        // and no back action, so hide the bar at this level only.
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

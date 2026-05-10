@@ -12,7 +12,7 @@ import SwiftData
 
 // MARK: - Supporting Types
 
-struct OnboardingExercise: Identifiable, Equatable, Hashable {
+struct OnboardingExercise: Identifiable, Equatable, Hashable, Codable {
     static let defaultPlannedSets: Int = 3
     static let defaultPlannedReps: Int = 8
     static let plannedSetsRange: ClosedRange<Int> = 1...10
@@ -22,11 +22,6 @@ struct OnboardingExercise: Identifiable, Equatable, Hashable {
     var name: String
     var plannedSets: Int = OnboardingExercise.defaultPlannedSets
     var plannedReps: Int = OnboardingExercise.defaultPlannedReps
-}
-
-struct OnboardingBaseline {
-    var weightKg: Double = 0
-    var reps: Int = 8
 }
 
 struct ImportedProgramExercise: Identifiable, Equatable {
@@ -54,8 +49,8 @@ final class OnboardingViewModel {
     var setupPath: SetupPath = .build
 
     enum ImportMethod {
-        case photo
         case paste
+        case history
         case manual
     }
     var importMethod: ImportMethod = .manual
@@ -68,12 +63,21 @@ final class OnboardingViewModel {
     // MARK: Split
 
     var dayCount: Int = 3
-    var dayNames: [String] = ["", "", ""]
+    /// Default day labels are pre-filled (`"Day 1"`, `"Day 2"`, …) so the
+    /// Split Builder advances without forcing the user to think up names
+    /// before they have exercise context. Renaming happens in-place from
+    /// the day editor on the Exercises step, where each day's contents
+    /// inform the natural label (e.g. "Push" / "Pull" / "Legs").
+    var dayNames: [String] = OnboardingViewModel.defaultDayNames(count: 3)
     var dayExercises: [[OnboardingExercise]] = [[], [], []]
-
-    // MARK: Baselines
-
-    var baselines: [UUID: OnboardingBaseline] = [:]
+    /// Weekday assignment per day-template. 1=Sun, 2=Mon … 7=Sat. 0 = unset.
+    /// Stays 0 across all entries when `useFlexibleSchedule == true` —
+    /// rotation mode is the explicit opt-out from a fixed weekly schedule.
+    var dayWeekdays: [Int] = [0, 0, 0]
+    /// When true, commit() writes every template with `scheduledWeekday = 0`
+    /// (rotation). Set by the schedule step's "I lift on a flexible schedule"
+    /// toggle so users who don't anchor to weekdays still complete onboarding.
+    var useFlexibleSchedule: Bool = false
 
     // MARK: Start Date
 
@@ -133,13 +137,22 @@ final class OnboardingViewModel {
         dayExercises[dayIndex][i].plannedReps = clampPlannedReps(dayExercises[dayIndex][i].plannedReps + delta)
     }
 
+    static func defaultDayNames(count: Int) -> [String] {
+        (1...max(1, count)).map { "Day \($0)" }
+    }
+
     func updateDayCount(_ newCount: Int) {
         let count = max(2, min(6, newCount))
         dayCount = count
-        while dayNames.count < count { dayNames.append("") }
+        // New slots get a `"Day N"` placeholder so `splitIsValid` stays
+        // true by default — see `dayNames` declaration. User-edited names
+        // are preserved; only freshly-appended slots receive the default.
+        while dayNames.count < count { dayNames.append("Day \(dayNames.count + 1)") }
         if dayNames.count > count { dayNames = Array(dayNames.prefix(count)) }
         while dayExercises.count < count { dayExercises.append([]) }
         if dayExercises.count > count { dayExercises = Array(dayExercises.prefix(count)) }
+        while dayWeekdays.count < count { dayWeekdays.append(0) }
+        if dayWeekdays.count > count { dayWeekdays = Array(dayWeekdays.prefix(count)) }
     }
 
     // MARK: - Sample Seeding
@@ -147,6 +160,7 @@ final class OnboardingViewModel {
     func seedSampleData() {
         dayCount = 3
         dayNames = ["Push", "Pull", "Legs"]
+        dayWeekdays = [2, 4, 6] // Mon / Wed / Fri
 
         let pushExs: [OnboardingExercise] = [
             OnboardingExercise(name: "Bench Press", plannedSets: 3, plannedReps: 8),
@@ -164,22 +178,6 @@ final class OnboardingViewModel {
             OnboardingExercise(name: "Leg Press", plannedSets: 3, plannedReps: 10)
         ]
         dayExercises = [pushExs, pullExs, legsExs]
-
-        // Intermediate baselines (stored in kg)
-        let samples: [(OnboardingExercise, Double, Int)] = [
-            (pushExs[0], 80, 8),
-            (pushExs[1], 52.5, 8),
-            (pushExs[2], 30, 12),
-            (pullExs[0], 70, 8),
-            (pullExs[1], 60, 10),
-            (pullExs[2], 0, 8),
-            (legsExs[0], 90, 5),
-            (legsExs[1], 100, 8),
-            (legsExs[2], 120, 10)
-        ]
-        for (ex, kg, reps) in samples {
-            baselines[ex.id] = OnboardingBaseline(weightKg: kg, reps: reps)
-        }
     }
 
     // MARK: - Validation
@@ -188,30 +186,22 @@ final class OnboardingViewModel {
         dayNames.allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
+    /// True when the schedule step's CTA can advance: either the user opted
+    /// into flexible (rotation) mode, or every day-template has a weekday in
+    /// 1...7 picked. Same weekday across multiple rows is allowed — the
+    /// downstream calendar/today logic resolves duplicates by orderedTemplate
+    /// position, so PPL users can hit Push twice a week.
+    var scheduleIsValid: Bool {
+        if useFlexibleSchedule { return true }
+        guard dayWeekdays.count >= dayCount else { return false }
+        return dayWeekdays.prefix(dayCount).allSatisfy { (1...7).contains($0) }
+    }
+
     var exercisesAreValid: Bool {
-        dayExercises.allSatisfy { !$0.isEmpty }
-    }
-
-    var baselinesAreValid: Bool {
-        for day in dayExercises {
-            for ex in day {
-                let b = baselines[ex.id]
-                if (b?.reps ?? 0) < 1 { return false }
-            }
+        dayExercises.allSatisfy { day in
+            !day.isEmpty &&
+            day.allSatisfy { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         }
-        return true
-    }
-
-    /// Indices of days that are missing at least one exercise baseline.
-    var incompleteDayIndices: Set<Int> {
-        var result = Set<Int>()
-        for (i, day) in dayExercises.enumerated() {
-            for ex in day {
-                let b = baselines[ex.id]
-                if (b?.reps ?? 0) < 1 { result.insert(i) }
-            }
-        }
-        return result
     }
 
     // MARK: - Commit
@@ -225,8 +215,10 @@ final class OnboardingViewModel {
         var exerciseMap: [UUID: Exercise] = [:]
         for day in dayExercises {
             for onbEx in day {
-                let key = onbEx.name.trimmingCharacters(in: .whitespaces).lowercased()
-                let isBodyweight = isBodyweightExercise(named: onbEx.name)
+                let displayName = onbEx.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !displayName.isEmpty else { continue }
+                let key = displayName.lowercased()
+                let isBodyweight = isBodyweightExercise(named: displayName)
                 if let match = nameToExercise[key] {
                     if isBodyweight && !match.isBodyweight {
                         match.isBodyweight = true
@@ -234,7 +226,7 @@ final class OnboardingViewModel {
                     exerciseMap[onbEx.id] = match
                 } else {
                     let ex = Exercise(
-                        displayName: onbEx.name.trimmingCharacters(in: .whitespaces),
+                        displayName: displayName,
                         isBodyweight: isBodyweight
                     )
                     modelContext.insert(ex)
@@ -252,7 +244,9 @@ final class OnboardingViewModel {
         // 3. Create DayTemplates
         var templateIds: [UUID] = []
         for (i, name) in dayNames.enumerated() {
-            let dayOnbExs = dayExercises[i]
+            let dayOnbExs = dayExercises[i].filter {
+                !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
             let exerciseIds = dayOnbExs.compactMap { exerciseMap[$0.id]?.id }
             var setsPlan: [UUID: Int] = [:]
             var repsPlan: [UUID: Int] = [:]
@@ -261,10 +255,17 @@ final class OnboardingViewModel {
                 setsPlan[resolvedId] = onbEx.plannedSets
                 repsPlan[resolvedId] = onbEx.plannedReps
             }
+            let resolvedWeekday: Int = {
+                guard !useFlexibleSchedule,
+                      dayWeekdays.indices.contains(i),
+                      (1...7).contains(dayWeekdays[i]) else { return 0 }
+                return dayWeekdays[i]
+            }()
             let tmpl = DayTemplate(
-                name: name,
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 splitId: split.id,
                 orderedExerciseIds: exerciseIds,
+                scheduledWeekday: resolvedWeekday,
                 plannedSetsByExerciseId: setsPlan,
                 plannedRepsByExerciseId: repsPlan
             )
@@ -290,13 +291,14 @@ extension OnboardingViewModel {
         return bodyweightKeywords.contains { name.contains($0) }
     }
 
-    func baselineIsValid(forDay dayIndex: Int) -> Bool {
-        guard dayExercises.indices.contains(dayIndex) else { return false }
-        return dayExercises[dayIndex].allSatisfy { (baselines[$0.id]?.reps ?? 0) > 0 }
-    }
-
     func applyImportedProgram(_ days: [ImportedProgramDay]) {
-        let sanitizedDays = days.filter { !$0.exercises.isEmpty }
+        let sanitizedDays = days.compactMap { day -> ImportedProgramDay? in
+            let exercises = day.exercises.filter {
+                !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            guard !exercises.isEmpty else { return nil }
+            return ImportedProgramDay(name: day.name, exercises: exercises)
+        }
         guard !sanitizedDays.isEmpty else { return }
 
         dayCount = min(6, max(1, sanitizedDays.count))
@@ -304,6 +306,11 @@ extension OnboardingViewModel {
             let trimmed = day.name.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? "Workout \(index + 1)" : trimmed
         })
+        // Paste parser doesn't carry weekday metadata yet — user picks in the
+        // schedule step. Reset to unset so stale values from a prior path
+        // don't survive a re-import.
+        dayWeekdays = Array(repeating: 0, count: dayCount)
+        useFlexibleSchedule = false
 
         dayExercises = Array(sanitizedDays.prefix(dayCount).map { day in
             day.exercises.map { exercise in
@@ -314,19 +321,6 @@ extension OnboardingViewModel {
                 )
             }
         })
-
-        baselines = [:]
-        for (dayIndex, day) in sanitizedDays.prefix(dayCount).enumerated() {
-            for (exerciseIndex, exercise) in day.exercises.enumerated() {
-                guard dayExercises.indices.contains(dayIndex),
-                      dayExercises[dayIndex].indices.contains(exerciseIndex) else { continue }
-                let onboardingExercise = dayExercises[dayIndex][exerciseIndex]
-                baselines[onboardingExercise.id] = OnboardingBaseline(
-                    weightKg: exercise.weightKg ?? 0,
-                    reps: max(1, exercise.reps ?? 8)
-                )
-            }
-        }
     }
 
     private func normalizedExerciseName(_ name: String) -> String {

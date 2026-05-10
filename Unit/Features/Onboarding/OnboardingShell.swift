@@ -4,8 +4,11 @@
 //
 //  Shared onboarding wrapper built on top of AppScreen.
 //  Keeps onboarding on the same atom layer: one screen shell, one nav treatment,
-//  one sticky primary CTA, one progress component. Sticky chrome stacks
-//  back-button → progress → title → optional accessory (e.g. day chips); body
+//  one sticky primary CTA, one progress component. The back action is a real
+//  iOS-native `ToolbarItem(.topBarLeading)` rendered by the host
+//  `NavigationStack`'s `UINavigationBar` (auto-styled exactly like the Today
+//  screen's leading button). The `customHeader` chrome below the nav bar
+//  stacks progress → title → optional sticky accessory (e.g. day chips); body
 //  scrolls beneath via the canonical `appScrollEdgeSoft` fade.
 //
 //  Surface: transparent. The Milk page lives once on `OnboardingFlow` so a
@@ -24,6 +27,11 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     var subtitle: String? = nil
     var ctaLabel: String = "Continue"
     var ctaEnabled: Bool = true
+    /// One-line diagnostic shown above a disabled primary CTA. Pass a string
+    /// from `AppCopy.FormHint` so a greyed `Continue` button explains its own
+    /// gate ("Add at least one named exercise to every day."). Hidden when the
+    /// CTA is enabled. Pair with `ctaEnabled` — both flip together.
+    var ctaDisabledReason: String? = nil
     var progressStep: Int? = nil
     var progressTotal: Int? = nil
     var onContinue: (() -> Void)? = nil
@@ -31,6 +39,19 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     /// every step gets one wired explicitly so there is no environment-dismiss
     /// fallback to drift to.
     let onBack: () -> Void
+    /// Mirrors `AppScreen.usesOuterScroll`. Default `true` matches every
+    /// onboarding screen with simple stacked cards. Pass `false` for a screen
+    /// whose body is dominated by a flexible control (e.g. a `TextEditor` that
+    /// fills available height) — putting one of those inside a SwiftUI
+    /// `ScrollView` breaks hit-testing on the editor and lets inline content
+    /// push the bottom CTA past the screen edge.
+    var usesOuterScroll: Bool = true
+    /// Mirrors `AppScreen.showsKeyboardDismissToolbar`. Default `false` so the
+    /// standard TextField flows (Return / Next / Done) don't show a redundant
+    /// accessory bar. Flip to `true` on screens that focus a multi-line
+    /// `TextEditor`, where Return inserts a newline and the user needs an
+    /// explicit Done button to dismiss the keyboard.
+    var showsKeyboardDismissToolbar: Bool = false
     @ViewBuilder var content: () -> Content
     /// Optional sticky accessory rendered below the title in the top safe-area
     /// inset (e.g. a horizontal day-chip strip). Stays pinned while the body
@@ -47,10 +68,12 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     private var headerStack: AnyView {
         AnyView(
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack(spacing: 0) {
-                    OnboardingBackButton(action: onBack)
-                    Spacer(minLength: 0)
-                }
+                // No back-button row: the back action is now a real
+                // `ToolbarItem(.topBarLeading)` declared in `body`, rendered by
+                // the host `NavigationStack`'s `UINavigationBar` — same code
+                // path as `TodayView`'s leading list-icon button, so the
+                // capsule chrome, sizing, and Liquid Glass treatment match
+                // automatically.
                 if hasProgressBar {
                     OnboardingProgressBar(
                         step: progressStep ?? 0,
@@ -96,17 +119,41 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                 PrimaryButtonConfig(
                     label: ctaLabel,
                     isEnabled: ctaEnabled,
+                    disabledReason: ctaDisabledReason,
                     action: action
                 )
             },
             customHeader: headerStack,
             floatingAccessory: hasFloatingAccessory ? AnyView(floatingAccessory()) : nil,
-            hidesNavigationBar: true,
-            showsKeyboardDismissToolbar: false,
+            // `showsNativeNavigationBar: true` instead of `hidesNavigationBar`
+            // so the host `NavigationStack`'s nav bar is visible and can host
+            // the back-button `ToolbarItem` below. The `customHeader`
+            // (progress + title + subtitle + sticky accessory) still renders
+            // below it — `AppScreen.topChrome` no longer gates customHeader on
+            // `!showsNativeNavigationBar` for exactly this case.
+            showsNativeNavigationBar: true,
+            usesOuterScroll: usesOuterScroll,
+            showsKeyboardDismissToolbar: showsKeyboardDismissToolbar,
             surface: nil
         ) {
             content()
         }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: onBack) {
+                    Label("Back", systemImage: AppIcon.back.systemName)
+                        .labelStyle(.iconOnly)
+                }
+                .accessibilityLabel("Back")
+            }
+        }
+        // Nav bar appearance is owned by the global proxy in
+        // `ContentView.configureNavigationBarAppearance()`: transparent at
+        // scroll edge, default Material once scrolled — same scroll-aware
+        // pattern as `TodayView`. No `.toolbarBackground(.hidden)` here, or
+        // the bar would stay transparent on scroll and content would show
+        // through behind the back button.
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -116,20 +163,26 @@ extension OnboardingShell where StickyAccessory == EmptyView, FloatingAccessory 
         subtitle: String? = nil,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
+        ctaDisabledReason: String? = nil,
         progressStep: Int? = nil,
         progressTotal: Int? = nil,
         onContinue: (() -> Void)? = nil,
         onBack: @escaping () -> Void,
+        usesOuterScroll: Bool = true,
+        showsKeyboardDismissToolbar: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.ctaLabel = ctaLabel
         self.ctaEnabled = ctaEnabled
+        self.ctaDisabledReason = ctaDisabledReason
         self.progressStep = progressStep
         self.progressTotal = progressTotal
         self.onContinue = onContinue
         self.onBack = onBack
+        self.usesOuterScroll = usesOuterScroll
+        self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
         self.content = content
         self.stickyAccessory = { EmptyView() }
         self.floatingAccessory = { EmptyView() }
@@ -142,10 +195,13 @@ extension OnboardingShell where FloatingAccessory == EmptyView {
         subtitle: String? = nil,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
+        ctaDisabledReason: String? = nil,
         progressStep: Int? = nil,
         progressTotal: Int? = nil,
         onContinue: (() -> Void)? = nil,
         onBack: @escaping () -> Void,
+        usesOuterScroll: Bool = true,
+        showsKeyboardDismissToolbar: Bool = false,
         @ViewBuilder content: @escaping () -> Content,
         @ViewBuilder stickyAccessory: @escaping () -> StickyAccessory
     ) {
@@ -153,10 +209,13 @@ extension OnboardingShell where FloatingAccessory == EmptyView {
         self.subtitle = subtitle
         self.ctaLabel = ctaLabel
         self.ctaEnabled = ctaEnabled
+        self.ctaDisabledReason = ctaDisabledReason
         self.progressStep = progressStep
         self.progressTotal = progressTotal
         self.onContinue = onContinue
         self.onBack = onBack
+        self.usesOuterScroll = usesOuterScroll
+        self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
         self.content = content
         self.stickyAccessory = stickyAccessory
         self.floatingAccessory = { EmptyView() }
@@ -169,10 +228,13 @@ extension OnboardingShell where StickyAccessory == EmptyView {
         subtitle: String? = nil,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
+        ctaDisabledReason: String? = nil,
         progressStep: Int? = nil,
         progressTotal: Int? = nil,
         onContinue: (() -> Void)? = nil,
         onBack: @escaping () -> Void,
+        usesOuterScroll: Bool = true,
+        showsKeyboardDismissToolbar: Bool = false,
         @ViewBuilder content: @escaping () -> Content,
         @ViewBuilder floatingAccessory: @escaping () -> FloatingAccessory
     ) {
@@ -180,36 +242,16 @@ extension OnboardingShell where StickyAccessory == EmptyView {
         self.subtitle = subtitle
         self.ctaLabel = ctaLabel
         self.ctaEnabled = ctaEnabled
+        self.ctaDisabledReason = ctaDisabledReason
         self.progressStep = progressStep
         self.progressTotal = progressTotal
         self.onContinue = onContinue
         self.onBack = onBack
+        self.usesOuterScroll = usesOuterScroll
+        self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
         self.content = content
         self.stickyAccessory = { EmptyView() }
         self.floatingAccessory = floatingAccessory
-    }
-}
-
-/// Native iOS-style back button — chevron + "Back" label. Used at top-leading
-/// of every onboarding step's `customHeader`. The shell's flow is custom
-/// (state-driven coordinator, not `NavigationStack`), so this stand-in mirrors
-/// the system-bar treatment without the bar itself.
-private struct OnboardingBackButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.xs) {
-                AppIcon.back.image(size: 17, weight: .semibold)
-                Text("Back")
-                    .font(AppFont.body.font.weight(.semibold))
-            }
-            .foregroundStyle(AppColor.textPrimary)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Back")
     }
 }
 
