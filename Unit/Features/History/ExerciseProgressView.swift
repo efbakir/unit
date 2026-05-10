@@ -56,6 +56,7 @@ struct ExerciseProgressView: View {
     }
 
     private var epley1RM: Double? {
+        guard !isBodyweight else { return nil }
         guard let pr = allTimePR else { return nil }
         guard pr.reps > 1 else { return pr.weight }
         return pr.weight * (1.0 + Double(pr.reps) / 30.0)
@@ -66,8 +67,8 @@ struct ExerciseProgressView: View {
             showsNativeNavigationBar: true
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                if let pr = allTimePR, let e1rm = epley1RM {
-                    prCard(pr: pr, e1rm: e1rm)
+                if let pr = allTimePR {
+                    prCard(pr: pr)
                         // Identity-keyed numeric cross-fade — switching exercises
                         // (or a new PR landing) re-runs the entrance instead of
                         // popping in place.
@@ -97,7 +98,7 @@ struct ExerciseProgressView: View {
 
     // MARK: - PR Card
 
-    private func prCard(pr: SessionPoint, e1rm: Double) -> some View {
+    private func prCard(pr: SessionPoint) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Best set")
@@ -110,10 +111,10 @@ struct ExerciseProgressView: View {
             }
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: AppSpacing.xs) {
-                Text("Est. 1RM")
+                Text(isBodyweight ? "Best reps" : "Est. 1RM")
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
-                Text(WorkoutTargetFormatter.weightDisplay(e1rm))
+                Text(isBodyweight ? "\(pr.reps)" : WorkoutTargetFormatter.weightDisplay(epley1RM ?? pr.weight))
                     .font(AppFont.title.font)
                     .monospacedDigit()
                     .contentTransition(.numericText())
@@ -128,7 +129,7 @@ struct ExerciseProgressView: View {
     /// near-identical weights still render labelled axes. Without this, Charts
     /// collapses the Y range to a single value and the axis labels disappear.
     private var chartYDomain: ClosedRange<Double> {
-        let weights = sessionPoints.map(\.weight)
+        let weights = sessionPoints.map(chartValue)
         guard let lo = weights.min(), let hi = weights.max() else { return 0...1 }
         let span = hi - lo
         let pad = max(span * 0.15, 5)
@@ -136,11 +137,11 @@ struct ExerciseProgressView: View {
     }
 
     private var chartCard: some View {
-        SettingsSection(title: "Weight over time") {
+        SettingsSection(title: isBodyweight ? "Reps over time" : "Weight over time") {
             Chart(sessionPoints) { point in
                 LineMark(
                     x: .value("Date", point.date),
-                    y: .value("Weight (kg)", point.weight)
+                    y: .value(isBodyweight ? "Reps" : "Weight (kg)", chartValue(for: point))
                 )
                 .interpolationMethod(.monotone)
                 .foregroundStyle(AppColor.textPrimary)
@@ -148,7 +149,7 @@ struct ExerciseProgressView: View {
 
                 PointMark(
                     x: .value("Date", point.date),
-                    y: .value("Weight (kg)", point.weight)
+                    y: .value(isBodyweight ? "Reps" : "Weight (kg)", chartValue(for: point))
                 )
                 .foregroundStyle(AppColor.textPrimary)
                 .symbolSize(30)
@@ -180,6 +181,10 @@ struct ExerciseProgressView: View {
         }
     }
 
+    private func chartValue(for point: SessionPoint) -> Double {
+        isBodyweight ? Double(point.reps) : point.weight
+    }
+
     // MARK: - Session list
 
     private var sessionRowItems: [SessionRowItem] {
@@ -201,7 +206,7 @@ struct ExerciseProgressView: View {
 
     private func sessionRow(point: SessionPoint, prev: SessionPoint?) -> some View {
         let templateName = templates.first(where: { $0.id == point.templateId })?.name ?? "Session"
-        let delta = prev.map { point.weight - $0.weight }
+        let delta = prev.map { isBodyweight ? Double(point.reps - $0.reps) : point.weight - $0.weight }
 
         return HStack {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -218,12 +223,12 @@ struct ExerciseProgressView: View {
                     .monospacedDigit()
                 if let d = delta {
                     if d > 0 {
-                        Text("+\(WorkoutTargetFormatter.weightDisplay(d))")
+                        Text(isBodyweight ? "+\(Int(d)) reps" : "+\(WorkoutTargetFormatter.weightDisplay(d))")
                             .font(AppFont.caption.font)
                             .foregroundStyle(AppColor.success)
                             .monospacedDigit()
                     } else if d < 0 {
-                        Text("-\(WorkoutTargetFormatter.weightDisplay(abs(d)))")
+                        Text(isBodyweight ? "-\(Int(abs(d))) reps" : "-\(WorkoutTargetFormatter.weightDisplay(abs(d)))")
                             .font(AppFont.caption.font)
                             .foregroundStyle(AppColor.error)
                             .monospacedDigit()
