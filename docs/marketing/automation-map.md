@@ -18,10 +18,10 @@
 | **RevenueCat metrics → MRR screenshot** | Semi-automated | RevenueCat Charts UI | Already a screenshot in their UI — you copy + paste. No pipeline needed. |
 | **Weekly metrics review (5 min)** | Manual | n/a | Decision-making, not data collection. Has to be human. |
 | **Monthly content recording** | Manual | Phone + tripod + QuickTime | Only a human can do this. (And the human has to actually train.) |
-| **UGC creator brief / cast / receive** | Manual | Billo / Insense UI | Each quarter. |
-| **Submagic auto-captions** | Automated | Submagic | The whole point of Submagic. |
-| **Opus Clip long → shorts** | Automated | Opus Clip | The whole point of Opus Clip. |
-| **CapCut final assembly** | Manual | CapCut | Editorial control on transitions, timer overlays, B-roll choices. |
+| **UGC creator brief / cast / receive** | Manual | (varies by tier — see `tools.md` UGC ladder) | **DEFERRED for Q1** per 2026-05-02 budget decision. When reactivated: each quarter, run via TestFlight clips ($0) / Fiverr / Collabstr / reduced Billo. |
+| **Submagic auto-captions + Auto Zooms + silence trim** | Automated | Submagic Pro | The whole point of Submagic. |
+| **Submagic Magic Clips long → shorts** | Automated | Submagic Magic Clips (addon, conditional) | Replaces Opus Clip per the 2026-05-02 stack audit. Only used when a source rant exceeds 5min raw. |
+| **CapCut final assembly** | Manual | CapCut Free | Editorial control on transitions, timer overlays, split-screen composites, B-roll choices. Free tier covers all of this for vertical 1080p. |
 | **ElevenLabs voiceover** | Semi-automated | ElevenLabs | Script is manual, voice generation is automated. |
 | **Email replies (support@)** | Manual | n/a | Customer trust. Auto-replies kill it. |
 | **Discord moderation** (when launched) | Manual | n/a | 1 reply/day minimum for first 60 days per `launch-plan.md` §5. |
@@ -33,7 +33,7 @@
 **Automate**:
 - Anything the platform algorithm *doesn't penalize* (scheduled video posts on TikTok/IG/YT/X)
 - Anything that's pure data fetching (AppFigures alerts, Buffer analytics, RevenueCat Charts)
-- Anything purely mechanical (Submagic captions, Opus Clip cutting)
+- Anything purely mechanical (Submagic captions, Magic Clips cutting)
 
 **Don't automate**:
 - Reddit anything (posting, replying, even commenting on others' posts) — single biggest ban risk
@@ -58,7 +58,7 @@ Tools that run on schedules:
 | **Daily** | AppFigures keyword monitoring | AppFigures | Daily |
 | **Weekly (Sun)** | RevenueCat dashboard check | (manual) | Weekly |
 | **Monthly (last Sun)** | Recording session | (manual) | Monthly |
-| **Quarterly (first Sun)** | UGC brief in Billo | (manual) | Quarterly |
+| **Quarterly (first Sun)** | UGC brief — **DEFERRED for Q1** (per 2026-05-02 budget decision); reactivate per `tools.md` ladder if Q2 evaluation warrants | (manual) | Dormant during launch |
 
 ---
 

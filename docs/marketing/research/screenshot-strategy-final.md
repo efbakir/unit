@@ -8,20 +8,20 @@
 
 ## The decisions (locked)
 
-| Decision | Resolution | Rationale |
-|---|---|---|
-| Variant to ship | **Variant 1 — "Notebook Replacement"** | `app-store-copy-variants.md` recommended; matches launch-plan.md hero direction; widest searcher comprehension |
-| Number of screenshots | **5** | Gemini + `viral-patterns` §7 agree; first 3 carry the load, 4-5 are secondary |
-| Orientation | **Portrait only** | 96% of top apps; Unit is iPhone-only, light-only, portrait-only per CLAUDE.md |
-| Reference dimensions | **1290 × 2796** (iPhone 16/17 Pro Max) | Apple auto-scales down. Single source of truth per Apple spec |
-| Caption position | **Above device frame** | OCR-friendly, doesn't obscure UI, matches Liftosaur/DevUtils precedent |
-| Background color | **`#F5F5F5`** (Unit's `AppColors.background`) | Light mode, brand-cohesive. NOT Gemini's "muted slate or sage" — Gemini doesn't have access to DesignSystem.swift |
-| Headline font | **Geist Bold** at 110pt | Unit's actual display font (Geist family per AppFont). 110pt = upper end of Gemini's 80-120pt range |
-| Headline color | **`#0A0A0A`** (Unit's `AppColors.textPrimary` / `accent`) | Per CLAUDE.md: "accent is `0x0A0A0A`" not `#FF4400` |
-| Subhead font | **Geist Regular** at 36pt | Matches Unit's `numericInput` size, generous but not display |
-| Subhead color | **`#595959`** (`textSecondary`) | Calm, not stark |
-| Device frame | **Standard iPhone 16 Pro Max, straight-on (0° tilt)** | No 3D rotations. Gemini + viral-patterns both flag this. |
-| Screenshot 5 | **"No account. Works offline."** (NOT paywall) | Paywall is OFF at W3 launch per launch-plan.md and product-compass.md decision 2026-04-28 |
+| Decision              | Resolution                                                | Rationale                                                                                                         |
+| --------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Variant to ship       | **Variant 1 — "Notebook Replacement"**                    | `app-store-copy-variants.md` recommended; matches launch-plan.md hero direction; widest searcher comprehension    |
+| Number of screenshots | **5**                                                     | Gemini + `viral-patterns` §7 agree; first 3 carry the load, 4-5 are secondary                                     |
+| Orientation           | **Portrait only**                                         | 96% of top apps; Unit is iPhone-only, light-only, portrait-only per CLAUDE.md                                     |
+| Reference dimensions  | **1290 × 2796** (iPhone 16/17 Pro Max)                    | Apple auto-scales down. Single source of truth per Apple spec                                                     |
+| Caption position      | **Above device frame**                                    | OCR-friendly, doesn't obscure UI, matches Liftosaur/DevUtils precedent                                            |
+| Background color      | **`#F5F5F5`** (Unit's `AppColors.background`)             | Light mode, brand-cohesive. NOT Gemini's "muted slate or sage" — Gemini doesn't have access to DesignSystem.swift |
+| Headline font         | **Geist Bold** at 110pt                                   | Unit's actual display font (Geist family per AppFont). 110pt = upper end of Gemini's 80-120pt range               |
+| Headline color        | **`#0A0A0A`** (Unit's `AppColors.textPrimary` / `accent`) | Per CLAUDE.md: "accent is `0x0A0A0A`" not `#FF4400`                                                               |
+| Subhead font          | **Geist Regular** at 36pt                                 | Matches Unit's `numericInput` size, generous but not display                                                      |
+| Subhead color         | **`#595959`** (`textSecondary`)                           | Calm, not stark                                                                                                   |
+| Device frame          | **Standard iPhone 16 Pro Max, straight-on (0° tilt)**     | No 3D rotations. Gemini + viral-patterns both flag this.                                                          |
+| Screenshot 5          | **"No account. Works offline."** (NOT paywall)            | Paywall is OFF at W3 launch per launch-plan.md and product-compass.md decision 2026-04-28                         |
 
 ---
 
@@ -210,14 +210,21 @@ Subhead (36pt):
     Your training data lives on your iPhone. Always.
 
 UI inside frame:
-    Either:
-      a) The onboarding view that shows "no sign-up required" path
-         (likely the redo-from-history or paste-template flow start)
-      b) The Settings view showing "no account" / "all data on device" /
-         "data export available in Pro" — gentle hint at upgrade without
-         showing the active paywall
-    Pick (a) — onboarding speed is the more compelling visual proof of
-    "no account."
+    SettingsView with the Data section visible at the top. Three rows:
+      • Storage          On this iPhone
+      • Account                    None
+      • Export data               [PRO]
+    The section enumerates the trust mechanic as facts — TypingMind-style
+    proof, not a marketing claim. PRO chip is the gentle upgrade hint
+    without an active paywall sheet.
+
+    Decision history (2026-05-10): the brief originally listed two
+    options — (a) onboarding screen "no sign-up path", (b) Settings
+    showing "no account / on device / Pro export". Code exploration
+    confirmed (a) does not exist as a discrete screen — every onboarding
+    step is implicit-only proof (no sign-in field). Pivoted to (b) and
+    built the Data section in SettingsView. See decision-log entry
+    "Settings gets a 'Data' section to carry App Store screenshot #5".
 
 Device frame:
     Same as 2-3-4.

@@ -8,10 +8,10 @@
 | Source | Frequency | What | Who shoots |
 |---|---|---|---|
 | **A. DIY founder content** | Monthly (3hrs/session) | Gym recordings + talking-head rants | You |
-| **B. UGC creators** | Quarterly ($200 budget) | 4-6 short clips | Billo / Insense / JoinBrands creators (real lifters, brand-matched) |
+| **B. UGC creators** | **DEFERRED for Q1** (per 2026-05-02 budget decision) | 0 clips during launch ramp; re-evaluate at Q2 | When reactivated: ladder in `tools.md` (TestFlight clips → Fiverr → Collabstr → reduced Billo) |
 | **C. ElevenLabs voiceover** | As needed | Voice-of-you narrating screen recordings | You write script + clone voice; no face needed |
 
-All three converge into the same Submagic + Opus Clip + CapCut pipeline. Buffer schedules the output.
+All three converge into the same Submagic + CapCut pipeline (Submagic absorbs what Opus Clip used to do — see `tools.md` 2026-05-02 audit). Buffer schedules the output.
 
 ---
 
@@ -53,20 +53,24 @@ Output: ~5-7 min raw footage.
 ### Hour 3 — ingest + edit
 
 Pipeline:
-1. **Submagic** — auto-captions on all clips (gym + talking-head). Custom caption style: white text, bold, drop shadow, no fancy animation.
-2. **Opus Clip** — feed talking-head into Opus, get 6-8 short clips per rant (Opus auto-identifies the strongest 30s of each long take).
-3. **CapCut** — assembly. Add transitions only where natural (no flashy effects). Add timer overlays for "set logged in 2.4s" claims.
+1. **Submagic Pro** — auto-captions on all clips (gym + talking-head). Custom caption style: white text, bold, drop shadow, no fancy animation. Also handles AI Auto Zooms, silence trim, and clip selection on sources up to 5min raw.
+2. **Submagic Magic Clips (addon, conditional)** — only if a rant exceeded the 5min Submagic Pro source cap, feed it through Magic Clips for 6-8 short clips per rant. For ≤5min rants, Submagic Pro alone identifies the strongest 30s. (This step replaces the Opus Clip step from the pre-2026-05-02 stack.)
+3. **CapCut Free** — assembly. Add transitions only where natural (no flashy effects). Add timer overlays for "set logged in 2.4s" claims. Free tier handles all of this; Premium not needed.
 4. Export 30-60s vertical (9:16) at 1080×1920.
 
 Output: ~15-20 vertical clips per session.
 
 ---
 
-## Source B — UGC creators (quarterly)
+## Source B — UGC creators (DEFERRED for Q1)
 
-**When**: first Sunday of each quarter (Q1, Q2, Q3, Q4).
+> **Status (2026-05-02): DORMANT.** Q1 paid UGC skipped per the budget decision in `tools.md`. Sources A + C cover ~25 clips/month, sufficient for the W1-W12 launch ramp. Re-evaluate at Q2 (~2026-08-02) only if cornerstone DIY clips are averaging <5k views AND the failure isn't a positioning problem.
+>
+> When/if reactivated, follow the ladder in `tools.md` UGC section: TestFlight real-user clips ($0) → Fiverr ($50-100/video) → Collabstr → reduced Billo. The original $200/quarter Billo plan was dropped from default.
 
-**Budget**: $200/quarter for 4-6 videos = $50/video average.
+**When (when reactivated)**: first Sunday of each quarter (Q1, Q2, Q3, Q4).
+
+**Budget (when reactivated)**: tier-dependent — see ladder in `tools.md`. The original $200/quarter for 4-6 videos = $50/video average is preserved as the upper-tier reference, NOT the default.
 
 ### Brief once, run quarterly
 
@@ -92,10 +96,10 @@ Brief includes:
 ### Process
 
 1. **Brief** (1hr) — fill out Billo brief once per quarter, paste from `ugc-brief.md`
-2. **Cast** (~24-72h Billo turnaround) — review applicants, accept 4-6
-3. **Receive raw footage** (1-2 weeks) — creators submit
-4. **Iterate if needed** (Billo offers 1 free revision)
-5. **Ingest** — same Submagic + Opus Clip + CapCut pipeline as Source A
+2. **Cast** — turnaround varies by tier (TestFlight clips: same-day; Fiverr/Collabstr: 24-72h; Billo: 24-72h)
+3. **Receive raw footage** (1-2 weeks for paid creators; same-day for TestFlight clips)
+4. **Iterate if needed** (most paid platforms offer 1 free revision)
+5. **Ingest** — same Submagic + CapCut pipeline as Source A (Magic Clips addon only if any single UGC source exceeds 5min raw, which is unusual for 30–60s briefs)
 
 Output: 4-6 vertical clips per quarter = ~10-15 short pieces after Submagic re-cuts.
 

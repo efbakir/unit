@@ -272,7 +272,7 @@ If you read nothing else: **submit in Week 1, ship free with a "Pro coming soon"
 The strategic timeline above (WHEN) is paired with operational scaffolding (HOW) in [`docs/marketing/`](marketing/):
 
 - [`docs/marketing/README.md`](marketing/README.md) — folder index
-- [`docs/marketing/tools.md`](marketing/tools.md) — the $51/mo stack (Buffer, Submagic, Opus Clip, AppFigures, ElevenLabs)
+- [`docs/marketing/tools.md`](marketing/tools.md) — the ~$60/mo (~$43/mo annual) stack (Buffer, Submagic, AppFigures, ElevenLabs; CapCut Free; Opus Clip dropped per the 2026-05-02 overlap audit)
 - [`docs/marketing/reddit.md`](marketing/reddit.md) — Reddit BIP playbook with frequency caps
 - [`docs/marketing/tiktok-ig.md`](marketing/tiktok-ig.md) — 5 TikTok/IG formats ranked by conversion
 - [`docs/marketing/content-engine.md`](marketing/content-engine.md) — monthly recording workflow (3 sources: DIY + UGC + ElevenLabs voiceover over screen recordings)

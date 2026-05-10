@@ -1,8 +1,10 @@
 # UGC creator brief
 
-> Casting + format spec for Billo / Insense / JoinBrands.
+> **Status (2026-05-02): DORMANT for Q1.** Paid UGC is deferred per the budget decision in `tools.md`. This brief is preserved for re-activation at Q2 evaluation. If/when you trial UGC via the ladder in `tools.md` (TestFlight clips → Fiverr → Collabstr → reduced Billo, or the experimental Dans UGC option), this brief is the canonical paste-in.
+>
+> Casting + format spec — same brief works for any platform on the ladder.
 > Paste this verbatim into the brief field. Re-use each quarter unless you've learned something specific about which casting/format works best.
-> Resolved 2026-04-29.
+> Resolved 2026-04-29; status updated 2026-05-02.
 
 ---
 
@@ -140,15 +142,15 @@ Don't:
 2. **Cast 4-6 creators** within 24-72h
 3. **Receive raw footage** within 1-2 weeks
 4. **Iterate if needed** (1 free revision)
-5. **Ingest** through the same Submagic + Opus Clip + CapCut pipeline as DIY content (see `content-engine.md` Source B)
+5. **Ingest** through the same Submagic + CapCut pipeline as DIY content (see `content-engine.md` Source B)
 
 ---
 
 ## Budget
 
-$200/quarter ≈ $50/video for 4 videos. Scale to $300/quarter for 4-5 higher-quality videos via Insense if Billo casting comes back thin.
+**See `tools.md` UGC ladder** for the active budget tier. Original $200/quarter Billo plan was dropped from default in the 2026-05-02 budget cut; tier ladder runs cheapest-first: TestFlight real-user clips ($0) → Fiverr ($50-100/video) → Collabstr (<$100/video) → reduced Billo ($50-100/quarter) → full Billo ($200/quarter, deferred until $1k MRR).
 
-Per `tools.md`: ~$67/month amortized. Counts against the $120/month all-in cap.
+If/when reactivated, the chosen tier amortized counts against the active all-in cap (~$60/mo at indie launch, ~$130/mo if full UGC resumes).
 
 ## See also
 

@@ -82,7 +82,7 @@ Avoid: `#fitness` `#gym` `#workout` `#fyp` (oversaturated, pure noise).
 ## Post-production checklist
 
 - [ ] Submagic auto-captions added (white bold, drop shadow, no animation)
-- [ ] Opus Clip identified strongest 30s if source is talking-head
+- [ ] Submagic identified strongest 30s if source is talking-head (use Magic Clips addon only if source >5min raw)
 - [ ] CapCut: timer overlay added on screen-record sections
 - [ ] CapCut: closing screen with app icon (1080×1920)
 - [ ] No music with lyrics

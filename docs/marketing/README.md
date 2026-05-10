@@ -8,7 +8,7 @@
 
 The 8-week launch plan in `docs/launch-plan.md` is the strategic timeline. The files here are the operational scaffolding that lets that plan execute without eating your week:
 
-- A tool stack that costs ~$51/mo (~$120/mo with quarterly UGC)
+- A tool stack that costs ~$43-60/mo at indie launch (Q1 paid UGC skipped per 2026-05-02 budget decision; cap rises to ~$110-130/mo only if UGC reactivates Q2+)
 - Templates so each "post day" is fill-in-the-blank, not write-from-scratch
 - A content engine: ~3hrs of recording per month → ~30 short clips
 - An automation map that explicitly draws the line between scheduled and manual
@@ -19,7 +19,7 @@ The 8-week launch plan in `docs/launch-plan.md` is the strategic timeline. The f
 ```
 docs/marketing/
 ├── README.md                    ← this file
-├── tools.md                     ← the $51/mo stack, links, account placeholders
+├── tools.md                     ← the ~$60/mo monthly (~$43/mo annual) stack, links, account placeholders
 ├── reddit.md                    ← Reddit playbook + frequency caps
 ├── tiktok-ig.md                 ← TikTok/IG playbook + 5 formats
 ├── content-engine.md            ← monthly recording workflow (3 sources)

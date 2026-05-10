@@ -79,7 +79,7 @@ End with one of:
 ## Post-production
 
 - [ ] Submagic auto-captions
-- [ ] Opus Clip if you recorded long (>60s) — pick strongest 30-45s
+- [ ] Submagic clip-selection if you recorded long (>60s) — pick strongest 30-45s. Add Magic Clips addon only if raw >5min.
 - [ ] CapCut: insert screen-record clip(s) of the app for the "what Unit does" section
 - [ ] No music with lyrics — silent or subtle ambient bed (CapCut royalty-free)
 - [ ] 1080×1920 vertical, MP4

@@ -47,7 +47,7 @@
 
 | ❌ | Why |
 |---|---|
-| Stack > $120/mo before $1k MRR | The cap is the cap. Justify any addition against the 5 metrics in `cadence.md`. |
+| Stack > $60/mo at indie launch (Q1, no paid UGC) or > $130/mo if UGC reactivates Q2+ | The cap is the cap. Justify any addition against the 5 metrics in `cadence.md`. **Cap history**: $120 (original, based on stale $16 Submagic price) → $130 in the 2026-05-02 overlap audit (actual Submagic $39 monthly / $23 annual) → **$60 at indie launch** in the 2026-05-02 UGC budget cut (Q1 paid UGC skipped). |
 | Multi-tool overlap (e.g., Buffer + Hypefury + Later) | Pick one scheduler. Switching costs are time, not money. |
 | Building a custom MCP server / dashboard / pipeline before the basics work | The custom-builds list is "NOT day-one." First validate the playbooks. |
 

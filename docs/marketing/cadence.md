@@ -43,20 +43,24 @@ Log to a Notion page (per `launch-plan.md` §9 "Notion page: Unit metrics") or a
 The recording session per `content-engine.md` Source A:
 - **Hour 1**: gym recording (3 exercises × 3 sets, multiple angles, screen-record)
 - **Hour 2**: 4 talking-head rants (~5-7 min raw)
-- **Hour 3**: ingest in Submagic + Opus Clip + CapCut → ~15-20 vertical clips
+- **Hour 3**: ingest in Submagic + CapCut → ~15-20 vertical clips (Magic Clips addon only if any rant exceeded 5min raw — see `tools.md`)
 
 Output goes into the `clips/` library that the weekly Sunday checklist draws from.
 
-## Quarterly rhythm — first Sunday of the quarter (1 hour)
+## Quarterly rhythm — DEFERRED for Q1
 
-The UGC brief per `content-engine.md` Source B:
-- **Open Billo** (or Insense, or JoinBrands)
+> **Status (2026-05-02): DORMANT.** Q1 paid UGC is skipped per the budget decision in `tools.md`. There is no quarterly rhythm to run during the launch ramp. Reclaim the first-Sunday-of-the-quarter hour for product polish or a metrics-deep-dive.
+>
+> Re-evaluate at Q2 (~2026-08-02). If reactivated, follow the ladder in `tools.md` UGC section. Steps below are preserved for re-activation.
+
+When reactivated, the UGC brief per `content-engine.md` Source B:
+- **Pick a tier** from `tools.md` UGC ladder (TestFlight clips → Fiverr → Collabstr → reduced Billo)
 - **Paste the brief** from `ugc-brief.md`
-- **Cast 4-6 creators** ($200 budget)
-- **Wait** 1-2 weeks for raw footage delivery
-- **Ingest** through the same Submagic + Opus Clip + CapCut pipeline
+- **Cast** per tier budget
+- **Wait** 1-2 weeks for raw footage delivery (or same-day for TestFlight clips)
+- **Ingest** through the same Submagic + CapCut pipeline
 
-Output: ~10-15 short pieces per quarter after re-cuts.
+Output (when reactivated): ~5-15 short pieces per quarter depending on tier.
 
 ## Reddit-post day (1 specific weekday per week)
 
