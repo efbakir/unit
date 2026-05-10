@@ -23,6 +23,7 @@
   --header-height: 64px; /* h-16 on Header */
   --button-height-lg: 60px;
   --button-height-md: 52px;
+  --marketing-feature-device-width: 300px; /* 75% of the previous 400px slab frame */
 
   /* Single source of truth for the marketing site's motion curves.
      ease-out-quart for press feedback (fast settle), ease-out-expo for
@@ -213,6 +214,7 @@ body {
     transition: transform 240ms var(--ease-out-expo),
       border-color 240ms var(--ease-out-expo);
   }
+
   @media (hover: hover) {
     .lift-hover:hover {
       transform: translateY(-2px);
