@@ -12,7 +12,7 @@ import OSLog
 @main
 struct UnitApp: App {
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.atlaslog.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "com.unitlift.app",
         category: "SwiftData"
     )
 
