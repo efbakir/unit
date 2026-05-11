@@ -3,4 +3,4 @@
 // or temporarily flip it to a personal gmail until then.
 export const SUPPORT_EMAIL = "support@unitlift.app"
 export const DEVELOPER_NAME = "Efe Bakir"
-export const LEGAL_LAST_UPDATED = "April 13, 2026"
+export const LEGAL_LAST_UPDATED = "May 11, 2026"

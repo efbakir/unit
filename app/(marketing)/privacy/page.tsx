@@ -54,6 +54,12 @@ export default function PrivacyPage() {
             transmitted to any external server.
           </p>
           <p>
+            If you have iCloud Backup enabled on your device, Unit&apos;s local
+            data may be included in those backups. iCloud Backup is operated by
+            Apple under your Apple ID and is governed by Apple&apos;s privacy
+            policy. I have no access to your iCloud account or its contents.
+          </p>
+          <p>
             If you delete the App, your locally stored data will be removed from
             your device.
           </p>
