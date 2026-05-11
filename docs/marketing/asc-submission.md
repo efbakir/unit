@@ -122,10 +122,10 @@ The privacy manifest declares only `UserDefaults` (reason `CA92.1` — app funct
 Unit is a local-first gym logger for iPhone. It requires no account, no sign-in, and no network connection — all workout data is stored on-device via SwiftData. No demo credentials are needed.
 
 To evaluate the core flow:
-1. Open the app — onboarding takes ~30 seconds and asks no personal questions.
-2. Pick a starter program (or skip and build your own).
-3. Tap "Start workout" on the Today tab to begin a session.
-4. Log a set: weight and reps are pre-filled from the most recent session ("ghost values"). Tap Done to log. The rest timer starts automatically and is visible on the Lock Screen / Dynamic Island.
+1. Open the app. Onboarding walks through about six short screens: pick a weight unit (kg or lb), choose whether to paste an existing program, import past workout history, or build one from scratch; then set up the split (number of training days), schedule, and exercises. No personal information is requested at any point — no name, email, age, weight, or contact details.
+2. After onboarding, the Today tab shows the next scheduled workout. Tap "Start workout" to begin a session.
+3. Inside a session, weight and reps for each set are pre-filled from your most recent session of that exercise ("ghost values"). Tap Done to log a set. The rest timer starts automatically and is visible on the Lock Screen and in the Dynamic Island so you don't need to reopen the app between sets.
+4. The History tab shows every past session by date. PRs are detected and flagged automatically.
 
 In-app purchases for Unit Pro are configured in the listing but are not gated in this build — core logging is free with no paywall. Pro features (export, Apple Health sync, custom icons, custom template colors) will be enabled in a future update, with pricing matching the listing description.
 
