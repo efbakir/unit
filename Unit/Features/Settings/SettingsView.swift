@@ -35,7 +35,7 @@ private enum SubscriptionRow: String, CaseIterable, Identifiable {
 private enum LegalRow: String, CaseIterable, Identifiable {
     case privacy = "Privacy Policy"
     case terms = "Terms of Service"
-    case contact = "Contact support"
+    case contact = "Contact me"
 
     var id: String { rawValue }
 

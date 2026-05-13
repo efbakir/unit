@@ -15,7 +15,7 @@ import OSLog
 enum MarketingSeed {
 
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.unitlift.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "app.unitlift",
         category: "MarketingSeed"
     )
 

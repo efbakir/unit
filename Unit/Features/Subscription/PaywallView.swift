@@ -176,65 +176,15 @@ struct PaywallView: View {
     @ViewBuilder
     private var tierCards: some View {
         ForEach(StoreManager.Tier.allCases) { tier in
-            tierCard(tier: tier)
+            AppSelectableTierCard(
+                label: label(for: tier),
+                price: priceText(for: tier),
+                sublabel: sublabel(for: tier),
+                badge: badgeText(for: tier),
+                isSelected: store.selectedTier == tier,
+                action: { store.selectedTier = tier }
+            )
         }
-    }
-
-    private func tierCard(tier: StoreManager.Tier) -> some View {
-        let isSelected = store.selectedTier == tier
-        let badge = badgeText(for: tier)
-
-        return Button {
-            withAnimation(reduceMotion ? nil : .appPress) {
-                store.selectedTier = tier
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                // Badge inside the card top — replaces the prior overflow trick
-                // (alignmentGuide straddling ZStack `.top`). Routes through the
-                // canonical `AppTag(.accent, .compactCapsule)` so chrome lives
-                // in the design system, not paywall-local code.
-                if let badge {
-                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
-                }
-
-                HStack(spacing: AppSpacing.xs) {
-                    Text(label(for: tier))
-                        .appCapsLabel(.smallLabel)
-                        .foregroundStyle(AppColor.textSecondary)
-
-                    Spacer(minLength: 0)
-
-                    if isSelected {
-                        AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
-                            .foregroundStyle(AppColor.accent)
-                            .accessibilityHidden(true)
-                    }
-                }
-
-                Text(priceText(for: tier))
-                    .font(AppFont.productHeading.font)
-                    .tracking(AppFont.productHeading.tracking)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .allowsTightening(true)
-
-                Text(sublabel(for: tier))
-                    .font(AppFont.muted.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.65)
-                    .multilineTextAlignment(.leading)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, AppSpacing.md)
-            .padding(.horizontal, AppSpacing.smd)
-            .background(isSelected ? AppColor.accentSoft : AppColor.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        }
-        .buttonStyle(ScaleButtonStyle())
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Tier copy

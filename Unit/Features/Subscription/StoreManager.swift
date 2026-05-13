@@ -46,7 +46,7 @@ final class StoreManager {
     /// Currently selected tier in the paywall. Default = Annual (recommended).
     var selectedTier: Tier = .annual
 
-    private let logger = Logger(subsystem: "com.unitlift.app", category: "StoreManager")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.unitlift", category: "StoreManager")
     @ObservationIgnored nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
 
     // MARK: - Init
