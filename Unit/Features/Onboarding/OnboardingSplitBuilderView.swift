@@ -34,7 +34,7 @@ struct OnboardingSplitBuilderView: View {
         @Bindable var vm = vm
 
         OnboardingShell(
-            title: "Your training split",
+            title: "My training split",
             ctaLabel: "Continue",
             ctaEnabled: vm.splitIsValid,
             ctaDisabledReason: vm.splitIsValid ? nil : AppCopy.FormHint.onboardingSplitNamesRequired,

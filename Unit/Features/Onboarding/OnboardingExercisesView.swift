@@ -41,6 +41,56 @@ struct OnboardingExercisesView: View {
         let index: Int
     }
 
+    /// Muted banner above the day-exercise list that summarizes what the
+    /// parser dropped during import: conditioning lines filtered (per
+    /// CLAUDE.md §3 scope fence) and trailing days truncated at the
+    /// 6-day cap. Always non-blocking — the lifter has already advanced
+    /// past the paste step, so this is informational, not an error. Hidden
+    /// entirely when there were no warnings (e.g. manual-build path or a
+    /// clean strength-only paste).
+    @ViewBuilder
+    private var parserWarningsBanner: some View {
+        if !vm.importWarnings.isEmpty {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                ForEach(vm.importWarnings.indices, id: \.self) { idx in
+                    let warning = vm.importWarnings[idx]
+                    Text(parserWarningCopy(warning))
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Human-readable copy for each warning case. Concise — the lifter
+    /// doesn't need the full original line text in the UI; they have the
+    /// original paste in muscle memory. Just the category + count.
+    private func parserWarningCopy(_ warning: ProgramImportResult.Warning) -> String {
+        switch warning {
+        case .skippedConditioning(let lines):
+            let count = lines.count
+            return count == 1
+                ? "1 conditioning line skipped (cardio belongs outside the lift log)."
+                : "\(count) conditioning lines skipped (cardio belongs outside the lift log)."
+        case .truncatedAtSixDays(let dropped):
+            let count = dropped.count
+            return count == 1
+                ? "Only the first 6 days were imported. 1 trailing day was skipped — add it manually if you need it."
+                : "Only the first 6 days were imported. \(count) trailing days were skipped — add them manually if you need them."
+        case .noisyLines(let count):
+            return count == 1
+                ? "1 line couldn't be read as an exercise. Re-edit the paste to add it manually if needed."
+                : "\(count) lines couldn't be read as exercises. Re-edit the paste to add them manually if needed."
+        case .exerciseNameOnly(let names):
+            let count = names.count
+            return count == 1
+                ? "1 exercise was imported without sets or reps — fill them in below."
+                : "\(count) exercises were imported without sets or reps — fill them in below."
+        }
+    }
+
     private func exerciseNameBinding(dayIndex: Int, exerciseID: UUID) -> Binding<String> {
         Binding(
             get: {
@@ -77,6 +127,7 @@ struct OnboardingExercisesView: View {
             onContinue: onContinue,
             onBack: onBack,
             content: {
+                parserWarningsBanner
                 if dayExs.isEmpty {
                     // Empty state owns the Add Exercise affordance inline,
                     // vertically centered in the available scroll area —
@@ -130,6 +181,48 @@ struct OnboardingExercisesView: View {
                                             .frame(width: 44, height: 44)
                                             .contentShape(Rectangle())
                                     }
+                                }
+
+                                // Parser-captured note — per-side / duration
+                                // / distance / intent / form note — rendered
+                                // as a single-line muted hint under the name
+                                // row. Indented under the TextField so it
+                                // reads as belonging to the exercise above
+                                // it, not floating. Empty string hides the
+                                // row entirely so manually-added exercises
+                                // don't get a stray empty line. CLAUDE.md
+                                // §3 deferred-list: per-side / duration as
+                                // structured fields ships in v2; until
+                                // then this surfaces the parser's read so
+                                // the lifter sees what was captured.
+                                if !ex.note.isEmpty {
+                                    Text(ex.note)
+                                        .font(AppFont.muted.font)
+                                        .foregroundStyle(AppColor.textSecondary)
+                                        .lineLimit(2)
+                                        .padding(.leading, AppSpacing.xxl)
+                                        .accessibilityLabel("Imported note: \(ex.note)")
+                                }
+
+                                // `From: <raw line>` hint — paste path only.
+                                // Surfaces the original pasted line beneath
+                                // the parsed exercise row so the lifter can
+                                // spot mismatches (rep ranges parsed as
+                                // weight, RPE % misread as kg, etc.) before
+                                // commit. Suppressed for manually-added
+                                // exercises (originalLine == "") and for
+                                // rows where the original line matches the
+                                // parsed name exactly (no information gain).
+                                if vm.importMethod == .paste,
+                                   !ex.originalLine.isEmpty,
+                                   ex.originalLine.lowercased() != ex.name.lowercased() {
+                                    Text("From: \(ex.originalLine)")
+                                        .font(AppFont.muted.font)
+                                        .foregroundStyle(AppColor.textDisabled)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                        .padding(.leading, AppSpacing.xxl)
+                                        .accessibilityLabel("Imported from: \(ex.originalLine)")
                                 }
 
                                 HStack(spacing: AppSpacing.sm) {
@@ -220,7 +313,7 @@ struct OnboardingExercisesView: View {
         .sheet(isPresented: $showingAddSheet, onDismiss: {
             focusedExerciseID = nil
         }) {
-            ExerciseSearchSheet(dayIndex: selectedDayIndex)
+            OnboardingExerciseSearchSheet(dayIndex: selectedDayIndex)
                 .environment(vm)
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()
@@ -349,7 +442,7 @@ private struct ExerciseReorderDropDelegate: DropDelegate {
 
 // MARK: - Exercise Search Sheet
 
-struct ExerciseSearchSheet: View {
+struct OnboardingExerciseSearchSheet: View {
     @Environment(OnboardingViewModel.self) private var vm
     @Environment(\.dismiss) private var dismiss
     let dayIndex: Int

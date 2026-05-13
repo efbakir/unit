@@ -7,28 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */; };
+		4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842C /* ProgramImportParserTests.swift */; };
 		A10000000000000000000001 /* UnitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UnitApp.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Exercise.swift */; };
-		ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECAT200000000000000000001 /* ExerciseCatalog.swift */; };
-		MKSD100000000000000000001 /* MarketingSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = MKSD200000000000000000001 /* MarketingSeed.swift */; };
-		PTPL100000000000000000001 /* ProgramTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PTPL200000000000000000001 /* ProgramTemplate.swift */; };
-		PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCAT200000000000000000001 /* ProgramCatalog.swift */; };
-		PIMP100000000000000000001 /* ProgramImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = PIMP200000000000000000001 /* ProgramImporter.swift */; };
-		PLIB100000000000000000001 /* ProgramLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLIB200000000000000000001 /* ProgramLibraryView.swift */; };
-		PLDT100000000000000000001 /* ProgramLibraryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */; };
-		WRMP100000000000000000001 /* WarmupGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = WRMP200000000000000000001 /* WarmupGenerator.swift */; };
 		A10000000000000000000004 /* DayTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* DayTemplate.swift */; };
 		A10000000000000000000005 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WorkoutSession.swift */; };
 		A10000000000000000000006 /* SetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* SetEntry.swift */; };
 		A10000000000000000000007 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* TodayView.swift */; };
-		A10000000000000000000012 /* TrainingWeekProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* TrainingWeekProgress.swift */; };
-		EWK100000000000000000001 /* EarlierWeekCatchup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EWK200000000000000000001 /* EarlierWeekCatchup.swift */; };
-		TRO100000000000000000001 /* TodayRoutineOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRO200000000000000000001 /* TodayRoutineOverride.swift */; };
 		A10000000000000000000008 /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ActiveWorkoutView.swift */; };
 		A10000000000000000000009 /* TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* TemplatesView.swift */; };
-		QKS100000000000000000001 /* FreestyleSessionSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKS200000000000000000001 /* FreestyleSessionSupport.swift */; };
-		A1PROGDETAIL000000000001 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2PROGDETAIL000000000001 /* ProgramDetailView.swift */; };
 		A1000000000000000000000A /* TemplateDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* TemplateDetailView.swift */; };
 		A1000000000000000000000B /* AddTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AddTemplateView.swift */; };
 		A1000000000000000000000C /* ExercisesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* ExercisesListView.swift */; };
@@ -37,8 +26,20 @@
 		A1000000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000010 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* RestTimerAttributes.swift */; };
 		A10000000000000000000011 /* WorkoutTargetFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* WorkoutTargetFormatter.swift */; };
+		A10000000000000000000012 /* TrainingWeekProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* TrainingWeekProgress.swift */; };
+		A1PROGDETAIL000000000001 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2PROGDETAIL000000000001 /* ProgramDetailView.swift */; };
 		CC000000000000000000005 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000100005 /* SettingsView.swift */; };
 		CC000000000000000000006 /* ExerciseProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000100006 /* ExerciseProgressView.swift */; };
+		DBE02AEB864A65860041BAC2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B4994CEC26AC15587254F6D4 /* Foundation.framework */; };
+		ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECAT200000000000000000001 /* ExerciseCatalog.swift */; };
+		EWK100000000000000000001 /* EarlierWeekCatchup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EWK200000000000000000001 /* EarlierWeekCatchup.swift */; };
+		FT100000000000000000001 /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000001 /* Geist-Medium.ttf */; };
+		FT100000000000000000002 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000002 /* Geist-SemiBold.ttf */; };
+		FT100000000000000000003 /* Geist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000003 /* Geist-Bold.ttf */; };
+		FT100000000000000000004 /* GeistMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000004 /* GeistMono-Medium.ttf */; };
+		FT100000000000000000010 /* GeistMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000010 /* GeistMono-SemiBold.ttf */; };
+		FT100000000000000000011 /* GeistMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000011 /* GeistMono-Bold.ttf */; };
+		MKSD100000000000000000001 /* MarketingSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = MKSD200000000000000000001 /* MarketingSeed.swift */; };
 		OB100000000000000000001 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000001 /* OnboardingViewModel.swift */; };
 		OB100000000000000000002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000002 /* OnboardingView.swift */; };
 		OB100000000000000000003 /* OnboardingShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000003 /* OnboardingShell.swift */; };
@@ -46,27 +47,36 @@
 		OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000007 /* OnboardingSplitBuilderView.swift */; };
 		OB100000000000000000008 /* OnboardingExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000008 /* OnboardingExercisesView.swift */; };
 		OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000009 /* OnboardingScheduleView.swift */; };
-		OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000020 /* OnboardingUnitPickerView.swift */; };
 		OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000D /* OnboardingImportMethodView.swift */; };
 		OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000E /* OnboardingProgramImportView.swift */; };
-		UI100000000000000000005 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000005 /* DesignSystem.swift */; };
-		UI100000000000000000006 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
+		OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000020 /* OnboardingUnitPickerView.swift */; };
+		PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCAT200000000000000000001 /* ProgramCatalog.swift */; };
+		PIMP100000000000000000001 /* ProgramImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = PIMP200000000000000000001 /* ProgramImporter.swift */; };
+		PLDT100000000000000000001 /* ProgramLibraryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */; };
+		PLIB100000000000000000001 /* ProgramLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLIB200000000000000000001 /* ProgramLibraryView.swift */; };
+		PRV100000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		PTPL100000000000000000001 /* ProgramTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PTPL200000000000000000001 /* ProgramTemplate.swift */; };
+		QKS100000000000000000001 /* FreestyleSessionSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKS200000000000000000001 /* FreestyleSessionSupport.swift */; };
 		SUB100000000000000000001 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUB000000000000000000001 /* StoreManager.swift */; };
 		SUB100000000000000000002 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUB000000000000000000002 /* PaywallView.swift */; };
-		FT100000000000000000001 /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000001 /* Geist-Medium.ttf */; };
-		FT100000000000000000002 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000002 /* Geist-SemiBold.ttf */; };
-		FT100000000000000000003 /* Geist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000003 /* Geist-Bold.ttf */; };
-		FT100000000000000000004 /* GeistMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000004 /* GeistMono-Medium.ttf */; };
-		FT100000000000000000010 /* GeistMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000010 /* GeistMono-SemiBold.ttf */; };
-		FT100000000000000000011 /* GeistMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000011 /* GeistMono-Bold.ttf */; };
-		PRV100000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		TRO100000000000000000001 /* TodayRoutineOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRO200000000000000000001 /* TodayRoutineOverride.swift */; };
+		UI100000000000000000005 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000005 /* DesignSystem.swift */; };
+		UI100000000000000000006 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
 		WE100000000000000000001 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* RestTimerLiveActivity.swift */; };
 		WE100000000000000000002 /* UnitWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* UnitWidgetBundle.swift */; };
 		WE100000000000000000003 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* RestTimerAttributes.swift */; };
 		WE100000000000000000004 /* UnitWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = WE000000000000000000001 /* UnitWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		WRMP100000000000000000001 /* WarmupGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = WRMP200000000000000000001 /* WarmupGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B85A786BAF0B9211EB9C9CB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = Unit;
+		};
 		WE800000000000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A70000000000000000000001 /* Project object */;
@@ -91,30 +101,18 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		165569863085B0817806842C /* ProgramImportParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParserTests.swift; sourceTree = "<group>"; };
 		544D8D052F5F58C100E4C17E /* Unit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Unit.entitlements; sourceTree = "<group>"; };
 		A20000000000000000000000 /* Unit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* UnitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
-		ECAT200000000000000000001 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
-		MKSD200000000000000000001 /* MarketingSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketingSeed.swift; sourceTree = "<group>"; };
-		PTPL200000000000000000001 /* ProgramTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramTemplate.swift; sourceTree = "<group>"; };
-		PCAT200000000000000000001 /* ProgramCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramCatalog.swift; sourceTree = "<group>"; };
-		PIMP200000000000000000001 /* ProgramImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramImporter.swift; sourceTree = "<group>"; };
-		PLIB200000000000000000001 /* ProgramLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramLibraryView.swift; sourceTree = "<group>"; };
-		PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramLibraryDetailView.swift; sourceTree = "<group>"; };
-		WRMP200000000000000000001 /* WarmupGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupGenerator.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* DayTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTemplate.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSession.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* SetEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetEntry.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
-		A20000000000000000000012 /* TrainingWeekProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWeekProgress.swift; sourceTree = "<group>"; };
-		EWK200000000000000000001 /* EarlierWeekCatchup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlierWeekCatchup.swift; sourceTree = "<group>"; };
-		TRO200000000000000000001 /* TodayRoutineOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRoutineOverride.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* TemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatesView.swift; sourceTree = "<group>"; };
-		QKS200000000000000000001 /* FreestyleSessionSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleSessionSupport.swift; sourceTree = "<group>"; };
-		A2PROGDETAIL000000000001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* TemplateDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateDetailView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000B /* AddTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTemplateView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000C /* ExercisesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisesListView.swift; sourceTree = "<group>"; };
@@ -123,11 +121,26 @@
 		A2000000000000000000000F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000010 /* RestTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerAttributes.swift; sourceTree = "<group>"; };
 		A20000000000000000000011 /* WorkoutTargetFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTargetFormatter.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* TrainingWeekProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWeekProgress.swift; sourceTree = "<group>"; };
+		A2PROGDETAIL000000000001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
+		A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParser.swift; sourceTree = "<group>"; };
 		B20000000000000000000001 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* UnitWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitWidgetBundle.swift; sourceTree = "<group>"; };
 		B20000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B4994CEC26AC15587254F6D4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		CC000000000000000100005 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CC000000000000000100006 /* ExerciseProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseProgressView.swift; sourceTree = "<group>"; };
+		ECAT200000000000000000001 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
+		EWK200000000000000000001 /* EarlierWeekCatchup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlierWeekCatchup.swift; sourceTree = "<group>"; };
+		FD3F6404A55923CE345F9422 /* UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FT000000000000000000001 /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Medium.ttf"; sourceTree = "<group>"; };
+		FT000000000000000000002 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-SemiBold.ttf"; sourceTree = "<group>"; };
+		FT000000000000000000003 /* Geist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Bold.ttf"; sourceTree = "<group>"; };
+		FT000000000000000000004 /* GeistMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-Medium.ttf"; sourceTree = "<group>"; };
+		FT000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FT000000000000000000010 /* GeistMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-SemiBold.ttf"; sourceTree = "<group>"; };
+		FT000000000000000000011 /* GeistMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-Bold.ttf"; sourceTree = "<group>"; };
+		MKSD200000000000000000001 /* MarketingSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketingSeed.swift; sourceTree = "<group>"; };
 		OB000000000000000000001 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		OB000000000000000000002 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		OB000000000000000000003 /* OnboardingShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingShell.swift; sourceTree = "<group>"; };
@@ -135,25 +148,34 @@
 		OB000000000000000000007 /* OnboardingSplitBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplitBuilderView.swift; sourceTree = "<group>"; };
 		OB000000000000000000008 /* OnboardingExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingExercisesView.swift; sourceTree = "<group>"; };
 		OB000000000000000000009 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
-		OB000000000000000000020 /* OnboardingUnitPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUnitPickerView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000D /* OnboardingImportMethodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingImportMethodView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000E /* OnboardingProgramImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramImportView.swift; sourceTree = "<group>"; };
-		UI000000000000000000005 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-		UI000000000000000000006 /* AppCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCopy.swift; sourceTree = "<group>"; };
+		OB000000000000000000020 /* OnboardingUnitPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUnitPickerView.swift; sourceTree = "<group>"; };
+		PCAT200000000000000000001 /* ProgramCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramCatalog.swift; sourceTree = "<group>"; };
+		PIMP200000000000000000001 /* ProgramImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramImporter.swift; sourceTree = "<group>"; };
+		PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramLibraryDetailView.swift; sourceTree = "<group>"; };
+		PLIB200000000000000000001 /* ProgramLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramLibraryView.swift; sourceTree = "<group>"; };
+		PRV000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		PTPL200000000000000000001 /* ProgramTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramTemplate.swift; sourceTree = "<group>"; };
+		QKS200000000000000000001 /* FreestyleSessionSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleSessionSupport.swift; sourceTree = "<group>"; };
 		SUB000000000000000000001 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		SUB000000000000000000002 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		FT000000000000000000001 /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Medium.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000002 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-SemiBold.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000003 /* Geist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Bold.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000004 /* GeistMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-Medium.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000010 /* GeistMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-SemiBold.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000011 /* GeistMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-Bold.ttf"; sourceTree = "<group>"; };
-		FT000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		PRV000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		TRO200000000000000000001 /* TodayRoutineOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRoutineOverride.swift; sourceTree = "<group>"; };
+		UI000000000000000000005 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		UI000000000000000000006 /* AppCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCopy.swift; sourceTree = "<group>"; };
 		WE000000000000000000001 /* UnitWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UnitWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		WRMP200000000000000000001 /* WarmupGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		143B0525B9481C1F98DEB694 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DBE02AEB864A65860041BAC2 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A30000000000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -171,6 +193,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		053CD7431C0798E4C1207409 /* UnitTests */ = {
+			isa = PBXGroup;
+			children = (
+				165569863085B0817806842C /* ProgramImportParserTests.swift */,
+			);
+			name = UnitTests;
+			path = UnitTests;
+			sourceTree = "<group>";
+		};
 		541C84E52F5B815D00D0DB57 /* Engine */ = {
 			isa = PBXGroup;
 			children = (
@@ -179,12 +210,22 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
+		5CD29B9EF3A2BA51B2BB2BF2 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				B4994CEC26AC15587254F6D4 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* Unit */,
 				B40000000000000000000001 /* UnitWidget */,
 				A40000000000000000000003 /* Products */,
+				DBE06D3FF68AA954B7F15B59 /* Frameworks */,
+				053CD7431C0798E4C1207409 /* UnitTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -212,6 +253,7 @@
 			children = (
 				A20000000000000000000000 /* Unit.app */,
 				WE000000000000000000001 /* UnitWidgetExtension.appex */,
+				FD3F6404A55923CE345F9422 /* UnitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -225,18 +267,6 @@
 				A20000000000000000000006 /* SetEntry.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		ECAT300000000000000000001 /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				ECAT200000000000000000001 /* ExerciseCatalog.swift */,
-				MKSD200000000000000000001 /* MarketingSeed.swift */,
-				PTPL200000000000000000001 /* ProgramTemplate.swift */,
-				PCAT200000000000000000001 /* ProgramCatalog.swift */,
-				PIMP200000000000000000001 /* ProgramImporter.swift */,
-			);
-			path = Data;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000005 /* Features */ = {
@@ -299,15 +329,6 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
-		SUB200000000000000000001 /* Subscription */ = {
-			isa = PBXGroup;
-			children = (
-				SUB000000000000000000001 /* StoreManager.swift */,
-				SUB000000000000000000002 /* PaywallView.swift */,
-			);
-			path = Subscription;
-			sourceTree = "<group>";
-		};
 		B40000000000000000000001 /* UnitWidget */ = {
 			isa = PBXGroup;
 			children = (
@@ -318,38 +339,24 @@
 			path = UnitWidget;
 			sourceTree = "<group>";
 		};
-		OB200000000000000000001 /* Onboarding */ = {
+		DBE06D3FF68AA954B7F15B59 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				OB000000000000000000001 /* OnboardingViewModel.swift */,
-				OB000000000000000000002 /* OnboardingView.swift */,
-				OB000000000000000000003 /* OnboardingShell.swift */,
-				OB000000000000000000004 /* OnboardingSplashView.swift */,
-				OB000000000000000000007 /* OnboardingSplitBuilderView.swift */,
-				OB000000000000000000008 /* OnboardingExercisesView.swift */,
-				OB000000000000000000009 /* OnboardingScheduleView.swift */,
-				OB000000000000000000020 /* OnboardingUnitPickerView.swift */,
-				OB00000000000000000000D /* OnboardingImportMethodView.swift */,
-				OB00000000000000000000E /* OnboardingProgramImportView.swift */,
+				5CD29B9EF3A2BA51B2BB2BF2 /* iOS */,
 			);
-			path = Onboarding;
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		UI200000000000000000001 /* UI */ = {
+		ECAT300000000000000000001 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				UI000000000000000000006 /* AppCopy.swift */,
-				UI000000000000000000005 /* DesignSystem.swift */,
+				ECAT200000000000000000001 /* ExerciseCatalog.swift */,
+				MKSD200000000000000000001 /* MarketingSeed.swift */,
+				PTPL200000000000000000001 /* ProgramTemplate.swift */,
+				PCAT200000000000000000001 /* ProgramCatalog.swift */,
+				PIMP200000000000000000001 /* ProgramImporter.swift */,
 			);
-			path = UI;
-			sourceTree = "<group>";
-		};
-		FT200000000000000000002 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				FT200000000000000000001 /* Fonts */,
-			);
-			path = Resources;
+			path = Data;
 			sourceTree = "<group>";
 		};
 		FT200000000000000000001 /* Fonts */ = {
@@ -365,9 +372,71 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
+		FT200000000000000000002 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FT200000000000000000001 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		OB200000000000000000001 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				OB000000000000000000001 /* OnboardingViewModel.swift */,
+				OB000000000000000000002 /* OnboardingView.swift */,
+				OB000000000000000000003 /* OnboardingShell.swift */,
+				OB000000000000000000004 /* OnboardingSplashView.swift */,
+				OB000000000000000000007 /* OnboardingSplitBuilderView.swift */,
+				OB000000000000000000008 /* OnboardingExercisesView.swift */,
+				OB000000000000000000009 /* OnboardingScheduleView.swift */,
+				OB000000000000000000020 /* OnboardingUnitPickerView.swift */,
+				OB00000000000000000000D /* OnboardingImportMethodView.swift */,
+				OB00000000000000000000E /* OnboardingProgramImportView.swift */,
+				A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		SUB200000000000000000001 /* Subscription */ = {
+			isa = PBXGroup;
+			children = (
+				SUB000000000000000000001 /* StoreManager.swift */,
+				SUB000000000000000000002 /* PaywallView.swift */,
+			);
+			path = Subscription;
+			sourceTree = "<group>";
+		};
+		UI200000000000000000001 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				UI000000000000000000006 /* AppCopy.swift */,
+				UI000000000000000000005 /* DesignSystem.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		81AEF1BDAF7F1FA295D6146A /* UnitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE6E38E5B8E24EBC10709497 /* Build configuration list for PBXNativeTarget "UnitTests" */;
+			buildPhases = (
+				C8C33DE30ACA7E47E85A22EF /* Sources */,
+				143B0525B9481C1F98DEB694 /* Frameworks */,
+				01E69E04E0B10B40DB39735D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E12696516A18DA0F71042443 /* PBXTargetDependency */,
+			);
+			name = UnitTests;
+			productName = UnitTests;
+			productReference = FD3F6404A55923CE345F9422 /* UnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A50000000000000000000001 /* Unit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXNativeTarget "Unit" */;
@@ -429,11 +498,19 @@
 			targets = (
 				A50000000000000000000001 /* Unit */,
 				WE500000000000000000001 /* UnitWidgetExtension */,
+				81AEF1BDAF7F1FA295D6146A /* UnitTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		01E69E04E0B10B40DB39735D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A50000000000000000000003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -508,6 +585,15 @@
 				UI100000000000000000006 /* AppCopy.swift in Sources */,
 				SUB100000000000000000001 /* StoreManager.swift in Sources */,
 				SUB100000000000000000002 /* PaywallView.swift in Sources */,
+				1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C8C33DE30ACA7E47E85A22EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -524,6 +610,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		E12696516A18DA0F71042443 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Unit;
+			target = A50000000000000000000001 /* Unit */;
+			targetProxy = B85A786BAF0B9211EB9C9CB7 /* PBXContainerItemProxy */;
+		};
 		WE800000000000000000002 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = WE500000000000000000001 /* UnitWidgetExtension */;
@@ -532,6 +624,55 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		1060950633848A33EB4222A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Unit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Unit";
+			};
+			name = Debug;
+		};
+		7744992ACA739225B5E63CC6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Unit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Unit";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		A80000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -653,20 +794,20 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Unit/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Unit";
+				INFOPLIST_KEY_CFBundleDisplayName = Unit;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.unitlift.app;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -675,7 +816,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -693,20 +834,20 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Unit/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Unit";
+				INFOPLIST_KEY_CFBundleDisplayName = Unit;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.unitlift.app;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -715,7 +856,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -737,7 +878,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.unitlift.app.UnitWidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -747,7 +888,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -769,7 +910,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.unitlift.app.UnitWidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -779,7 +920,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -800,6 +941,15 @@
 			buildConfigurations = (
 				A80000000000000000000003 /* Debug */,
 				A80000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FE6E38E5B8E24EBC10709497 /* Build configuration list for PBXNativeTarget "UnitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7744992ACA739225B5E63CC6 /* Release */,
+				1060950633848A33EB4222A5 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

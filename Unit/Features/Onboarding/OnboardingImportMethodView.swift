@@ -16,14 +16,14 @@ struct OnboardingImportMethodView: View {
 
     var body: some View {
         OnboardingShell(
-            title: "Add your program",
-            subtitle: "Choose how to create your template.",
+            title: "Add my program",
+            subtitle: "I'll bring it in this way.",
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack
         ) {
             VStack(spacing: AppSpacing.sm) {
-                OnboardingOptionCard(
+                AppOptionTileCard(
                     icon: .clipboard,
                     title: "Paste program"
                 ) {
@@ -31,7 +31,7 @@ struct OnboardingImportMethodView: View {
                 }
 
                 if hasHistory {
-                    OnboardingOptionCard(
+                    AppOptionTileCard(
                         icon: .calendarClock,
                         title: "Use past workout"
                     ) {
@@ -39,59 +39,10 @@ struct OnboardingImportMethodView: View {
                     }
                 }
 
-                OnboardingOptionCard(icon: .edit, title: "Build manually") {
+                AppOptionTileCard(icon: .edit, title: "Build manually") {
                     onSelect(.manual)
                 }
             }
-        }
-    }
-}
-
-struct OnboardingOptionCard: View {
-    var icon: AppIcon? = nil
-    var iconText: String? = nil
-    let title: String
-    var badge: String? = nil
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(alignment: .center, spacing: AppSpacing.md) {
-                if icon != nil || iconText != nil {
-                    iconBubble
-                }
-
-                Text(title)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-
-                Spacer(minLength: 0)
-
-                if let badge {
-                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
-                }
-            }
-            .appCardStyle()
-        }
-        .buttonStyle(ScaleButtonStyle())
-    }
-
-    @ViewBuilder
-    private var iconBubble: some View {
-        AppIconCircle(
-            diameter: 40,
-            shape: .roundedRect(radius: AppRadius.md),
-            surface: .accentSoft
-        ) {
-            Group {
-                if let icon {
-                    icon.image(size: 18, weight: .semibold)
-                } else if let iconText {
-                    Text(iconText)
-                        .font(AppFont.stepIndicator.font)
-                }
-            }
-            .foregroundStyle(AppColor.accent)
         }
     }
 }

@@ -22,6 +22,29 @@ struct OnboardingExercise: Identifiable, Equatable, Hashable, Codable {
     var name: String
     var plannedSets: Int = OnboardingExercise.defaultPlannedSets
     var plannedReps: Int = OnboardingExercise.defaultPlannedReps
+    /// Parser-captured detail that the data model can't represent
+    /// structurally yet (per-side, duration, distance, tempo, intent
+    /// qualifiers, parenthesized form notes). Carried from
+    /// `ImportedProgramExercise.note` into onboarding state so the
+    /// Exercises confirmation step can render it as a muted hint under
+    /// the exercise name — the lifter sees what the parser saw before
+    /// committing. Empty string is the canonical "no note" sentinel so
+    /// the Codable persistence in `OnboardingPreferences` stays simple
+    /// (no Optional<String> migration on stored data). Not persisted to
+    /// the `Exercise` model — these details are v2 structural work
+    /// (per-side reps, duration on `SetEntry`, etc.).
+    var note: String = ""
+    /// Original sanitized line from the paste — surfaced under each
+    /// exercise row on the Exercises step (paste path only) as a
+    /// `From: <raw line>` muted hint so the lifter sees what the parser
+    /// read, side-by-side with the parsed name + sets + reps. Catches
+    /// the 8 silent-corruption modes the parser hardening pass closed
+    /// (rep ranges, RPE %, Wendler 5/3/1, ChatGPT verbose form, markdown
+    /// tables) before they commit to a real Split. Empty string is the
+    /// canonical "no source line" sentinel — manually-added exercises
+    /// from `OnboardingExerciseSearchSheet` carry "", so the row stays clean.
+    /// Codable default "" same pattern as `note` above; no migration.
+    var originalLine: String = ""
 }
 
 struct ImportedProgramExercise: Identifiable, Equatable {
@@ -30,6 +53,21 @@ struct ImportedProgramExercise: Identifiable, Equatable {
     var sets: Int?
     var reps: Int?
     var weightKg: Double?
+    /// Free-form parser note — assembled by `ProgramImportParser.Normalizer`
+    /// from per-side / duration / distance / intent / paren-form-cue
+    /// tokens that the data model can't store structurally. Threaded into
+    /// `OnboardingExercise.note` by `applyImportedProgram(_:)` so the
+    /// Exercises step can surface it. `nil` if the parser found nothing
+    /// noteworthy — distinct from "" so an empty parser result reads as
+    /// "no detail captured" rather than "detail explicitly cleared".
+    var note: String? = nil
+    /// Raw sanitized line this exercise came from — propagated through
+    /// the parser so the Exercises step can render a `From: <line>` hint
+    /// under each row when `importMethod == .paste`. Lifter scans this
+    /// against the parsed name + sets + reps to catch mismatches before
+    /// commit (rep ranges parsed as weight, RPE % as kg, etc.). `nil`
+    /// for non-paste paths (history fast-track, manual build).
+    var originalLine: String? = nil
 }
 
 struct ImportedProgramDay: Identifiable, Equatable {
@@ -54,6 +92,21 @@ final class OnboardingViewModel {
         case manual
     }
     var importMethod: ImportMethod = .manual
+
+    /// Raw text in the paste step's editor. Lives on the viewmodel (not as
+    /// view-local `@State`) so step swaps through `OnboardingFlow` — which
+    /// disposes and re-creates each step via `.id(step)` — preserve whatever
+    /// the user typed. Persisted via `OnboardingPreferences` so a
+    /// quit-and-relaunch mid-paste returns the user to the same draft.
+    var pastedProgramText: String = ""
+
+    /// Warnings emitted by the last successful `ProgramImportParser` run.
+    /// The Exercises step renders these as a muted footer ("2 lines
+    /// skipped: Bike Intervals, Easy Bike Cooldown") so the parser's drops
+    /// are never invisible to the lifter. Reset to `[]` when
+    /// `applyImportedProgram(_:)` runs again. Not persisted across
+    /// app relaunch — these are step-local context, not user data.
+    var importWarnings: [ProgramImportResult.Warning] = []
 
     // MARK: Units
 
@@ -237,7 +290,23 @@ final class OnboardingViewModel {
         }
 
         // 2. Create Split
-        let splitName = dayNames.joined(separator: " / ")
+        //
+        // Synthesize a concise name when all day labels are generic
+        // placeholders (`Day 1`, `Workout 2`, `Session 3`). The join-on-` / `
+        // form ("Workout 1 / Workout 2 / Push / Pull") was visually noisy in
+        // the Today eyebrow and the Templates list after paste-import when
+        // the lifter hadn't renamed every day yet. The synthesized "4-Day
+        // Split" is still editable post-commit from `TemplatesView`, but
+        // gives the cleaner default. Mixed-naming pastes (some custom + some
+        // generic) keep the original join — the lifter named those days
+        // intentionally.
+        let splitName: String = {
+            let allGeneric = dayNames.allSatisfy { isGenericDayName($0) }
+            if allGeneric && dayNames.count > 0 {
+                return "\(dayNames.count)-Day Split"
+            }
+            return dayNames.joined(separator: " / ")
+        }()
         let split = Split(name: splitName)
         modelContext.insert(split)
 
@@ -281,14 +350,37 @@ final class OnboardingViewModel {
 }
 
 extension OnboardingViewModel {
-    func isBodyweightExercise(named exerciseName: String) -> Bool {
-        let name = normalizedExerciseName(exerciseName)
+    /// Static probe — callers (and unit tests) can hit the vocabulary
+    /// without instantiating `OnboardingViewModel`. Constructing the
+    /// viewmodel from a `@MainActor`-unestablished test harness can
+    /// SIGABRT in Swift 6 if the `@Observable` macro tries to register
+    /// observers before the actor is live. The instance method below
+    /// preserves the existing call-site signature
+    /// (`vm.isBodyweightExercise(named:)`) by forwarding here.
+    static func isBodyweightExercise(named exerciseName: String) -> Bool {
+        let name = exerciseName
+            .lowercased()
+            .replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
         let bodyweightKeywords = [
             "pull up", "chin up", "push up", "dip", "plank", "hanging leg raise",
             "ab wheel rollout", "sit up", "crunch", "mountain climber", "burpee",
-            "bodyweight squat"
+            "bodyweight squat",
+            // Vocab expansion — these all reliably default to BW in real
+            // programs (`Inverted Row 3x12`, `Band Pull Aparts 3x20`,
+            // `Face Pull 4x15`, `Neck Extension 2x20`). The lifter can
+            // still log added weight; the flag just means the ghost-value
+            // baseline doesn't read as "0 kg" on session 1.
+            "inverted row", "band pull apart", "band pull aparts",
+            "face pull", "neck extension", "neck flexion",
+            "muscle up", "ring dip", "ring row",
+            "knees to elbows", "toes to bar"
         ]
         return bodyweightKeywords.contains { name.contains($0) }
+    }
+
+    func isBodyweightExercise(named exerciseName: String) -> Bool {
+        Self.isBodyweightExercise(named: exerciseName)
     }
 
     func applyImportedProgram(_ days: [ImportedProgramDay]) {
@@ -317,7 +409,9 @@ extension OnboardingViewModel {
                 OnboardingExercise(
                     name: exercise.name,
                     plannedSets: clampPlannedSets(exercise.sets ?? OnboardingExercise.defaultPlannedSets),
-                    plannedReps: clampPlannedReps(exercise.reps ?? OnboardingExercise.defaultPlannedReps)
+                    plannedReps: clampPlannedReps(exercise.reps ?? OnboardingExercise.defaultPlannedReps),
+                    note: exercise.note ?? "",
+                    originalLine: exercise.originalLine ?? ""
                 )
             }
         })
@@ -328,6 +422,17 @@ extension OnboardingViewModel {
             .lowercased()
             .replacingOccurrences(of: "-", with: " ")
             .replacingOccurrences(of: "_", with: " ")
+    }
+
+    /// True when a day-template name is a generic placeholder (`Day N`,
+    /// `Workout N`, `Session N`). Used at commit time to decide whether to
+    /// synthesize a concise split name ("4-Day Split") or join the labels
+    /// verbatim — generic-only placements never give the lifter a useful
+    /// joined name, so the synthesized form scans cleaner everywhere.
+    private func isGenericDayName(_ name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let pattern = #"^(day|workout|session)\s+\d+$"#
+        return trimmed.range(of: pattern, options: .regularExpression) != nil
     }
 }
 

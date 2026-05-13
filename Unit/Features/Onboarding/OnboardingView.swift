@@ -33,6 +33,7 @@ enum OnboardingPreferencesKeys {
     static let useFlexibleSchedule = "onboarding.useFlexibleSchedule"
     static let importMethod = "onboarding.importMethod"
     static let dayExercises = "onboarding.dayExercises"
+    static let pastedProgramText = "onboarding.pastedProgramText"
 }
 
 /// Persists the in-flight onboarding state to UserDefaults so a quit-and-relaunch
@@ -48,6 +49,7 @@ enum OnboardingPreferences {
         defaults.set(viewModel.dayWeekdays, forKey: OnboardingPreferencesKeys.dayWeekdays)
         defaults.set(viewModel.useFlexibleSchedule, forKey: OnboardingPreferencesKeys.useFlexibleSchedule)
         defaults.set(rawImportMethod(from: viewModel.importMethod), forKey: OnboardingPreferencesKeys.importMethod)
+        defaults.set(viewModel.pastedProgramText, forKey: OnboardingPreferencesKeys.pastedProgramText)
 
         if let exercisesData = try? JSONEncoder().encode(viewModel.dayExercises) {
             defaults.set(exercisesData, forKey: OnboardingPreferencesKeys.dayExercises)
@@ -84,6 +86,10 @@ enum OnboardingPreferences {
 
         if let rawMethod = defaults.string(forKey: OnboardingPreferencesKeys.importMethod) {
             viewModel.importMethod = importMethod(from: rawMethod)
+        }
+
+        if let pastedText = defaults.string(forKey: OnboardingPreferencesKeys.pastedProgramText) {
+            viewModel.pastedProgramText = pastedText
         }
 
         if let exercisesData = defaults.data(forKey: OnboardingPreferencesKeys.dayExercises),

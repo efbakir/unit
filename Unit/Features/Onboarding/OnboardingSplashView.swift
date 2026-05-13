@@ -72,7 +72,13 @@ struct OnboardingSplashView: View {
             Spacer(minLength: AppSpacing.lg)
 
             AppPrimaryButton("Set up program", action: onGetStarted)
-                .padding(.horizontal, AppSpacing.xl)
+                // 16pt horizontal inset matches `AppScreen.primaryButton`'s
+                // canonical CTA inset everywhere else in onboarding. Used
+                // to be 32pt (`AppSpacing.xl`) which made the button visibly
+                // jump inward when advancing Splash → UnitPicker. Fixing
+                // here at the Splash level since this is the one screen
+                // that doesn't route through `AppScreen`.
+                .padding(.horizontal, AppSpacing.md)
                 .padding(.bottom, AppSpacing.md)
                 .modifier(staggered(3))
         }

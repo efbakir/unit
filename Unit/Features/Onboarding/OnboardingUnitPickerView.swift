@@ -16,18 +16,18 @@ struct OnboardingUnitPickerView: View {
 
     var body: some View {
         OnboardingShell(
-            title: "Pick your unit",
-            subtitle: "Choose how weights show up in the app.",
+            title: "Pick my unit",
+            subtitle: "I'll see weights this way everywhere.",
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack
         ) {
             VStack(spacing: AppSpacing.sm) {
-                OnboardingOptionCard(iconText: "kg", title: "Kilograms") {
+                AppOptionTileCard(iconText: "kg", title: "Kilograms") {
                     onSelect("kg")
                 }
 
-                OnboardingOptionCard(iconText: "lb", title: "Pounds") {
+                AppOptionTileCard(iconText: "lb", title: "Pounds") {
                     onSelect("lb")
                 }
             }
