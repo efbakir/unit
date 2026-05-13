@@ -271,6 +271,7 @@ struct TodayView: View {
                             PreviewListRow(
                                 title: target.exerciseName,
                                 subtitle: target.displayTarget,
+                                trailingLabel: target.lastPerformanceLabel,
                                 isEmptyHint: target.isEmptyHint
                             )
                         }

@@ -31,6 +31,12 @@ struct ActiveWorkoutView: View {
     @State private var showsFinishConfirmation = false
     @State private var showsRenamePrompt = false
     @State private var renameDraft = ""
+    /// Drives the "Discard workout name?" confirmation when the lifter taps
+    /// Skip *after* typing a draft. Set true from the Skip-button handler on
+    /// `showsRenamePrompt`; on confirm, `renameDraft` is cleared; on cancel,
+    /// `showsRenamePrompt` re-opens with the draft preserved so the lifter
+    /// can finish typing without re-entering anything.
+    @State private var showsDiscardRenamePrompt = false
     @State private var showsAddExercise = false
     @State private var pendingExerciseForSetup: Exercise?
     @State private var customSetCounts: [UUID: Int] = [:]
@@ -640,10 +646,38 @@ struct ActiveWorkoutView: View {
                     template.name = trimmed
                     try? modelContext.save()
                 }
+                renameDraft = ""
             }
-            Button(AppCopy.Session.skipNaming, role: .cancel) {}
+            Button(AppCopy.Session.skipNaming, role: .cancel) {
+                // Skip with a typed draft is the lossy path — funnel through a
+                // second confirmation so the lifter can't lose a name with one
+                // wrong tap (HIG: destructive flows ask once). Tapping Skip on
+                // an empty field still dismisses cleanly because there is
+                // nothing to discard.
+                if !renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    showsDiscardRenamePrompt = true
+                }
+            }
         } message: {
             Text(AppCopy.Workout.nameWorkoutMessage)
+        }
+        .alert(
+            AppCopy.Session.discardWorkoutNameTitle,
+            isPresented: $showsDiscardRenamePrompt
+        ) {
+            Button(AppCopy.Session.discardWorkoutNameAction, role: .destructive) {
+                renameDraft = ""
+            }
+            Button(AppCopy.Workout.keepEditing, role: .cancel) {
+                // Re-open the rename alert with the typed draft intact so the
+                // lifter resumes typing exactly where they left off — same
+                // pattern Mail uses for "Keep Draft" on attempted discard.
+                showsRenamePrompt = true
+            }
+        } message: {
+            Text(AppCopy.Session.discardWorkoutNameMessage(
+                renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+            ))
         }
         .onAppear {
             selectedExerciseIndex = recommendedExerciseIndex
@@ -696,65 +730,54 @@ struct ActiveWorkoutView: View {
     }
 
     private var exerciseListSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(exerciseLineupFragments) { fragment in
-                        switch fragment {
-                        case .grouped(let pairs):
-                            AppCardList(data: pairs.map { LineupRowItem(index: $0.index, section: $0.section) }, id: \.id) { item in
-                                Button {
-                                    selectedExerciseIndex = item.index
-                                    showLineup = false
-                                } label: {
-                                    exerciseLineupRowContent(index: item.index, section: item.section)
-                                }
-                                .buttonStyle(ScaleButtonStyle())
-                                .accessibilityLabel(
-                                    exerciseLineupAccessibilityLabel(
-                                        name: item.section.exercise.displayName,
-                                        isCurrent: item.index == selectedExerciseIndex,
-                                        isDone: item.section.hasReachedPlannedSetGoal
-                                    )
-                                )
+        AppSheetScreen(
+            title: AppCopy.Nav.exercises,
+            dismissLabel: AppCopy.Nav.done,
+            dismissActionPlacement: .confirmation,
+            onDismissAction: { showLineup = false }
+        ) {
+            VStack(spacing: AppSpacing.sm) {
+                ForEach(exerciseLineupFragments) { fragment in
+                    switch fragment {
+                    case .grouped(let pairs):
+                        AppCardList(data: pairs.map { LineupRowItem(index: $0.index, section: $0.section) }, id: \.id) { item in
+                            Button {
+                                selectedExerciseIndex = item.index
+                                showLineup = false
+                            } label: {
+                                exerciseLineupRowContent(index: item.index, section: item.section)
                             }
-                        case .rich(let index, let section):
-                            AppCardList(data: [LineupRowItem(index: index, section: section)], id: \.id) { item in
-                                Button {
-                                    selectedExerciseIndex = item.index
-                                    showLineup = false
-                                } label: {
-                                    exerciseLineupRowContent(index: item.index, section: item.section)
-                                }
-                                .buttonStyle(ScaleButtonStyle())
-                                .accessibilityLabel(
-                                    exerciseLineupAccessibilityLabel(
-                                        name: item.section.exercise.displayName,
-                                        isCurrent: item.index == selectedExerciseIndex,
-                                        isDone: item.section.hasReachedPlannedSetGoal
-                                    )
+                            .buttonStyle(ScaleButtonStyle())
+                            .accessibilityLabel(
+                                exerciseLineupAccessibilityLabel(
+                                    name: item.section.exercise.displayName,
+                                    isCurrent: item.index == selectedExerciseIndex,
+                                    isDone: item.section.hasReachedPlannedSetGoal
                                 )
+                            )
+                        }
+                    case .rich(let index, let section):
+                        AppCardList(data: [LineupRowItem(index: index, section: section)], id: \.id) { item in
+                            Button {
+                                selectedExerciseIndex = item.index
+                                showLineup = false
+                            } label: {
+                                exerciseLineupRowContent(index: item.index, section: item.section)
                             }
+                            .buttonStyle(ScaleButtonStyle())
+                            .accessibilityLabel(
+                                exerciseLineupAccessibilityLabel(
+                                    name: item.section.exercise.displayName,
+                                    isCurrent: item.index == selectedExerciseIndex,
+                                    isDone: item.section.hasReachedPlannedSetGoal
+                                )
+                            )
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(AppSpacing.md)
             }
-            .appScrollEdgeSoft()
-            .navigationTitle(AppCopy.Nav.exercises)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) {
-                        showLineup = false
-                    }
-                    .appToolbarTextStyle()
-                }
-            }
-            .appNavigationBarChrome()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(AppColor.background.ignoresSafeArea())
     }
 
     private struct LineupRowItem {
@@ -1364,10 +1387,36 @@ private struct AdjustResultSheet: View {
     var onDelete: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    /// Lifter's chosen weight unit, surfaced here so the Weight field caption
+    /// reads "Weight (lb)" for lb users instead of the developer-default
+    /// "Weight (kg)". Same `@AppStorage` key the unit picker and the rest of
+    /// the app already share — never duplicated.
+    @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @State private var weightText = ""
     @State private var repsText = ""
     @State private var noteText = ""
     @State private var seeded = false
+    /// Snapshot of the seeded values after `onAppear` runs. `isDirty` compares
+    /// current text against these so the warn-before-discard alert only fires
+    /// when the lifter actually edited a field — opening the sheet, glancing
+    /// at the prefill, and swiping away with no changes stays a clean dismiss.
+    @State private var seededWeightText = ""
+    @State private var seededRepsText = ""
+    @State private var seededNoteText = ""
+    /// Drives the "Discard this set?" confirmation alert. Funnels both the
+    /// swipe-down attempt (intercepted via `interactiveDismissDisabled`) and
+    /// the explicit Cancel toolbar tap through the same prompt so the lifter
+    /// can never lose typed reps/weight/note silently.
+    @State private var showsDiscardConfirmation = false
+
+    /// True once the lifter has edited any field away from its seeded value.
+    /// Drives both `interactiveDismissDisabled` (blocks swipe-down) and the
+    /// Cancel button's confirmation gate. Pure derived state — no side effects.
+    private var isDirty: Bool {
+        weightText != seededWeightText
+        || repsText != seededRepsText
+        || noteText != seededNoteText
+    }
 
     private var parsedWeight: Double {
         Double(weightText.replacingOccurrences(of: ",", with: ".")) ?? 0
@@ -1407,79 +1456,107 @@ private struct AdjustResultSheet: View {
         return exerciseName
     }
 
+    /// Cancel-button handler routed through `AppSheetScreen.onDismissAction`.
+    /// Mirrors the swipe-down guard (`interactiveDismissDisabled(isDirty)`)
+    /// so a typed weight/reps/note is never silently lost — both gestures
+    /// funnel into the same `showsDiscardConfirmation` alert.
+    private func handleDismiss() {
+        if isDirty {
+            showsDiscardConfirmation = true
+        } else {
+            dismiss()
+        }
+    }
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        AppSheetScreen(
+            title: navigationTitle,
+            primaryButton: PrimaryButtonConfig(
+                label: primaryLabel,
+                isEnabled: canSave,
+                action: {
+                    onSave(parsedWeight, parsedReps, noteText)
+                    dismiss()
+                }
+            ),
+            dismissLabel: AppCopy.Nav.cancel,
+            dismissActionPlacement: .cancellation,
+            // Cancel button routes through the confirmation alert when the
+            // lifter has typed something — matches the swipe-down guard
+            // (`interactiveDismissDisabled` below) so there is exactly one
+            // warn-before-discard surface, not a split between gestures.
+            onDismissAction: handleDismiss,
+            showsKeyboardDismissToolbar: true
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.sm) {
+                    manualInputField(
+                        title: AppCopy.Workout.weightLabel(isBodyweight: isBodyweight, unitSystem: unitSystem),
+                        text: $weightText,
+                        keyboardType: .decimalPad,
+                        suffix: effectiveIsBodyweight ? AppCopy.Workout.bodyweightAbbrev : nil
+                    )
+
+                    manualInputField(
+                        title: AppCopy.Workout.repsLabel,
+                        text: $repsText,
+                        keyboardType: .numberPad
+                    )
+                }
+
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack(spacing: AppSpacing.sm) {
-                        manualInputField(
-                            title: isBodyweight ? "Weight" : "Weight (kg)",
-                            text: $weightText,
-                            keyboardType: .decimalPad,
-                            suffix: effectiveIsBodyweight ? "BW" : nil
-                        )
+                    Text(AppCopy.Workout.adjustSetNoteLabel)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
 
-                        manualInputField(
-                            title: "Reps",
-                            text: $repsText,
-                            keyboardType: .numberPad
-                        )
-                    }
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(AppCopy.Workout.adjustSetNoteLabel)
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-
-                        TextField(
-                            AppCopy.Workout.adjustSetNotePlaceholder,
-                            text: $noteText,
-                            axis: .vertical
-                        )
-                        .font(AppFont.body.font)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(3...5)
-                        .appInputFieldStyleMultiline(
-                            minHeight: 96,
-                            horizontalPadding: AppSpacing.md,
-                            verticalPadding: AppSpacing.smd,
-                            elevated: true
-                        )
-                    }
-                    .padding(.top, AppSpacing.md)
-
-                    AppPrimaryButton(primaryLabel, isEnabled: canSave) {
-                        onSave(parsedWeight, parsedReps, noteText)
-                        dismiss()
-                    }
-                    .padding(.top, AppSpacing.md)
-
-                    if isEditMode, let onDelete {
-                        AppSecondaryButton(
-                            AppCopy.Workout.deleteSet,
-                            tone: .destructive,
-                            action: {
-                                onDelete()
-                                dismiss()
-                            }
-                        )
-                    }
+                    TextField(
+                        AppCopy.Workout.adjustSetNotePlaceholder,
+                        text: $noteText,
+                        axis: .vertical
+                    )
+                    .font(AppFont.body.font)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3...5)
+                    .appInputFieldStyleMultiline(
+                        minHeight: 96,
+                        horizontalPadding: AppSpacing.md,
+                        verticalPadding: AppSpacing.smd,
+                        elevated: true
+                    )
                 }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.Nav.cancel, role: .cancel) {
-                        dismiss()
-                    }
+                .padding(.top, AppSpacing.md)
+
+                // Destructive "Delete set" stays inline at the end of the
+                // scroll content (edit mode only) so it never visually competes
+                // with the sticky primary CTA below. Quiet by design — rarely
+                // tapped, doubly-confirming via the system delete sheet.
+                if isEditMode, let onDelete {
+                    AppSecondaryButton(
+                        AppCopy.Workout.deleteSet,
+                        tone: .destructive,
+                        action: {
+                            onDelete()
+                            dismiss()
+                        }
+                    )
+                    .padding(.top, AppSpacing.md)
                 }
             }
-            .appNavigationBarChrome()
+        }
+        // Block the swipe-down gesture while there are unsaved edits. iOS
+        // forwards the gesture into a no-op; the explicit Cancel button stays
+        // available and feeds the same discard-confirmation alert below.
+        .interactiveDismissDisabled(isDirty)
+        .alert(
+            AppCopy.Workout.discardSetEntryTitle,
+            isPresented: $showsDiscardConfirmation
+        ) {
+            Button(AppCopy.Workout.discardSetEntryAction, role: .destructive) {
+                dismiss()
+            }
+            Button(AppCopy.Workout.keepEditing, role: .cancel) {}
+        } message: {
+            Text(AppCopy.Workout.discardSetEntryMessage)
         }
         .onAppear {
             guard !seeded else { return }
@@ -1498,6 +1575,13 @@ private struct AdjustResultSheet: View {
                 repsText = "\(reps)"
                 noteText = note
             }
+            // Snapshot the post-seed values so `isDirty` only flips true on a
+            // real user edit. Setting these *after* the switch covers both
+            // `.log` (which only writes weight/reps) and `.edit` (which writes
+            // all three) without duplicating the assignment per case.
+            seededWeightText = weightText
+            seededRepsText = repsText
+            seededNoteText = noteText
         }
     }
 
