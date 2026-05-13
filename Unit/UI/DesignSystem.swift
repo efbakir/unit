@@ -868,6 +868,15 @@ struct AppTextEditor: View {
     @Binding var text: String
     let placeholder: String
     var minHeight: CGFloat = 220
+    /// Optional ceiling on the card's vertical size. Default `nil` keeps the
+    /// historical behavior — the card sits at exactly `minHeight` and the
+    /// inner UITextView scrolls internally for long pastes. Pass `.infinity`
+    /// for screens whose body should be dominated by the editor (e.g. the
+    /// onboarding paste step) so the card flexes to fill all available
+    /// vertical space between its top sibling and whatever sits below it.
+    /// Combine with a parent `VStack(... maxHeight: .infinity)` so the flex
+    /// has somewhere to go.
+    var maxHeight: CGFloat? = nil
 
     /// Bound to the underlying `TextEditor` so the entire card surface — not
     /// just the inner UITextView's hit area — focuses on tap. Without this,
@@ -899,7 +908,7 @@ struct AppTextEditor: View {
                     .allowsHitTesting(false)
             }
         }
-        .frame(minHeight: minHeight, alignment: .topLeading)
+        .frame(minHeight: minHeight, maxHeight: maxHeight, alignment: .topLeading)
         .background(AppColor.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         // Make the full card a hit target and route every tap to focus.
@@ -2014,29 +2023,57 @@ struct RestTimerControl: View {
 ///
 /// `isEmptyHint = true` softens the data line (caption font + secondary color)
 /// for cold-start rows like "No prior sets".
+///
+/// `trailingLabel` renders on the same baseline as the title in muted text —
+/// carries ghost-value memory ("Last 60kg" / "Last BW") so the prior-session
+/// weight surfaces on the Today preview alongside the planned set/rep target
+/// underneath. Suppressed when nil; takes layout priority so a long title
+/// truncates first rather than pushing the weight memory off-screen.
 struct PreviewListRow: View {
     let title: String
     let subtitle: String
+    var trailingLabel: String? = nil
     var isEmptyHint: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppFont.sectionHeader.font)
-                .foregroundStyle(AppColor.textPrimary)
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(title)
+                    .font(AppFont.sectionHeader.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(trailingLabel == nil ? nil : 1)
+                    .truncationMode(.tail)
 
-            Text(subtitle)
-                .font(subtitleFont)
-                .foregroundStyle(AppColor.textSecondary)
+                Text(subtitle)
+                    .font(subtitleFont)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let trailingLabel {
+                Text(trailingLabel)
+                    .font(AppFont.muted.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                    .accessibilityHidden(true)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, AppSpacing.sm)
         .frame(minHeight: 52)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var subtitleFont: Font {
         isEmptyHint ? AppFont.caption.font : AppFont.body.font
+    }
+
+    private var accessibilityLabel: String {
+        var parts = [title, subtitle]
+        if let trailingLabel { parts.append(trailingLabel) }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -2114,6 +2151,195 @@ struct AppCard<Content: View>: View {
         .background(AppColor.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .modifier(AppCardElevation(cornerRadius: cornerRadius))
+    }
+}
+
+/// Tap-to-advance option tile used by onboarding step screens that ask the
+/// lifter to pick one path (unit, import method, etc.). A leading 40pt icon
+/// bubble (`AppIconCircle` on `accentSoft` surface), a centered title row,
+/// and an optional trailing accent badge. Auto-presses via the canonical
+/// `ScaleButtonStyle`, fires a selection haptic at press time, and holds
+/// the action by 110ms so the press-state dim is visibly underway when the
+/// step-swap slide takes over.
+///
+/// This was previously `OnboardingOptionCard` in
+/// `Unit/Features/Onboarding/OnboardingImportMethodView.swift`. Promoted to
+/// the design system because two onboarding screens (`UnitPicker`,
+/// `ImportMethod`) and any future step that needs the same affordance
+/// should share one canonical molecule — never a feature-file fork.
+///
+/// Pass either `icon` (SF Symbol via `AppIcon`) or `iconText` (a short
+/// glyph like `kg` / `lb`) — exactly one. `badge` is the optional accent
+/// chip trailing the title (e.g. "New", "Recommended").
+struct AppOptionTileCard: View {
+    var icon: AppIcon? = nil
+    var iconText: String? = nil
+    let title: String
+    var badge: String? = nil
+    let action: () -> Void
+
+    /// Re-entrancy guard. While the 110ms press-visibility hold is running,
+    /// a second tap should no-op rather than queueing another navigation.
+    /// Reset isn't strictly required because the step swap destroys the
+    /// view, but resetting after `action()` keeps the card safe in the
+    /// unlikely case the parent ignores the tap and the view stays mounted.
+    @State private var isProcessingTap = false
+
+    var body: some View {
+        Button(action: handleTap) {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                if icon != nil || iconText != nil {
+                    iconBubble
+                }
+
+                Text(title)
+                    .font(AppFont.sectionHeader.font)
+                    .foregroundStyle(AppColor.textPrimary)
+
+                Spacer(minLength: 0)
+
+                if let badge {
+                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
+                }
+            }
+            .appCardStyle()
+        }
+        // Press feedback (opacity dim + brightness shift + scale) is the
+        // canonical system-level treatment on `ScaleButtonStyle`. Every
+        // tappable atom in Unit uses the same style so onboarding cards,
+        // CTAs, ghost buttons, and floating pills all flash the same way on
+        // tap. Don't override here — fix at `ScaleButtonStyle` and the
+        // whole product moves.
+        .buttonStyle(ScaleButtonStyle())
+    }
+
+    private func handleTap() {
+        guard !isProcessingTap else { return }
+        isProcessingTap = true
+        // Selection haptic fires at the same instant the press-state
+        // animation begins (via `ScaleButtonStyle`). Visual + tactile
+        // together so the tap feels received in two senses.
+        UISelectionFeedbackGenerator().selectionChanged()
+        // Hold the action by 110ms so the press-state dim from
+        // `ScaleButtonStyle` is visibly underway when the slide transition
+        // (`appEnter` 0.32s) takes over. Without this, navigation cards
+        // (kg / lb / paste / build manually / use past workout) auto-advance
+        // before the eye registers the press. CTAs that stay in place
+        // (Continue, Read program) don't need this hold — the press is
+        // visible during finger-down because the screen doesn't move.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.11) {
+            action()
+            isProcessingTap = false
+        }
+    }
+
+    @ViewBuilder
+    private var iconBubble: some View {
+        AppIconCircle(
+            diameter: 40,
+            shape: .roundedRect(radius: AppRadius.md),
+            surface: .accentSoft
+        ) {
+            Group {
+                if let icon {
+                    icon.image(size: 18, weight: .semibold)
+                } else if let iconText {
+                    Text(iconText)
+                        .font(AppFont.stepIndicator.font)
+                }
+            }
+            .foregroundStyle(AppColor.accent)
+        }
+    }
+}
+
+/// Canonical tier-selection card for the paywall (and any future "pick one of
+/// N priced tiers" surface). Replaces the 50-line inline `tierCard` in
+/// `PaywallView` that hand-rolled its own `.background`/`.clipShape` chrome
+/// outside the design system — CLAUDE.md §4 parallel-implementation ban.
+///
+/// Layout: optional accent badge top, eyebrow row (small-caps label +
+/// trailing checkmark when selected), price (`productHeading` tracking),
+/// muted sublabel. Selected state shifts the background to `accentSoft`
+/// AND lays down a 1.5pt accent border so the affordance reads correctly
+/// for reduced-color-discrimination users (WCAG AA), not just for the
+/// 14pt checkmark glyph alone.
+///
+/// Accessibility: the `.isSelected` trait fires on the underlying button so
+/// VoiceOver announces "Selected, Annually" without an extra label hack.
+struct AppSelectableTierCard: View {
+    let label: String
+    let price: String
+    let sublabel: String
+    var badge: String? = nil
+    let isSelected: Bool
+    let action: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button(action: handleTap) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                if let badge {
+                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
+                }
+
+                HStack(spacing: AppSpacing.xs) {
+                    Text(label)
+                        .appCapsLabel(.smallLabel)
+                        .foregroundStyle(AppColor.textSecondary)
+
+                    Spacer(minLength: 0)
+
+                    if isSelected {
+                        AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
+                            .foregroundStyle(AppColor.accent)
+                            .accessibilityHidden(true)
+                    }
+                }
+
+                Text(price)
+                    .font(AppFont.productHeading.font)
+                    .tracking(AppFont.productHeading.tracking)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .allowsTightening(true)
+
+                Text(sublabel)
+                    .font(AppFont.muted.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.65)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.smd)
+            .background(isSelected ? AppColor.accentSoft : AppColor.cardBackground)
+            // 1.5pt accent border on selected — a second WCAG-friendly cue
+            // beyond the tinted fill, so users with reduced color
+            // discrimination (or who have just glanced at the card from
+            // across the room) can still tell which tier is selected.
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? AppColor.accent : Color.clear,
+                        lineWidth: 1.5
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func handleTap() {
+        // Selection animation matches every other ScaleButtonStyle press in
+        // the app — Reduce Motion clamps to a still selection transition.
+        withAnimation(reduceMotion ? nil : .appPress) {
+            action()
+        }
     }
 }
 
@@ -3908,9 +4134,21 @@ struct AppScreen<Content: View>: View {
                     )
                 }
             }
-            .padding(.top, AppSpacing.md)
+            // Tight sticky-CTA chrome — every pt of vertical padding here is
+            // a pt that the input/scroll area above doesn't get. Top `sm`
+            // (8pt) keeps the button visually separated from the scroll
+            // content fading into it; bottom `xs` (4pt) sits just above the
+            // home-indicator safe area, which already handles its own
+            // breathing room. Was `md` top + `sm` bottom (24pt total) — the
+            // chrome was eating the input area visibly on the onboarding
+            // paste step and the split-builder validation state, and there
+            // was no design reason for that extra slack. System-level: every
+            // screen routing through `AppScreen` with a primary or secondary
+            // button picks up the tighter padding (Today, Templates,
+            // History, every onboarding step, sheets that wrap `AppScreen`).
+            .padding(.top, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.md)
-            .padding(.bottom, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xs)
             .frame(maxWidth: maxContentWidth)
             .frame(maxWidth: .infinity)
             .background(AppScreenChromeBackground(surface: chromeSurface))
@@ -4467,10 +4705,56 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
 /// Apply to every tappable card or row so "press" reads consistently. Press is
 /// a touch confirmation, not motion, so this is intentionally not gated by
 /// Reduce Motion (per Apple HIG: tactile feedback is permitted).
+/// Canonical press-state treatment for every tappable atom in Unit —
+/// `AppPrimaryButton`, `AppSecondaryButton`, `AppGhostButton`,
+/// `AppFloatingPillButton`, `OnboardingOptionCard`, and every internal
+/// `Button(...).buttonStyle(ScaleButtonStyle())` call site. **Fix here, not
+/// at the screen layer**: any change to how a tap looks is a system-level
+/// change and belongs in this struct so every surface flips together.
+///
+/// Three cues fire on press, all animating together via `.appPress` (0.15s)
+/// in both directions:
+///
+/// 1. **Opacity → 0.88** — subtle dim. Big filled CTAs (accent primary)
+///    showed too much state change at the original 0.7; 12 % is still
+///    visible on the orange surface without making the button look broken
+///    or unavailable mid-tap.
+/// 2. **Brightness → -0.06** — the cue that survives on near-white surfaces.
+///    Opacity alone on a white card over a Milk background is invisible
+///    (you're letting Milk show through Milk). Brightness shifts every
+///    color channel down by 6 %, so white reads as a perceptible light
+///    grey, accent reads as a slightly deeper accent, and transparent
+///    ghosts read as a faded text. Universal — works on every shape we
+///    have without per-style branching.
+/// 3. **Scale → 0.97** — secondary tactile cue. 3 % is enough to feel
+///    without competing with the opacity/brightness shift.
+///
+/// **Animation is symmetric** (`.appPress` both ways). The earlier asymmetric
+/// version (snap-on, ease-off) was meant to register 30ms taps but read as
+/// a hard cut — "jumping from one side to the other". 0.15s in both
+/// directions is short enough that even a fast tap renders a visible frame
+/// or two of dim, and the on-and-off motion stays a single continuous gesture
+/// rather than two disjoint moments.
+///
+/// **Navigation cards must hold the action briefly** (see
+/// `OnboardingOptionCard.handleTap`'s 110ms `asyncAfter`). The press state
+/// only exists while the finger is down — for surfaces that auto-advance to
+/// another screen on release (option cards, but not regular CTAs that stay
+/// in place), the slide transition starts the instant the action fires, so
+/// without a tiny delay the press is gone before the eye registers it. The
+/// hold is the *timing* fix; this style is the *visual* fix. Both layers
+/// are needed for tap-to-navigate to feel acknowledged.
+///
+/// Outline / border highlights were rejected: an accent stroke around a card
+/// reads as a selected *state* (persistent), not a momentary press feedback,
+/// and looked wrong on filled CTAs where there is no white background to
+/// stroke against.
 struct ScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.appPress, value: configuration.isPressed)
     }
 }

@@ -57,6 +57,23 @@ enum AppCopy {
         /// Labels inside the routine-target editor sheet.
         static let targetSetsLabel = "Sets"
         static let targetRepsLabel = "Reps"
+
+        /// Field caption above the weight input in `AdjustResultSheet`. The unit
+        /// is read from `@AppStorage("unitSystem")` so a lifter in lb sees
+        /// "Weight (lb)" — previously a hardcoded "Weight (kg)" leaked the
+        /// developer-default unit into the most-used set-logging surface.
+        /// Bodyweight exercises drop the unit suffix: the value is optional
+        /// added load, so "Weight" alone reads cleaner than "Weight (kg)" on
+        /// an empty field that may stay empty.
+        static func weightLabel(isBodyweight: Bool, unitSystem: String) -> String {
+            if isBodyweight { return "Weight" }
+            return "Weight (\(unitSystem))"
+        }
+
+        /// Field caption above the reps input in `AdjustResultSheet`. Tokenized
+        /// alongside `weightLabel` so all set-entry copy lives in one place
+        /// instead of split between the design system and the view.
+        static let repsLabel = "Reps"
         /// Lineup tag — shown next to the currently selected exercise in the lineup sheet.
         static let exerciseCurrentTag = "Current"
         /// PR badge headline — paired with a Verde checkmark inside `WorkoutCommandCard`.
@@ -105,6 +122,18 @@ enum AppCopy {
         static let keepGoing = "Keep going"
         static let keepLogging = "Keep logging"
 
+        /// Warn-before-discard alert shown when the lifter tries to dismiss
+        /// `AdjustResultSheet` with edited-but-unsaved fields. The title is a
+        /// question (HIG: action sheets ask before they act), the destructive
+        /// action names the thing (the entry), and the cancel keeps them in
+        /// the sheet to finish typing.
+        static let discardSetEntryTitle = "Discard this set?"
+        static let discardSetEntryAction = "Discard"
+        static let discardSetEntryMessage = "Your typed weight, reps, and note will be lost."
+        /// Cancel label paired with `discardSetEntry*` — reads naturally
+        /// because the lifter is mid-entry.
+        static let keepEditing = "Keep editing"
+
         /// Single-fire toast surfaced after the user closes their first
         /// `AdjustResultSheet` edit. The gesture (tap a logged set chip to
         /// edit it) isn't visually labeled — the toast confirms the action
@@ -132,6 +161,17 @@ enum AppCopy {
         static let discard = "Discard"
         static let useName = "Use name"
         static let skipNaming = "Skip"
+
+        /// Warn-before-discard alert shown when the lifter taps Skip on the
+        /// post-workout rename prompt *after* typing a draft name. Discarding
+        /// loses unsaved text, so we ask once before the alert closes. If the
+        /// lifter chooses "Keep editing", the rename alert re-opens with the
+        /// draft preserved.
+        static let discardWorkoutNameTitle = "Discard workout name?"
+        static let discardWorkoutNameAction = "Discard"
+        static func discardWorkoutNameMessage(_ draft: String) -> String {
+            "You typed \"\(draft)\". Discarding will lose it."
+        }
 
         /// Stale-session prompt — shown when the lifter returns the next day with
         /// an open session that has logged work. The destructive path is `discard`;
