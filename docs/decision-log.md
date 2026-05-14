@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-05-14 — Calendar deletion completed (the 2026-05-10 entry shipped before the work did)
+
+**Decision:** Audit caught that `Unit/Features/History/HistoryView.swift` was 979 lines and still contained every type the 2026-05-10 entry claimed was dropped — `SessionHistoryMode`, `CalendarDayStatus`, `CalendarDayCellModel`, `CalendarMonthHeader`, `CalendarGrid`, `CalendarDayCell`, plus `isMissedDay`, `assignedWorkoutName`, `syncCalendarSelectionIfNeeded`, and the segmented `List | Calendar` control. The May 10 commit `a8c1160` ("History: list-only after Calendar tab removal") only trimmed the `MissedDay*` payload types (file went 1,084 → 979, net –105 lines), not Calendar mode itself. No revert between 2026-05-10 and 2026-05-14 — the deletion never completed. Re-executed the actual deletion today: dropped all Calendar* types, `SessionHistoryMode`, the segmented control, `routineTemplateIDs`, `selectedDate`, `displayMonth`, the private `Calendar.startOfMonth(for:)` extension, `HistoryMissedDayCard`, and the `initialMode:` parameter on the `RecentSessionsView` init. File is now 574 lines.
+**Why:** Original rationale (95%+ of days have ≤1 session; Calendar was a ~270-line parallel-implementation foothold outside `DesignSystem.swift`, CLAUDE.md §4 violation) still holds — the gap was execution, not intent. Per the append-only rule the 2026-05-10 entry stays as written; this entry records what actually shipped and corrects the inflated numbers ("1,263 → 543 lines" claim was wrong on both ends — the file was 1,084 pre-May-10, never 1,263).
+**Implication:** Only external caller was `TodayView.swift:98`, which was already calling `RecentSessionsView(showsCloseButton: true)` with no `initialMode:` argument — so no other files needed updating. Process note for future entries: verify numeric claims (`git show <commit>:path | wc -l`, current `wc -l`) before writing them into the log, and re-grep after the commit lands to confirm the named types are actually gone. The "edits applied, not yet verified — visual pass pending" rule (CLAUDE.md §6) applies here too.
+
+---
+
 ## 2026-05-10 — Settings gets a "Data" section to carry App Store screenshot #5
 
 **Decision:** Added a `Data` section as the first card in `Unit/Features/Settings/SettingsView.swift`, above Preferences. Three rows: `Storage → "On this iPhone"`, `Account → "None"`, `Export data → [PRO]` (accent-fill `AppTag(.compactCapsule)`). Reuses existing primitives only — no `DesignSystem.swift` edits. Export tap is intentionally a no-op stub at W3; a `// TODO at W5+` marks where the paywall + CSV export wire in once Pro flips on.
