@@ -38,4 +38,17 @@ public struct RestTimerAttributes: ActivityAttributes {
         self.kind = kind
     }
 }
+
+/// `Activity<Attributes>` is an ActivityKit reference type whose methods
+/// (`update`, `end`) are async and thread-safe per Apple's design, but the
+/// iOS 26 SDK doesn't expose explicit Sendable conformance. Xcode Cloud's
+/// complete strict-concurrency build flags any capture of an Activity into
+/// a Task closure as "Sending value of non-Sendable type". Assert Sendable
+/// here so callers can use Activity references the way ActivityKit's own
+/// sample code does — capture, then `await activity?.update(content)` in a
+/// detached Task — without per-call `@unchecked` ceremony.
+///
+/// Mirrors the `nonisolated(unsafe)` pattern already used in
+/// `StoreManager.swift:50` for similar SDK-vs-strict-concurrency mismatches.
+extension Activity: @retroactive @unchecked Sendable {}
 #endif

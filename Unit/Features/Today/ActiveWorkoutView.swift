@@ -1963,16 +1963,17 @@ final class RestTimerManager {
             upNext: upNext
         )
         let updatedContent = ActivityContent(state: updatedState, staleDate: endDate.addingTimeInterval(60))
-        Task { @MainActor [weak self] in
-            await self?.activity?.update(updatedContent)
+        let currentActivity = activity
+        Task {
+            await currentActivity?.update(updatedContent)
         }
     }
 
     private func endActivity() {
-        Task { @MainActor [weak self] in
-            let activityToEnd = self?.activity
-            self?.activity = nil
-            await activityToEnd?.end(nil, dismissalPolicy: .immediate)
+        let currentActivity = activity
+        activity = nil
+        Task {
+            await currentActivity?.end(nil, dismissalPolicy: .immediate)
         }
     }
 }
