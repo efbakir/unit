@@ -885,6 +885,7 @@ struct ActiveWorkoutView: View {
             var reps: Int?
             var weightText: String?
             var isPR: Bool = false
+            var isEditing: Bool = false
             var onTap: (() -> Void)? = nil
 
             if index < section.entries.count {
@@ -897,6 +898,7 @@ struct ActiveWorkoutView: View {
                     weightText = "BW"
                 }
                 isPR = prSetEntryIDs.contains(entry.id)
+                isEditing = editingSetPayload?.entry.id == entry.id
                 onTap = {
                     editingSetPayload = EditSetPayload(
                         entry: entry,
@@ -917,6 +919,7 @@ struct ActiveWorkoutView: View {
                 reps: reps,
                 weightText: weightText,
                 isPR: isPR,
+                isEditing: isEditing,
                 onTap: onTap
             )
         }
@@ -1485,8 +1488,7 @@ private struct AdjustResultSheet: View {
             // lifter has typed something — matches the swipe-down guard
             // (`interactiveDismissDisabled` below) so there is exactly one
             // warn-before-discard surface, not a split between gestures.
-            onDismissAction: handleDismiss,
-            showsKeyboardDismissToolbar: true
+            onDismissAction: handleDismiss
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.sm) {
@@ -1965,7 +1967,7 @@ final class RestTimerManager {
         )
         let updatedContent = ActivityContent(state: updatedState, staleDate: endDate.addingTimeInterval(60))
         let currentActivity = activity
-        Task { @MainActor in
+        Task { @MainActor [currentActivity] in
             await currentActivity?.update(updatedContent)
         }
     }
@@ -1974,7 +1976,7 @@ final class RestTimerManager {
         let currentActivity = activity
         activity = nil
 
-        Task {
+        Task { @MainActor [currentActivity] in
             await currentActivity?.end(nil, dismissalPolicy: .immediate)
         }
     }
