@@ -885,7 +885,6 @@ struct ActiveWorkoutView: View {
             var reps: Int?
             var weightText: String?
             var isPR: Bool = false
-            var isEditing: Bool = false
             var onTap: (() -> Void)? = nil
 
             if index < section.entries.count {
@@ -898,7 +897,6 @@ struct ActiveWorkoutView: View {
                     weightText = "BW"
                 }
                 isPR = prSetEntryIDs.contains(entry.id)
-                isEditing = editingSetPayload?.entry.id == entry.id
                 onTap = {
                     editingSetPayload = EditSetPayload(
                         entry: entry,
@@ -919,7 +917,6 @@ struct ActiveWorkoutView: View {
                 reps: reps,
                 weightText: weightText,
                 isPR: isPR,
-                isEditing: isEditing,
                 onTap: onTap
             )
         }
