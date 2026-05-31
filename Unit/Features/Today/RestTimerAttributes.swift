@@ -14,7 +14,7 @@ import ActivityKit
 /// Attributes for the rest timer Live Activity.
 /// Include this file in both Unit and UnitWidgetExtension targets so the same type is used.
 public struct RestTimerAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
+    public struct ContentState: Codable, Hashable, Sendable {
         /// When the rest period started — required by `Text(timerInterval:pauseTime:countsDown:)`
         /// so the system can clamp the display at 0:00 instead of counting up after `endDate`.
         public var startDate: Date
