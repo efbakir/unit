@@ -54,7 +54,7 @@ REST TIMER ON YOUR LOCK SCREEN
 The timer starts automatically when you log a set. It lives on your Lock Screen and in the Dynamic Island. You don't need to reopen the app between sets. The notebook never made you do that either.
 
 YOUR HISTORY, READABLE AT A GLANCE
-Calendar view shows every training day at a glance. Tap any date to see exactly what you lifted: exercise, weight, reps, sets. Personal records are tracked automatically and flagged when you hit them. No dashboard. No summary cards. Just your data, organized.
+Calendar view shows every training day at a glance. Tap any date to see exactly what you lifted: exercise, weight, reps, sets. No dashboard. No summary cards. Just your data, organized.
 
 LOCAL. NO ACCOUNT. ALWAYS WORKS.
 No sign-up. No cloud dependency. Your training data lives on your iPhone. Unit works in a basement gym, in airplane mode, in a building with no signal. The notebook worked offline. So does this.
@@ -120,14 +120,18 @@ The privacy manifest declares only `UserDefaults` (reason `CA92.1` — app funct
 Unit is a local-first gym logger for iPhone. It requires no account, no sign-in, and no network connection — all workout data is stored on-device via SwiftData. No demo credentials are needed.
 
 To evaluate the core flow:
-1. Open the app. Onboarding walks through about six short screens: pick a weight unit (kg or lb), choose whether to paste an existing program, import past workout history, or build one from scratch; then set up the split (number of training days), schedule, and exercises. No personal information is requested at any point — no name, email, age, weight, or contact details.
+1. Open the app. Onboarding walks through about six short screens: pick a weight unit (kg or lb), choose whether to paste an existing program text or build one from scratch, then set up the split (number of training days), schedule, and exercises. No personal information is requested at any point — no name, email, age, weight, or contact details. (Note: the "import past workout history" path only appears for users who already have prior completed sessions on this device; on a fresh reviewer install it is gated off by design.)
 2. After onboarding, the Today tab shows the next scheduled workout. Tap "Start workout" to begin a session.
 3. Inside a session, weight and reps for each set are pre-filled from your most recent session of that exercise ("ghost values"). Tap Done to log a set. The rest timer starts automatically and is visible on the Lock Screen and in the Dynamic Island so you don't need to reopen the app between sets.
-4. The History tab shows every past session by date. PRs are detected and flagged automatically.
+4. The History tab shows every past session by date. Tap any date to see the exercises, weights, reps, and sets you logged.
 
-There are no in-app purchases or subscriptions in this build — the entire app is free. A Pro tier may launch in a future update, but is not configured, gated, or referenced in this submission.
+There are no in-app purchases or subscriptions in this build — the entire app is free. A Pro tier may launch in a future update, but is not configured, gated, or referenced in this submission. StoreKit code paths exist in the binary as scaffolding for that future tier but are not reachable from any UI surface in v1.0.0 — `PaywallView.swift` is never presented from any screen, the Settings Subscription section is not rendered (`subscriptionSection` is defined but uncalled in `settingsContent`), and no IAP products are configured in App Store Connect, so `Product.products(for:)` returns an empty collection at runtime.
 
-The app does not collect, transmit, or store any personal data. There is no analytics, no tracking, no advertising SDK. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality).
+The app does not collect, transmit, or store any personal data. There is no analytics, no tracking, no advertising SDK. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality). Privacy is verifiable offline: put the device in airplane mode and every feature still works — onboarding, logging, history, rest timer, Live Activity.
+
+Native iOS depth (verifiable in 30 seconds of use): tap Done on a logged set to see an ActivityKit Live Activity and Dynamic Island countdown (UnitWidget extension, `NSSupportsLiveActivities = YES` in Info.plist). All workout data persists via SwiftData (`@Model` on `WorkoutSession`, `SetEntry`, `Exercise`, `DayTemplate`). UI is 100% native SwiftUI — `TabView`, `NavigationStack`, `presentationDetents`, `@FocusState`, `.sensoryFeedback`. No web view, no cross-platform runtime, no JavaScript bridge.
+
+The subtitle's "3 seconds per set" claim refers to the ghost-value flow: Today → Start workout → tap a set row, observe the elapsed time between the tap and the haptic confirmation. The in-app rest timer auto-starts on set completion and is visible on the Lock Screen and Dynamic Island — that is what makes the loop reproducible without reopening the app between sets.
 
 If you have questions during review, please email support@unitlift.app.
 ```

@@ -157,9 +157,9 @@ OCR caption:
 
 ---
 
-### Screenshot 4 — History + PRs (proof of progression)
+### Screenshot 4 — Your history. Local. (proof of progression)
 
-**Purpose**: answer "but does it remember?". History + automatic PR detection are free-tier features, must be on the launch listing.
+**Purpose**: answer "but does it remember?". Full history is a free-tier feature, must be on the launch listing.
 
 ```
 Layout:           Standard device frame, straight-on.
@@ -168,17 +168,25 @@ Layout:           Standard device frame, straight-on.
 
 Headline (110pt):
     Every set.
-    Every PR. Local.
+    Your history. Local.
 
 Subhead (36pt):
-    Full history. Automatic PR detection. No account.
+    Full session record on your iPhone. No account. No cloud.
 
 UI inside frame:
     History calendar view OR exercise progress view (pick one — calendar
     likely converts better because it's a unique visual hook).
     If calendar: month grid with logged days highlighted, one day expanded
-    showing the lifts. Subtle "PR" badge on one of the entries (rendered
-    in #34C759 success color from AppColors).
+    showing the lifts (exercise rows with weight × reps × sets).
+    Highlight one day's totals (heaviest set summary line) to draw the
+    eye — do NOT add a "PR" badge or use the word "PR" anywhere in this
+    frame. The in-app History tab and session-detail surfaces do not
+    render PR badging in v1.0.0 (PR detection lives session-local inside
+    a live workout only). A "PR" badge in the screenshot promises a UI
+    element a reviewer cannot find — exactly the 2.3.3 (Accurate
+    Screenshots) trip-wire that compounded the 2026-06-03 rejection.
+    SUPERSEDED 2026-06-03 from the original PR-badge spec; re-introduce
+    when SessionDetailView renders a real PR indicator (v1.1+).
 
 Device frame:
     Same as 2 and 3.
@@ -188,7 +196,7 @@ Pattern reference:
     aesthetic draw.
 
 OCR caption:
-    "Lifting log. Every set, every PR, no account."
+    "Lifting log. Every set on this iPhone. No account."
 ```
 
 ---

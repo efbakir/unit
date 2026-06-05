@@ -282,8 +282,8 @@ struct SettingsView: View {
                     .font(AppFont.caption.font)
             }
             .foregroundStyle(AppColor.textSecondary)
-            if let mailURL = URL(string: "mailto:hello@unitlift.app") {
-                Link("hello@unitlift.app", destination: mailURL)
+            if let mailURL = URL(string: "mailto:support@unitlift.app") {
+                Link("support@unitlift.app", destination: mailURL)
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textPrimary)
             }
