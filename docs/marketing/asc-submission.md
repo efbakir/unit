@@ -1,8 +1,8 @@
 # Unit — App Store Connect submission (paste-ready)
 
-> Single-source paste sheet for the submission session on Thu May 14.
+> Single-source paste sheet for the submission session.
 > Synthesizes [app-store-copy-variants.md](app-store-copy-variants.md) (Variant 1 — Notebook Replacement, locked), [aso-keywords.md](aso-keywords.md) (97-char keywords field, locked), [launch-week-may-11.md](../launch-week-may-11.md) Day 2 + Day 4 specs, and the live legal pages.
-> Resolved 2026-05-11.
+> Resolved 2026-05-11. **Updated 2026-05-31**: App Name changed to `Unit — Gym Notebook` (collision on `Unit`), and Pro IAP decoupled — see updated In-App Purchases section. **Updated 2026-06-03**: Build 1.0 (12) rejected under Guideline 2.1(b) — the binary's Settings → Subscription section + Settings → Data → Export PRO row + Screenshot 5 PRO chip all triggered the "paid content with no IAP" pattern. Surgical fix landed (Settings code strips both Pro surfaces; Screenshot 5 Row 3 replaced with "Tracking: None"). Reply drafted at [`app-review-reply-2026-06-03.md`](app-review-reply-2026-06-03.md). See [`../decision-log.md`](../decision-log.md) 2026-06-03 entry for full rationale.
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Field | Value | Notes |
 |---|---|---|
-| App Name | `Unit` | 4 chars — leaves room if alt App Name needed later |
+| App Name | `Unit — Gym Notebook` | 19 chars. Original `Unit` (4 chars) was already taken on App Store Connect — collision hit 2026-05-31 during submission. Em-dash separator per indie iOS convention (Things, Bear, Reeder, Halide). "Gym Notebook" reinforces Variant 1 positioning and is the App Name alternative pre-blessed in `aso-keywords.md` row 28. Home screen icon still reads `Unit` via `INFOPLIST_KEY_CFBundleDisplayName = Unit` — this rename is App Store listing only. |
 | Subtitle | `Log a set in 3 seconds` | 22 chars — Variant 3 ASO subtitle (per `app-store-copy-variants.md` §Subtitle note), paired with Variant 1 description |
 | Primary Category | `Health & Fitness` | |
 | Secondary Category | `Sports` (optional) | leave blank if undecided |
-| Bundle ID | `com.unitlift.app` | already locked in project.pbxproj |
+| Bundle ID | `app.unitlift` | already locked in project.pbxproj (changed from `com.unitlift.app` on 2026-05-12 — original ID unavailable; canonical reverse-DNS of `unitlift.app`) |
 | SKU | `unit-ios-v1` | |
 | Content Rights | "Does not contain, show, or access third-party content" | true — Unit ships zero third-party content |
 | Age Rating | `4+` | no objectionable content; answers below |
@@ -62,16 +62,14 @@ No sign-up. No cloud dependency. Your training data lives on your iPhone. Unit w
 WHAT UNIT IS NOT
 — Not an AI coach. You already know what to lift.
 — Not a social platform. No feed, no followers, no sharing.
-— Not a subscription wall on core logging. Set logging, ghost values, rest timer, history, and PRs are free, always.
-
-Unit Pro adds export (CSV, Markdown), Apple Health sync, custom app icons, and custom template colors. $4.99/month or $29.99/year — 7-day free trial included.
+— Not a subscription. Everything in the app is here, free.
 
 Your notebook knew what you needed. So does Unit.
 ```
 
-Approximate length: ~1900 chars. Under the 4000-char limit with ~2100 chars of headroom for future additions.
+Approximate length: ~1700 chars. Under the 4000-char limit with ~2300 chars of headroom.
 
-**Pricing note:** Pro pricing matches [pricing.md](../pricing.md) — $4.99/mo, $29.99/yr. If Pro IAP products are NOT yet configured in ASC at the moment you paste (you're submitting v1 with paywall inert per [launch-week-may-11.md](../launch-week-may-11.md)), strip the "Unit Pro adds export…" paragraph to avoid mismatch — Apple checks IAP setup against description claims. Re-add when Pro products are live in W5+.
+**Submission decision SUPERSEDED (2026-05-31): Decouple chosen — Pro IAP deferred.** The Option B / "configure all 3 IAPs and attach to v1.0.0" plan recorded in this doc on 2026-05-30 was reversed at the moment of submission because no Pro feature is built and the Guideline 3.1.1 "purchase doesn't deliver advertised features" risk is too high to absorb in the launch review. The Pro paragraph is stripped. The third "WHAT UNIT IS NOT" bullet is rewritten from "subscription wall on core logging" to "Not a subscription" — accurate-now and forward-compatible. Product IDs `com.unit.monthly` / `com.unit.annual` / `com.unit.lifetime` remain reserved in `StoreManager.swift` for when Pro ships. When that happens, re-add the Pro paragraph and restore the "subscription wall on core logging" bullet phrasing.
 
 ---
 
@@ -127,7 +125,7 @@ To evaluate the core flow:
 3. Inside a session, weight and reps for each set are pre-filled from your most recent session of that exercise ("ghost values"). Tap Done to log a set. The rest timer starts automatically and is visible on the Lock Screen and in the Dynamic Island so you don't need to reopen the app between sets.
 4. The History tab shows every past session by date. PRs are detected and flagged automatically.
 
-In-app purchases for Unit Pro are configured in the listing but are not gated in this build — core logging is free with no paywall. Pro features (export, Apple Health sync, custom icons, custom template colors) will be enabled in a future update, with pricing matching the listing description.
+There are no in-app purchases or subscriptions in this build — the entire app is free. A Pro tier may launch in a future update, but is not configured, gated, or referenced in this submission.
 
 The app does not collect, transmit, or store any personal data. There is no analytics, no tracking, no advertising SDK. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality).
 
@@ -164,7 +162,19 @@ Final rating: **4+**.
 
 ---
 
-## In-App Purchases (Pro)
+## In-App Purchases (Pro) — DEFERRED for v1.0.0
+
+> **SUPERSEDED 2026-05-31 — Decouple chosen.** Skip this entire section for the v1.0.0 submission. No IAP records are created in ASC. No paragraph in the description references Pro. The product IDs below remain reserved in `StoreManager.swift` for the future Pro launch but are NOT configured in App Store Connect today. Everything below is preserved for the eventual Pro submission — read past it for the v1.0.0 final checklist.
+>
+> **Original 2026-05-30 Option B plan (DO NOT EXECUTE):** configure all 3 records, attach them to the v1.0.0 build for review, keep the Pro paragraph in the description. The cost is review surface — see **Review risk** below.
+
+**Verified clean 2026-05-30** — product IDs and prices match across all three sources, so there is no silent `Product.products(for:)` failure waiting in review:
+
+| Source | Monthly | Annual | Lifetime |
+|---|---|---|---|
+| `StoreManager.swift:19-21` | `com.unit.monthly` | `com.unit.annual` | `com.unit.lifetime` |
+| `docs/pricing.md` | `com.unit.monthly` · $4.99 | `com.unit.annual` · $29.99 | `com.unit.lifetime` · $44.99 |
+| This sheet | ✓ | ✓ | ✓ |
 
 Pulled directly from [pricing.md](../pricing.md) and verified against `Unit/Features/Subscription/StoreManager.swift` `Tier` enum:
 
@@ -176,15 +186,44 @@ Pulled directly from [pricing.md](../pricing.md) and verified against `Unit/Feat
 
 These IDs are load-bearing — `StoreManager.swift:18–24` requests products by these exact strings. Any drift between the StoreManager enum and the ASC product configuration breaks `Product.products(for:)` silently in review.
 
+### ASC configuration sequence (do this in order)
+
+No App Store Connect API key or fastlane config exists in the repo, so this is a manual web task — ~15 min. Order matters: the subscription group must exist before the auto-renewables.
+
+0. **Prerequisite — Paid Applications Agreement must be active.** Business → Agreements, Tax, and Banking → the "Paid Applications" agreement is signed and not "Pending". No IAP can be created or submitted until it is. First-time accounts often have only the free agreement; sign it now or the whole sequence is blocked.
+1. **Create the subscription group.** Features → Subscriptions → create group, reference name `unit-pro`, group display name `Unit Pro` (this is user-visible in Manage Subscriptions).
+2. **Monthly** (in the `unit-pro` group). Reference Name `Unit Pro Monthly` · Product ID `com.unit.monthly` · Duration 1 month · Price $4.99 · Introductory Offer: **Free, 7 days**.
+3. **Annual** (in the `unit-pro` group). Reference Name `Unit Pro Annual` · Product ID `com.unit.annual` · Duration 1 year · Price $29.99 · Introductory Offer: **Free, 7 days**.
+4. **Lifetime** (Features → In-App Purchases, **Non-Consumable** — NOT in the subscription group). Reference Name `Unit Pro Lifetime` · Product ID `com.unit.lifetime` · Price $44.99 · no trial.
+5. **Per product, fill the localized display name + description** (table below) and **upload one review screenshot** — a capture of `PaywallView` covers all three.
+6. **Attach all 3 to the v1.0.0 version for review.** App Store tab → the v1.0.0 version page → "In-App Purchases and Subscriptions" → select all three. First-time IAPs are reviewed *with* the binary; if you skip this they sit unreviewed and the description references purchases nobody can make (metadata-mismatch rejection). This is why Option B attaches rather than leaving them in draft.
+
 **Free trial:** 7 days on Monthly and Annual. Configure via Introductory Offer (Free, 7 days) in ASC. Lifetime has no trial — it is one-time.
 
 **Subscription group:** Monthly + Annual belong to one auto-renewable group (suggested name: `unit-pro`). Lifetime is non-consumable and does NOT belong to the subscription group.
 
 **Display name + description** (each ≤30 / ≤45 chars, per Apple):
 
-- `com.unit.monthly` — `Unit Pro Monthly` / `Export, Health sync, custom icons`
-- `com.unit.annual` — `Unit Pro Annual` / `Export, Health sync, custom icons`
-- `com.unit.lifetime` — `Unit Pro Lifetime` / `Pro features, one-time purchase`
+- `com.unit.monthly` — `Unit Pro Monthly` / `Support Unit + lock your founding rate`
+- `com.unit.annual` — `Unit Pro Annual` / `Support Unit + lock your founding rate`
+- `com.unit.lifetime` — `Unit Pro Lifetime` / `Support Unit forever. One-time purchase`
+
+(Each description ≤45 chars, framed around what a purchase delivers *today* — founding-rate support — not the forthcoming features, per the Review-risk resolution below.)
+
+### Review risk (read before you submit)
+
+Every Pro feature named in the description and the in-app paywall is **unbuilt** as of 2026-05-30 (verified against the code):
+
+- Export (CSV/Markdown) and Apple Health sync → Settings shows "Coming soon" *after* purchase (`SettingsView.swift:220,239`).
+- Custom app icons + custom template accent colors → no implementation exists at all (no `setAlternateIconName`, no color picker in the codebase).
+- A completed purchase delivers exactly one thing today: founding-supporter status (`SettingsView.swift:184` "Active — Thanks for supporting Unit") + the locked founding rate.
+
+Two distinct Apple exposures:
+
+- **Guideline 2.1 "couldn't locate the in-app purchase" — LOW.** The paywall is reachable from three surfaces (Settings → Unit Pro → Subscribe; Settings → Data → Export / Apple Health; History → toolbar PRO chip), and `StoreManager.purchase()` is fully wired. A reviewer can find and complete a sandbox purchase.
+- **Guideline 3.1.1 / 2.3.1 "purchase doesn't deliver the advertised features" — MEDIUM-HIGH.** A reviewer who buys Pro sees every advertised feature flip to "Coming soon" or not appear. The description's present-tense "Unit Pro adds export, Health sync, custom icons, custom colors" compounds the mismatch.
+
+**Mitigation — resolved 2026-05-30: timing-honest reframe applied.** The description paragraph, the in-app paywall (`PaywallView.swift` subhead + benefit rows — forthcoming features now tagged "coming soon" to match Settings), and the 3 IAP localized descriptions above all now frame the features as forthcoming free updates, with the founding-rate lock as the present-tense benefit. The reviewer notes still carry the rollout explanation as backup. Residual 3.1.1 risk is reduced but not zero (a strict reviewer may still question charging ahead of features) — if it bounces, the next lever is shipping one cosmetic feature (custom app icons or accent colors) before re-submit.
 
 **Win-back offer** (post-launch, not at W3 submission): $19.99/yr Apple promotional offer on the Annual product, triggered after trial expiry without conversion or after cancellation. Configure under the Annual product's "Promotional Offers" in ASC. Wire via StoreKit 2 or RevenueCat per [launch-plan.md](../launch-plan.md) §2.
 
@@ -209,7 +248,7 @@ Submission ships English (United States) only. Per [launch-plan.md](../launch-pl
 - [ ] App Privacy section says "Data Not Collected"
 - [ ] Age rating set to 4+ (or whatever the questionnaire returned)
 - [ ] Pricing tier set (Free at top level; subscriptions configured separately)
-- [ ] Subscription Group + Introductory Offer set up for Monthly/Yearly if Pro is going live in v1.0.0 (otherwise IAP records stay in draft)
+- [ ] **Pro IAP deferred** (Decouple chosen 2026-05-31): zero IAP records created in ASC; description does NOT mention Pro; third "WHAT UNIT IS NOT" bullet says "Not a subscription" (not "subscription wall"); App Review notes say "no in-app purchases in this build". The [In-App Purchases section](#in-app-purchases-pro--deferred-for-v100) is preserved for the future Pro launch — do not execute it today.
 
 ---
 

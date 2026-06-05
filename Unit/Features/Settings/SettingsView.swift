@@ -156,7 +156,16 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             dataSection
             preferencesSection
-            subscriptionSection
+            // `subscriptionSection` is intentionally NOT rendered in v1.0.0.
+            // Per docs/decision-log.md 2026-06-03 (App Review rejection for
+            // Build 12 under Guideline 2.1(b)): showing "Restore purchases" +
+            // "Manage subscription" rows while no IAPs are configured in
+            // App Store Connect creates a metadata-vs-binary mismatch — the
+            // reviewer cannot evaluate a subscription that does not exist.
+            // The ViewBuilder + SubscriptionRow enum are retained as dead
+            // code (zero render-time cost) so the v1.1+ Pro launch can
+            // re-enable this section by simply re-adding `subscriptionSection`
+            // to the layout, without re-implementing it.
             legalSection
 
             #if DEBUG
@@ -170,17 +179,21 @@ struct SettingsView: View {
     @ViewBuilder
     private var dataSection: some View {
         SettingsSection(title: "Data", contentInset: AppSpacing.sm) {
-            AppDividedList(DataRow.allCases) { row in
+            // `.export` is filtered out for v1.0.0 — same rationale as
+            // `subscriptionSection` (Guideline 2.1(b) rejection 2026-06-03):
+            // a PRO chip with no IAP behind it reads as undelivered paid
+            // content to App Review. Re-include `.export` when Pro IAPs are
+            // submitted in v1.1+. See docs/decision-log.md 2026-06-03.
+            AppDividedList(DataRow.allCases.filter { $0 != .export }) { row in
                 switch row {
                 case .storage:
                     AppListRow(title: row.rawValue, value: "On this iPhone")
                 case .account:
                     AppListRow(title: row.rawValue, value: "None")
                 case .export:
-                    // Pro chip carries the upgrade hint; tap is intentionally
-                    // a no-op until W5+ when the paywall flips on and CSV
-                    // export ships. Per the screenshot brief, the chip alone
-                    // is the gentle Pro hint — no active paywall here.
+                    // Unreachable in v1.0.0 (filtered above). Switch case
+                    // retained so the v1.1+ Pro launch only needs to remove
+                    // the filter, not re-add the rendering.
                     Button { } label: {
                         AppListRow(title: row.rawValue) {
                             AppTag(text: "PRO", style: .accent, layout: .compactCapsule)

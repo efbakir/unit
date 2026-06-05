@@ -21,7 +21,7 @@
 | Subhead font          | **Geist Regular** at 36pt                                 | Matches Unit's `numericInput` size, generous but not display                                                      |
 | Subhead color         | **`#595959`** (`textSecondary`)                           | Calm, not stark                                                                                                   |
 | Device frame          | **Standard iPhone 16 Pro Max, straight-on (0° tilt)**     | No 3D rotations. Gemini + viral-patterns both flag this.                                                          |
-| Screenshot 5          | **"No account. Works offline."** (NOT paywall)            | Paywall is OFF at W3 launch per launch-plan.md and product-compass.md decision 2026-04-28                         |
+| Screenshot 5          | **"No account. Works offline."** (NOT paywall)            | Composition, no device frame — icon+label trio mirrors the in-app Settings Data section. Paywall off at W3 per launch-plan.md / product-compass.md 2026-04-28 |
 
 ---
 
@@ -195,53 +195,127 @@ OCR caption:
 
 ### Screenshot 5 — Trust + Local-First
 
-**Purpose**: close on trust. NOT a paywall (paywall is OFF at W3 per launch-plan.md and product-compass.md decision 2026-04-28).
+**Purpose**: close on trust. NOT a paywall (paywall is OFF at W3 per launch-plan.md and product-compass.md decision 2026-04-28). Composition, not a device-frame capture — the three trust facts read faster as iconography than as a Settings list.
 
 ```
-Layout:           Standard device frame, straight-on.
+Layout:           Composition, NO device frame. Flat canvas.
                   Top 20%: headline + subhead.
-                  Middle 75%: device frame.
+                  Middle 55%: three stacked icon+label rows, vertically centered.
+                  Bottom 25%: breathing space, empty.
 
-Headline (110pt):
+Canvas:           1290 × 2796 px, background #F5F5F5, sRGB, no transparency.
+Margin:           Horizontal 8% (≈103 px) — matches other 4 screenshots.
+
+Headline (Geist Bold, 110pt, #0A0A0A):
     No account.
     Works offline.
 
-Subhead (36pt):
+Subhead (Geist Regular, 36pt, #595959):
     Your training data lives on your iPhone. Always.
 
-UI inside frame:
-    SettingsView with the Data section visible at the top. Three rows:
-      • Storage          On this iPhone
-      • Account                    None
-      • Export data               [PRO]
-    The section enumerates the trust mechanic as facts — TypingMind-style
-    proof, not a marketing claim. PRO chip is the gentle upgrade hint
-    without an active paywall sheet.
+The three fact rows (vertically centered within the middle 55% band):
+  Row gap:        64 px between rows.
+  Row layout:     [icon 96pt] [label 56pt left]   [value 56pt right, baseline-aligned]
+  Optional:       1 px #E5E5E5 hairline divider between rows, full-bleed
+                  within the 8% horizontal margin (mirrors in-app AppDividedList).
 
-    Decision history (2026-05-10): the brief originally listed two
-    options — (a) onboarding screen "no sign-up path", (b) Settings
-    showing "no account / on device / Pro export". Code exploration
-    confirmed (a) does not exist as a discrete screen — every onboarding
-    step is implicit-only proof (no sign-in field). Pivoted to (b) and
-    built the Data section in SettingsView. See decision-log entry
-    "Settings gets a 'Data' section to carry App Store screenshot #5".
+  Row 1 — Storage:
+    Icon:  SF Symbol  iphone                            (regular weight, #0A0A0A)
+    Label: "Storage"  (Geist Medium 56pt, #0A0A0A)
+    Value: "On this iPhone"  (Geist Regular 56pt, #595959)
 
-Device frame:
-    Same as 2-3-4.
+  Row 2 — Account:
+    Icon:  SF Symbol  person.crop.circle.badge.xmark    (regular weight, #0A0A0A)
+    Label: "Account"  (Geist Medium 56pt, #0A0A0A)
+    Value: "None"  (Geist Regular 56pt, #595959)
+
+  Row 3 — Tracking:
+    Icon:  SF Symbol  hand.raised.slash                 (regular weight, #0A0A0A)
+    Label: "Tracking"  (Geist Medium 56pt, #0A0A0A)
+    Value: "None"  (Geist Regular 56pt, #595959)
+
+    Originally specified as "Export data" + PRO chip. That spec triggered
+    an App Review rejection on 2026-06-03 (Guideline 2.1(b) — Information
+    Needed): the marketing screenshot promised a Pro tier that v1.0.0's
+    binary does not carry (no IAPs configured in App Store Connect per the
+    2026-05-31 Decouple decision). Replaced with "Tracking: None" — a true
+    fact about v1.0.0 (verified by PrivacyInfo.xcprivacy: only UserDefaults
+    declared, no third-party analytics SDKs, no tracking) that maintains
+    the three-fact rhythm and reinforces the calm-honest brand voice.
+    See docs/decision-log.md 2026-06-03 for the full reasoning. Re-add the
+    Pro/Export row in the v1.1+ screenshot refresh when Pro IAPs ship.
+
+Glyph rationale:
+    iphone                          most literal read of "on this iPhone".
+                                    Beats internaldrive (too technical) and
+                                    house (too abstract).
+    person.crop.circle.badge.xmark  explicit negation, no ambiguity. Beats
+                                    person.slash (reads "blocked user")
+                                    and bare xmark.circle (no human cue).
+    hand.raised.slash               replaces square.and.arrow.up (the
+                                    original "Export data" icon). Universal
+                                    "stop / refuse" gesture paired with a
+                                    cancellation slash reads as "we do not
+                                    track" without needing the label to do
+                                    the work alone. Beats eye.slash (reads
+                                    "hidden", not "absent") and shield.slash
+                                    (reads "security off", inverted intent).
+
+    All three are stock SF Symbols at regular weight. They live ONLY in the
+    Figma marketing file — DesignSystem.swift AppIcon enum is unchanged.
 
 Pattern reference:
-    TypingMind (per Gemini §3) — establishing trust with technical users
-    by showing the trust mechanic, not a marketing claim about it.
+    1Password / Bitwarden / Proton (per visual-treatment catalog, 2026-05-10) —
+    vertically-stacked icon+label trio with no device frame, for three
+    independent trust facts. Same "show, don't claim" intent as the
+    TypingMind reference in the prior brief, but content is promoted from
+    settings-row chrome to first-class glyphs so each fact scans at
+    App Store thumbnail size.
 
 OCR caption:
     "Local gym tracker. No account. Offline."
+
+Decision history (2026-05-10):
+    Original brief listed two options — (a) onboarding screen "no sign-up
+    path", (b) Settings showing "no account / on device / Pro export".
+    Option (a) was killed by code exploration (Unit has no discrete
+    onboarding screen — sign-up is proven by absence, which can't be
+    photographed). Pivoted to (b) and built the Data section in SettingsView.
+    Same-day pushback: a Settings capture still reads as "screenshot of a
+    settings list" first, "trust mechanic" second. Pivoted to (c) this
+    composition. The in-app Data section stays — it remains a real product
+    surface independent of the marketing asset. See decision-log entries
+    "Settings gets a 'Data' section to carry App Store screenshot #5"
+    AND "Screenshot #5 pivots from Settings capture to iconographic
+    three-fact composition" (both 2026-05-10).
 
 Why NOT the paywall (push-back from app-store-screenshots-2026-04-30.md):
     Per launch-plan.md §2 and product-compass.md decision 2026-04-28, the
     paywall is OFF at W3 launch and conditionally flips on at W5+. Showing
     a paywall in the listing creates UX mismatch (user sees pricing, installs,
     finds no paywall, confused). Defer the paywall screenshot to W5+ once
-    Pro is live.
+    Pro is live. SUPERSEDED 2026-06-03 — the original "PRO chip in row 3
+    is a gentle upgrade hint" framing was rejected by App Review under
+    Guideline 2.1(b): a PRO badge with no IAP behind it reads as paid
+    content the reviewer cannot evaluate. Row 3 is now "Tracking: None"
+    (no Pro signal at all) until the v1.1+ Pro launch resubmission, at
+    which point a paywall screenshot can replace slot 5 entirely.
+
+Why NOT other treatments considered:
+    Device frame + small corner lock glyph    Preserves rhythm with 2–4 but
+                                              defeats the goal of moving away
+                                              from a literal app capture.
+                                              "Lock" also reads "encryption",
+                                              a different claim from "no
+                                              account / offline".
+    Pure typographic, no imagery              Strongest restraint but loses
+                                              the three-fact enumeration that
+                                              is the whole "show, don't
+                                              claim" intent.
+    Horizontal three-column trio              More "feature page" energy but
+    (Notion-style)                            less faithful to the Settings
+                                              Data section's vertical flow,
+                                              and less readable at thumbnail.
 ```
 
 ---
@@ -270,9 +344,9 @@ Build screenshot 1 first; it's the most important and design decisions cascade f
 2. **Screenshot 3 (Ghost Values)** — the most-defining feature. Build before 2 because the UI capture needs the most setup. ~1 hour.
 3. **Screenshot 2 (Core Loop)** — copies 3's device-frame layer and changes the inside. ~30 min.
 4. **Screenshot 4 (History/PRs)** — same. ~30 min.
-5. **Screenshot 5 (Trust)** — same. ~30 min.
+5. **Screenshot 5 (Trust)** — composition (no device frame); icon+label rows + typography. ~45 min.
 
-**Total: ~4.5 hours** for all 5, including UI captures. Spread across two sessions for fresh eyes on the second pass.
+**Total: ~4.75 hours** for all 5, including UI captures. Spread across two sessions for fresh eyes on the second pass.
 
 ---
 
@@ -286,7 +360,7 @@ Before uploading to App Store Connect:
 - [ ] No gradients, no stock photography, no 3D rotations
 - [ ] Geist Bold 110pt for all headlines (consistent)
 - [ ] Background `#F5F5F5` on all 5
-- [ ] Real UI from the app (not vector mockups) on screenshots 2-5
+- [ ] Real UI from the app (not vector mockups) on screenshots 2-4 (screenshot 5 is a composition — icon+label rows, no device frame)
 - [ ] Captions OCR-readable: keyword density without keyword stuffing
 - [ ] Each caption has at least one keyword from `aso-keywords.md` Bucket 1, 2, or 4
 - [ ] First 3 screenshots tell the story alone (test: hide 4 and 5, can a stranger understand Unit?)
