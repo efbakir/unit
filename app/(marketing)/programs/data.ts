@@ -28,7 +28,7 @@ export const programSlugs: Record<string, ProgramSlug> = {
     h1: "PPL (Push Pull Legs) in Unit",
     metaTitle: "PPL in Unit: import push pull legs in 30 seconds",
     metaDescription:
-      "PPL workout app for serious lifters. Paste a Push Pull Legs split into Unit and start logging in 30 seconds. Push pull legs tracker, ghost values, no account.",
+      "PPL workout app for serious lifters. Paste a Push Pull Legs split into Unit and start logging in 30 seconds. Push pull legs tracker, last session's weights ready, no account.",
     description:
       "Push Pull Legs is a six-day split that hits each muscle group twice per week. Push days cover chest, shoulders, and triceps. Pull days cover back and biceps. Leg days cover quads, hamstrings, and calves. The split below is a common intermediate version with a flat top set followed by back-off work.",
     template: `Push A
@@ -79,7 +79,7 @@ Seated Calf Raise 4x12`,
     importSteps: [
       "Open Unit and tap Get Started. On the import step, choose Paste text.",
       "Paste the template above. Unit reads each day, exercise, sets, and reps.",
-      "Confirm and tap Done. Your first session opens with ghost values waiting.",
+      "Confirm and tap Done. Your first session opens with last time's numbers waiting.",
     ],
     closing:
       "PPL is a great fit for a push pull legs tracker that stays out of the way.",
@@ -116,7 +116,7 @@ Leg Curl 5x10`,
     importSteps: [
       "Open Unit and tap Get Started. On the import step, choose Paste text.",
       "Paste the template above. Unit reads each day and main lift; percentages stay as notes you can interpret each week.",
-      "Set your training max per lift in the exercise sheet and tap Done. Ghost values carry your last working weight forward.",
+      "Set your training max per lift in the exercise sheet and tap Done. Unit carries your last working weight forward.",
     ],
     closing:
       "Use Unit as a Jim Wendler 5/3/1 tracker that respects your time between sets.",
@@ -128,7 +128,7 @@ Leg Curl 5x10`,
     h1: "GZCLP in Unit",
     metaTitle: "GZCLP in Unit: import GZCLP in 30 seconds",
     metaDescription:
-      "GZCLP tracker app built for the four-day linear progression. Paste GZCLP into Unit and start logging in 30 seconds. Ghost values, local, no account.",
+      "GZCLP tracker app built for the four-day linear progression. Paste GZCLP into Unit and start logging in 30 seconds. Last session's weights ready, local, no account.",
     description:
       "GZCLP by Cody Lefever is a four-day linear progression structured around three tiers: T1 main lifts (heavy 5x3 then AMRAP), T2 secondary (3x10), and T3 accessories (3x15 AMRAP on the last set). Run it three to four times per week, alternating Squat and Deadlift days against Bench and Press days.",
     template: `Day A1 Squat and Bench
@@ -153,7 +153,7 @@ Dumbbell Row T3 3x15`,
     importSteps: [
       "Open Unit and tap Get Started. On the import step, choose Paste text.",
       "Paste the template. Unit reads each day, lift, and rep target.",
-      "On the AMRAP set, log the actual reps you hit; ghost values pre-fill the rest.",
+      "On the AMRAP set, log the actual reps you hit; last time fills in the rest.",
     ],
     closing:
       "Run GZCLP with a tracker that stays quiet between sets.",
@@ -165,7 +165,7 @@ Dumbbell Row T3 3x15`,
     h1: "nSuns 5/3/1 in Unit",
     metaTitle: "nSuns in Unit: import nSuns 5/3/1 in 30 seconds",
     metaDescription:
-      "nSuns 5/3/1 app for high-volume training. Paste the nSuns tracker template into Unit and start logging fast. Local-first, no account, ghost values.",
+      "nSuns 5/3/1 app for high-volume training. Paste the nSuns tracker template into Unit and start logging fast. Local-first, no account, last session's weights ready.",
     description:
       "nSuns 5/3/1 is a high-volume linear-progression variant of Wendler's 5/3/1. Each main lift day runs 9 working sets at climbing then descending percentages of training max, followed by a secondary lift on the same plan plus accessories. The 4-day version below covers Bench, Squat, Overhead Press, and Deadlift weekly.",
     template: `Day 1 Bench and OHP
@@ -198,7 +198,7 @@ Standing Calf Raise 3x15`,
     importSteps: [
       "Open Unit and tap Get Started. On the import step, choose Paste text.",
       "Paste the template. Unit reads each day and lift; the percentage notes stay alongside.",
-      "Enter your training max per lift, then tap Done. Ghost values track the climbing sets across the week.",
+      "Enter your training max per lift, then tap Done. Unit carries the climbing sets across the week.",
     ],
     closing:
       "Use Unit as an nSuns tracker that keeps you focused on the next set.",

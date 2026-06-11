@@ -13,7 +13,7 @@ const releases = [
     date: "June 11, 2026",
     notes: [
       "Initial App Store release.",
-      "Ghost values pre-fill weight and reps from your last session.",
+      "Weight and reps fill in from your last session, ready to confirm.",
       "Rest timer with Lock Screen and Dynamic Island Live Activity.",
       "Paste-to-import: paste a routine from Notes or WhatsApp during onboarding.",
       "PR detection with quiet thresholds (no badges, no streaks).",

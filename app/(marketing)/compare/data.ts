@@ -32,13 +32,13 @@ export const compareSlugs: Record<string, CompareSlug> = {
     competitor: "Strong",
     metaTitle: "Unit vs Strong: a faster, local-first gym tracker",
     metaDescription:
-      "Looking for a Strong app alternative? Unit is a minimalist gym tracker for fast gym logging. Ghost values, no account, local-first, under 3 seconds per set.",
+      "Looking for a Strong app alternative? Unit is a minimalist gym tracker for fast gym logging. Last session's weights ready, no account, local-first, under 3 seconds per set.",
     heroSubhead:
       "Both log sets. The difference is how much they ask of you between sets.",
     table: [
       {
         feature: "Speed per set",
-        unit: "Ghost values pre-fill weight and reps. One tap to log.",
+        unit: "Weight and reps from last time, already there. One tap to log.",
         competitor: "Manual entry per set, with templates and history nearby.",
       },
       {
@@ -80,13 +80,13 @@ export const compareSlugs: Record<string, CompareSlug> = {
     competitor: "Hevy",
     metaTitle: "Unit vs Hevy: a no-social, offline gym tracker",
     metaDescription:
-      "A Hevy alternative without the social feed. Unit is a no social gym tracker, offline gym tracker, with ghost values and one-tap set logging. Calm by default.",
+      "A Hevy alternative without the social feed. Unit is a no social gym tracker, offline gym tracker, where last time fills in weight and reps for one-tap logging. Calm by default.",
     heroSubhead:
       "Both can log a set. Only one is built around a feed.",
     table: [
       {
         feature: "Speed per set",
-        unit: "Ghost values pre-fill from your last session. Tap Done.",
+        unit: "Last session's numbers, already filled in. Tap Done.",
         competitor: "Type sets per workout; templates speed it up.",
       },
       {
@@ -128,13 +128,13 @@ export const compareSlugs: Record<string, CompareSlug> = {
     competitor: "Jefit",
     metaTitle: "Unit vs Jefit: a no-account, local gym logger",
     metaDescription:
-      "A Jefit alternative built for speed. Unit is a gym logger with no account and a local gym app footprint. Paste your program; ghost values handle the rest.",
+      "A Jefit alternative built for speed. Unit is a gym logger with no account and a local gym app footprint. Paste your program; last time handles the rest.",
     heroSubhead:
       "Same goal, smaller surface area.",
     table: [
       {
         feature: "Speed per set",
-        unit: "Ghost values pre-fill weight and reps. One tap.",
+        unit: "Weight and reps from last time, already there. One tap.",
         competitor: "Manual entry with a routine player and rest cues.",
       },
       {

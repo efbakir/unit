@@ -23,7 +23,7 @@
   --header-height: 64px; /* h-16 on Header */
   --button-height-lg: 60px;
   --button-height-md: 52px;
-  --marketing-feature-device-width: 300px; /* 75% of the previous 400px slab frame */
+  --marketing-feature-device-width: 380px; /* transparent exports carry ~39% shadow margin; 380px renders the device at the old 300px-tile size */
 
   /* Single source of truth for the marketing site's motion curves.
      ease-out-quart for press feedback (fast settle), ease-out-expo for
@@ -167,13 +167,6 @@ body {
   }
   .h-section {
     @apply text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-unit-text-primary;
-  }
-
-  /* Underscore-flanked keyword accent (KW component). Underscores render
-     as decorative brackets at reduced opacity; the keyword keeps the
-     surrounding heading's color and weight. */
-  .kw-mark {
-    @apply opacity-40;
   }
 
   /* The Ink radial-gradient ambient blur used behind hero mockup and

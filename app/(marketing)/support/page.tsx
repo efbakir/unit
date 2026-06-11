@@ -48,8 +48,8 @@ export default function SupportPage() {
             answer="If you deleted the app, your locally stored workout data is removed from the device. Unit stores all data on-device. I recommend using iCloud device backups to protect your data."
           />
           <FAQItem
-            question="How do ghost values work?"
-            answer="When you start a session, Unit pre-fills weight and reps from your most recent session for each exercise. Just tap Done to log the same values, or adjust before tapping."
+            question="How do I see what I logged last time?"
+            answer="When you start an exercise, Unit shows what you logged last time: same weight, same reps. Tap Done to log it again, or adjust before you tap."
           />
           <FAQItem
             question="Can I change my program after setup?"
@@ -122,11 +122,11 @@ export default function SupportPage() {
             ]}
           />
           <TroubleshootItem
-            title="Ghost values show wrong numbers"
+            title="Last-time numbers look wrong"
             steps={[
-              "Ghost values are based on your most recent session for each exercise.",
+              "The numbers come from your most recent session for each exercise.",
               "If a previous session was logged incorrectly, edit or delete the set in your session history.",
-              "Ghost values update automatically after your next session.",
+              "They update automatically after your next session.",
             ]}
           />
         </div>

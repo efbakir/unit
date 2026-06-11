@@ -7,7 +7,6 @@ import WaitlistForm from "@/components/marketing/WaitlistForm"
 import AppStoreBadge from "@/components/marketing/AppStoreBadge"
 import TrustBand from "@/components/marketing/TrustBand"
 import FounderStory from "@/components/marketing/FounderStory"
-import KW from "@/components/marketing/KW"
 import { isLaunched, APP_STORE_URL } from "@/lib/launchState"
 import { getWaitlistCount } from "@/lib/waitlist"
 
@@ -30,7 +29,7 @@ type HeroBackgroundMockup = {
 
 export const metadata: Metadata = {
   description:
-    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in under 3 seconds — ghost values pre-fill from your last session. No AI, no social, no account.",
+    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in under 3 seconds. Every set opens with what you did last time. No AI, no social, no account.",
   alternates: { canonical: "/" },
 }
 
@@ -50,9 +49,9 @@ const faqs = [
       "Yes — completely free at launch. No ads, no account, no paywall on any logging feature. I may add a small Pro tier later for power-user extras; if I do, core logging stays free.",
   },
   {
-    question: "How do ghost values work?",
+    question: "How does Unit fill in my numbers?",
     answer:
-      "When you start a session, Unit pre-fills weight and reps from your most recent session for each exercise. Just tap Done to log the same values, or adjust them before tapping.",
+      "When you start an exercise, Unit shows what you logged last time: same weight, same reps. Tap Done to log it again, or adjust before you tap.",
   },
   {
     question: "Does Unit work offline?",
@@ -88,10 +87,10 @@ const softwareLd = {
   applicationCategory: "HealthApplication",
   operatingSystem: "iOS",
   description:
-    "Fast iOS gym tracker and workout log. Log a set in under 3 seconds. Ghost values pre-fill from your last session. Local-first, no account, no AI.",
+    "Fast iOS gym tracker and workout log. Log a set in under 3 seconds. Every set opens with what you did last time. Local-first, no account, no AI.",
   url: "https://unitlift.app/",
   keywords:
-    "gym tracker, workout log, lifting log, strength log, ghost values, rest timer, local-first, no account",
+    "gym tracker, workout log, lifting log, strength log, last session values, rest timer, local-first, no account",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   ...(isLaunched ? { installUrl: APP_STORE_URL } : {}),
 }
@@ -123,25 +122,29 @@ const secondaryFeatures = [
   { title: "Eight starter programs", body: "5/3/1, GZCLP, Upper/Lower, PPL, more — pick one or paste your own." },
 ]
 
-// Crops of the approved App Store listing screenshots (headline band removed,
-// device frame bleeding off the bottom). Canvas background is #F5F5F5 — same
-// token as --unit-background, so the tiles blend into the page seamlessly.
-const SCREENSHOT_W = 1290
-const SCREENSHOT_H = 2396
+// Crops of the approved App Store listing screenshots: transparent-background
+// exports (headline band removed, device bleeding off the bottom). The wider
+// canvas carries the unclipped drop shadow (~184px per side); every mockup on
+// the page shares this geometry so hero and cards render at one scale.
+const HERO_W = 1658
+const HERO_H = 2386
 
 const heroMockups: {
   foreground: HeroForegroundMockup
   background: HeroBackgroundMockup[]
 } = {
+  // Hero layers use the transparent-background exports (hero-*.png) so the
+  // foreground phone overlaps the back phones without painting a canvas
+  // rectangle over them. Feature cards keep the tiled crops.
   foreground: {
-    src: "/screenshots/active-workout.png",
-    alt: "Unit — active workout: Bench Press 80 kg × 8 pre-filled, one tap to complete the set",
+    src: "/screenshots/hero-active-workout.png",
+    alt: "Unit — active workout: Bench Press 80 kg × 8 from last time, one tap to complete the set",
     priority: true,
     sizes: "(min-width: 1024px) 460px, 360px",
   },
   background: [
     {
-      src: "/screenshots/history-calendar.png",
+      src: "/screenshots/hero-history-calendar.png",
       alt: "Unit — history calendar with logged sessions",
       offsetX: -38,
       offsetY: -8,
@@ -150,8 +153,8 @@ const heroMockups: {
       z: 0,
     },
     {
-      src: "/screenshots/ghost-values.png",
-      alt: "Unit — ghost values pre-filled from the last session",
+      src: "/screenshots/hero-ghost-values.png",
+      alt: "Unit — last session's weight and reps filled in",
       offsetX: 38,
       offsetY: 6,
       scale: 0.78,
@@ -190,17 +193,23 @@ export default async function LandingPage() {
       />
 
       {/* ── 1. Hero (layered) ── */}
-      <section className="pt-32 md:pt-40 pb-unit-xxl md:pb-unit-xxxl">
+      {/* overflow-x-clip: the rotated background layers may poke past the
+          viewport on lg screens; clip the bleed instead of growing the page
+          scroll width. */}
+      <section className="overflow-x-clip pt-32 md:pt-40 pb-unit-xxl md:pb-unit-xxxl">
         <div className="max-w-6xl mx-auto px-unit-md md:px-unit-lg">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,420px)] xl:grid-cols-[1fr_minmax(0,460px)] gap-unit-xxl items-center">
+          {/* Device column sized so the phone inside the hero export (61% of
+              the canvas width; the rest is shadow margin) renders at the same
+              visual size the old margin-less exports had at 420/460px. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,500px)] xl:grid-cols-[1fr_minmax(0,560px)] gap-unit-xxl items-center">
             {/* Copy column */}
             <div className="stagger-hero max-w-2xl">
               <h1 className="h-display mb-unit-lg text-balance">
-                <KW>Faster</KW> than paper.
+                Faster than paper.
               </h1>
               <p className="text-xl leading-snug mb-unit-xl max-w-xl text-unit-text-secondary">
-                Log a set in one tap. Ghost values pre-fill from your last
-                session. No typing. No menus. Under three seconds.
+                Log a set in one tap. Every set opens with what you did last
+                time. No typing. No menus. Under three seconds.
               </p>
               {PrimaryCTA}
               <div className="mt-unit-lg">
@@ -208,10 +217,10 @@ export default async function LandingPage() {
               </div>
             </div>
 
-            <div className="relative w-full max-w-[400px] mx-auto lg:mx-0 lg:justify-self-end">
+            <div className="relative w-full max-w-[480px] mx-auto lg:mx-0 lg:justify-self-end">
               <LayeredDeviceStack
-                width={SCREENSHOT_W}
-                height={SCREENSHOT_H}
+                width={HERO_W}
+                height={HERO_H}
                 foreground={heroMockups.foreground}
                 background={heroMockups.background}
               />
@@ -238,19 +247,19 @@ export default async function LandingPage() {
           <FeatureShowcase
             eyebrow="How it works"
             title="Designed for the bench, not your desk."
-            body="The core workflow stays predictable: bring your program, log with ghost values, rest, and review later."
+            body="The core workflow stays predictable: bring your program, log against last time, rest, and review later."
             items={[
               {
                 eyebrow: "One tap per set",
-                title: "Ghost values do the typing.",
-                body: "Weight and reps pre-fill from your last session. Tap Done. Move on. The Gym Test: one-handed, sweaty, under three seconds to log a set.",
+                title: "Last time does the typing.",
+                body: "Weight and reps from your last session are already there. Tap Done. Move on. The Gym Test: one-handed, sweaty, under three seconds to log a set.",
                 microStat: "Avg log: 2.4s",
                 mockup: {
-                  src: "/screenshots/ghost-values.png",
-                  alt: "Unit — active set with ghost value: Last 3×5×140 kg pre-filled",
-                  width: SCREENSHOT_W,
-                  height: SCREENSHOT_H,
-                  sizes: "300px",
+                  src: "/screenshots/hero-ghost-values.png",
+                  alt: "Unit — active set showing last time: 3×5×140 kg, ready to confirm",
+                  width: HERO_W,
+                  height: HERO_H,
+                  sizes: "380px",
                 },
               },
               {
@@ -290,11 +299,11 @@ export default async function LandingPage() {
                 title: "Every set. Every PR.",
                 body: "Calendar of every session. Heaviest set, best rep, and best volume PRs detected automatically. You decide when to add weight — Unit just remembers what you did.",
                 mockup: {
-                  src: "/screenshots/history-calendar.png",
+                  src: "/screenshots/hero-history-calendar.png",
                   alt: "Unit — history calendar, April 2026, logged days highlighted",
-                  width: SCREENSHOT_W,
-                  height: SCREENSHOT_H,
-                  sizes: "300px",
+                  width: HERO_W,
+                  height: HERO_H,
+                  sizes: "380px",
                 },
               },
               {
@@ -302,11 +311,14 @@ export default async function LandingPage() {
                 title: "Follows you to the Lock Screen.",
                 body: "Auto-starts on Done. Lives in the Dynamic Island and on the Lock Screen. No need to reopen the app between sets.",
                 mockup: {
-                  src: "/screenshots/rest-timer.png",
+                  // Background-keyed crop of listing screenshot 2, padded to
+                  // the same 1658×2386 geometry as the hero exports so all
+                  // cards render at one scale.
+                  src: "/screenshots/rest-timer-transparent.png",
                   alt: "Unit — rest timer running at 1:57 with the set editor below",
-                  width: SCREENSHOT_W,
-                  height: SCREENSHOT_H,
-                  sizes: "300px",
+                  width: HERO_W,
+                  height: HERO_H,
+                  sizes: "380px",
                 },
               },
             ]}

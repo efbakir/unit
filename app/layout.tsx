@@ -30,7 +30,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: "Unit — Gym Logger & Workout Tracker for iPhone", template: "%s | Unit" },
   description:
-    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in under 3 seconds — ghost values pre-fill from your last session. No AI, no social, no account.",
+    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in under 3 seconds. Every set opens with what you did last time. No AI, no social, no account.",
   metadataBase: new URL("https://unitlift.app"),
   alternates: { canonical: "/" },
   openGraph: {
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     url: "https://unitlift.app/",
     title: "Unit — Gym Logger & Workout Tracker for iPhone",
     description:
-      "Fast iOS gym tracker. Log a set in under 3 seconds. Ghost values pre-fill from your last session. Local-first, no account, no AI.",
+      "Fast iOS gym tracker. Log a set in under 3 seconds. Every set opens with what you did last time. Local-first, no account, no AI.",
     images: [
       { url: "/opengraph-image", width: 1200, height: 630, alt: "Unit — Gym Logger & Workout Tracker" },
     ],
