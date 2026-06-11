@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 const releases = [
   {
     version: "v1.0",
-    date: "Coming soon",
+    date: "June 11, 2026",
     notes: [
-      "Initial App Store release; currently in Apple's review queue.",
+      "Initial App Store release.",
       "Ghost values pre-fill weight and reps from your last session.",
       "Rest timer with Lock Screen and Dynamic Island Live Activity.",
       "Paste-to-import: paste a routine from Notes or WhatsApp during onboarding.",
