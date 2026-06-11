@@ -1,7 +1,11 @@
 // Single source of truth for whether Unit has launched on the App Store.
-// Pre-launch: hero CTA is the waitlist email form, post-launch swaps to the
-// App Store badge. The page reads `isLaunched` and chooses what to render.
-export const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL ?? ""
+// LIVE since 2026-06-11 — the listing URL is the hardcoded default so
+// production flips without a Vercel env change. NEXT_PUBLIC_APP_STORE_URL
+// still overrides; set it to an empty string to preview the pre-launch
+// waitlist state locally.
+export const APP_STORE_URL =
+  process.env.NEXT_PUBLIC_APP_STORE_URL ??
+  "https://apps.apple.com/us/app/unit-gym-notebook/id6775008893"
 export const isLaunched = APP_STORE_URL.length > 0
 
 // Trust band counter visibility. Below this threshold the band shows the

@@ -77,7 +77,7 @@ export default function WaitlistForm({
   if (state.kind === "success") {
     return (
       <div
-        className={`inline-flex items-center justify-center px-unit-lg rounded-md bg-unit-card border border-unit-border ${textClass} font-semibold`}
+        className={`inline-flex items-center justify-center px-unit-lg rounded-xl bg-unit-card border border-unit-border ${textClass} font-semibold`}
         style={{
           height: heightVar,
           viewTransitionName: VIEW_TRANSITION_NAME,
@@ -114,7 +114,7 @@ export default function WaitlistForm({
           aria-describedby={
             state.kind === "error" ? "waitlist-error" : undefined
           }
-          className={`flex-1 px-unit-md rounded-md bg-unit-card border border-unit-border ${textClass} font-medium text-unit-text-primary placeholder:text-unit-text-secondary focus:outline-none focus:border-unit-accent transition-colors`}
+          className={`flex-1 px-unit-md rounded-xl bg-unit-card border border-unit-border ${textClass} font-medium text-unit-text-primary placeholder:text-unit-text-secondary focus:outline-none focus:border-unit-accent transition-colors`}
           style={{ height: heightVar }}
         />
         <button

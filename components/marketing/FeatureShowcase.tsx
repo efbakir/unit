@@ -43,7 +43,7 @@ export default function FeatureShowcase({
         {items.map((item) => (
           <article
             key={item.title}
-            className="lift-hover flex min-h-[280px] flex-col overflow-hidden rounded-xl border border-unit-border bg-unit-card"
+            className="lift-hover flex min-h-[280px] flex-col overflow-hidden rounded-[32px] border border-unit-border bg-unit-card"
           >
             <div className="flex flex-1 flex-col p-unit-lg md:p-unit-xl">
               {item.eyebrow && <p className="eyebrow mb-unit-sm">{item.eyebrow}</p>}

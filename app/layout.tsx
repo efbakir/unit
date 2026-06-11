@@ -52,6 +52,9 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
+  // Smart App Banner — iOS Safari shows a native install/open strip for the
+  // live App Store listing (id 6775008893).
+  itunes: { appId: "6775008893" },
 }
 
 export const viewport: Viewport = {

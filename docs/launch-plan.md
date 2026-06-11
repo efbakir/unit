@@ -18,7 +18,7 @@ Three blockers from your own submission checklist, in order:
 
 1. **Domain + support email (PRO-9).** Register `tryunit.app` or `unitapp.io` today — don't agonize for more than 10 minutes. Deploy `app/(marketing)/` to Vercel. Point the `#download` placeholder to your future App Store URL (update after approval). Set up `support@[yourdomain]` and wire it to your inbox.
 2. **Screenshots (PRO-6).** Run `capture-app-store-screenshots.sh` on a 6.9" device. Use real data, not lorem ipsum. First screenshot = the hero "<3s set logged" moment. Five screenshots total, one headline each.
-3. **Gym Test (PRO-3).** 10 sets in a real gym on a real device, all ≤3s with ghost values. If it fails, fix only what broke. Do not refactor.
+3. **Gym Test (PRO-3).** 10 sets in a real gym on a real device, all ≤3s with last-time pre-fill. If it fails, fix only what broke. Do not refactor.
 
 Then: Xcode archive → App Store Connect → submit. Expect 24–72h review. While waiting, do §2–§3.
 
@@ -48,7 +48,7 @@ You want a subscription experiment: **$9/mo, $49/yr, $30/yr win-back.** Good ins
 
 ### Pricing recommendation (one decisive path)
 
-- **Free forever**: Full core logging — templates, ghost values, rest timer + Dynamic Island, history, calendar, PRs, haptics, custom exercises. Everything in the MVP Ships list. You promised this in `privacy/page.tsx`; keep the promise — it's your credibility moat.
+- **Free forever**: Full core logging — templates, Last time pre-fill, rest timer + Dynamic Island, history, calendar, PRs, haptics, custom exercises. Everything in the MVP Ships list. You promised this in `privacy/page.tsx`; keep the promise — it's your credibility moat.
 - **Unit Pro — subscription with 7-day free trial**:
   - **Monthly: $9.99** (round up from $9 — App Store tier is cleaner, and psychological delta is zero)
   - **Yearly: $49.99** (effective $4.17/mo — beats Hevy's yearly, matches Strong)
@@ -116,7 +116,7 @@ Recruit from:
 
 All anchored to **notebook replacement**:
 
-1. **Universal launch paragraph (90 words)**: *"I'm an intermediate lifter who kept a paper notebook for years because every tracker felt slower than writing. Three months ago I started building Unit — a gym logger designed around one rule: log a set in under 3 seconds, one-handed, sweaty. Ghost values prefill your last session so you tap once to confirm. No AI coach. No social feed. No algorithm telling you what to lift. Free core logging — never paywalled. Pro is $9.99/mo or $49.99/yr, 7-day free trial. Built solo. Brutal feedback welcome. [link]"*
+1. **Universal launch paragraph (90 words)**: *"I'm an intermediate lifter who kept a paper notebook for years because every tracker felt slower than writing. Three months ago I started building Unit — a gym logger designed around one rule: log a set in under 3 seconds, one-handed, sweaty. Last time's weight and reps prefill from your last session so you tap once to confirm. No AI coach. No social feed. No algorithm telling you what to lift. Free core logging — never paywalled. Pro is $9.99/mo or $49.99/yr, 7-day free trial. Built solo. Brutal feedback welcome. [link]"*
 2. **60-sec TikTok (gym POV)**: quick cut of writing in a notebook → *"still faster than Strong or Hevy"* → cut to Unit, tap once, haptic confirm, timer overlay shows 2.4s → *"I built the tracker I wanted. Free on App Store."*
 3. **Three tweet drafts**: (a) notebook vs app side-by-side photo + one line, (b) 5-tweet build-in-public thread covering the 3 months, (c) pricing philosophy tweet (*"core logging will never be paywalled"*).
 4. **Launch email** to every contact who should know (~30 people). One paragraph. Personal.
@@ -246,7 +246,7 @@ If Week 8 shows zero conversions, the answer is not "lower the price." It's eith
 
 - [docs/product-compass.md](docs/product-compass.md) — positioning source of truth (anchor copy here)
 - [docs/goals.md](docs/goals.md) — v1 Ships / Does-not-ship list (keep sacred)
-- [app/(marketing)/page.tsx](app/(marketing)/page.tsx) — update `#download` to real App Store URL post-approval
+- [app/(marketing)/page.tsx](app/(marketing)/page.tsx) — ~~update `#download` to real App Store URL post-approval~~ **Done 2026-06-11**: `NEXT_PUBLIC_APP_STORE_URL` set in Vercel + `.env.example`; badges link to the live listing
 - [app/(marketing)/privacy/page.tsx](app/(marketing)/privacy/page.tsx) — update `[pending-domain]` email
 - [Unit/Features/Subscription/PaywallView.swift](Unit/Features/Subscription/PaywallView.swift) — flip to subscription products (monthly + yearly) when RevenueCat wired in Week 5
 - `capture-app-store-screenshots.sh` — run Week 1

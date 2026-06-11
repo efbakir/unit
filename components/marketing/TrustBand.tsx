@@ -1,8 +1,12 @@
-import { COUNTER_VISIBILITY_THRESHOLD } from "@/lib/launchState"
+import { COUNTER_VISIBILITY_THRESHOLD, isLaunched } from "@/lib/launchState"
 
 export default function TrustBand({ count }: { count?: number }) {
+  // Waitlist counter is a pre-launch mechanic; once live, the only honest
+  // second fact is that the app is on the App Store.
   const showCounter =
-    typeof count === "number" && count >= COUNTER_VISIBILITY_THRESHOLD
+    !isLaunched &&
+    typeof count === "number" &&
+    count >= COUNTER_VISIBILITY_THRESHOLD
 
   return (
     <div className="flex flex-wrap items-center gap-x-unit-sm gap-y-unit-xxs">
@@ -16,7 +20,9 @@ export default function TrustBand({ count }: { count?: number }) {
           {count!.toLocaleString()} on the waitlist
         </span>
       ) : (
-        <span className="eyebrow">Coming soon to iOS</span>
+        <span className="eyebrow">
+          {isLaunched ? "Now on the App Store" : "Coming soon to iOS"}
+        </span>
       )}
     </div>
   )

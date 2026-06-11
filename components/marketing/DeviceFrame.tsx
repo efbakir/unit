@@ -25,7 +25,7 @@ export default function DeviceFrame({
     return (
       <div className={`relative ${className}`}>
         <div
-          className="flex w-full items-center justify-center overflow-hidden rounded-2xl border border-unit-border bg-unit-muted"
+          className="flex w-full items-center justify-center overflow-hidden rounded-[24px] border border-unit-border bg-unit-muted"
           style={{ aspectRatio: "1 / 1" }}
         >
           <span className="eyebrow px-unit-md text-center">{alt}</span>
@@ -43,7 +43,7 @@ export default function DeviceFrame({
         height={height}
         priority={priority}
         sizes={sizes}
-        className="block h-auto w-full"
+        className="block h-auto w-full rounded-[24px]"
       />
     </div>
   )

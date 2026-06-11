@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import FAQItem from "@/components/marketing/FAQItem"
 import LayeredDeviceStack from "@/components/marketing/LayeredDeviceStack"
 import FeatureShowcase from "@/components/marketing/FeatureShowcase"
@@ -74,9 +75,9 @@ const faqs = [
       "Your data lives on your iPhone. iCloud Backup covers it. Nothing depends on a Unit server. You'd lose the app; you wouldn't lose your history.",
   },
   {
-    question: "When does Unit launch?",
+    question: "Where can I download Unit?",
     answer:
-      "Unit is in App Store review now. Join the waitlist above and I'll email you once at launch; no marketing follow-up.",
+      "Unit is live on the App Store as “Unit — Gym Notebook”. Tap any download button on this page, or search the App Store directly. Free to download, no account needed.",
   },
 ]
 
@@ -92,6 +93,7 @@ const softwareLd = {
   keywords:
     "gym tracker, workout log, lifting log, strength log, ghost values, rest timer, local-first, no account",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  ...(isLaunched ? { installUrl: APP_STORE_URL } : {}),
 }
 
 const faqLd = {
@@ -121,18 +123,26 @@ const secondaryFeatures = [
   { title: "Eight starter programs", body: "5/3/1, GZCLP, Upper/Lower, PPL, more — pick one or paste your own." },
 ]
 
+// Crops of the approved App Store listing screenshots (headline band removed,
+// device frame bleeding off the bottom). Canvas background is #F5F5F5 — same
+// token as --unit-background, so the tiles blend into the page seamlessly.
+const SCREENSHOT_W = 1290
+const SCREENSHOT_H = 2396
+
 const heroMockups: {
   foreground: HeroForegroundMockup
   background: HeroBackgroundMockup[]
 } = {
   foreground: {
-    alt: "Unit — Today screen",
+    src: "/screenshots/active-workout.png",
+    alt: "Unit — active workout: Bench Press 80 kg × 8 pre-filled, one tap to complete the set",
     priority: true,
     sizes: "(min-width: 1024px) 460px, 360px",
   },
   background: [
     {
-      alt: "Unit — History view",
+      src: "/screenshots/history-calendar.png",
+      alt: "Unit — history calendar with logged sessions",
       offsetX: -38,
       offsetY: -8,
       scale: 0.78,
@@ -140,7 +150,8 @@ const heroMockups: {
       z: 0,
     },
     {
-      alt: "Unit — Active workout view",
+      src: "/screenshots/ghost-values.png",
+      alt: "Unit — ghost values pre-filled from the last session",
       offsetX: 38,
       offsetY: 6,
       scale: 0.78,
@@ -199,8 +210,8 @@ export default async function LandingPage() {
 
             <div className="relative w-full max-w-[400px] mx-auto lg:mx-0 lg:justify-self-end">
               <LayeredDeviceStack
-                width={1206}
-                height={2622}
+                width={SCREENSHOT_W}
+                height={SCREENSHOT_H}
                 foreground={heroMockups.foreground}
                 background={heroMockups.background}
               />
@@ -235,9 +246,10 @@ export default async function LandingPage() {
                 body: "Weight and reps pre-fill from your last session. Tap Done. Move on. The Gym Test: one-handed, sweaty, under three seconds to log a set.",
                 microStat: "Avg log: 2.4s",
                 mockup: {
-                  alt: "Unit — Active workout, ghost values pre-filled",
-                  width: 1206,
-                  height: 2622,
+                  src: "/screenshots/ghost-values.png",
+                  alt: "Unit — active set with ghost value: Last 3×5×140 kg pre-filled",
+                  width: SCREENSHOT_W,
+                  height: SCREENSHOT_H,
                   sizes: "300px",
                 },
               },
@@ -246,35 +258,42 @@ export default async function LandingPage() {
                 title: "Paste from Notes. Done.",
                 body: "Paste your routine from anywhere and Unit reads exercises, sets, reps, and weights automatically. Or build from scratch in under two minutes.",
                 children: (
-                  <div className="mt-unit-lg flex flex-wrap items-center gap-x-unit-md gap-y-unit-xs">
-                    <span className="eyebrow">Imports from</span>
-                    {importSources.map((src, i) => (
-                      <span key={src} className="flex items-center gap-x-unit-md">
-                        <span className="text-base font-semibold tracking-tight">
-                          {src}
+                  <>
+                    <div className="mt-unit-lg flex flex-wrap items-center gap-x-unit-md gap-y-unit-xs">
+                      <span className="eyebrow">Imports from</span>
+                      {importSources.map((src, i) => (
+                        <span key={src} className="flex items-center gap-x-unit-md">
+                          <span className="text-base font-semibold tracking-tight">
+                            {src}
+                          </span>
+                          {i < importSources.length - 1 && (
+                            <span className="text-unit-text-secondary opacity-50">·</span>
+                          )}
                         </span>
-                        {i < importSources.length - 1 && (
-                          <span className="text-unit-text-secondary opacity-50">·</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    {/* A pasted-program snippet instead of a device mockup —
+                        the paste flow's "before" state is a note, not an app
+                        screen. flex-1 keeps the card height level with its
+                        image-card siblings. */}
+                    <div className="mt-unit-lg flex-1 rounded-[24px] border border-unit-border bg-unit-background p-unit-lg">
+                      <p className="eyebrow mb-unit-sm">Pasted from Notes</p>
+                      <p className="whitespace-pre-line font-mono text-sm leading-relaxed text-unit-text-secondary">
+                        {"push day\nbench press 5x5 @ 80kg\nohp 3x8 @ 40kg\nincline db 3x10 @ 24kg\nlateral raise 3x12"}
+                      </p>
+                    </div>
+                  </>
                 ),
-                mockup: {
-                  alt: "Unit — Program list with templates",
-                  width: 1206,
-                  height: 2622,
-                  sizes: "300px",
-                },
               },
               {
                 eyebrow: "History · PRs",
                 title: "Every set. Every PR.",
                 body: "Calendar of every session. Heaviest set, best rep, and best volume PRs detected automatically. You decide when to add weight — Unit just remembers what you did.",
                 mockup: {
-                  alt: "Unit — History calendar with PR markers",
-                  width: 1206,
-                  height: 2622,
+                  src: "/screenshots/history-calendar.png",
+                  alt: "Unit — history calendar, April 2026, logged days highlighted",
+                  width: SCREENSHOT_W,
+                  height: SCREENSHOT_H,
                   sizes: "300px",
                 },
               },
@@ -283,9 +302,10 @@ export default async function LandingPage() {
                 title: "Follows you to the Lock Screen.",
                 body: "Auto-starts on Done. Lives in the Dynamic Island and on the Lock Screen. No need to reopen the app between sets.",
                 mockup: {
-                  alt: "Unit — Rest timer in the Dynamic Island",
-                  width: 1206,
-                  height: 2622,
+                  src: "/screenshots/rest-timer.png",
+                  alt: "Unit — rest timer running at 1:57 with the set editor below",
+                  width: SCREENSHOT_W,
+                  height: SCREENSHOT_H,
                   sizes: "300px",
                 },
               },
@@ -416,9 +436,26 @@ export default async function LandingPage() {
             One tap per set. Everything stays on your phone. The notebook,
             upgraded.
           </p>
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-unit-lg">
             {isLaunched ? (
-              <AppStoreBadge href={APP_STORE_URL} />
+              <>
+                <AppStoreBadge href={APP_STORE_URL} />
+                {/* Desktop visitors can't tap the badge on their phone —
+                    the QR bridges the gap. Hidden on mobile, where the badge
+                    itself is the direct path. */}
+                <div className="hidden md:flex items-center gap-unit-md rounded-[24px] border border-unit-border bg-unit-card p-unit-md">
+                  <Image
+                    src="/qr-app-store.svg"
+                    alt="QR code linking to Unit on the App Store"
+                    width={104}
+                    height={104}
+                    className="h-[104px] w-[104px]"
+                  />
+                  <p className="max-w-[16ch] text-left text-sm leading-snug text-unit-text-secondary">
+                    Point your iPhone camera here to get Unit.
+                  </p>
+                </div>
+              </>
             ) : (
               <WaitlistForm size="lg" />
             )}

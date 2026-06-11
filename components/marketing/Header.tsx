@@ -5,6 +5,11 @@ import Link from "next/link"
 import Image from "next/image"
 import { compareSlugs, compareSlugList } from "@/app/(marketing)/compare/data"
 import { programSlugs, programSlugList } from "@/app/(marketing)/programs/data"
+import { isLaunched } from "@/lib/launchState"
+
+// Post-launch the header CTA sends visitors to the #download badge section;
+// pre-launch the same anchor holds the waitlist form, so only the label flips.
+const ctaLabel = isLaunched ? "Download" : "Join waitlist"
 
 type DropdownKey = "compare" | "programs"
 type DropdownState = DropdownKey | null
@@ -90,7 +95,7 @@ export default function Header() {
             Support
           </Link>
           <a href="#download" className="btn-primary h-11 px-unit-md text-[13px]">
-            Join waitlist
+            {ctaLabel}
           </a>
         </div>
 
@@ -138,7 +143,7 @@ export default function Header() {
               className="btn-primary text-[15px] px-unit-lg mt-unit-xs"
               style={{ height: "var(--button-height-lg)" }}
             >
-              Join waitlist
+              {ctaLabel}
             </a>
           </div>
         </div>
