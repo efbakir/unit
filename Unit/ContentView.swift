@@ -9,8 +9,6 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
-    @AppStorage(wrappedValue: false, "hasSeenPaywall") private var hasSeenPaywall
-
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
 
@@ -20,7 +18,6 @@ struct ContentView: View {
 
     /// Uses `UserDefaults.standard` in the app; pass an isolated suite in `#Preview` so canvas state does not touch real onboarding flags.
     init(userDefaults: UserDefaults = .standard) {
-        _hasSeenPaywall = AppStorage(wrappedValue: false, "hasSeenPaywall", store: userDefaults)
         _splits = Query(sort: \Split.name)
         _sessions = Query(sort: \WorkoutSession.date, order: .reverse)
         _store = State(initialValue: StoreManager())
@@ -47,19 +44,38 @@ struct ContentView: View {
                 OnboardingView()
                     .transition(.opacity)
             } else {
-                // Paywall deferred — ship v1 free to validate retention
-                // without price as a confound. Monetize after proving habit.
                 mainTabView
                     .transition(.opacity)
             }
         }
         .appAnimation(.appEnter, value: needsOnboarding, reduceMotion: reduceMotion)
         .background(AppColor.background.ignoresSafeArea())
+        // Hard paywall — presented as a non-dismissable full-screen cover
+        // once onboarding is complete and the StoreKit entitlement check has
+        // returned `!isPurchased`. The gate uses a computed binding whose
+        // setter is a no-op so the user cannot swipe / programmatically
+        // dismiss; the only exit is a successful purchase, which flips
+        // `store.isPurchased` and the get returns false.
+        .fullScreenCover(isPresented: paywallGate) {
+            PaywallView { /* dismiss flows via store.isPurchased onChange */ }
+                .environment(store)
+        }
         .onAppear {
             configureNavigationBarAppearance()
             configureSegmentedControlAppearance()
             configureTabBarAppearance()
         }
+    }
+
+    /// Reactive gate — re-evaluated on every render. True once onboarding
+    /// is complete AND the initial entitlement check has returned without
+    /// finding a Pro entitlement. False while the check is still pending
+    /// (avoids flashing the paywall on cold launch over a subscribed user).
+    private var paywallGate: Binding<Bool> {
+        Binding(
+            get: { !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased },
+            set: { _ in }
+        )
     }
 
     private var mainTabView: some View {
@@ -191,9 +207,7 @@ enum RootTab: String, CaseIterable, Hashable {
 
 private enum ContentViewPreviewDefaults {
     static var userDefaults: UserDefaults {
-        let suite = UserDefaults(suiteName: "unit.preview.ContentView")!
-        suite.set(true, forKey: "hasSeenPaywall")
-        return suite
+        UserDefaults(suiteName: "unit.preview.ContentView")!
     }
 }
 

@@ -2,8 +2,9 @@
 //  PaywallView.swift
 //  Unit
 //
-//  Post-onboarding paywall. Three tiers: Monthly, Annual, Lifetime.
-//  Pricing authority: docs/pricing.md. Calm, light, quiet — no hype.
+//  Hard paywall presented after onboarding, before first workout log.
+//  Three tiers: Weekly, Monthly, Annual. No free trial. No dismissal.
+//  Pricing authority: docs/pricing.md.
 //
 
 import SwiftUI
@@ -14,16 +15,15 @@ struct PaywallView: View {
     var onDismiss: () -> Void
 
     var body: some View {
+        // Hard paywall — no `secondaryButton`, no "Not now". The only way out
+        // is to subscribe (or kill the app). `onDismiss` is invoked only via
+        // the `.onChange(of: store.isPurchased)` post-subscribe handler below.
         AppScreen(
             primaryButton: PrimaryButtonConfig(
                 label: ctaTitle,
                 isEnabled: !store.products.isEmpty,
                 isLoading: store.isLoading,
                 action: { Task { await store.purchase() } }
-            ),
-            secondaryButton: SecondaryButtonConfig(
-                label: "Not now",
-                action: onDismiss
             ),
             hidesNavigationBar: true
         ) {
@@ -32,18 +32,18 @@ struct PaywallView: View {
                 // MARK: - Top Area
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Your plan is ready")
+                    Text("Unit")
                         .appCapsLabel(.smallLabel)
                         .foregroundStyle(AppColor.textSecondary)
 
-                    Text("Unlock Unit")
+                    Text("Your gym notebook")
                         .font(AppFont.numericDisplay.font)
                         .tracking(AppFont.numericDisplay.tracking)
                         .foregroundStyle(AppColor.textPrimary)
                 }
                 .padding(.top, AppSpacing.xl)
 
-                Text("Power-user extras for lifters who already log every session.")
+                Text("Log every set, see every PR. Built for lifters who actually train.")
                     .font(AppFont.body.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -51,14 +51,16 @@ struct PaywallView: View {
 
                 // MARK: - Benefits
                 //
-                // Pro feature set per docs/pricing.md and the 2026-04-28 entry
-                // in docs/product-compass.md. None of these touch the Gym Test
-                // path (logging, ghost values, history, PR detection, widgets)
-                // — those stay free forever per docs/claude/scope.md.
+                // Hard paywall — these are product capabilities, not "Pro extras".
+                // Authority: docs/pricing.md §Hard paywall.
 
                 VStack(spacing: 0) {
-                    benefitRow("Custom template accent colors")
-                    benefitRow("Founding supporter badge")
+                    benefitRow("One-tap set logging with last-time pre-fill")
+                    benefitRow("Personal records, detected automatically")
+                    benefitRow("Lock Screen rest timer")
+                    benefitRow("All your training history, forever")
+                    benefitRow("Paste your program from Notes or WhatsApp")
+                    benefitRow("Local-first — no account, no cloud")
                 }
                 .padding(.top, AppSpacing.xl)
 
@@ -130,12 +132,9 @@ struct PaywallView: View {
     // MARK: - CTA title
 
     private var ctaTitle: String {
-        switch store.selectedTier {
-        case .monthly, .annual:
-            return "Start 7-day free trial"
-        case .lifetime:
-            return "Unlock Unit Lifetime"
-        }
+        // Hard paywall — no trial copy. Same verb for every tier; the tier
+        // card itself communicates the cadence.
+        return "Subscribe"
     }
 
     // MARK: - Benefit Row
@@ -191,9 +190,9 @@ struct PaywallView: View {
 
     private func label(for tier: StoreManager.Tier) -> String {
         switch tier {
-        case .lifetime: return "Lifetime"
-        case .annual: return "Annually"
+        case .weekly: return "Weekly"
         case .monthly: return "Monthly"
+        case .annual: return "Annually"
         }
     }
 
@@ -201,18 +200,21 @@ struct PaywallView: View {
         if let product = store.product(for: tier) {
             return product.displayPrice
         }
+        // Fallback prices only shown when StoreKit product load fails —
+        // primary authority is the live ASC price returned by `product(for:)`.
+        // Authority: docs/pricing.md (2026-06-16 hard-paywall rewrite).
         switch tier {
-        case .lifetime: return "$44.99"
-        case .annual: return "$29.99"
-        case .monthly: return "$4.99"
+        case .weekly: return "$4.99"
+        case .monthly: return "$9.99"
+        case .annual: return "$59.99"
         }
     }
 
     private func sublabel(for tier: StoreManager.Tier) -> String {
         switch tier {
-        case .lifetime: return "Pay once"
-        case .annual: return "~$2.50/mo"
+        case .weekly: return "Per week"
         case .monthly: return "Per month"
+        case .annual: return "~$5/mo"
         }
     }
 
@@ -226,9 +228,8 @@ struct PaywallView: View {
     // MARK: - Subscription Disclosure
     //
     // Apple Guideline 3.1.2(b): the purchase surface must disclose
-    // subscription title, period, free-trial terms, auto-renewal language,
-    // and how to cancel. Per-tier copy keeps the Lifetime variant accurate
-    // (one-time purchase, not auto-renewing).
+    // subscription title, period, auto-renewal language, and how to cancel.
+    // No trial language — hard paywall, no free trial (docs/pricing.md).
 
     private var subscriptionDisclosure: some View {
         Text(disclosureCopy)
@@ -240,12 +241,12 @@ struct PaywallView: View {
 
     private var disclosureCopy: String {
         switch store.selectedTier {
+        case .weekly:
+            return "Weekly subscription. Auto-renews weekly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
         case .monthly:
-            return "Monthly subscription. Includes a 7-day free trial that converts to a paid subscription unless cancelled at least 24 hours before it ends. The subscription auto-renews monthly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
+            return "Monthly subscription. Auto-renews monthly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
         case .annual:
-            return "Annual subscription. Includes a 7-day free trial that converts to a paid subscription unless cancelled at least 24 hours before it ends. The subscription auto-renews yearly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
-        case .lifetime:
-            return "Lifetime access. One-time purchase, not a subscription. Does not auto-renew."
+            return "Annual subscription. Auto-renews yearly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
         }
     }
 

@@ -3,7 +3,7 @@
 //  Unit
 //
 //  Handles StoreKit 2 product loading, purchasing, and restore
-//  for the three Unit Pro tiers: Monthly, Annual, Lifetime.
+//  for the three Unit subscription tiers: Weekly, Monthly, Annual.
 //  Pricing authority: docs/pricing.md.
 //
 
@@ -16,21 +16,21 @@ final class StoreManager {
     // MARK: - Product IDs
 
     enum Tier: String, CaseIterable, Identifiable {
+        case weekly = "com.unit.weekly"
         case monthly = "com.unit.monthly"
         case annual = "com.unit.annual"
-        case lifetime = "com.unit.lifetime"
 
         var id: String { rawValue }
     }
 
-    nonisolated static let lifetimeProductID = Tier.lifetime.rawValue
-    nonisolated static let annualProductID = Tier.annual.rawValue
+    nonisolated static let weeklyProductID = Tier.weekly.rawValue
     nonisolated static let monthlyProductID = Tier.monthly.rawValue
+    nonisolated static let annualProductID = Tier.annual.rawValue
 
     nonisolated private static let allProductIDs: [String] = [
+        Tier.weekly.rawValue,
         Tier.monthly.rawValue,
-        Tier.annual.rawValue,
-        Tier.lifetime.rawValue
+        Tier.annual.rawValue
     ]
 
     // MARK: - State
@@ -38,6 +38,10 @@ final class StoreManager {
     var products: [String: Product] = [:]
     var isLoading = false
     var isPurchased = false
+    /// Flips true the first time `checkEntitlement()` completes (success or no
+    /// entitlement). Read by `ContentView` to avoid flashing the hard paywall
+    /// over `mainTabView` on cold launch before the StoreKit check returns.
+    var hasCheckedEntitlement = false
     var purchaseError: String?
     /// Non-error notice shown via the same `.alert` channel — e.g.
     /// "No purchases to restore." after a benign restore call.
@@ -57,7 +61,11 @@ final class StoreManager {
         Task { await checkEntitlement() }
     }
 
-    deinit {
+    /// Nonisolated for the same back-deploy-shim SIGABRT as
+    /// `ActiveWorkoutViewModel.deinit` — see the comment there. Safe:
+    /// `transactionListener` is `nonisolated(unsafe)` and `Task.cancel()`
+    /// is thread-safe.
+    nonisolated deinit {
         transactionListener?.cancel()
     }
 
@@ -169,6 +177,7 @@ final class StoreManager {
             }
         }
         isPurchased = hasEntitlement
+        hasCheckedEntitlement = true
     }
 
     // MARK: - Transaction Listener
