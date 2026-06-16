@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct TemplatesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -35,47 +36,15 @@ struct TemplatesView: View {
         sessions.first(where: { !$0.isCompleted })
     }
 
-    /// Sticky bottom CTA when an active program exists. Three states:
-    ///   • In-progress session  → "Continue workout", switches to Today.
-    ///   • Today's scheduled template (with exercises, not yet completed)
-    ///                          → "Start workout", inserts a session and
-    ///                            switches to Today. Reuses the canonical
-    ///                            `DayTemplate.startWorkoutSession(in:)` so
-    ///                            the two entry paths share insert + stamp +
-    ///                            save semantics (one canonical path).
-    ///   • Rest day / completed / unscheduled → nil (no sticky CTA; the
-    ///                            existing in-card affordances stay).
+    /// Sticky bottom CTA — surfaces "Continue workout" only when a session
+    /// is already in progress, as a shortcut back to Today. Starting a
+    /// workout deliberately lives on the Today tab: the Program tab is for
+    /// viewing and editing routines, not initiating sessions.
     private var programsCTA: PrimaryButtonConfig? {
-        guard let split = activeSplit else { return nil }
-
-        if activeSession != nil {
-            return PrimaryButtonConfig(
-                label: AppCopy.Workout.continueWorkout,
-                action: { appTabSelection(.today) }
-            )
-        }
-
-        let calendar = Calendar.current
-        let todayWeekday = calendar.component(.weekday, from: Date())
-        let ordered = orderedTemplates(for: split)
-        guard let scheduled = ordered.first(where: { $0.scheduledWeekday == todayWeekday }),
-              !scheduled.orderedExerciseIds.isEmpty else {
-            return nil
-        }
-        let completedToday = sessions.contains { session in
-            session.templateId == scheduled.id
-                && session.isCompleted
-                && calendar.isDateInToday(session.date)
-        }
-        if completedToday { return nil }
-
-        let template = scheduled
+        guard activeSession != nil else { return nil }
         return PrimaryButtonConfig(
-            label: AppCopy.Workout.startWorkout,
-            action: {
-                template.startWorkoutSession(in: modelContext)
-                appTabSelection(.today)
-            }
+            label: AppCopy.Workout.continueWorkout,
+            action: { appTabSelection(.today) }
         )
     }
 
@@ -276,19 +245,36 @@ struct EditProgramView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
 
     @State private var showDeleteConfirmation = false
     @State private var showAddDay = false
-    @State private var isReordering = false
+    @State private var draggedTemplateID: UUID?
 
-    private var orderedTemplates: [DayTemplate] {
+    private var baseTemplates: [DayTemplate] {
         let byID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
         let linked = split.orderedTemplateIds.compactMap { byID[$0] }
-        if !linked.isEmpty {
-            return linked
+        return linked.isEmpty ? templates.filter { $0.splitId == split.id } : linked
+    }
+
+    /// True when any routine in this Split is pinned to a calendar weekday
+    /// (set in onboarding's "When do I lift?" step). In weekday mode the
+    /// per-routine weekday dictates order, so the list sorts by weekday and
+    /// the drag-to-reorder affordance is hidden — drag would only juggle
+    /// display order without changing which day a routine falls on.
+    private var isWeekdayScheduled: Bool {
+        baseTemplates.contains { $0.scheduledWeekday > 0 }
+    }
+
+    private var orderedTemplates: [DayTemplate] {
+        let base = baseTemplates
+        guard isWeekdayScheduled else { return base }
+        return base.sorted { lhs, rhs in
+            let lw = lhs.scheduledWeekday > 0 ? lhs.scheduledWeekday : Int.max
+            let rw = rhs.scheduledWeekday > 0 ? rhs.scheduledWeekday : Int.max
+            return lw < rw
         }
-        return templates.filter { $0.splitId == split.id }
     }
 
     var body: some View {
@@ -309,20 +295,20 @@ struct EditProgramView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Label("Delete program", systemImage: AppIcon.trash.systemName)
-                    }
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
                 } label: {
-                    AppIcon.more.image()
+                    Label("Delete program", systemImage: AppIcon.trash.systemName)
+                        .labelStyle(.iconOnly)
                 }
-                .accessibilityLabel("More")
+                .accessibilityLabel("Delete program")
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button(AppCopy.Nav.done) { dismiss() }
-                    .appToolbarTextStyle()
+                Button { dismiss() } label: {
+                    Label(AppCopy.Nav.done, systemImage: AppIcon.checkmark.systemName)
+                        .labelStyle(.iconOnly)
+                }
+                .accessibilityLabel(AppCopy.Nav.done)
             }
         }
         .appNavigationBarChrome()
@@ -364,84 +350,105 @@ struct EditProgramView: View {
 
     private var routinesSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader("Routines") {
-                reorderToggle
-            }
+            AppSectionHeader("Routines")
             routinesList
         }
     }
 
-    @ViewBuilder
-    private var reorderToggle: some View {
-        if orderedTemplates.count > 1 {
-            Button(isReordering ? "Done" : "Reorder") {
-                isReordering.toggle()
-            }
-            .font(AppFont.caption.font)
-            .foregroundStyle(AppColor.accent)
-            .accessibilityLabel(isReordering ? "Finish reordering" : "Reorder routines")
-        }
-    }
-
-    @ViewBuilder
     private var routinesList: some View {
-        if isReordering {
-            AppCardList(orderedTemplates) { template in
-                let index = orderedTemplates.firstIndex(where: { $0.id == template.id }) ?? 0
-                reorderRow(template, index: index)
+        AppCardList(orderedTemplates, row: { template in
+            routineRow(template)
+        }, trailing: {
+            AppCardListAddRow("Add Routine") {
+                showAddDay = true
             }
-        } else {
-            AppCardList(orderedTemplates, row: { template in
-                NavigationLink(value: template) {
-                    PreviewListRow(
-                        title: template.displayName,
-                        subtitle: subtitle(for: template)
-                    )
-                }
-                .buttonStyle(ScaleButtonStyle())
-            }, trailing: {
-                AppCardListAddRow("Add Day") {
-                    showAddDay = true
-                }
-            })
-        }
+        })
     }
 
     // MARK: - Rows
 
-    private func reorderRow(_ template: DayTemplate, index: Int) -> some View {
-        HStack(spacing: AppSpacing.sm) {
+    @ViewBuilder
+    private func routineRow(_ template: DayTemplate) -> some View {
+        if isWeekdayScheduled {
+            weekdayRoutineRow(template)
+        } else {
+            draggableRoutineRow(template)
+        }
+    }
+
+    private func weekdayRoutineRow(_ template: DayTemplate) -> some View {
+        NavigationLink(value: template) {
             PreviewListRow(
                 title: template.displayName,
-                subtitle: subtitle(for: template)
+                subtitle: subtitle(for: template),
+                trailingLabel: weekdayShort(template.scheduledWeekday)
             )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
 
-            VStack(spacing: 0) {
-                Button {
-                    moveTemplate(at: index, direction: .up)
-                } label: {
-                    AppIcon.moveUp.image(size: 12, weight: .semibold)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .disabled(index == 0)
-                .accessibilityLabel("Move up")
+    private func draggableRoutineRow(_ template: DayTemplate) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            AppIcon.reorder.image(size: 15, weight: .semibold)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(minWidth: 44, minHeight: 44, alignment: .leading)
+                .accessibilityHidden(true)
 
-                Button {
-                    moveTemplate(at: index, direction: .down)
-                } label: {
-                    AppIcon.moveDown.image(size: 12, weight: .semibold)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .disabled(index >= orderedTemplates.count - 1)
-                .accessibilityLabel("Move down")
+            NavigationLink(value: template) {
+                PreviewListRow(
+                    title: template.displayName,
+                    subtitle: subtitle(for: template)
+                )
             }
             .buttonStyle(ScaleButtonStyle())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .appReorderable(
+            id: template.id,
+            draggedID: $draggedTemplateID,
+            reduceMotion: reduceMotion
+        ) {
+            routineDragPreview(for: template)
+        }
+        .onDrop(
+            of: [UTType.text],
+            delegate: RoutineReorderDropDelegate(
+                targetTemplateID: template.id,
+                split: split,
+                modelContext: modelContext,
+                draggedTemplateID: $draggedTemplateID,
+                reduceMotion: reduceMotion
+            )
+        )
+    }
+
+    @ViewBuilder
+    private func routineDragPreview(for template: DayTemplate) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            AppIcon.reorder.image(size: 15, weight: .semibold)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 44, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(template.displayName)
+                    .font(AppFont.sectionHeader.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                Text(subtitle(for: template))
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: AppSpacing.sm)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .frame(maxWidth: 320, minHeight: 56)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(AppColor.cardBackground)
+        )
     }
 
     // MARK: - Helpers
@@ -451,15 +458,9 @@ struct EditProgramView: View {
         return count == 0 ? "Add exercises" : "\(count) exercise\(count == 1 ? "" : "s")"
     }
 
-    private enum MoveDirection { case up, down }
-
-    private func moveTemplate(at index: Int, direction: MoveDirection) {
-        var ids = split.orderedTemplateIds
-        let targetIndex = direction == .up ? index - 1 : index + 1
-        guard targetIndex >= 0, targetIndex < ids.count else { return }
-        ids.swapAt(index, targetIndex)
-        split.orderedTemplateIds = ids
-        try? modelContext.save()
+    private func weekdayShort(_ weekday: Int) -> String? {
+        guard weekday >= 1, weekday <= 7 else { return nil }
+        return Calendar.current.shortWeekdaySymbols[weekday - 1]
     }
 
     private func syncTemplateOrderIfNeeded() {
@@ -480,6 +481,41 @@ struct EditProgramView: View {
         modelContext.delete(split)
         try? modelContext.save()
         dismiss()
+    }
+}
+
+private struct RoutineReorderDropDelegate: DropDelegate {
+    let targetTemplateID: UUID
+    let split: Split
+    let modelContext: ModelContext
+    @Binding var draggedTemplateID: UUID?
+    var reduceMotion: Bool = false
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedTemplateID,
+              draggedTemplateID != targetTemplateID,
+              let fromIndex = split.orderedTemplateIds.firstIndex(of: draggedTemplateID),
+              let toIndex = split.orderedTemplateIds.firstIndex(of: targetTemplateID) else {
+            return
+        }
+
+        withAnimation(reduceMotion ? nil : .appConfirm) {
+            var ids = split.orderedTemplateIds
+            let moved = ids.remove(at: fromIndex)
+            ids.insert(moved, at: toIndex)
+            split.orderedTemplateIds = ids
+        }
+        AppHaptic.reorderSwap.fire()
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        try? modelContext.save()
+        draggedTemplateID = nil
+        return true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
     }
 }
 

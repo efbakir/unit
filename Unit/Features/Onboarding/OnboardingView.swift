@@ -63,7 +63,7 @@ enum OnboardingPreferences {
         }
 
         if let names = defaults.stringArray(forKey: OnboardingPreferencesKeys.dayNames), !names.isEmpty {
-            viewModel.updateDayCount(max(2, min(6, names.count)))
+            viewModel.updateDayCount(names.count)
             for index in viewModel.dayNames.indices {
                 if index < names.count {
                     viewModel.dayNames[index] = names[index]
@@ -97,7 +97,7 @@ enum OnboardingPreferences {
            !decoded.isEmpty {
             // Stored shape wins: dayCount may have been bumped after exercises
             // were arranged on a smaller split, so resize first then drop in.
-            viewModel.updateDayCount(max(2, min(6, decoded.count)))
+            viewModel.updateDayCount(decoded.count)
             for index in viewModel.dayExercises.indices {
                 if index < decoded.count {
                     viewModel.dayExercises[index] = decoded[index]

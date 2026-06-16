@@ -82,6 +82,12 @@ final class DayTemplate {
     /// Per-exercise planned rep count, used as the first-session ghost before any
     /// real history exists. JSON-encoded `[exerciseId.uuidString: Int]`.
     var plannedRepsByExerciseIdData: Data?
+    /// Per-exercise planned weight (kg), used as the first-session "Last time"
+    /// ghost before any real history exists — seeded from the weights in a
+    /// pasted program so day-one sets aren't blank. JSON-encoded
+    /// `[exerciseId.uuidString: Double]`. Optional/additive: pre-existing
+    /// templates decode to `[:]` and behave exactly as before (blank weight).
+    var plannedWeightByExerciseIdData: Data?
 
     init(
         id: UUID = UUID(),
@@ -91,7 +97,8 @@ final class DayTemplate {
         lastPerformedDate: Date? = nil,
         scheduledWeekday: Int = 0,
         plannedSetsByExerciseId: [UUID: Int] = [:],
-        plannedRepsByExerciseId: [UUID: Int] = [:]
+        plannedRepsByExerciseId: [UUID: Int] = [:],
+        plannedWeightByExerciseId: [UUID: Double] = [:]
     ) {
         self.id = id
         self.name = name
@@ -101,6 +108,7 @@ final class DayTemplate {
         self.scheduledWeekday = scheduledWeekday
         self.plannedSetsByExerciseIdData = Self.encodePlanMap(plannedSetsByExerciseId)
         self.plannedRepsByExerciseIdData = Self.encodePlanMap(plannedRepsByExerciseId)
+        self.plannedWeightByExerciseIdData = Self.encodeWeightMap(plannedWeightByExerciseId)
     }
 
     /// Strips "Day N · " prefix if present, returning just the routine name.
@@ -133,8 +141,14 @@ final class DayTemplate {
         set { plannedRepsByExerciseIdData = Self.encodePlanMap(newValue) }
     }
 
+    var plannedWeightByExerciseId: [UUID: Double] {
+        get { Self.decodeWeightMap(plannedWeightByExerciseIdData) }
+        set { plannedWeightByExerciseIdData = Self.encodeWeightMap(newValue) }
+    }
+
     func plannedSets(for exerciseId: UUID) -> Int? { plannedSetsByExerciseId[exerciseId] }
     func plannedReps(for exerciseId: UUID) -> Int? { plannedRepsByExerciseId[exerciseId] }
+    func plannedWeight(for exerciseId: UUID) -> Double? { plannedWeightByExerciseId[exerciseId] }
 
     func setPlannedSets(_ value: Int?, for exerciseId: UUID) {
         var map = plannedSetsByExerciseId
@@ -148,6 +162,12 @@ final class DayTemplate {
         plannedRepsByExerciseId = map
     }
 
+    func setPlannedWeight(_ value: Double?, for exerciseId: UUID) {
+        var map = plannedWeightByExerciseId
+        if let value { map[exerciseId] = value } else { map.removeValue(forKey: exerciseId) }
+        plannedWeightByExerciseId = map
+    }
+
     private static func encodePlanMap(_ map: [UUID: Int]) -> Data? {
         let stringKeyed = Dictionary(uniqueKeysWithValues: map.map { ($0.key.uuidString, $0.value) })
         return try? JSONEncoder().encode(stringKeyed)
@@ -159,6 +179,23 @@ final class DayTemplate {
             return [:]
         }
         var result: [UUID: Int] = [:]
+        for (key, value) in decoded {
+            if let uuid = UUID(uuidString: key) { result[uuid] = value }
+        }
+        return result
+    }
+
+    private static func encodeWeightMap(_ map: [UUID: Double]) -> Data? {
+        let stringKeyed = Dictionary(uniqueKeysWithValues: map.map { ($0.key.uuidString, $0.value) })
+        return try? JSONEncoder().encode(stringKeyed)
+    }
+
+    private static func decodeWeightMap(_ data: Data?) -> [UUID: Double] {
+        guard let data,
+              let decoded = try? JSONDecoder().decode([String: Double].self, from: data) else {
+            return [:]
+        }
+        var result: [UUID: Double] = [:]
         for (key, value) in decoded {
             if let uuid = UUID(uuidString: key) { result[uuid] = value }
         }

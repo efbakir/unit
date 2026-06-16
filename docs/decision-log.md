@@ -20,6 +20,36 @@
 
 ---
 
+## 2026-06-11 — Reddit plan refined from the "Subreddits" session: post-now subs + r/iosapps gate change + RSS-assisted comments
+
+**Decision:** Folded the parallel "Subreddits" Claude Code session (`53d502cf`) into `README.md`'s Reddit section. Three changes: (1) reframed from "farm karma for weeks, then post" to **two games in parallel** — post the screenshot-feedback post *now* in link-friendly subs (**r/appledevelopers** — link-in-body survives — plus r/SideProject, r/alphaandbetausers, r/TestMyApp, r/betatesting) while farming karma for the gated ones; (2) captured r/iosapps's tightened **Phase-1 gate** (25 *community* karma, ABC format, Freemium flair never "Free", verify email, 1 promo/30 days); (3) noted Claude can pull live threads + draft comments via Reddit's **public RSS feed** (the connector + JSON API are 403 auth-walled). Added the proven self-deprecating post hook ("I can deadlift Xkg but can't tell if my screenshots are any good").
+
+**Why:** Founder asked to mine that session and reconcile it with the plan. It contained live-verified tactics the README lacked — most importantly that the app is already live so open subs are postable today, and that r/iosapps changed its rules (old karma plan assumed a floor of 15; it's 25 community karma now).
+
+**Implication:** The blanket "link in first comment, never in body" don't is now nuanced — body links are fine in r/appledevelopers + the dedicated feedback subs. r/iosapps stays gated until 25 community karma + email verify. Reddit comment automation stays banned (ToS + shadowban risk — confirmed in that session). The RSS route and r/iosapps rules are already in memory (`reference_reddit_research_via_rss`, `reference_reddit_iosapps_rules`). Full title variants + ~150-word body template live in the `53d502cf` session if needed.
+
+---
+
+## 2026-06-11 — Content model switched: aspirational-identity content + app-in-caption (NOT app demos)
+
+**Decision:** The primary reel format is now **journal.bingen's model** — aspirational *identity* footage (you training, cinematic, locked-in) with one bold on-screen text claim, app named **only in the caption** + comment funnel. Demoting the inherited "screen-record the app logging a set" demo format (from the archived `tiktok-ig.md` tradesman playbook) — app footage is now optional (a ≤1s glance shot), not the subject. Verified by pulling the cover frames of his top 6 reels (11.3M→176k views): zero show the app; all are monk-mode/lock-in/reverse-brainrot aesthetic. `README.md` "The format" section rewritten; study updated with the visual finding.
+
+**Why:** Founder looked at his actual page and pushed back that he behaves like an influencer and only names the app in the caption — far easier than choreographing app demos. The frames confirmed it. Easier production directly serves the anti-overwhelm goal, and identity/aesthetic content out-reaches product demos.
+
+**Implication / open risk:** Eclipta (meditation) has a tight content→product link; a gym *logger* is looser — lifting footage sells *training*, not *logging*. Mitigation locked into the plan: the on-screen claim must point at the **tracking/simplicity identity**, not generic gym motivation, or reach won't convert to installs. This is the one thing to get right; watch install-per-view, not just views. His video frames were viewed for analysis but **not committed** (his content, public repo, `anti-patterns.md` reuse rule).
+
+---
+
+## 2026-06-11 — Marketing radically simplified to one daily routine; folder cut 56→6 files; Reddit karma habit added
+
+**Decision:** Collapsed `docs/marketing/` from 56 files to an active core of 6 — a single one-page plan (`README.md`), `anti-patterns.md`, `account-studies/`, and the `ig_account_fetch.py` tool. The other ~48 files (`12-week-calendar.md`, launch-day/ASO/App-Review docs, the ElevenLabs + Python automation pipeline, X and Reddit deep docs, UGC brief, all `research/`) moved to `docs/archive/marketing/` via `git mv` — parked, not deleted, with an archive README. The live plan is a **daily routine**: ~25 min/day (1 reel to TikTok+IG from a Sunday-filmed library · reply to comments · 1–3 Reddit karma comments) + a ~60 min Sunday session. **Reddit is back in** as a daily comment-only karma habit with a 3-phase ladder (bank karma → mention-when-asked at >100 r/SideProject / ≥25 r/iosapps → BIP post at a real milestone), distilled from the archived `reddit-karma-plan.md`.
+
+**Why:** Founder was overwhelmed — "too many options, no plan" — and explicitly asked to delete what isn't used and be given one direction to execute without getting sidetracked. Drift-prevention here means *removing* options, not adding a plan on top (CLAUDE.md §1/§7 simplification bias). This **overrides** the same-day README line "don't add Reddit back for 90 days": karma farming is a slow background habit that must *start* early (the months-long runway is the point); only the promo post stays gated, so a daily comment habit is compatible with simplicity — it's a fixed checklist item, not a new open-ended choice.
+
+**Implication:** One entry point for all marketing now: `docs/marketing/README.md`, checklist-first. `INDEX.md` marketing row updated; `anti-patterns.md` research-citation paths repointed into `../archive/`. Append-only links from this log to `research/monetization-strategy-2026-05-31.md` and `research/pre-fill-naming-2026-06-09.md` now resolve under `docs/archive/marketing/research/` (noted in the archive README; not chased). To revive any channel: `git mv docs/archive/marketing/<file> docs/marketing/`. Reddit anti-pattern rules (link in first comment, 1 BIP/sub/month, manual posting, 6h reply window) remain binding and are restated in the plan.
+
+---
+
 ## 2026-06-11 — anti-patterns.md trust-calibrated (durable vs tactical rows); engagement-bait row split — first live-data correction
 
 **Decision:** Added a "How to trust this file" header to `anti-patterns.md` splitting rows into **durable** (legal / brand / budget — obey) and **tactical** (algorithm reach/shadowban/timing claims — test, don't obey; sourced from 2026-04-29 secondary research, never tested on Unit's accounts; live `account-studies/` data overrides). Split the "engagement bait" row: hollow bait ("like for part 2", "comment YES") stays banned; the **keyword auto-DM funnel** ("comment X → auto-DM the link") is removed from the ban — Meta-native conversion mechanic, not bait.

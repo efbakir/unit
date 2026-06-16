@@ -22,6 +22,14 @@ struct OnboardingExercise: Identifiable, Equatable, Hashable, Codable {
     var name: String
     var plannedSets: Int = OnboardingExercise.defaultPlannedSets
     var plannedReps: Int = OnboardingExercise.defaultPlannedReps
+    /// First-session weight seed (kg), carried from
+    /// `ImportedProgramExercise.weightKg`. Becomes the "Last time" ghost
+    /// weight on the very first session so a pasted program's numbers aren't
+    /// discarded. `nil` when the paste carried no weight — the field stays
+    /// blank, exactly as before. `Optional<Double>` decodes via
+    /// `decodeIfPresent`, so onboarding drafts persisted before this field
+    /// existed migrate to `nil` cleanly (no stored-data migration needed).
+    var plannedWeightKg: Double? = nil
     /// Parser-captured detail that the data model can't represent
     /// structurally yet (per-side, duration, distance, tempo, intent
     /// qualifiers, parenthesized form notes). Carried from
@@ -81,6 +89,12 @@ struct ImportedProgramDay: Identifiable, Equatable {
 @Observable
 final class OnboardingViewModel {
 
+    /// Nonisolated for the same back-deploy-shim SIGABRT as
+    /// `ActiveWorkoutViewModel.deinit` — see the comment there. (This class
+    /// is MainActor via the module's default isolation, so its implicit
+    /// deinit was isolated too.)
+    nonisolated deinit {}
+
     // MARK: Path
 
     enum SetupPath { case build }
@@ -114,6 +128,12 @@ final class OnboardingViewModel {
     var unitSystem: String = "kg"
 
     // MARK: Split
+
+    /// Allowed training days per week: 1 (full-body, same workout each
+    /// session) through 7 (every day). The split-builder stepper and every
+    /// restore/clamp path read this single range so the bound never drifts
+    /// across files.
+    static let dayCountRange: ClosedRange<Int> = 1...7
 
     var dayCount: Int = 3
     /// Default day labels are pre-filled (`"Day 1"`, `"Day 2"`, …) so the
@@ -195,7 +215,7 @@ final class OnboardingViewModel {
     }
 
     func updateDayCount(_ newCount: Int) {
-        let count = max(2, min(6, newCount))
+        let count = min(max(newCount, Self.dayCountRange.lowerBound), Self.dayCountRange.upperBound)
         dayCount = count
         // New slots get a `"Day N"` placeholder so `splitIsValid` stays
         // true by default — see `dayNames` declaration. User-edited names
@@ -319,10 +339,15 @@ final class OnboardingViewModel {
             let exerciseIds = dayOnbExs.compactMap { exerciseMap[$0.id]?.id }
             var setsPlan: [UUID: Int] = [:]
             var repsPlan: [UUID: Int] = [:]
+            var weightPlan: [UUID: Double] = [:]
             for onbEx in dayOnbExs {
                 guard let resolvedId = exerciseMap[onbEx.id]?.id else { continue }
                 setsPlan[resolvedId] = onbEx.plannedSets
                 repsPlan[resolvedId] = onbEx.plannedReps
+                // Only seed a real, positive weight — a 0 or absent paste
+                // weight leaves the field blank so the ghost reads as "no
+                // weight yet", not "0 kg".
+                if let w = onbEx.plannedWeightKg, w > 0 { weightPlan[resolvedId] = w }
             }
             let resolvedWeekday: Int = {
                 guard !useFlexibleSchedule,
@@ -336,7 +361,8 @@ final class OnboardingViewModel {
                 orderedExerciseIds: exerciseIds,
                 scheduledWeekday: resolvedWeekday,
                 plannedSetsByExerciseId: setsPlan,
-                plannedRepsByExerciseId: repsPlan
+                plannedRepsByExerciseId: repsPlan,
+                plannedWeightByExerciseId: weightPlan
             )
             modelContext.insert(tmpl)
             templateIds.append(tmpl.id)
@@ -393,7 +419,7 @@ extension OnboardingViewModel {
         }
         guard !sanitizedDays.isEmpty else { return }
 
-        dayCount = min(6, max(1, sanitizedDays.count))
+        dayCount = min(max(sanitizedDays.count, Self.dayCountRange.lowerBound), Self.dayCountRange.upperBound)
         dayNames = Array(sanitizedDays.prefix(dayCount).enumerated().map { index, day in
             let trimmed = day.name.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? "Workout \(index + 1)" : trimmed
@@ -410,6 +436,7 @@ extension OnboardingViewModel {
                     name: exercise.name,
                     plannedSets: clampPlannedSets(exercise.sets ?? OnboardingExercise.defaultPlannedSets),
                     plannedReps: clampPlannedReps(exercise.reps ?? OnboardingExercise.defaultPlannedReps),
+                    plannedWeightKg: exercise.weightKg,
                     note: exercise.note ?? "",
                     originalLine: exercise.originalLine ?? ""
                 )

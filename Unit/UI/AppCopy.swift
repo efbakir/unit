@@ -78,6 +78,9 @@ enum AppCopy {
         static let exerciseCurrentTag = "Current"
         /// PR badge headline — paired with a Verde checkmark inside `WorkoutCommandCard`.
         static let personalRecord = "Personal record"
+        /// Compact PR chip on History session rows, detail headers, and set
+        /// rows. VoiceOver expands it via `personalRecord`.
+        static let prTag = "PR"
         /// Edit-mode title for `AdjustResultSheet` (tap a logged chip). Numbered to
         /// match the chip the user tapped — "Set 1", "Set 2", etc.
         static func editSet(_ setNumber: Int) -> String { "Set \(setNumber)" }

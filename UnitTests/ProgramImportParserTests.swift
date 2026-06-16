@@ -529,6 +529,168 @@ final class ProgramImportParserTests: XCTestCase {
                       "Free-text coach notes should surface as a noisyLines warning, not drop silently")
     }
 
+    // MARK: - Weight seed path (parser weight → first-session "Last time" ghost)
+
+    // The parser already extracts `weightKg` (see the table / explicit-unit
+    // tests above). These verify the weight survives the rest of the chain —
+    // import → onboarding state → DayTemplate → first-session ghost — instead
+    // of being silently discarded the way it was before this fix.
+
+    /// A pasted weight round-trips through the DayTemplate planned-weight map
+    /// (the persisted seed) and is readable per exercise.
+    func testWeightSeed_DayTemplate_RoundTrips() {
+        let squat = UUID()
+        let bench = UUID()
+        let template = DayTemplate(
+            name: "Push",
+            plannedWeightByExerciseId: [squat: 100, bench: 60]
+        )
+        XCTAssertEqual(template.plannedWeight(for: squat) ?? 0, 100, accuracy: 0.01)
+        XCTAssertEqual(template.plannedWeight(for: bench) ?? 0, 60, accuracy: 0.01)
+    }
+
+    /// No seed → nil, so a paste without weights leaves the field blank
+    /// (never "0 kg"). Confirms the additive map is safe for old templates.
+    func testWeightSeed_DayTemplate_AbsentReturnsNil() {
+        let template = DayTemplate(name: "Push")
+        XCTAssertNil(template.plannedWeight(for: UUID()),
+                     "A template with no seeded weight must read as blank, not 0")
+    }
+
+    /// `applyImportedProgram` carries the parser's `weightKg` into onboarding
+    /// state. Before the fix this hop dropped the weight on the floor.
+    func testWeightSeed_ApplyImportedProgram_CarriesWeightKg() {
+        let vm = OnboardingViewModel()
+        let day = ImportedProgramDay(
+            name: "Push",
+            exercises: [ImportedProgramExercise(name: "Bench", sets: 4, reps: 8, weightKg: 60)]
+        )
+        vm.applyImportedProgram([day])
+        XCTAssertEqual(vm.dayExercises.first?.first?.plannedWeightKg ?? 0, 60, accuracy: 0.01,
+                       "Pasted weight must reach onboarding state, not be discarded")
+    }
+
+    /// The first-session ghost (`.planned` source) is seeded from the pasted
+    /// weight when one exists. (kg user → no conversion.)
+    func testWeightSeed_Prefill_SeedsPlannedWeight() {
+        UserDefaults.standard.set("kg", forKey: "unitSystem")
+        let vm = ActiveWorkoutViewModel()
+        let session = WorkoutSession(templateId: UUID())
+        let prefill = vm.prefillSet(
+            for: UUID(),
+            currentSession: session,
+            sessions: [],
+            plannedReps: 5,
+            plannedWeightKg: 100
+        )
+        XCTAssertEqual(prefill?.source, .planned)
+        XCTAssertEqual(prefill?.weight ?? -1, 100, accuracy: 0.01,
+                       "First-session ghost should show the seeded weight")
+        XCTAssertEqual(prefill?.reps, 5)
+    }
+
+    /// The seed is stored in kg but the logging pipeline is in the lifter's
+    /// display unit — so an lb user's first-session ghost converts kg → lb.
+    /// (Regression guard for the kg-into-lb-field bug.)
+    func testWeightSeed_Prefill_ConvertsKgToDisplayUnitForLb() {
+        UserDefaults.standard.set("lb", forKey: "unitSystem")
+        defer { UserDefaults.standard.set("kg", forKey: "unitSystem") }
+        let vm = ActiveWorkoutViewModel()
+        let session = WorkoutSession(templateId: UUID())
+        let prefill = vm.prefillSet(
+            for: UUID(),
+            currentSession: session,
+            sessions: [],
+            plannedReps: 5,
+            plannedWeightKg: 100
+        )
+        XCTAssertEqual(prefill?.weight ?? -1, 100 * 2.20462, accuracy: 0.1,
+                       "100 kg seed must display as ~220 lb for an lb user, not 100")
+    }
+
+    /// No seed → weight 0 (blank): the unchanged behaviour for manually-built
+    /// programs that carry no pasted weight.
+    func testWeightSeed_Prefill_NoSeedIsZeroWeight() {
+        UserDefaults.standard.set("kg", forKey: "unitSystem")
+        let vm = ActiveWorkoutViewModel()
+        let session = WorkoutSession(templateId: UUID())
+        let prefill = vm.prefillSet(
+            for: UUID(),
+            currentSession: session,
+            sessions: [],
+            plannedReps: 5
+        )
+        XCTAssertEqual(prefill?.source, .planned)
+        XCTAssertEqual(prefill?.weight ?? -1, 0, accuracy: 0.01,
+                       "Without a seed the first-session ghost weight stays blank (0)")
+    }
+
+    /// Triple-`x` notation respects the lifter's unit: `4x8x135` for an lb
+    /// user is 135 lb, stored as ~61.2 kg (not 135 kg). Regression guard for
+    /// the unit bug that only surfaced once the weight reached the ghost.
+    func testWeightSeed_TripleX_RespectsLbDefaultUnit() {
+        let kg = ProgramImportParser.parse("Squat 4x8x135", defaultUnit: "lb")
+            .first?.exercises.first?.weightKg ?? 0
+        XCTAssertEqual(kg, 135 / 2.20462, accuracy: 0.01,
+                       "Triple-x weight must convert lb → kg like the other weight paths")
+    }
+
+    // MARK: - Turkish tab-separated table paste (v2 robustness)
+
+    /// Real paste from a Turkish user: a tab-separated 5-column table
+    /// (Egzersiz / Ağırlık / Set x Rep / RPE / Dinlenme) with a header row
+    /// and a trailing conditioning row. The header must be skipped, the RPE
+    /// and rest columns ignored, the weight (which sits BEFORE the NxR)
+    /// captured, and "Incline Walk" filtered as conditioning.
+    func testTurkishTablePaste_HeaderSkipped_ColumnsIgnored() {
+        let input = """
+        Egzersiz\tAğırlık (kg)\tSet x Rep\tRPE\tDinlenme
+        Barbell Bent Over Row\t67.5\t4x8\t8\t2dk
+        Barbell OHP\t55\t4x8\t8\t2dk
+        Lat Pulldown\t42.5\t3x10\t7\t60sn
+        Cable Row\t42.5\t3x10\t7\t60sn
+        Rear Delt Fly\t75\t3x12\t7\t60sn
+        Face Pull\t30\t3x12\t7\t60sn
+        Barbell Curl\t30\t3x10\t7\t60sn
+        Hammer Curl\t16\t3x10\t7\t60sn
+        Incline Walk\t—\t35dk\t—\t—
+        """
+
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+
+        // Exactly one day (no heading), 8 strength exercises in order.
+        XCTAssertEqual(result.days.count, 1, "Expected a single workout day")
+        let day = result.days[0]
+        XCTAssertEqual(day.exercises.map(\.name), [
+            "Barbell Bent Over Row", "Barbell OHP", "Lat Pulldown", "Cable Row",
+            "Rear Delt Fly", "Face Pull", "Barbell Curl", "Hammer Curl",
+        ], "Header row must be skipped; Incline Walk filtered as conditioning")
+
+        // Slot-filling: weight is the bare number BEFORE the NxR; the RPE
+        // (8/7) and rest (2dk/60sn) columns must not corrupt weight or reps.
+        XCTAssertEqual(day.exercises[0].sets, 4)
+        XCTAssertEqual(day.exercises[0].reps, 8)
+        XCTAssertEqual(day.exercises[0].weightKg ?? 0, 67.5, accuracy: 0.01)
+
+        XCTAssertEqual(day.exercises[2].name, "Lat Pulldown")
+        XCTAssertEqual(day.exercises[2].sets, 3)
+        XCTAssertEqual(day.exercises[2].reps, 10)
+        XCTAssertEqual(day.exercises[2].weightKg ?? 0, 42.5, accuracy: 0.01)
+
+        // The Turkish header row must never become an exercise.
+        XCTAssertFalse(
+            day.exercises.contains { $0.name.localizedCaseInsensitiveContains("Egzersiz") },
+            "The header row leaked in as an exercise"
+        )
+
+        // Incline Walk (duration-only cardio) filtered as conditioning.
+        let conditioning = result.warnings.first {
+            if case .skippedConditioning = $0 { return true }
+            return false
+        }
+        XCTAssertNotNil(conditioning, "Expected Incline Walk filtered as conditioning")
+    }
+
     // MARK: - Fixture data
 
     /// Verbatim user paste used by the per-day tests so they stay aligned
@@ -565,4 +727,144 @@ final class ProgramImportParserTests: XCTestCase {
     Neck Band Extensions 2x20
     Easy Bike Cooldown 10min
     """
+}
+
+// MARK: - PR history derivation
+
+/// Coverage for `PRHistory.prSetEntryIDs(in:)` — the History-side mirror of
+/// `ActiveWorkoutView.priorBest`. Lives in this file because the UnitTests
+/// target lists source files explicitly in project.pbxproj (no synchronized
+/// folders); same precedent as the weight-seed tests above.
+@MainActor
+final class PRHistoryTests: XCTestCase {
+
+    private func makeSession(
+        daysAgo: Int,
+        isCompleted: Bool = true,
+        entries: [SetEntry]
+    ) -> WorkoutSession {
+        let session = WorkoutSession(
+            date: Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!,
+            templateId: UUID(),
+            isCompleted: isCompleted
+        )
+        session.setEntries = entries
+        return session
+    }
+
+    private func entry(
+        _ exerciseID: UUID,
+        weight: Double,
+        reps: Int,
+        setIndex: Int = 0,
+        isWarmup: Bool = false,
+        isCompleted: Bool = true
+    ) -> SetEntry {
+        SetEntry(
+            sessionId: UUID(),
+            exerciseId: exerciseID,
+            weight: weight,
+            reps: reps,
+            isWarmup: isWarmup,
+            isCompleted: isCompleted,
+            setIndex: setIndex
+        )
+    }
+
+    /// First-ever log of an exercise sets the baseline without firing —
+    /// matches the live workout's "no baseline → no PR" rule.
+    func testFirstEverLog_IsNotAPR() {
+        let bench = UUID()
+        let sessions = [makeSession(daysAgo: 1, entries: [entry(bench, weight: 100, reps: 8)])]
+        XCTAssertTrue(PRHistory.prSetEntryIDs(in: sessions).isEmpty)
+    }
+
+    func testHeavierSetInLaterSession_IsAPR() {
+        let bench = UUID()
+        let old = entry(bench, weight: 100, reps: 8)
+        let new = entry(bench, weight: 105, reps: 8)
+        let sessions = [
+            makeSession(daysAgo: 7, entries: [old]),
+            makeSession(daysAgo: 1, entries: [new]),
+        ]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: sessions), [new.id])
+    }
+
+    /// Weight ranks first, reps break ties — same comparator as `priorBest`.
+    func testSameWeightMoreReps_IsAPR_SameWeightSameReps_IsNot() {
+        let bench = UUID()
+        let base = entry(bench, weight: 100, reps: 8)
+        let moreReps = entry(bench, weight: 100, reps: 9)
+        let equal = entry(bench, weight: 100, reps: 9)
+        let sessions = [
+            makeSession(daysAgo: 7, entries: [base]),
+            makeSession(daysAgo: 4, entries: [moreReps]),
+            makeSession(daysAgo: 1, entries: [equal]),
+        ]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: sessions), [moreReps.id])
+    }
+
+    /// Warmups neither badge nor raise the baseline — a heavy warmup single
+    /// must not suppress the working-set PR that follows.
+    func testWarmupSets_NeverBadge_AndDoNotRaiseBaseline() {
+        let bench = UUID()
+        let base = entry(bench, weight: 100, reps: 8)
+        let heavyWarmup = entry(bench, weight: 140, reps: 1, setIndex: 0, isWarmup: true)
+        let working = entry(bench, weight: 105, reps: 8, setIndex: 1)
+        let sessions = [
+            makeSession(daysAgo: 7, entries: [base]),
+            makeSession(daysAgo: 1, entries: [heavyWarmup, working]),
+        ]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: sessions), [working.id])
+    }
+
+    /// Abandoned (incomplete) sessions are invisible: their sets never badge
+    /// and never raise the baseline — mirrors `priorBest` filtering to
+    /// completed prior sessions.
+    func testIncompleteSessions_AreInvisible() {
+        let bench = UUID()
+        let base = entry(bench, weight: 100, reps: 8)
+        let abandoned = entry(bench, weight: 120, reps: 8)
+        let working = entry(bench, weight: 110, reps: 8)
+        let sessions = [
+            makeSession(daysAgo: 7, entries: [base]),
+            makeSession(daysAgo: 4, isCompleted: false, entries: [abandoned]),
+            makeSession(daysAgo: 1, entries: [working]),
+        ]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: sessions), [working.id])
+    }
+
+    /// Earlier sets in the same session count toward the baseline for later
+    /// ones — two ascending sets in the very first session: the second fires.
+    func testWithinFirstSession_SecondAscendingSet_IsAPR() {
+        let bench = UUID()
+        let first = entry(bench, weight: 100, reps: 8, setIndex: 0)
+        let second = entry(bench, weight: 105, reps: 8, setIndex: 1)
+        let sessions = [makeSession(daysAgo: 1, entries: [first, second])]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: sessions), [second.id])
+    }
+
+    /// Replay must order by session date, not by array position.
+    func testChronologyFollowsDate_NotArrayOrder() {
+        let bench = UUID()
+        let old = entry(bench, weight: 100, reps: 8)
+        let new = entry(bench, weight: 105, reps: 8)
+        let newerFirst = [
+            makeSession(daysAgo: 1, entries: [new]),
+            makeSession(daysAgo: 7, entries: [old]),
+        ]
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: newerFirst), [new.id])
+    }
+
+    /// Baselines are per-exercise — a bench baseline must not make the first
+    /// squat log a PR.
+    func testExercisesAreIndependent() {
+        let bench = UUID()
+        let squat = UUID()
+        let sessions = [
+            makeSession(daysAgo: 7, entries: [entry(bench, weight: 100, reps: 8)]),
+            makeSession(daysAgo: 1, entries: [entry(squat, weight: 90, reps: 8)]),
+        ]
+        XCTAssertTrue(PRHistory.prSetEntryIDs(in: sessions).isEmpty)
+    }
 }

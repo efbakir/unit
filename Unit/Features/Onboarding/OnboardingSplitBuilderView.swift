@@ -53,8 +53,8 @@ struct OnboardingSplitBuilderView: View {
                         Spacer()
                         AppStepper(
                             value: "\(vm.dayCount)",
-                            isDecrementEnabled: vm.dayCount > 2,
-                            isIncrementEnabled: vm.dayCount < 6,
+                            isDecrementEnabled: vm.dayCount > OnboardingViewModel.dayCountRange.lowerBound,
+                            isIncrementEnabled: vm.dayCount < OnboardingViewModel.dayCountRange.upperBound,
                             onDecrement: { vm.updateDayCount(vm.dayCount - 1) },
                             onIncrement: { vm.updateDayCount(vm.dayCount + 1) }
                         )

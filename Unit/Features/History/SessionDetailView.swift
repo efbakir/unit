@@ -15,8 +15,12 @@ struct SessionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
+    /// Full session history — the PR baseline must replay every completed
+    /// session, not just the one on display.
+    @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]
 
     private var exerciseSnapshots: [SessionExerciseSnapshot] {
+        let prIDs = PRHistory.prSetEntryIDs(in: allSessions)
         let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
         return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
             guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
@@ -27,7 +31,8 @@ struct SessionDetailView: View {
                     setIndex: entry.setIndex,
                     actualWeight: entry.weight,
                     actualReps: entry.reps,
-                    note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines)
+                    note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines),
+                    isPR: prIDs.contains(entry.id)
                 )
             }
             return SessionExerciseSnapshot(

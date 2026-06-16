@@ -149,22 +149,41 @@ enum TrainingWeekProgressBuilder {
         return days
     }
 
-    /// Past calendar day before today: user has at least one routine template, and no **completed**
-    /// session from that routine on that day. Matches `overviewDays` / Today week strip semantics.
+    /// Past calendar day where the lifter actually had a routine scheduled
+    /// and didn't log a session. Three guards in order:
+    ///
+    /// 1. **Past date** — today and future days are never "missed".
+    /// 2. **Date's weekday is in `scheduledWeekdays`** — the lifter only
+    ///    "misses" a day they had explicitly assigned in onboarding (e.g.
+    ///    Mon/Wed/Fri). Tuesdays for a 3-day push/pull/legs lifter are
+    ///    rest days by design, not missed workouts. Pass an empty set for
+    ///    flexible-schedule (rotation-mode) splits — every day is fair
+    ///    game, so nothing is technically "missed".
+    /// 3. **No completed session** from any routine template on that day.
+    ///
+    /// `scheduledWeekdays` uses iOS `Calendar` weekday numbering
+    /// (1 = Sunday, 7 = Saturday), matching `DayTemplate.scheduledWeekday`.
+    /// The 0 value (rotation) should never appear in this set — callers
+    /// must filter it out before constructing.
     static func isMissedTrainingDay(
         date: Date,
         calendar: Calendar = .current,
         now: Date = Date(),
         routineTemplateIDs: [UUID],
+        scheduledWeekdays: Set<Int>,
         sessions: [WorkoutSession]
     ) -> Bool {
         guard !routineTemplateIDs.isEmpty else { return false }
-        let templateIDs = Set(routineTemplateIDs)
+        guard !scheduledWeekdays.isEmpty else { return false }
         let dayStart = calendar.startOfDay(for: date)
         let startOfToday = calendar.startOfDay(for: now)
         guard dayStart < startOfToday else { return false }
         if calendar.isDateInToday(date) { return false }
 
+        let weekday = calendar.component(.weekday, from: dayStart)
+        guard scheduledWeekdays.contains(weekday) else { return false }
+
+        let templateIDs = Set(routineTemplateIDs)
         let completedSessions = sessions.filter(\.isCompleted)
         let hadSession = completedSessions.contains { session in
             templateIDs.contains(session.templateId)

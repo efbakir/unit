@@ -26,6 +26,12 @@ enum AppColor {
     /// Neutral surface for steppers, segmented track, disabled buttons, muted chip fills.
     /// Single canonical "secondary surface" token.
     static let controlBackground = Color(uiColor: uicolor(0xE8E8E8))
+    /// One shade darker than `controlBackground`. Use to mark a control as the
+    /// active subject of a sheet that is currently open — e.g. the logged set
+    /// chip whose values are being edited in `AdjustResultSheet`. Subtle enough
+    /// to read as "this is the one" without competing with the accent pill used
+    /// for the live current set.
+    static let controlBackgroundActive = Color(uiColor: uicolor(0xD6D6D6))
 
     // Text
     static let textPrimary = Color(uiColor: uicolor(0x0A0A0A))
@@ -506,9 +512,17 @@ private struct AppWorkoutPanelChrome: ViewModifier {
 /// SF Symbol catalog as role-named cases. Always invoke via `.image(size:weight:)`
 /// so icons across the app share the same stroke weight. Disclosure chevrons are
 /// intentionally not exposed here.
+///
+/// `back` + `forward` are a paired set — both chevrons so the visual rhythm
+/// reads as one nav control. The earlier `arrow.right` for `.forward` paired
+/// awkwardly with `chevron.left` (chevron + straight arrow = inconsistent
+/// pair, the only call site is the History calendar month nav). The
+/// chevron-right ban in CLAUDE.md §4 is on raw `chevron.right` in view code
+/// as a disclosure indicator — using it here via the design-system atom is
+/// fine; the hook excludes `DesignSystem.swift`.
 enum AppIcon: String {
     case back = "chevron.left"
-    case forward = "arrow.right"
+    case forward = "chevron.right"
     case chevronDown = "chevron.down"
     case chevronUp = "chevron.up"
     case close = "xmark"
@@ -542,9 +556,6 @@ enum AppIcon: String {
     case keyboard = "keyboard"
     case minusCircle = "minus.circle"
     case circle = "circle"
-    case moveUp = "arrow.up"
-    case moveDown = "arrow.down"
-    case more = "ellipsis.circle"
     case scalemass = "scalemass"
 
     var systemName: String { rawValue }
@@ -1705,6 +1716,13 @@ struct SetProgressIndicator: View {
         /// chrome so the milestone persists for the rest of the session — pairs with
         /// the heavy-impact haptic that fires once at log time.
         var isPR: Bool = false
+        /// True while this chip's set is the subject of an open edit sheet
+        /// (`AdjustResultSheet` in `.edit` mode). Renders a slightly darker
+        /// chip background so the strip behind the sheet communicates which
+        /// set is being modified, even when the current-set accent pill sits
+        /// further down the strip. PR chips keep their accent fill — the PR
+        /// signal outranks the edit affordance.
+        var isEditing: Bool = false
         /// Tap handler for completed/failed chips — opens the edit sheet for that set
         /// in `ActiveWorkoutView`. Honored only when state is `completed` or `failed`;
         /// upcoming/current/disabled chips are never interactive (no values to edit).
@@ -1713,7 +1731,17 @@ struct SetProgressIndicator: View {
 
         var chipText: String? {
             guard let reps, let weightText, !weightText.isEmpty else { return nil }
-            return "\(weightText)x\(reps)"
+            // Uppercase the weight token so the unit (`kg`, `lb`) reads as
+            // all-caps inside the chip — matches the all-caps `SET N` pill
+            // sitting beside it (`stepIndicator` mono semibold cap-style).
+            // Digits are unaffected by `.uppercased()`. The literal `x`
+            // separator stays lowercase per the lifter's spec: only the
+            // unit converts, not the multiplier glyph. `BW` is already
+            // uppercase so it round-trips cleanly. Applying this at the
+            // string layer (not via `.textCase(.uppercase)` on the
+            // SwiftUI Text) is what lets us case the unit without also
+            // casing the `x` between weight and reps.
+            return "\(weightText.uppercased())x\(reps)"
         }
     }
 
@@ -1793,11 +1821,11 @@ struct SetProgressIndicator: View {
             .foregroundStyle(step.isPR ? AppColor.accentForeground : AppColor.textSecondary)
             .padding(.horizontal, AppSpacing.sm)
             .frame(height: 24)
-            .background(Capsule(style: .continuous).fill(step.isPR ? AppColor.accent : AppColor.controlBackground))
+            .background(Capsule(style: .continuous).fill(chipFill(for: step)))
         } else {
             ZStack {
                 Circle()
-                    .fill(backgroundColor(for: step.state))
+                    .fill(backgroundColor(for: step.state, isEditing: step.isEditing))
                     .frame(width: 24, height: 24)
 
                 switch step.state {
@@ -1816,14 +1844,19 @@ struct SetProgressIndicator: View {
         }
     }
 
-    private func backgroundColor(for state: Step.State) -> Color {
+    private func chipFill(for step: Step) -> Color {
+        if step.isPR { return AppColor.accent }
+        return step.isEditing ? AppColor.controlBackgroundActive : AppColor.controlBackground
+    }
+
+    private func backgroundColor(for state: Step.State, isEditing: Bool = false) -> Color {
         switch state {
         case .current:
             return AppColor.accent
         case .disabled:
             return AppColor.background
         case .completed, .failed, .upcoming:
-            return AppColor.controlBackground
+            return isEditing ? AppColor.controlBackgroundActive : AppColor.controlBackground
         }
     }
 
@@ -2280,9 +2313,25 @@ struct AppSelectableTierCard: View {
     var body: some View {
         Button(action: handleTap) {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                if let badge {
-                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
+                // Badge slot is always reserved — even on tiers with no
+                // badge — so a row of three cards keeps a single visual
+                // baseline. Previously, only the badged card (annual)
+                // took up the badge-row height, leaving the un-badged
+                // cards visibly shorter; in `HStack(alignment: .top)`
+                // the annual card then extended past the others and its
+                // price + sublabel got clipped by the surrounding
+                // scroll-edge fade. `.hidden()` keeps the AppTag's
+                // exact footprint without rendering pixels, so any
+                // future AppTag size change auto-syncs.
+                Group {
+                    if let badge {
+                        AppTag(text: badge, style: .accent, layout: .compactCapsule)
+                    } else {
+                        AppTag(text: " ", style: .accent, layout: .compactCapsule)
+                            .hidden()
+                    }
                 }
+                .accessibilityHidden(badge == nil)
 
                 HStack(spacing: AppSpacing.xs) {
                     Text(label)
@@ -2575,10 +2624,20 @@ extension View {
     /// shadow for edge definition. The flat-card doctrine still applies to
     /// every other surface — only views that need to read as detached from the
     /// page get this treatment.
+    ///
+    /// **Directional, not haloed.** `y == radius` on both layers so the
+    /// shadow extends purely downward from the pill — no upward bleed. The
+    /// earlier halo recipe (`radius: 20, y: 10`) reached ~10pt above the
+    /// pill's top edge, which got hard-clipped by the iOS 26 navigation-bar
+    /// Liquid Glass material whenever a top-mounted `AppToast` sat near the
+    /// safe-area inset (visible on the onboarding "Add exercises" undo
+    /// toast as a sharp horizontal cut along the toast's top edge). Matches
+    /// the Apple-native floating-pill convention (Clipboard / "Copied")
+    /// where the shadow lives beneath the object, not around it.
     func appFloatingShadow() -> some View {
         self
-            .shadow(color: AppColor.textPrimary.opacity(0.14), radius: 20, x: 0, y: 10)
-            .shadow(color: AppColor.textPrimary.opacity(0.06), radius: 2, x: 0, y: 1)
+            .shadow(color: AppColor.textPrimary.opacity(0.14), radius: 14, x: 0, y: 14)
+            .shadow(color: AppColor.textPrimary.opacity(0.06), radius: 2, x: 0, y: 2)
     }
 }
 
@@ -3423,7 +3482,17 @@ struct SessionStateBar: View {
                         Text(subtitle)
                             .foregroundStyle(AppColor.textPrimary)
                     }
-                    .font(AppFont.caption.font)
+                    // `productAction` (17pt bold) matches `AppPrimaryButton`'s
+                    // label font so the secondary "Next exercise" CTA reads at
+                    // the same visual weight as the primary "Complete set"
+                    // CTA stacked above it. Visual hierarchy still works:
+                    // the primary uses `AppColor.accent` fill + accent
+                    // foreground, the secondary uses `controlBackground` +
+                    // textPrimary/textSecondary halves — chrome carries the
+                    // hierarchy, type carries the read. Was `caption`
+                    // (15pt medium) which read as a footnote and felt tiny
+                    // on iPhone Pro screens.
+                    .font(AppFont.productAction.font)
                     .frame(maxWidth: .infinity, minHeight: 60)
                     .background(
                         AppColor.controlBackground,
@@ -3624,7 +3693,7 @@ struct AppSheetScreen<Content: View>: View {
         dismissActionPlacement: DismissActionPlacement = .confirmation,
         onDismissAction: (() -> Void)? = nil,
         usesOuterScroll: Bool = true,
-        showsKeyboardDismissToolbar: Bool = true,
+        showsKeyboardDismissToolbar: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
@@ -3945,8 +4014,20 @@ struct AppScreen<Content: View>: View {
     var showsNativeNavigationBar: Bool = false
     /// When `false`, the screen does not wrap content in `ScrollView` — use for fixed dashboards where an inner control (e.g. `PreviewListContainer`) owns vertical scrolling.
     var usesOuterScroll: Bool = true
-    /// When `true`, adds a trailing **Done** on the keyboard accessory bar to dismiss first responder. Turn **off** for flows that use the standard keyboard (Return / Next / Done) so the accessory does not appear without a visible keyboard.
-    var showsKeyboardDismissToolbar: Bool = true
+    /// When `true`, adds a trailing **Done** to the keyboard accessory bar
+    /// to dismiss first responder. **Default is `false` and no caller in
+    /// the app currently opts in.** iOS 26 renders
+    /// `ToolbarItemGroup(placement: .keyboard)` content as a persistent
+    /// floating Liquid Glass pill at the bottom safe area — even when the
+    /// keyboard is dismissed, and even when the focused field is a
+    /// numeric pad on a hardware-keyboard simulator (visible as a stray
+    /// bottom-right Done with no keyboard in sight). For dismissal, rely
+    /// instead on: `.scrollDismissesKeyboard(.interactively)` (already on
+    /// `AppScreen`), tap-outside on the milk background, or the sheet's
+    /// primary CTA. Re-introduce this opt-in only behind `@FocusState`
+    /// gating that attaches the toolbar exclusively while a multi-line
+    /// `axis: .vertical` TextField is first responder.
+    var showsKeyboardDismissToolbar: Bool = false
     /// Page surface fill. Default `AppColor.background` (Milk) keeps every screen
     /// rendering as an opaque page. Pass a `nil` to suppress the fill so a
     /// parent container can own a single shared page surface (used by
@@ -3971,7 +4052,7 @@ struct AppScreen<Content: View>: View {
         hidesNavigationBar: Bool = false,
         showsNativeNavigationBar: Bool = false,
         usesOuterScroll: Bool = true,
-        showsKeyboardDismissToolbar: Bool = true,
+        showsKeyboardDismissToolbar: Bool = false,
         surface: Color? = AppColor.background,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -4087,7 +4168,18 @@ struct AppScreen<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
+                // `sm` (8pt) bottom — was `md` (16pt). Combined with the
+                // content area's `.padding(.top, md)` below, the old pair
+                // produced a 32pt gap between the chrome and the first
+                // scroll-content line. That reads as airy "header → body"
+                // when the chrome ends with a primary element (large title
+                // + subtitle), but as a disconnect when the chrome ends
+                // with a secondary affordance like `OnboardingShell`'s
+                // sticky day-chip strip — two small things bracketing a
+                // big gap. Tightening to `sm` brings the gap to 24pt,
+                // which mirrors `bottomChrome`'s `top: sm` for symmetry
+                // across the page chrome (top: sm-bottom, bottom: sm-top).
+                .padding(.bottom, AppSpacing.sm)
                 .frame(maxWidth: maxContentWidth)
                 .frame(maxWidth: .infinity)
                 .background(AppScreenChromeBackground(surface: chromeSurface))

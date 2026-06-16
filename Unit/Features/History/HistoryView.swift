@@ -77,6 +77,10 @@ struct SessionSetSnapshot: Identifiable {
     let actualWeight: Double
     let actualReps: Int
     let note: String
+    /// At-log-time PR flag derived by `PRHistory` — this set beat the
+    /// all-time best when it was logged, mirroring the live workout's
+    /// accent-chip semantics.
+    let isPR: Bool
 }
 
 struct SessionExerciseSnapshot: Identifiable {
@@ -84,6 +88,10 @@ struct SessionExerciseSnapshot: Identifiable {
     let name: String
     let isBodyweight: Bool
     let sets: [SessionSetSnapshot]
+
+    var hasPR: Bool {
+        sets.contains { $0.isPR }
+    }
 
     /// Exercise summary via `WorkoutTargetFormatter` compact `setxrepxkg` style.
     var previewPerformanceText: String? {
@@ -111,6 +119,10 @@ struct SessionSnapshot: Identifiable {
 
     var setCount: Int {
         exercises.reduce(0) { $0 + $1.sets.count }
+    }
+
+    var hasPR: Bool {
+        exercises.contains { $0.hasPR }
     }
 
     /// Short caption showing total exercise count, e.g. “6 exercises”.
@@ -176,7 +188,10 @@ struct RecentSessionsView: View {
     }
 
     private var sessionSnapshots: [SessionSnapshot] {
-        historySessions.compactMap(makeSnapshot(for:))
+        // Derive once per render from the FULL session list — the PR baseline
+        // must see every completed session, not just the filtered subset.
+        let prIDs = PRHistory.prSetEntryIDs(in: sessions)
+        return historySessions.compactMap { makeSnapshot(for: $0, prSetEntryIDs: prIDs) }
     }
 
     private var sessionsByDay: [Date: [SessionSnapshot]] {
@@ -185,6 +200,16 @@ struct RecentSessionsView: View {
 
     private var routineTemplateIDs: [UUID] {
         ActiveSplitStore.resolve(from: splits)?.orderedTemplateIds ?? []
+    }
+
+    /// Weekdays (1=Sun … 7=Sat) the active split actually pins a routine to.
+    /// Excludes 0 (rotation) so `isMissedTrainingDay` only flags days the
+    /// lifter committed to. Empty for flexible-schedule splits — nothing is
+    /// "missed" in rotation mode.
+    private var scheduledWeekdays: Set<Int> {
+        let templateByID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
+        let ordered = routineTemplateIDs.compactMap { templateByID[$0] }
+        return Set(ordered.map(\.scheduledWeekday).filter { $0 > 0 })
     }
 
     private var selectedDaySessions: [SessionSnapshot] {
@@ -367,7 +392,12 @@ struct RecentSessionsView: View {
             title: snapshot.templateName,
             caption: snapshot.compactExerciseHeadline
         ) {
-            AppTag(text: snapshot.state.title, style: snapshot.state.tagStyle, layout: .compactCapsule)
+            HStack(spacing: AppSpacing.xs) {
+                if snapshot.hasPR {
+                    historyPRTag()
+                }
+                AppTag(text: snapshot.state.title, style: snapshot.state.tagStyle, layout: .compactCapsule)
+            }
         }
     }
 
@@ -400,6 +430,7 @@ struct RecentSessionsView: View {
                         sessionsByDay: sessionsByDay,
                         selectedDate: selectedDate,
                         routineTemplateIDs: routineTemplateIDs,
+                        scheduledWeekdays: scheduledWeekdays,
                         sessions: sessions,
                         onSelect: { day in
                             guard day.status.isTappable else { return }
@@ -435,6 +466,7 @@ struct RecentSessionsView: View {
         return TrainingWeekProgressBuilder.isMissedTrainingDay(
             date: day,
             routineTemplateIDs: routineTemplateIDs,
+            scheduledWeekdays: scheduledWeekdays,
             sessions: sessions
         )
     }
@@ -460,19 +492,71 @@ struct RecentSessionsView: View {
         }
     }
 
-    private func makeSnapshot(for session: WorkoutSession) -> SessionSnapshot? {
+    private func makeSnapshot(for session: WorkoutSession, prSetEntryIDs: Set<UUID>) -> SessionSnapshot? {
         makeHistorySessionSnapshot(
             for: session,
             templateNamesByID: templateNamesByID,
-            exercisesByID: exercisesByID
+            exercisesByID: exercisesByID,
+            prSetEntryIDs: prSetEntryIDs
         )
     }
+}
+
+/// Derives which historical sets were PRs *at the time they were logged* by
+/// replaying completed sessions chronologically with a per-exercise running
+/// best. Mirrors `ActiveWorkoutView.priorBest` exactly — keep the two in
+/// lockstep: completed, non-warmup working sets only; completed sessions
+/// only; weight ranks first, reps break ties; the first-ever log of an
+/// exercise sets the baseline without firing (no baseline → no PR).
+///
+/// Pure derivation — nothing is persisted, so badges appear for sessions
+/// logged before this feature existed and survive edits/deletes by
+/// recomputing from stored truth. One divergence from the live screen:
+/// editing an old set re-ranks everything after it here, while the live
+/// session freezes at-log-time flags for unedited entries. Stored truth
+/// wins in History.
+enum PRHistory {
+    static func prSetEntryIDs(in sessions: [WorkoutSession]) -> Set<UUID> {
+        var bestByExercise: [UUID: (weight: Double, reps: Int)] = [:]
+        var prIDs: Set<UUID> = []
+        let ordered = sessions
+            .filter(\.isCompleted)
+            .sorted { $0.date < $1.date }
+        for session in ordered {
+            let entries = session.setEntries
+                .filter { $0.isCompleted && !$0.isWarmup }
+                .sorted { $0.setIndex < $1.setIndex }
+            for entry in entries {
+                guard let prior = bestByExercise[entry.exerciseId] else {
+                    bestByExercise[entry.exerciseId] = (entry.weight, entry.reps)
+                    continue
+                }
+                let beats = entry.weight > prior.weight
+                    || (entry.weight == prior.weight && entry.reps > prior.reps)
+                if beats {
+                    prIDs.insert(entry.id)
+                    bestByExercise[entry.exerciseId] = (entry.weight, entry.reps)
+                }
+            }
+        }
+        return prIDs
+    }
+}
+
+/// Ink "PR" chip shared by the History session rows, detail header, and set
+/// rows — same accent language as the live workout's PR set chip. Composition
+/// of existing atoms only; lives here because all call sites are in this file.
+@ViewBuilder
+func historyPRTag() -> some View {
+    AppTag(text: AppCopy.Workout.prTag, style: .accent, layout: .compactCapsule)
+        .accessibilityLabel(AppCopy.Workout.personalRecord)
 }
 
 func makeHistorySessionSnapshot(
     for session: WorkoutSession,
     templateNamesByID: [UUID: String],
-    exercisesByID: [UUID: Exercise]
+    exercisesByID: [UUID: Exercise],
+    prSetEntryIDs: Set<UUID>
 ) -> SessionSnapshot? {
     let completedEntries = session.setEntries
         .filter { $0.isCompleted && !$0.isWarmup }
@@ -492,7 +576,8 @@ func makeHistorySessionSnapshot(
                 setIndex: entry.setIndex,
                 actualWeight: entry.weight,
                 actualReps: entry.reps,
-                note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines)
+                note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines),
+                isPR: prSetEntryIDs.contains(entry.id)
             )
         }
         .sorted { $0.setIndex < $1.setIndex }
@@ -595,7 +680,12 @@ private struct SessionSummaryCard: View {
             title: snapshot.templateName,
             caption: snapshot.compactExerciseHeadline,
             trailing: {
-                AppTag(text: snapshot.state.title, style: snapshot.state.tagStyle, layout: .compactCapsule)
+                HStack(spacing: AppSpacing.xs) {
+                    if snapshot.hasPR {
+                        historyPRTag()
+                    }
+                    AppTag(text: snapshot.state.title, style: snapshot.state.tagStyle, layout: .compactCapsule)
+                }
             }
         ) {
             VStack(alignment: .leading, spacing: 0) {
@@ -646,6 +736,14 @@ struct SessionExerciseSummary: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                // PR marker lives at the exercise grain only while the
+                // uniform one-line summary hides the per-set rows; once the
+                // breakdown renders, the per-set tags below carry it instead
+                // — exactly one grain tagged at a time.
+                if exercise.hasPR, !showsPerSetBreakdown {
+                    historyPRTag()
+                }
+
                 if let headerSummary {
                     Text(headerSummary)
                         .font(AppFont.performance.font)
@@ -674,6 +772,13 @@ struct SessionExerciseSummary: View {
                     .foregroundStyle(AppColor.textSecondary)
 
                 Spacer(minLength: AppSpacing.sm)
+
+                // Tag sits LEFT of the metric so the mono number column stays
+                // flush right across PR and non-PR rows — same rule as the
+                // exercise header above (tag before the trailing metric).
+                if set.isPR {
+                    historyPRTag()
+                }
 
                 Text(actualText(for: set))
                     .font(AppFont.performance.font)
@@ -765,6 +870,7 @@ private struct CalendarGrid: View {
     let sessionsByDay: [Date: [SessionSnapshot]]
     let selectedDate: Date?
     let routineTemplateIDs: [UUID]
+    let scheduledWeekdays: Set<Int>
     let sessions: [WorkoutSession]
     let onSelect: (CalendarDayCellModel) -> Void
 
@@ -800,6 +906,7 @@ private struct CalendarGrid: View {
             } else if TrainingWeekProgressBuilder.isMissedTrainingDay(
                 date: date,
                 routineTemplateIDs: routineTemplateIDs,
+                scheduledWeekdays: scheduledWeekdays,
                 sessions: sessions
             ) {
                 status = .missed

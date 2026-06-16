@@ -346,6 +346,10 @@ struct TodayView: View {
 @MainActor
 @Observable
 final class TodayDashboardViewModel {
+    /// Nonisolated for the same back-deploy-shim SIGABRT as
+    /// `ActiveWorkoutViewModel.deinit` — see the comment there.
+    nonisolated deinit {}
+
     func dashboardState(
         sessions: [WorkoutSession],
         templates: [DayTemplate],

@@ -23,21 +23,6 @@ import SwiftUI
 struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Keyboard-aware header compression. When any input on the step focuses
-    /// and the keyboard slides up, `titleBlock` (large title + subtitle)
-    /// fades out and the input region gets that vertical space back —
-    /// roughly 80pt on a typical step, which is the difference between
-    /// seeing 3 day-name rows cramped vs. 4 rows comfortably on the split
-    /// builder. The progress bar stays so the lifter still knows which
-    /// step they are on; the back-button toolbar item stays for the same
-    /// reason. When the keyboard hides, the title fades back in.
-    ///
-    /// This is the explicit relax of the earlier "no overlap with the back
-    /// button" rule — under keyboard, we prefer maximizing input
-    /// visibility over keeping the title visible. The title returns the
-    /// instant focus leaves the input.
-    @State private var isKeyboardVisible = false
-
     let title: String
     var subtitle: String? = nil
     var ctaLabel: String = "Continue"
@@ -95,16 +80,12 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                         total: progressTotal ?? 0
                     )
                 }
-                // Title + subtitle collapse out of the layout while the
-                // keyboard is up so the input region gets that ~80pt back.
-                // `appReveal` animates both the opacity fade and the layout
-                // reflow so the input rows expand into the recovered space
-                // rather than popping. Reduce-motion users get a quieter
-                // fade via `appAnimation`'s own clamp.
-                if !isKeyboardVisible {
-                    titleBlock
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                // Title + subtitle stay pinned above the scrolling body.
+                // No keyboard-driven collapse: hiding the title on focus made
+                // the first input row jump ~80pt up under the nav bar, which
+                // read as the screen lurching. Standard keyboard avoidance
+                // scrolls the focused field into view instead.
+                titleBlock
                 if hasStickyAccessory {
                     // Width clamping for horizontal-scrolling accessories
                     // (e.g. `AppFilterChipBar`) lives at the atom layer so the
@@ -114,7 +95,6 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                     stickyAccessory()
                 }
             }
-            .appAnimation(.appReveal, value: isKeyboardVisible, reduceMotion: reduceMotion)
         )
     }
 
@@ -179,23 +159,6 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
         // the bar would stay transparent on scroll and content would show
         // through behind the back button.
         .navigationBarTitleDisplayMode(.inline)
-        // UIKit keyboard notifications are the only reliable cross-view
-        // way to know when the system keyboard is on screen — SwiftUI's
-        // `@FocusState` is scoped to the view that owns it, and the
-        // `keyboardLayoutGuide` is read-only geometry. `keyboardWillShow`
-        // / `willHide` fire just before the keyboard animates in/out, so
-        // pairing them with `appAnimation` on `headerStack` makes the
-        // title fade in lockstep with the keyboard slide.
-        .onReceive(
-            NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-        ) { _ in
-            isKeyboardVisible = true
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-        ) { _ in
-            isKeyboardVisible = false
-        }
     }
 }
 

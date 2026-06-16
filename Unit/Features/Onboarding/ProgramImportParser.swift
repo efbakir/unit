@@ -552,7 +552,7 @@ enum ProgramImportParser {
 
         // 5a. Triple-`x` shorthand (`4x8x60`) — catch before plain sets×reps
         // so the third number doesn't leak into the name as a stray `X`.
-        if sets == nil, reps == nil, let r = matchSetsTimesRepsTimesWeight(remaining) {
+        if sets == nil, reps == nil, let r = matchSetsTimesRepsTimesWeight(remaining, defaultUnit: defaultUnit) {
             sets = r.sets
             reps = r.reps
             weightKg = r.weightKg
@@ -612,10 +612,17 @@ enum ProgramImportParser {
         }
 
         // 8. Standalone duration / distance (no `Nx` prefix) —
-        // `Cooldown 10min`, `Run 1km`.
+        // `Cooldown 10min`, `Run 1km`. When the line already carries a full
+        // sets×reps prescription, a trailing short duration is the rest-column
+        // value of a pasted table (`Barbell Row 67.5 4x8 8 2dk`), not work —
+        // strip it from the name but don't surface it as a work duration in
+        // the note. A duration-only line (no reps, e.g. `Incline Walk 35dk`)
+        // still captures it.
         if durationSeconds == nil, let r = matchStandaloneDuration(remaining) {
-            durationSeconds = r.durationSeconds
             remaining = r.remaining
+            if sets == nil || reps == nil {
+                durationSeconds = r.durationSeconds
+            }
         }
         if distanceMeters == nil, let r = matchStandaloneDistance(remaining) {
             distanceMeters = r.distanceMeters
@@ -918,6 +925,11 @@ enum ProgramImportParser {
             "cardio", "conditioning", "cooldown", "cool down",
             "warmup", "warm up",
             "intervals", "tabata",
+            // Walking / treadmill cardio. Single-word "walk"/"walking" stay
+            // safe because compound strength names carry a non-conditioning
+            // token ("Farmer's Walk", "Walking Lunge" both keep). The
+            // multi-word phrases catch the common incline-treadmill finisher.
+            "walk", "walking", "incline walk", "treadmill walk", "incline treadmill walk",
             "bike intervals", "easy bike cooldown"
         ]
 
@@ -959,8 +971,13 @@ enum ProgramImportParser {
         /// `\d+` followed by a duration or distance unit. `min` listed
         /// before `m` so `10min` doesn't match as `10 m + in`.
         /// Word-boundary anchored on both sides so `40m` parses but `40mg`
-        /// (unlikely but possible) doesn't.
-        static let durationUnit = "(?:minutes|mins|min|seconds|secs|sec|s)"
+        /// (unlikely but possible) doesn't. Turkish `dk` (dakika / minute)
+        /// and `sn` (saniye / second) are included so pasted TR programs
+        /// (`35dk`, `60sn`) tokenize cleanly instead of leaking the unit
+        /// into the exercise name. Longer alternatives precede shorter so
+        /// `dakika` wins over `dk` and `sn` wins over `s` under ICU's
+        /// ordered alternation.
+        static let durationUnit = "(?:minutes|mins|min|dakika|dk|seconds|secs|sec|saniye|sn|s)"
         static let distanceUnit = "(?:kilometers|meters|miles|yards|feet|km|mi|ft|yd|m)"
 
         static let standaloneDurationOrDistance =
@@ -1045,22 +1062,22 @@ enum ProgramImportParser {
 
     /// Triple-`x` shorthand: `4x8x60` → 4 sets × 8 reps × 60 weight. Catches
     /// the third number explicitly so it doesn't leak into the exercise
-    /// name as a stray `X`. Weight interpreted under the lifter's chosen
-    /// default unit at the call site (caller doesn't pass it through here;
-    /// the value is raw and the bare-weight conversion happens once).
-    private static func matchSetsTimesRepsTimesWeight(_ line: String) -> (sets: Int, reps: Int, weightKg: Double, remaining: String)? {
+    /// name as a stray `X`. The weight is converted under the lifter's
+    /// `defaultUnit` (lb → kg), same as the bare-number and explicit-weight
+    /// paths, so the seeded first-session ghost shows the right value.
+    private static func matchSetsTimesRepsTimesWeight(_ line: String, defaultUnit: String) -> (sets: Int, reps: Int, weightKg: Double, remaining: String)? {
         guard let match = firstMatch(in: line, pattern: Regex.setsRepsTimesWeight),
               let setVal = Int(match[1]),
               let repVal = Int(match[2]) else { return nil }
         let numeric = match[3].replacingOccurrences(of: ",", with: ".")
         guard let weight = Double(numeric) else { return nil }
         let remaining = replacingFirst(in: line, match: match[0])
-        // Note: raw value — the bare-number defaultUnit conversion isn't
-        // applied here because the triple-`x` form is overwhelmingly used
-        // with kg-shape numbers (60, 100, 140). Lifters in lb who want the
-        // exact value should use the explicit `60lb` suffix, which is
-        // caught earlier by `matchExplicitWeight`.
-        return (setVal, repVal, weight, collapseWhitespace(remaining))
+        // Convert under the lifter's chosen unit, same as the bare-number
+        // path: `4x8x135` for an lb user is 135 lb → stored as kg. (This
+        // returned the raw number as kg before — harmless while the weight
+        // was discarded, but wrong once it seeds the first-session ghost.)
+        let kg = defaultUnit == "lb" ? weight / 2.20462 : weight
+        return (setVal, repVal, kg, collapseWhitespace(remaining))
     }
 
     /// Verbose "X sets x Y reps" — `4 sets x 8 reps`, common in ChatGPT
@@ -1127,7 +1144,8 @@ enum ProgramImportParser {
             let suffix = String(line[afterIndex...]).trimmingCharacters(in: .whitespaces)
             let lower = suffix.lowercased()
             for unit in ["kg", "kgs", "lb", "lbs", "min", "mins", "minutes",
-                         "sec", "secs", "seconds", "m", "km", "mi", "ft", "yd", "s"]
+                         "dakika", "dk", "sec", "secs", "seconds", "saniye", "sn",
+                         "m", "km", "mi", "ft", "yd", "s"]
             where lower.hasPrefix(unit) && (lower.count == unit.count || !lower.dropFirst(unit.count).first!.isLetter) {
                 return nil
             }
@@ -1322,12 +1340,13 @@ enum ProgramImportParser {
     // MARK: - Helpers
 
     private static func isDurationUnit(_ unit: String) -> Bool {
-        ["minutes", "mins", "min", "seconds", "secs", "sec", "s"].contains(unit)
+        ["minutes", "mins", "min", "dakika", "dk",
+         "seconds", "secs", "sec", "saniye", "sn", "s"].contains(unit)
     }
 
     private static func secondsForDuration(value: Double, unit: String) -> Int {
         switch unit {
-        case "minutes", "mins", "min": return Int(value * 60)
+        case "minutes", "mins", "min", "dakika", "dk": return Int(value * 60)
         default: return Int(value)
         }
     }

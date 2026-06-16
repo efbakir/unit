@@ -117,7 +117,8 @@ struct ActiveWorkoutView: View {
                 for: exercise.id,
                 currentSession: session,
                 sessions: sessions,
-                plannedReps: template?.plannedReps(for: exercise.id)
+                plannedReps: template?.plannedReps(for: exercise.id),
+                plannedWeightKg: template?.plannedWeight(for: exercise.id)
             )
 
             return WorkoutExerciseSectionModel(
@@ -413,6 +414,8 @@ struct ActiveWorkoutView: View {
     /// supplied. Returns nil when there's no prior data to beat (a brand-new exercise),
     /// which means the first log is *not* flagged a PR. Conservative on purpose: a PR
     /// signal only feels meaningful when there was a baseline.
+    /// History derives the same flags after the fact in `PRHistory`
+    /// (HistoryView.swift) — keep the two rule sets in lockstep.
     private func priorBest(for exerciseID: UUID, excluding entryID: UUID? = nil) -> (weight: Double, reps: Int)? {
         let priorSessionEntries = sessions
             .filter { $0.isCompleted }
@@ -1673,11 +1676,19 @@ struct SetPrefill {
 @MainActor
 @Observable
 final class ActiveWorkoutViewModel {
+    /// Nonisolated: under default-MainActor isolation the implicit deinit is
+    /// isolated and routes through `swift_task_deinitOnExecutor`'s back-deploy
+    /// shim, which SIGABRTs (malloc double-free in `TaskLocal::StopLookupScope`)
+    /// on iOS 26 runtimes when the last release happens with a task context.
+    /// Empty body — releasing stored refs needs no isolation.
+    nonisolated deinit {}
+
     func prefillSet(
         for exerciseID: UUID,
         currentSession: WorkoutSession,
         sessions: [WorkoutSession],
-        plannedReps: Int? = nil
+        plannedReps: Int? = nil,
+        plannedWeightKg: Double? = nil
     ) -> SetPrefill? {
         let currentEntries = currentSession.setEntries
             .filter { $0.exerciseId == exerciseID }
@@ -1704,7 +1715,14 @@ final class ActiveWorkoutViewModel {
         }
 
         if let plannedReps, plannedReps > 0 {
-            return SetPrefill(weight: 0, reps: plannedReps, source: .planned)
+            // First session: seed weight from a pasted program when present
+            // (the "Last time" ghost on day one), else 0 (blank). The parser
+            // stores kg; the logging pipeline (SetEntry / SetPrefill weight)
+            // is in the lifter's display unit, so convert kg → display here.
+            let seededKg = plannedWeightKg ?? 0
+            let unit = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
+            let displayWeight = (seededKg > 0 && unit == "lb") ? seededKg * 2.20462 : seededKg
+            return SetPrefill(weight: displayWeight, reps: plannedReps, source: .planned)
         }
 
         return nil
@@ -1761,6 +1779,12 @@ final class RestTimerManager {
     /// the user, including outside the app).
     private static let endDateKey = "unit.restTimer.endDate"
     private static let totalDurationKey = "unit.restTimer.totalDuration"
+
+    /// Nonisolated for the same back-deploy-shim SIGABRT as
+    /// `ActiveWorkoutViewModel.deinit` — see the comment there. The ticking
+    /// `task` exits on its own via `[weak self]` once this deallocates; no
+    /// isolated state is touched here.
+    nonisolated deinit {}
 
     init() {
         restoreFromPersistedState()
