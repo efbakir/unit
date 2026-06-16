@@ -35,7 +35,7 @@ Use sparingly — 1-2 times per month max. If you're using ElevenLabs every week
 
 1. **Record screen-only clip** of the app (no face, no live voice). Use QuickTime → iPhone screen mirror, or iOS Control Center Screen Recording.
 2. **Write a 30-60s script** matching `PRODUCT.md` brand voice (calm, expert, honest). Examples:
-   - "Three taps. Ghost value from last session pre-fills weight and reps. Tap to confirm. Haptic. Done. That's the whole loop. No menus, no AI coach, no recommendations. Just the set you actually did."
+   - "Three taps. Last time's weight and reps are already there under 'Last time.' Tap to confirm. Haptic. Done. That's the whole loop. No menus, no AI coach, no recommendations. Just the set you actually did."
    - "I built this because every gym app made me tap through 4 fields under fatigue. This is one tap. The previous session pre-fills. You confirm or you adjust. Then you log. That's it."
 3. **Generate audio** via ElevenLabs. Use your "Founder voice — Unit" voice. Settings: stability ~50, clarity ~75 (these are the calm-narration defaults — don't push the "expressive" sliders, you sound dry IRL too).
 4. **Drop in CapCut**: import screen recording + ElevenLabs audio. Sync audio to actions on screen. Trim silences.

@@ -5,9 +5,9 @@
 Today is **Sunday May 10, 2026**. Per [launch-plan.md](docs/launch-plan.md), App Store submission was scheduled for Week 1 (Apr 19–26), and we should already be live by Week 3 (today). We are **~3 weeks behind plan** — but the gap is operational, not code.
 
 **Current state (verified via codebase + repo audit):**
-- Code is ~95% ship-ready: bundle ID locked to `com.unitlift.app`, iOS 18 deployment target, onboarding fully wired (no scaffolding), core logging path complete (timer, PR detection, haptics), paywall intentionally inert, no banned `ProcessInfo.environment["UNIT_*"]` shipped.
+- Code is ~95% ship-ready: bundle ID locked to `app.unitlift` (canonical reverse-DNS of `unitlift.app` — see 2026-05-12 decision-log entry), iOS 18 deployment target, onboarding fully wired (no scaffolding), core logging path complete (timer, PR detection, haptics), paywall intentionally inert, no banned `ProcessInfo.environment["UNIT_*"]` shipped.
 - 44 modified files uncommitted (WIP snapshot — must clean up before submission).
-- Provisioning profiles for `com.unitlift.app` not yet generated (App Store Connect record doesn't exist).
+- Provisioning profiles for `app.unitlift` not yet generated (App Store Connect record doesn't exist).
 - Privacy/terms URLs hardcoded ([SettingsView.swift:47–48](Unit/Features/Settings/SettingsView.swift)) but `unitlift.app/privacy` + `/terms` not verified live.
 - `support@unitlift.app` not verified to round-trip.
 - App Store screenshots: strategy locked ([screenshot-strategy-final.md](docs/marketing/research/screenshot-strategy-final.md)), zero built. Estimated 4.5 hrs Figma work.
@@ -71,13 +71,13 @@ The 44-file WIP delta is the biggest single risk. It must be committed in clean,
 Today is mostly off-codebase work. The goal: by EOD, an archive validates against a real ASC listing.
 
 **Morning (~4 hrs)**
-- 09:00–10:00 — **App Store Connect**: create new app under `com.unitlift.app`. Fill:
+- 09:00–10:00 — **App Store Connect**: create new app under `app.unitlift`. Fill:
   - Name: `Unit`
   - Subtitle (30 chars): e.g. `Log a set in 3 seconds`
   - Primary category: Health & Fitness
-  - Bundle ID: `com.unitlift.app`
+  - Bundle ID: `app.unitlift`
   - SKU: `unit-ios-v1`
-- 10:00–11:30 — **Apple Developer Portal**: regenerate distribution provisioning profiles for `com.unitlift.app` and `com.unitlift.app.UnitWidgetExtension`. Confirm capabilities (App Groups for widget, anything else needed by [Unit.entitlements](Unit/Unit.entitlements)).
+- 10:00–11:30 — **Apple Developer Portal**: regenerate distribution provisioning profiles for `app.unitlift` and `app.unitlift.UnitWidgetExtension`. Confirm capabilities (App Groups for widget, anything else needed by [Unit.entitlements](Unit/Unit.entitlements)).
 - 11:30–12:00 — Xcode: select archive scheme, build for "Generic iOS Device" with Release config — confirm signing succeeds.
 
 **Afternoon (~4 hrs)**

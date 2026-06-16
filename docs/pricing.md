@@ -1,56 +1,62 @@
 # Unit — pricing
 
-> Authoritative reference for Unit's subscription tiers. Any change to price, trial length, or product IDs lives here first, code second.
+> Authoritative reference for Unit's subscription tiers. Any change to price or product IDs lives here first, code second.
 
 ## Tiers
 
-| Tier       | Price        | Billing        | Product ID             | Notes                                                    |
-| ---------- | ------------ | -------------- | ---------------------- | -------------------------------------------------------- |
-| Monthly    | **$4.99**    | auto-renewing  | `com.unit.monthly`     | Entry tier. Cancelable anytime.                          |
-| Annually   | **$29.99**   | auto-renewing  | `com.unit.annual`      | Default selection. ~$2.50/mo effective. 50% off monthly. |
-| Lifetime   | **$44.99**   | one-time       | `com.unit.lifetime`    | 1.5× yearly. Pay once, own forever.                      |
+| Tier     | Price       | Billing       | Product ID         | Notes                                                   |
+| -------- | ----------- | ------------- | ------------------ | ------------------------------------------------------- |
+| Weekly   | **$4.99**   | auto-renewing | `com.unit.weekly`  | Entry tier. ~$0.71/day.                                 |
+| Monthly  | **$9.99**   | auto-renewing | `com.unit.monthly` | Cancelable anytime.                                     |
+| Annually | **$59.99**  | auto-renewing | `com.unit.annual`  | Default selection. ~$5/mo effective. 50% off monthly.   |
 
-All subscription tiers include a **7-day free trial**. Lifetime has no trial — it is a one-time purchase.
+**No free trial** on any tier. **No lifetime tier** (dropped 2026-06-16 in favor of recurring revenue).
 
 ## Math
 
-- Monthly × 12 = $59.88/yr
-- Annual vs monthly-equivalent = $29.99 / $59.88 → **50% saved** (display as `SAVE 50%` on the Annual card)
-- Lifetime = Annual × 1.5 = $29.99 × 1.5 = $44.985 → rounded to **$44.99**
-- Lifetime payback ≈ 1.5 years of Annual, ≈ 9 months of Monthly
+- Weekly × 52 = $259.48/yr
+- Monthly × 12 = $119.88/yr
+- Annual vs monthly-equivalent = $59.99 / $119.88 → **50% saved** (display as `SAVE 50%` on the Annual card)
+- Weekly is the high-churn tier (LTV from "forgot to cancel" is the lever)
 
 ## Rationale
 
-- **Matches Liftosaur** ($4.99/mo, $29.99/yr, 7-day trial — `docs/launch-plan.md` §3 market table). Liftosaur is the closest positioning neighbor ("solo indie; programmable routines; lifter-respected"), so matching pricing signals the same audience and avoids a premium-price discovery risk on day one.
+- **Hard paywall** (resolved 2026-06-16, see `docs/decision-log.md`). All app functionality is gated behind a paid subscription. Onboarding completes free so the user sees their program built; the first attempt to start a workout opens the paywall, no dismissal.
+- **No free trial.** Day-1 conversion friction is the explicit goal; Apple Guideline 3.1.2(b) disclosure requirements still apply (auto-renewal language, cancellation method). Acknowledged risks: 1-star reviews citing "pay to even try," App Store reviewer scrutiny around the "no preview of value" pattern (mitigated by placing the wall after onboarding, not before).
+- **Weekly is the LTV lever.** Industry pattern: weekly subscribers churn fast but forgotten cancellations compound. Strong precedent in habit/utility apps. Position the weekly tier as the "try it for a week" framing without calling it a trial.
 - **Annual is default, highlighted.** Best LTV for Unit, biggest perceived savings for the user.
-- **Monthly is the low-commitment entry.** Sits in the lifter-tool band alongside Strong ($4.99) and Liftosaur ($4.99), below Hevy ($6.99) and Fitbod ($12.99).
-- **Lifetime at 1.5× yearly** is a deliberate premium: it rewards conviction without cannibalizing annual. At 1.5× (vs. typical 3–5× on other apps) it is intentionally generous — Unit's positioning is "trusted notebook," and a lifetime tier signals permanence, not extraction.
-- **Core logging remains free forever** (launch-plan.md). Paywall gates Pro features only — never basic set logging. CLAUDE.md §4 scope fence.
+- **Monthly is the middle tier.** Priced 2× weekly's annualized rate so the annual tier is the obvious better deal.
+- **No Lifetime.** Lifetime tiers conflict with hard-paywall growth — they cap LTV. Existing v1 users who purchased Lifetime under the soft-paywall model are not retroactively migrated; ASC retires the product.
 
 ## What is behind the paywall
 
-Resolved 2026-04-28 (see `docs/product-compass.md` §Decision log). The earlier list (template-count cap, history time cap, PR detection, widgets) is rejected — every one of those gates sits on the Gym Test path and would violate `docs/claude/scope.md` line 77 (*"Subscription gate on core logging"* → banned).
+Everything. Hard paywall = full app gated.
 
-**Pro features (gated):**
-- CSV + Markdown export of all training data
-- Apple Health workout sync (bidirectional)
-- Custom app icons (4–6 variants)
-- Custom template accent colors
-- "Founding supporter" in-app badge
-- Future Pro features (Apple Watch companion, ProgressionEngine opt-in, cloud backup) — no second paywall ever
+The onboarding flow (splash → unit picker → import method → program build → schedule) runs free so the user sees their program in the app before being asked to pay. The first attempt to **start a workout** opens the paywall.
 
-**Free forever — promise sacred:** all set logging, ghost values, rest timer + Lock Screen / Live Activity, all templates (no count cap), full history (no time cap), PR detection + notifications, custom exercises. None of these may move behind the paywall.
+**Free pre-paywall surfaces:**
+- All onboarding steps (program entry, day naming, schedule)
+- The post-onboarding "your program is ready" hand-off
 
-## Trial + win-back
+**Paid post-paywall surfaces:**
+- Today tab (start workout, log sets, rest timer)
+- Programs tab (view / edit / reorder templates)
+- History (browse past sessions, PR chart, calendar)
+- Settings (manage subscription, export, theming, etc.)
 
-- **Trial**: 7 days, applies to Monthly and Annual tiers at first purchase.
-- **Win-back**: $19.99/yr Apple promotional offer (⅔ of Annual), triggered after trial expiry without conversion or post-cancel. Wire via StoreKit 2 or RevenueCat (launch-plan.md §2).
-- **Founding member lock-in**: anyone subscribing in launch month keeps their rate forever.
+## Win-back
+
+- **Win-back**: $19.99/yr Apple promotional offer (⅔ of Annual), triggered after subscription cancel. Wire via StoreKit 2.
+- **Restore purchases**: standard Apple flow; user signed in with same Apple ID auto-restores entitlement (Required by App Store).
 
 ## Changing prices
 
-Don't change prices without data (launch-plan.md §3). If the numbers above need to move:
+Don't change prices without data. If the numbers above need to move:
 1. Update this file first.
-2. Update the App Store Connect product config.
-3. Update `StoreManager.swift` product IDs only if the IDs themselves changed (prices are pulled from StoreKit, not hardcoded).
-4. Note the change in `docs/product-compass.md` §Decision log with the date and the evidence that justified it.
+2. Update the App Store Connect product config (Weekly / Monthly / Annual prices).
+3. Update `StoreManager.swift` fallback prices in `PaywallView.priceText(for:)` (the live prices are pulled from StoreKit, not hardcoded — fallbacks only render when product load fails).
+4. Note the change in `docs/decision-log.md` with the date and the evidence that justified it.
+
+## History (superseded models)
+
+The original v1 model was "free forever core + soft Pro tier" — paywall gated only export, Apple Health, theming, and a "founding supporter" badge. Core logging was protected by a "sacred promise" in this file. That model is **superseded as of 2026-06-16**. Reasons in `docs/decision-log.md` 2026-06-16 entry. The `InstallProvenance` v1-grandfather mechanic recorded to Keychain has been deleted; v1 users hit the same paywall as new installers on v2 launch.

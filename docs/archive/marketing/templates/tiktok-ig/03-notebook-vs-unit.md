@@ -11,7 +11,7 @@
 | Time | Action |
 |---|---|
 | **0-3s** | Hand writing in notebook with stopwatch visible |
-| **3-15s** | Cut to Unit — ghost-value tap, haptic, done in 2.4s on overlay timer |
+| **3-15s** | Cut to Unit — "Last time" tap, haptic, done in 2.4s on overlay timer |
 | **15-25s** | Side-by-side numbers — notebook 8.1s, Unit 2.4s |
 | **25-30s** | Close — *"Faster than paper. Free on App Store."* |
 
@@ -60,7 +60,7 @@ Keep it dry, calm, ~10-15 words:
 ```
 Notebook: 8.1 seconds.
 Unit: 2.4 seconds.
-Three taps. Ghost value pre-fills. Done.
+Three taps. Last time's numbers are right there. Done.
 Free on App Store.
 ```
 

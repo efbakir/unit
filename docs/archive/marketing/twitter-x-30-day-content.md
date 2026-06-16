@@ -40,7 +40,7 @@ Char counts are shown in parens after each tweet body. Counts include line break
 | Day | Time (ET) | Slot | Anchor | Media | Reply | Why |
 |---|---|---|---|---|---|---|
 | Tue 05-05 | 10:30 AM | W2-T1 — TestFlight is live | standalone build progress | TestFlight install screen | none | Concrete "live thing today" beats abstract "coming soon". |
-| Thu 05-07 | 11:00 AM | W2-T2 — tester recruitment | tester ask | 8s screen-record of ghost values pre-fill | "DM 'unit' and I'll send a TestFlight code." | DM-as-CTA outperforms link in beta. Generates real warm leads. |
+| Thu 05-07 | 11:00 AM | W2-T2 — tester recruitment | tester ask | 8s screen-record of the "Last time" pre-fill | "DM 'unit' and I'll send a TestFlight code." | DM-as-CTA outperforms link in beta. Generates real warm leads. |
 | Sat 05-09 | 9:00 AM | W2-T3 — beta progress (count) | standalone build progress | dashboard still showing tester count | none | Small real numbers travel on X (viral-patterns §1). |
 | Mon 05-11 | 10:00 AM | W2-T4 — "Wed launch" hint | launch hint | hero screenshot (App Store screen 1) | none | T-2 day reminder. Lets followers RSVP without explicit CTA. |
 
@@ -174,7 +174,7 @@ Pen and paper beat all of them.
 The rule I built around: log a set in under 3 seconds, one-handed,
 sweaty.
 
-Ghost values from last session. Tap to confirm, tap to adjust, done.
+Last time's weight and reps, right there. Tap to confirm, tap to adjust, done.
 Auto rest timer. Lock Screen Live Activity. Local-first.
 
 No AI coach. No social feed. No "Day N of M".
@@ -339,7 +339,7 @@ So I built mine. Shipping next Wednesday at 10am ET.
 
 (204)
 
-- **Media**: 12s screen-record — log a set, watch ghost values land, rest timer fires.
+- **Media**: 12s screen-record — log a set, watch last time's weight and reps land, rest timer fires.
 - **Why X**: deadline. Public commitment. Specific stack/timing > vague "soon."
 
 ### W1-T2 — Micro-rant: logging friction (Fri 05-01, 11:00 AM ET)
@@ -406,7 +406,7 @@ DM "unit" for a code.
 
 (269)
 
-- **Media**: 8s screen-record of Unit's ghost-value pre-fill in action.
+- **Media**: 8s screen-record of Unit's "Last time" pre-fill in action.
 - **Reply**: `DM "unit" and I'll send a TestFlight code.`
 - **Why X**: clear ask, clear give, clear CTA. "Lifetime founding-member rate" is the hook (per `pricing.md` founding-member lock-in).
 
@@ -491,7 +491,7 @@ I cut auto-progression from Unit before launch.
 Every gym app's algorithmic "go up 2.5kg next session" is wrong
 half the time, because no algorithm knows you slept 4 hours.
 
-Ghost values stay. Lifters decide. The app's job is to log fast,
+"Last time" stays. Lifters decide. The app's job is to log fast,
 not to coach.
 ```
 
@@ -597,8 +597,8 @@ Not open source. It's a paid app — $4.99/mo or $29.99/yr or
 $44.99 lifetime, with a 7-day free trial. Core logging is free
 forever, no trial gate.
 
-Happy to share specific patterns (design system, ghost values
-logic) on request — DM me.
+Happy to share specific patterns (design system, "Last time"
+pre-fill logic) on request — DM me.
 ```
 
 (259)

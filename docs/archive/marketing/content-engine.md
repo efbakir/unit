@@ -43,7 +43,7 @@ Setup:
 Record 4 short rants:
 1. **"Why I built Unit"** (90s)
 2. **"What's broken with Hevy / Strong"** (60s) — be specific, not generic
-3. **"Why ghost values are the only progression UI you need"** (90s)
+3. **"Why 'Last time' is the only progression UI you need"** (90s)
 4. **"Notebook vs Unit — speed test"** (60s)
 
 Each rant is one take, two takes max. Don't rewrite — first-thought is most authentic.

@@ -66,7 +66,7 @@ Skip Reddit on Memorial Day W4 (Mon 5/26) and July 4 W10 (Sat 7/4) — both fall
 | --- | --- | --- | --- | --- | --- |
 | **Mon 4/27** | Build-progress (no demo) OR skip | "3 months solo. Submitting today." | 15-sec clip of you at the Mac with Xcode Organizer open + the Submit dialog. Calm voice: "Three months. Solo. SwiftUI, SwiftData, RevenueCat. This is the submit button." Cut on the click. | `#indieapp` `#ios` `#swift` `#productivity` `#lifting` | Recordable in 5 minutes. If you can't do it in 5 minutes, skip. Use a shot from `clips/` if one exists. No App Store CTA — there's no link to give. |
 | **Wed 4/29** | Build-progress (no demo) OR skip | "Screenshots day. Pick 5." | 20-sec clip: scrolling through `capture-app-store-screenshots.sh` output, picking the 5. Calm voice: "Hero is the 3-second log. Then templates, history, calendar, exercise picker. Five." | `#indieapp` `#ios` `#productivity` | If `capture-app-store-screenshots.sh` ran successfully W1, the output is your B-roll. |
-| **Fri 5/1** | EVERGREEN REPOST: best clip from prior 30 days OR skip | n/a | If you have any pre-launch 60-sec reel from the build period (e.g. an early ghost-value demo), schedule it now with no CTA. Caption: "Submitted. Waiting for review." Otherwise skip. | `#indieapp` `#ios` `#lifting` | Do not film fresh content this week unless you can do it in <30 min. |
+| **Fri 5/1** | EVERGREEN REPOST: best clip from prior 30 days OR skip | n/a | If you have any pre-launch 60-sec reel from the build period (e.g. an early Last time demo), schedule it now with no CTA. Caption: "Submitted. Waiting for review." Otherwise skip. | `#indieapp` `#ios` `#lifting` | Do not film fresh content this week unless you can do it in <30 min. |
 
 **Cross-posting:** TikTok primary at 10:00 ET. IG Reels +24h, YouTube Shorts +48h. If Mon/Wed/Fri are skipped, skip cross-posting too — don't pad.
 
@@ -104,8 +104,8 @@ W1 is the lightest week. The only deliverable that *must* ship is App Store subm
 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Mon 5/4** | Tradesman demo (Hook A: timer-led) | Timer overlay counting up, no voice for first 3s. | Screen-record of a real bench-press set being logged. 0-3s: timer ticks "1.2s… 1.8s… 2.4s set logged." 3-25s voiceover: "Three taps. Ghost value pre-fills weight and reps from last session. Tap to confirm. Haptic. Done." 25-50s: "Hevy needs 4 taps. Strong needs 3. This is one." 50-60s: app icon + "Coming this week. App Store." | `#lifting` `#gymtok` `#indieapp` `#ios` `#productivity` | Reference: `templates/tiktok-ig/01-tradesman-demo.md`. Use bench press for the lift. Save squat for W4 tradesman. |
-| **Wed 5/6** | Founder vlog (Hook A: frustration-led) | "I quit Hevy 4 months ago because it felt like a spreadsheet under fatigue." | You at desk, talking to camera. 3-25s: 2 specific complaints — "Hevy's set log has 4 taps before haptic. Strong asks me to pick from 47 templates before I can log." 25-40s: cut to Unit screen. "Ghost values. One tap." 40-45s: "Coming this week. App Store." | `#lifting` `#indieapp` `#ios` `#gymtok` | Reference: `templates/tiktok-ig/02-founder-vlog.md`. Save Hook B (specific moment) for W4 vlog. |
+| **Mon 5/4** | Tradesman demo (Hook A: timer-led) | Timer overlay counting up, no voice for first 3s. | Screen-record of a real bench-press set being logged. 0-3s: timer ticks "1.2s… 1.8s… 2.4s set logged." 3-25s voiceover: "Three taps. Last time's weight and reps are already filled in. Tap to confirm. Haptic. Done." 25-50s: "Hevy needs 4 taps. Strong needs 3. This is one." 50-60s: app icon + "Coming this week. App Store." | `#lifting` `#gymtok` `#indieapp` `#ios` `#productivity` | Reference: `templates/tiktok-ig/01-tradesman-demo.md`. Use bench press for the lift. Save squat for W4 tradesman. |
+| **Wed 5/6** | Founder vlog (Hook A: frustration-led) | "I quit Hevy 4 months ago because it felt like a spreadsheet under fatigue." | You at desk, talking to camera. 3-25s: 2 specific complaints — "Hevy's set log has 4 taps before haptic. Strong asks me to pick from 47 templates before I can log." 25-40s: cut to Unit screen. "Last time. One tap." 40-45s: "Coming this week. App Store." | `#lifting` `#indieapp` `#ios` `#gymtok` | Reference: `templates/tiktok-ig/02-founder-vlog.md`. Save Hook B (specific moment) for W4 vlog. |
 | **Fri 5/8** | Notebook vs Unit (Hook A: timer-first) | Stopwatch counting up, hand writing in notebook. Pen scratching audio. | 0-3s notebook close-up. 3-15s cut to Unit logging same lift. 15-25s split-screen "8.1s | 2.4s." 25-30s: "Faster than paper. App Store next week." | `#lifting` `#gymtok` `#indieapp` `#productivity` | Reference: `templates/tiktok-ig/03-notebook-vs-unit.md`. Use bench press for both portions (matches Mon's tradesman). Don't reuse this hook for 2 weeks — W4 notebook-vs-Unit uses Hook B (text overlay). |
 
 **Cross-posting:** TikTok primary 10:00 ET. IG Reels +24h, YouTube Shorts +48h. Buffer staggers automatically.
@@ -121,7 +121,7 @@ W1 is the lightest week. The only deliverable that *must* ship is App Store subm
 ```
 Solo dev — I've spent 3 months building Unit, a minimalist iOS gym
 logger built around one rule: log a set in <3s, one-handed, sweaty.
-Ghost values pre-fill last session. No AI coach. Free core logging.
+Unit fills in last time's numbers. No AI coach. Free core logging.
 
 Going live next week on the App Store. Recruiting 20 TestFlight testers
 this week if anyone wants to break it before I do — DM me. Brutal
@@ -162,8 +162,8 @@ TikTok 10:00 ET → IG Reels 10:00 next-day → YouTube Shorts 10:00 day-after v
 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Mon 5/11** | Tradesman demo (Hook B: split-screen) | Split-screen: bloated Hevy onboarding (10 screens) vs Unit (3-tap onboarding). Voiceover at 3s: "10 screens vs 1." | 0-3s split. 3-25s: Unit's 3-tap onboarding played out at real speed, then ghost-value tap, set logged. 25-50s: "Three months solo. Live Wednesday." 50-60s: app icon + "App Store this Wednesday." | `#lifting` `#gymtok` `#indieapp` `#ios` `#productivity` | Different hook from W2 Mon. Fresh angle for the priming-the-launch audience. |
-| **Wed 5/13** | Tradesman demo (Hook D: text-led) — **LAUNCH DAY POST** | Text overlay over Unit screen demo: "Logging a set in 2.4 seconds. One-handed. Sweaty. Live now." | 0-3s text + screen-record. 3-25s voiceover: "Three taps. Ghost value pre-fills. Tap. Haptic. Done. Free core logging — never paywalled. Pro is $4.99/mo or $29.99/yr." 25-50s: "Three months. Solo. Live now on the App Store." 50-60s: app icon + "Free on App Store. Link in bio." | `#lifting` `#gymtok` `#indieapp` `#ios` | This is the cornerstone clip of the launch. Pin it on the TikTok profile. Update IG bio link to App Store URL the moment it goes live. |
+| **Mon 5/11** | Tradesman demo (Hook B: split-screen) | Split-screen: bloated Hevy onboarding (10 screens) vs Unit (3-tap onboarding). Voiceover at 3s: "10 screens vs 1." | 0-3s split. 3-25s: Unit's 3-tap onboarding played out at real speed, then a Last time tap, set logged. 25-50s: "Three months solo. Live Wednesday." 50-60s: app icon + "App Store this Wednesday." | `#lifting` `#gymtok` `#indieapp` `#ios` `#productivity` | Different hook from W2 Mon. Fresh angle for the priming-the-launch audience. |
+| **Wed 5/13** | Tradesman demo (Hook D: text-led) — **LAUNCH DAY POST** | Text overlay over Unit screen demo: "Logging a set in 2.4 seconds. One-handed. Sweaty. Live now." | 0-3s text + screen-record. 3-25s voiceover: "Three taps. Last time's numbers are already filled in. Tap. Haptic. Done. Free core logging — never paywalled. Pro is $4.99/mo or $29.99/yr." 25-50s: "Three months. Solo. Live now on the App Store." 50-60s: app icon + "Free on App Store. Link in bio." | `#lifting` `#gymtok` `#indieapp` `#ios` | This is the cornerstone clip of the launch. Pin it on the TikTok profile. Update IG bio link to App Store URL the moment it goes live. |
 | **Fri 5/15** | Founder vlog (Hook D: build-in-public framing) | "3 months solo. Unit shipped Wednesday. Here's what's been happening." | 0-3s you at desk. 3-25s: "About 200 installs since Wednesday. Discord opened with [insert real W3 number] members. The first comment on r/SideProject was 'finally someone got the size of the keyboard right.'" 25-40s: cut to Unit + a screenshot of one user's first session in TestFlight. 40-45s: "Show me your tracker setup in comments." | `#lifting` `#indieapp` `#ios` `#gymtok` | Use real W3 numbers, not placeholders. If installs are weirdly low (<20), reframe as "first 20 lifters in" — small numbers are credible per `reddit.md` "150-400 words always" research. |
 
 **Cross-posting:** TikTok primary. IG Reels +24h. YouTube Shorts +48h.
@@ -188,7 +188,7 @@ every tracker felt slower than writing. Three months ago I started
 building Unit — a gym logger designed around one rule: log a set in
 under 3 seconds, one-handed, sweaty.
 
-Ghost values prefill your last session so you tap once to confirm. No
+Last time's numbers are already filled in — tap to keep them or type what changed. No
 AI coach. No social feed. No algorithm telling you what to lift.
 
 Built solo with Swift 6, SwiftUI, SwiftData. RevenueCat for subs.
@@ -217,7 +217,7 @@ Hi HN. I'm a solo iOS dev — I shipped Unit today, after 3 months of
 nights and weekends. It's a minimalist gym logger built around one
 rule: log a set in under 3 seconds, one-handed, sweaty.
 
-Ghost values pre-fill last session's weight and reps. One tap to confirm.
+Unit fills in last time's weight and reps. One tap to confirm.
 Auto-rest-timer with Live Activity on the Lock Screen. Local-first
 SwiftData. No account, no cloud.
 
@@ -249,7 +249,7 @@ Shipped Unit yesterday — solo iOS gym logger, 3 months in the making.
 
 - [Insert real W3 day-2 install number]
 - The most-replied-to comment on r/SideProject was a DM thread about
-  ghost values vs progression engines
+  Last time vs progression engines
 - One TestFlight user logged 22 sets in their first session. That's
   what I built it for.
 
@@ -320,8 +320,8 @@ Launch week is the most coordinated. TikTok 10:00 Wed → IG Reels 10:00 Thu →
 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Mon 5/18** | Tradesman demo (Hook C: frustration-led) | Cold open: hands sweaty, you fail twice to tap a tiny number stepper in [Hevy/Strong]. Voiceover at 3s: "Logging a set under fatigue. Watch this." | 3-25s: cut to Unit, ghost-value tap, set logged in 2.4s on overlay timer. Voiceover: "Three taps. Ghost value pre-fills. Done. The tracker tax goes from 8 seconds to 3 — and that's per set, 50 sets per week." 25-50s: "Live on App Store. Free core logging." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#productivity` | Different hook than W3 Mon (split-screen) and W2 Mon (timer-led). Use squat lift on screen for variety. |
-| **Wed 5/20** | Educational (Topic 1: ghost values vs engines) | "Every progression engine is broken. Here's the math." | 0-3s contrarian one-liner. 3-50s 3-step explanation per `templates/tiktok-ig/04-educational.md`. Step 1: what engines try to do. Step 2: why they break under fatigue. Step 3: ghost values respect athlete autonomy. 50-60s: "Unit shows your last session. Never tells you what to lift. Free on App Store." | `#lifting` `#indieapp` `#ios` `#productivity` | First educational of the calendar. Topic 1 is the highest-clarity topic — start here. Save Topic 2 (AI coach) for W6. |
+| **Mon 5/18** | Tradesman demo (Hook C: frustration-led) | Cold open: hands sweaty, you fail twice to tap a tiny number stepper in [Hevy/Strong]. Voiceover at 3s: "Logging a set under fatigue. Watch this." | 3-25s: cut to Unit, a Last time tap, set logged in 2.4s on overlay timer. Voiceover: "Three taps. Last time's numbers are already filled in. Done. The tracker tax goes from 8 seconds to 3 — and that's per set, 50 sets per week." 25-50s: "Live on App Store. Free core logging." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#productivity` | Different hook than W3 Mon (split-screen) and W2 Mon (timer-led). Use squat lift on screen for variety. |
+| **Wed 5/20** | Educational (Topic 1: Last time vs engines) | "Every progression engine is broken. Here's the math." | 0-3s contrarian one-liner. 3-50s 3-step explanation per `templates/tiktok-ig/04-educational.md`. Step 1: what engines try to do. Step 2: why they break under fatigue. Step 3: showing last time's numbers respects athlete autonomy. 50-60s: "Unit shows your last session. Never tells you what to lift. Free on App Store." | `#lifting` `#indieapp` `#ios` `#productivity` | First educational of the calendar. Topic 1 is the highest-clarity topic — start here. Save Topic 2 (AI coach) for W6. |
 | **Fri 5/22** | Notebook vs Unit (Hook B: text overlay-first) | Text overlay opens: "I tracked 200 sets in this notebook because every gym app was slower." | 0-3s text + notebook close-up. 3-15s cut to Unit logging same lift. 15-25s side-by-side "8.1s vs 2.4s." 25-30s: "Faster than paper. Free on App Store." | `#lifting` `#gymtok` `#productivity` | Use squat (not bench from W2 Fri) per the rotation in `templates/tiktok-ig/03-notebook-vs-unit.md`. |
 
 **Cross-posting:** TikTok primary 10:00 ET. IG Reels +24h. YouTube Shorts +48h. Memorial Day Mon 5/26 is W5 — don't push content late Sun 5/24, traffic drops.
@@ -349,7 +349,7 @@ custom icons).
 
 The math:
 
-- Free tier: full set logging, ghost values, rest timer + Lock Screen
+- Free tier: full set logging, Last time pre-fill, rest timer + Lock Screen
   Live Activity, all templates, full history, PR detection, custom
   exercises. None of that ever moves behind a paywall.
 - Pro ($4.99/mo, $29.99/yr, $44.99 lifetime): export, Health sync,
@@ -414,8 +414,8 @@ W4 is the first "post-launch normal" week. The TikTok/IG/YouTube Shorts cadence 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
 | **Mon 5/25 — SKIP (Memorial Day)** | — | — | — | — | Don't post into the holiday — US traffic depressed. |
-| **Tue 5/26** | Tradesman demo (Hook A: timer-led) | Timer overlay + screen-record. No voice for 3s. | Repeat of the cornerstone format with deadlift this week. Voiceover 3-25s: "Three taps. Ghost-value pre-fills. Tap. Haptic. Done." 25-50s: "Paywall is on. Core logging is still free forever. Pro is $4.99/mo, $29.99/yr, or $44.99 lifetime." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#ios` | Replaces Mon. Don't use the same hook as W2/W4 Mon (timer-led was W2). Wait — re-check: W2 Mon used Hook A. **Switch to Hook D (text-led)** instead to avoid same-hook-2-weeks-running. |
-| **Wed 5/27** | Founder vlog (Hook B: specific moment) | "Last Tuesday, my 5x5 set timer hit 90 seconds and I still hadn't logged the previous set." | You at desk OR gym. 3-25s: 2 specific complaints + the moment. 25-40s: cut to Unit's auto-timer + ghost values. 40-45s: "Free on App Store. Pro just went live — $4.99/mo." | `#lifting` `#indieapp` `#ios` `#gymtok` | Different hook than W2 Wed (frustration-led). |
+| **Tue 5/26** | Tradesman demo (Hook A: timer-led) | Timer overlay + screen-record. No voice for 3s. | Repeat of the cornerstone format with deadlift this week. Voiceover 3-25s: "Three taps. Last time's numbers are already filled in. Tap. Haptic. Done." 25-50s: "Paywall is on. Core logging is still free forever. Pro is $4.99/mo, $29.99/yr, or $44.99 lifetime." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#ios` | Replaces Mon. Don't use the same hook as W2/W4 Mon (timer-led was W2). Wait — re-check: W2 Mon used Hook A. **Switch to Hook D (text-led)** instead to avoid same-hook-2-weeks-running. |
+| **Wed 5/27** | Founder vlog (Hook B: specific moment) | "Last Tuesday, my 5x5 set timer hit 90 seconds and I still hadn't logged the previous set." | You at desk OR gym. 3-25s: 2 specific complaints + the moment. 25-40s: cut to Unit's auto-timer + Last time pre-fill. 40-45s: "Free on App Store. Pro just went live — $4.99/mo." | `#lifting` `#indieapp` `#ios` `#gymtok` | Different hook than W2 Wed (frustration-led). |
 | **Fri 5/29** | EVERGREEN REPOST: best clip from prior month | Repost the highest-completion-rate clip from W2-W4 with a fresh caption. | If W3 launch-day tradesman demo was the top clip, repost with caption: "Re-up because the launch week was a blur. Live now." | `#lifting` `#gymtok` `#indieapp` | Skip if no clip from the prior month broke 5k views — record fresh next week instead of double-burning attention. |
 
 **Cross-posting:** Tue TikTok → Wed IG Reels → Thu YouTube Shorts. Wed TikTok → Thu IG → Fri YouTube. Buffer auto-staggers.
@@ -504,8 +504,8 @@ W5 is the first week the engine runs in steady-state. Mon skipped for Memorial D
 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Mon 6/1** | Tradesman demo (Hook B: split-screen, this time vs Liftosaur) | Split-screen: Liftosaur's programming UI vs Unit's 3-tap log. Voiceover at 3s: "Programmable vs loggable." | 3-25s: Liftosaur's set selection flow on left, Unit's ghost-value tap on right. "Liftosaur is brilliant for programmers. Unit is built for the lifter at the bar." 25-50s: "Free core logging. Pro $4.99/mo." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#ios` | Don't repeat W3's Hevy split-screen. Liftosaur is a respected solo indie — frame as positioning, not attack. |
-| **Wed 6/3** | Educational (Topic 2: AI coach making you weaker) | "The 'AI coach' in your gym app is making you weaker." | 0-3s contrarian. 3-50s 3-step: (1) what AI coach recommends, (2) why it ignores fatigue/sleep/life, (3) why ghost values + athlete autonomy is the answer. 50-60s: "Unit shows your last session. Never tells you what to lift. Free on App Store." | `#lifting` `#indieapp` `#productivity` `#ios` | Topic 2 of the educational rotation. W4 was Topic 1. |
+| **Mon 6/1** | Tradesman demo (Hook B: split-screen, this time vs Liftosaur) | Split-screen: Liftosaur's programming UI vs Unit's 3-tap log. Voiceover at 3s: "Programmable vs loggable." | 3-25s: Liftosaur's set selection flow on left, Unit's Last time tap on right. "Liftosaur is brilliant for programmers. Unit is built for the lifter at the bar." 25-50s: "Free core logging. Pro $4.99/mo." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#ios` | Don't repeat W3's Hevy split-screen. Liftosaur is a respected solo indie — frame as positioning, not attack. |
+| **Wed 6/3** | Educational (Topic 2: AI coach making you weaker) | "The 'AI coach' in your gym app is making you weaker." | 0-3s contrarian. 3-50s 3-step: (1) what AI coach recommends, (2) why it ignores fatigue/sleep/life, (3) why showing last time's numbers + athlete autonomy is the answer. 50-60s: "Unit shows your last session. Never tells you what to lift. Free on App Store." | `#lifting` `#indieapp` `#productivity` `#ios` | Topic 2 of the educational rotation. W4 was Topic 1. |
 | **Fri 6/5** | Founder vlog (Hook C: direct opinion) | "Every gym app in 2026 is bloated. Here's what should have been removed." | 0-3s you at gym. 3-25s 2 specific complaints (rotate from `templates/tiktok-ig/02-founder-vlog.md` body table — pick "Hevy onboarding 14 screens" + "Strong asks me to pick from 47 templates"). 25-40s: cut to Unit, single clean home screen. 40-45s: "Show me your tracker setup in comments." | `#lifting` `#gymtok` `#indieapp` `#ios` | Different hook than W3 Fri (build-in-public framing) and W5 Wed (specific moment). |
 
 **Cross-posting:** standard TikTok primary → IG +24h → YouTube +48h.
@@ -683,8 +683,8 @@ seeing:
 Pre-launch, I drafted a paywall design that gated history depth
 ("free tier = last 30 days, Pro = unlimited"). I cut it because the
 landing-page promise was "free core logging forever" — and history is
-core logging. If a lifter can't see what they did 31 days ago, they
-can't ghost-value it for next session.
+core logging. If a lifter can't see what they did 31 days ago, Unit
+can't fill in those numbers next session.
 
 If I'd shipped that gate, the 1-star reviews would be writing
 themselves. Instead Pro gates only off-path features:
@@ -751,7 +751,7 @@ W8 mirrors W4's structure (philosophy on Reddit, philosophy on X) but with 4 mor
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
 | **Mon 6/22** | Tradesman demo (Hook D: text-led, fresh after rest cycle) | Text overlay: "Logging a set in 2.4 seconds. One-handed. Sweaty." | 0-3s text + screen-record. 3-25s voiceover. 25-50s: "Free core logging. Pro $4.99/mo or $29.99/yr." 50-60s: app icon. | `#lifting` `#gymtok` `#indieapp` `#ios` | Hook D last used W3 Wed (launch day) — 6 weeks ago, fresh. |
-| **Wed 6/24** | Educational (Topic 4: notebooks beating apps) | "Pen and paper beats every gym app. Here's why that's the bug, not the feature." | 0-3s contrarian. 3-50s 3-step: (1) why paper wins under fatigue, (2) what apps add that paper doesn't (auto-timer, ghost values, history), (3) when an app should pretend to be paper — answer: always, that's Unit's design rule. 50-60s closing. | `#lifting` `#indieapp` `#productivity` | Topic 4 of educational rotation. |
+| **Wed 6/24** | Educational (Topic 4: notebooks beating apps) | "Pen and paper beats every gym app. Here's why that's the bug, not the feature." | 0-3s contrarian. 3-50s 3-step: (1) why paper wins under fatigue, (2) what apps add that paper doesn't (auto-timer, Last time pre-fill, history), (3) when an app should pretend to be paper — answer: always, that's Unit's design rule. 50-60s closing. | `#lifting` `#indieapp` `#productivity` | Topic 4 of educational rotation. |
 | **Fri 6/26** | Notebook vs Unit (Hook A: timer-first — back in rotation) | Stopwatch + hand writing in notebook. | Standard format with row variation per the rotation in `templates/tiktok-ig/03-notebook-vs-unit.md` (W2/W4/W7 used bench/squat/overhead press; **W9 = row 5×8**). | `#lifting` `#gymtok` `#productivity` | Hook A last used W7 — 2 weeks ago. **Wait — Hook A was used W2 Fri AND W7 Wed**. W7 Wed used Hook C, actually. Confirmed Hook A last used W2 Fri = 7 weeks ago. Fresh. |
 
 **Cross-posting:** standard.
@@ -842,7 +842,7 @@ July 4 week protocol: lighter content, no Reddit, cross-posts pushed off the Sun
 
 | Day | Format | Hook | Body | Hashtags | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Mon 7/6** | Tradesman demo (Hook C: frustration-led — back in rotation) | Cold open: failed tap on competitor app, sweaty. | 3-25s: cut to Unit, ghost-value succeeds. 25-50s: "Tracker tax is real. 11 weeks of my own data — Unit averages 2.3s per set, last app I used averaged 7.8s." 50-60s: "Free on App Store. Pro $4.99/mo." | `#lifting` `#gymtok` `#indieapp` `#productivity` | Hook C last used W4 Mon — 7 weeks ago, fresh. |
+| **Mon 7/6** | Tradesman demo (Hook C: frustration-led — back in rotation) | Cold open: failed tap on competitor app, sweaty. | 3-25s: cut to Unit, the Last time tap succeeds. 25-50s: "Tracker tax is real. 11 weeks of my own data — Unit averages 2.3s per set, last app I used averaged 7.8s." 50-60s: "Free on App Store. Pro $4.99/mo." | `#lifting` `#gymtok` `#indieapp` `#productivity` | Hook C last used W4 Mon — 7 weeks ago, fresh. |
 | **Wed 7/8** | Educational (Topic 5: intermediate-to-advanced lifters) | "There's a moment in lifting when 'gym apps' stop helping and start slowing you down." | 0-3s contrarian. 3-50s 3-step: (1) beginner needs guidance, (2) intermediate has a program, (3) advanced needs to log without thinking — different products. 50-60s: "Unit is for the second two. Free on App Store." | `#lifting` `#indieapp` `#ios` `#productivity` | Topic 5 of educational rotation. |
 | **Fri 7/10** | Founder vlog (Hook B: specific moment, fresh after 6-week gap) | "Last Sunday in the gym, I logged 8 working sets in 18 seconds total." | 0-3s you at gym, post-workout. 3-25s the math + the quiet pride. 25-40s: cut to Unit's history view showing the 8 sets. 40-45s: "Show me your tracker setup in comments." | `#lifting` `#indieapp` `#gymtok` | Hook B last used W5 Wed — 6 weeks ago, fresh. |
 
@@ -969,7 +969,7 @@ W11 mirrors W3-style intensity — Reddit BIP on r/SideProject + thoughtful X tw
 12 weeks ago I shipped Unit, a minimalist iOS gym logger. Solo build,
 SwiftUI + SwiftData + RevenueCat. The pricing model:
 
-- Free forever: full set logging, ghost values, rest timer + Lock
+- Free forever: full set logging, Last time pre-fill, rest timer + Lock
   Screen Live Activity, all templates, full history, PR detection,
   custom exercises.
 - Pro ($4.99/mo, $29.99/yr, $44.99 lifetime): CSV + Markdown export,

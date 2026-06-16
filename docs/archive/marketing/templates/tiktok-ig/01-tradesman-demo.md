@@ -11,7 +11,7 @@
 | Time | Action | Notes |
 |---|---|---|
 | **0-3s** | Screen-record of a real set being logged with timer overlay | Hook MUST land in first 3s. No intro, no "hi guys". |
-| **3-25s** | Voiceover narrating: ghost value, tap to confirm, haptic, done | Calm, dry, no music. ~30 words max. |
+| **3-25s** | Voiceover narrating: "Last time" pre-fill, tap to confirm, haptic, done | Calm, dry, no music. ~30 words max. |
 | **25-50s** | One specific differentiator vs competitors | "Hevy makes you tap through 4 fields. Strong needs 3. This is one." |
 | **50-60s** | Closing screen with app icon + name | Simple text overlay: app name + "Free on App Store" |
 
@@ -39,7 +39,7 @@
 ## Voiceover script (30-60s, dry, calm)
 
 ```
-Three taps. Ghost value from last session pre-fills weight and reps.
+Three taps. Last time's weight and reps are already there under "Last time."
 Tap to confirm. Haptic. Done.
 
 That's the whole loop. No menus. No AI coach. No "what should you
@@ -105,7 +105,7 @@ Avoid: `#fitness` `#gym` `#workout` `#fyp` (oversaturated, pure noise).
 ## Why this format works
 
 Per `research/viral-patterns-2026-04-29.md` §2a:
-> The screen recording + calm voiceover format gets disproportionate watch-time on TikTok because the algorithm weighs completion rate ≥70% in first 3s. A 12-second screen-record of logging a set with ghost values, voiceover "no menus, no AI coach, three taps under fatigue" — that's the format. Realistic conversion: 0.3–1% of views to TestFlight signup if there's a pinned link in bio.
+> The screen recording + calm voiceover format gets disproportionate watch-time on TikTok because the algorithm weighs completion rate ≥70% in first 3s. A 12-second screen-record of logging a set with last time's numbers pre-filled, voiceover "no menus, no AI coach, three taps under fatigue" — that's the format. Realistic conversion: 0.3–1% of views to TestFlight signup if there's a pinned link in bio.
 
 The "tradesman" framing matches `PRODUCT.md` brand voice (calm, expert, honest) and the existing `docs/launch-plan.md` §4 rule: *"every video shows the app running in a real gym on a real iPhone."*
 

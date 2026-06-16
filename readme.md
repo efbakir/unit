@@ -2,7 +2,7 @@
 
 **A zero-friction gym logger for athletes who already know how to train.**
 
-Unit replaces the paper notebook and the Notes app with a tool that survives gym fatigue and earns its place on the dock through daily utility. The core paradigm is **ghost values** — last session's weight and reps are pre-filled, and one tap confirms a set. The primary program unit is the **Template**, not 8-week cycles, not periodisation engines, not weekly increment rules.
+Unit replaces the paper notebook and the Notes app with a tool that survives gym fatigue and earns its place on the dock through daily utility. The core paradigm is **Last time** — last session's weight and reps are pre-filled, and one tap confirms a set. The primary program unit is the **Template**, not 8-week cycles, not periodisation engines, not weekly increment rules.
 
 Authoritative product / design docs:
 
@@ -56,7 +56,7 @@ docs/                        — Product, design, references, claude/ intent spi
 - **WorkoutSession** — id, date, templateId, isCompleted
 - **SetEntry** — id, sessionId, exerciseId, weight, reps, rpe, isWarmup, isCompleted, setIndex
 
-**Rule:** Ghost values are computed at read-time from the most recent completed `SetEntry` for the same exercise (any template). They are never persisted.
+**Rule:** Last-time values are computed at read-time from the most recent completed `SetEntry` for the same exercise (any template). They are never persisted.
 
 ## Out of v1 scope
 
@@ -64,7 +64,7 @@ The following were intentionally cut or deferred — see [`docs/claude/scope.md`
 
 - `ProgressionEngine`, auto-increment, deload rules → deferred post-v1
 - 8-week cycles, `Cycle`, `WeekDetailView`, "Week N of M" → templates replace cycles
-- Target-vs-actual weight columns → ghost values only
+- Target-vs-actual weight columns → last-time pre-fill only
 - Plate calculator, social / feeds / sharing, exercise discovery → not for this product
 - CloudKit sync → local-first only
 - Paywall on core logging → core logging is free

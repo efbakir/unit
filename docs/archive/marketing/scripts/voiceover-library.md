@@ -16,7 +16,7 @@
 
 **Length:** ~90 seconds | **Word count:** 243 | **Duration at 150 wpm:** ~97 seconds
 
-**Visual notes:** Face-to-camera, gym setting or desk. Cut to screen recording of the app at the ghost-values moment. No music. No intro card.
+**Visual notes:** Face-to-camera, gym setting or desk. Cut to screen recording of the app at the Last time pre-fill moment. No music. No intro card.
 
 ---
 
@@ -26,7 +26,7 @@ Every gym app I tried was slower than that. Not by a little — most of them had
 
 The specific problem is that most apps are designed around the idea that you need guidance — a weight suggestion, a rep target, an AI telling you how close you are to your goal. I don't need that. I have a program. I just need to record what I actually did, fast, one-handed, with chalk on my hands, thirty seconds before the next set starts.
 
-So I built Unit. The ghost value pre-fills last session's weight and reps. You tap once to confirm or you adjust if you went up. Haptic feedback. Timer auto-starts. Then you put your phone in your pocket and you lift.
+So I built Unit. Last time fills in last session's weight and reps. You tap once to confirm or you adjust if you went up. Haptic feedback. Timer auto-starts. Then you put your phone in your pocket and you lift.
 
 That's it. No AI coach. No social feed. No weekly summary card asking if you "crushed it."
 
@@ -48,15 +48,15 @@ Strong is better — three interactions to confirm a set — but still relies on
 
 The problem isn't that these apps are bad. They're not. The problem is that both of them were designed to be looked at, and a gym logger needs to be used — one-handed, fatigued, under a bar.
 
-Ghost values solve this. Your last session pre-fills. You either tap once to confirm, or you adjust the number if you went up. One interaction, not six. That's the whole design premise.
+Last time solves this. Your last session pre-fills. You either tap once to confirm, or you adjust the number if you went up. One interaction, not six. That's the whole design premise.
 
 ---
 
-### A3 — Why Ghost Values Are the Only Progression UI You Need
+### A3 — Why "Last Time" Is the Only Progression UI You Need
 
 **Length:** ~90 seconds | **Word count:** 248 | **Duration at 150 wpm:** ~99 seconds
 
-**Visual notes:** Face-to-camera first 20s. Cut to screen recording showing ghost values pre-filling. Then close with face-to-camera. No music.
+**Visual notes:** Face-to-camera first 20s. Cut to screen recording showing the Last time pre-fill. Then close with face-to-camera. No music.
 
 ---
 
@@ -68,7 +68,7 @@ Here's what actually happens under fatigue: you look at the suggested weight, an
 
 So you override it. And you do that enough times that the app's model of your training diverges from your actual training. At that point the recommendation is noise — it's worse than nothing, because now you're spending mental energy either following bad advice or arguing with a screen.
 
-Ghost values don't recommend anything. They show you what you did last time. You decide whether to match it, exceed it, or back off. That decision is yours — it should be yours — and it takes about one second of context to make.
+Last time doesn't recommend anything. It shows you what you did last time. You decide whether to match it, exceed it, or back off. That decision is yours — it should be yours — and it takes about one second of context to make.
 
 The difference isn't between a "smart" app and a "dumb" app. It's between an app that respects your expertise and one that doesn't.
 
@@ -86,7 +86,7 @@ The claim is that Unit is faster than a paper notebook. I'm going to show you th
 
 Notebook: open the page, find the row, write the weight and reps, cap the pen. In my timing across ten sets in a real session, that averages around seven to nine seconds, depending on how messy the handwriting is getting toward the end.
 
-Unit: ghost value is pre-filled from last session. One tap to confirm. Haptic feedback. Timer auto-starts. That's about 1.8 to 2.4 seconds, and the slower end is when I'm adjusting the weight.
+Unit: Last time is pre-filled from last session. One tap to confirm. Haptic feedback. Timer auto-starts. That's about 1.8 to 2.4 seconds, and the slower end is when I'm adjusting the weight.
 
 The notebook loses on speed. It wins on battery life and it never asks you to update to iOS 19.
 
@@ -106,11 +106,11 @@ Free on App Store.
 
 **Length:** ~35 seconds | **Word count:** 88 | **Duration at 150 wpm:** ~35 seconds
 
-**Visual notes:** Screen recording of opening Unit on Today tab, tapping the bench press set. Ghost value shows last session weight and reps. One tap to confirm. Haptic. Timer overlay starts. Full loop takes under 3 seconds. Visible timer in top corner throughout.
+**Visual notes:** Screen recording of opening Unit on Today tab, tapping the bench press set. Last time shows last session weight and reps. One tap to confirm. Haptic. Timer overlay starts. Full loop takes under 3 seconds. Visible timer in top corner throughout.
 
 ---
 
-Bench press, set one of five. The weight and reps from last session are already there — ghost values pre-fill from the previous workout. Nothing to type.
+Bench press, set one of five. The weight and reps from last session are already there — Last time fills in last time's numbers from the previous workout. Nothing to type.
 
 Tap to confirm. Haptic feedback. Rest timer starts. Phone goes in the pocket.
 
@@ -124,17 +124,17 @@ When the rest timer hits two minutes, the Dynamic Island pulses. Pull the phone 
 
 **Length:** ~40 seconds | **Word count:** 100 | **Duration at 150 wpm:** ~40 seconds
 
-**Visual notes:** Overhead or side angle of phone screen with sweat visible on hands. Ghost value shown. User adjusts reps down by one (tap minus). Confirms. Timer. Then phone drops away from frame. Makes the fatigue context real.
+**Visual notes:** Overhead or side angle of phone screen with sweat visible on hands. Last time pre-fill shown. User adjusts reps down by one (tap minus). Confirms. Timer. Then phone drops away from frame. Makes the fatigue context real.
 
 ---
 
-Third set of squats. 130 kilograms, working set. Ghost value pre-filled — same weight, same reps as last session.
+Third set of squats. 130 kilograms, working set. Last time pre-filled it — same weight, same reps as last session.
 
 The target was five. I got four. Tap the rep count, minus one. Confirm. Haptic. Rest timer starts. Phone goes away.
 
 Total time: 2.8 seconds, with the manual adjustment. On a set where I'm making a change, not just confirming.
 
-The point is that it's not slower when you need to edit. The ghost value still saves time — you're adjusting from a known starting point instead of typing from zero.
+The point is that it's not slower when you need to edit. The Last time pre-fill still saves time — you're adjusting from a known starting point instead of typing from zero.
 
 Four reps at 130 is logged. That's accurate data from a hard set. That's what the history is for.
 
@@ -150,7 +150,7 @@ Four reps at 130 is logged. That's accurate data from a hard set. That's what th
 
 220 kilograms. One rep. PR.
 
-The ghost value had 215 from last session. I adjusted the weight up, tapped confirm. As soon as the set logged, the PR notification appeared — a quiet banner at the top, nothing more.
+Last time had 215 from last session. I adjusted the weight up, tapped confirm. As soon as the set logged, the PR notification appeared — a quiet banner at the top, nothing more.
 
 It's not a fireworks screen. There's no share button. The notification tells you the fact: new personal record, deadlift, 220 kilograms. You already know it happened; the app confirms the number.
 
@@ -184,13 +184,13 @@ Warm-up logging doesn't have to be a thing you dread or skip. If it's faster tha
 
 **Length:** ~45 seconds | **Word count:** 115 | **Duration at 150 wpm:** ~46 seconds
 
-**Visual notes:** Low-light environment. Tired hands. Show the ghost values pre-filling without any setup. The app already knows what tonight's session is. Close with the set count for the session — shows the workout actually got done.
+**Visual notes:** Low-light environment. Tired hands. Show the Last time pre-fill without any setup. The app already knows what tonight's session is. Close with the set count for the session — shows the workout actually got done.
 
 ---
 
 It's late. The gym is mostly empty. The last thing I want to do is think about what weight I was using two weeks ago.
 
-Ghost values handle that. Unit remembers last session's weight and reps for every exercise. I open the first exercise, the numbers are already there. I'm not reconstructing anything. I'm just confirming or adjusting.
+Last time handles that. Unit remembers last session's weight and reps for every exercise. I open the first exercise, the numbers are already there. I'm not reconstructing anything. I'm just confirming or adjusting.
 
 This is actually when the app matters most — not on a good session when you're motivated and focused, but on the ones where you just want to get it done and go home.
 
@@ -208,23 +208,23 @@ Eleven sets done. Halfway through.
 
 ---
 
-### C1 — Why Ghost Values Destroy Progression Engines
+### C1 — Why "Last Time" Destroys Progression Engines
 
 **Length:** ~55 seconds | **Word count:** 141 | **Duration at 150 wpm:** ~56 seconds
 
-**Visual notes:** Screen recording showing ghost-value pre-fill. Then optionally a side-by-side: competitor app showing a "suggested weight" vs Unit showing last actual weight. Let the contrast speak.
+**Visual notes:** Screen recording showing the Last time pre-fill. Then optionally a side-by-side: competitor app showing a "suggested weight" vs Unit showing last actual weight. Let the contrast speak.
 
 ---
 
 Every progression engine assumes your last session was accurate. If you logged 100 kilograms but you actually used 95 because the plates were wrong, the engine sends you to 102.5 next week. It's working from bad data.
 
-Ghost values don't suggest anything. They show you what you logged — which, if you're logging accurately, is exactly what you lifted.
+Last time doesn't suggest anything. It shows you what you logged — which, if you're logging accurately, is exactly what you lifted.
 
-The difference is: a progression engine is a model of your training. A ghost value is a mirror of your training. The model can be wrong. The mirror just shows what's there.
+The difference is: a progression engine is a model of your training. Last time is a mirror of your training. The model can be wrong. The mirror just shows what's there.
 
 When you look at 100 kilograms pre-filled before your next bench press set, you already know whether to match it, exceed it, or back off. You don't need an algorithm for that. You need accurate history and a second to think.
 
-Ghost values give you the history. The decision is yours.
+Last time gives you the history. The decision is yours.
 
 ---
 
@@ -260,7 +260,7 @@ The notebook won for a specific reason: it was always faster than any app. You o
 
 Every gym app that came before this year required more steps than a pen. Sometimes three steps more, sometimes six. The UX debt compounded across a one-hour session of sixteen sets.
 
-What changed is ghost values done properly. If the app knows what you lifted last time and pre-fills it, the confirmation is a single tap. That breaks the speed advantage paper had.
+What changed is the Last time pre-fill done properly. If the app knows what you lifted last time and pre-fills it, the confirmation is a single tap. That breaks the speed advantage paper had.
 
 The notebook still wins on battery life. It wins on simplicity. But it loses historical search, PR detection, and the rest timer that follows you out of the app.
 
@@ -326,7 +326,7 @@ Same bench press set. Same information logged — weight, reps.
 
 Left side: notebook. Open the page, find the row, write the set. 8.2 seconds.
 
-Right side: Unit. Ghost value pre-filled from last session. One tap. 2.1 seconds.
+Right side: Unit. Last time pre-filled from last session. One tap. 2.1 seconds.
 
 The notebook wins if your phone is dead. Unit wins if your phone is in your pocket, which it is.
 
@@ -346,7 +346,7 @@ Back squat. Same data both ways.
 
 Notebook: flip to the page, locate last session's entry, write today's weight and reps. 9.1 seconds — a bit slower because the entry is longer.
 
-Unit: ghost value pre-filled. I'm going up 2.5 kilograms today, so I tap the weight field once to increment. Confirm. 3.2 seconds, including the adjustment.
+Unit: Last time pre-filled it. I'm going up 2.5 kilograms today, so I tap the weight field once to increment. Confirm. 3.2 seconds, including the adjustment.
 
 Notebook is slower even when Unit requires a manual edit. That's because the starting point is already correct — you're adjusting one number, not writing the whole entry.
 
@@ -364,7 +364,7 @@ Deadlift. 215 kilograms for three.
 
 Notebook: the numbers are longer, handwriting is shakier after a heavy set. Open page, write 215 kg × 3. 10.3 seconds from unlock to pen down.
 
-Unit: ghost value shows 210 from last session. I increment to 215, confirm. 2.9 seconds.
+Unit: Last time shows 210 from last session. I increment to 215, confirm. 2.9 seconds.
 
 The heavier the set, the more accurate the data needs to be — 210 and 215 are not the same PR. Unit gets the number right because you're adjusting a pre-filled value, not writing under fatigue.
 

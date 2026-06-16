@@ -27,7 +27,7 @@
 ```
 Your paper notebook had one thing right: it never slowed you down.
 
-Unit doesn't either. Ghost values pre-fill your last session automatically, so you tap once to confirm a set, not type. Under 3 seconds, one-handed, mid-workout.
+Unit doesn't either. Last time's weight and reps are already filled in, so you tap once to confirm a set, not type. Under 3 seconds, one-handed, mid-workout.
 
 The notebook was your system. Unit is the same system — with a rest timer on your Lock Screen.
 ```
@@ -37,7 +37,7 @@ The notebook was your system. Unit is the same system — with a rest timer on y
 ```
 Your paper notebook had one thing right: it never slowed you down.
 
-Unit doesn't either. Ghost values pre-fill your last session automatically, so you tap once to confirm a set, not type. Under 3 seconds, one-handed, mid-workout.
+Unit doesn't either. Last time's weight and reps are already filled in, so you tap once to confirm a set, not type. Under 3 seconds, one-handed, mid-workout.
 
 The notebook was your system. Unit is the same system — with a rest timer on your Lock Screen.
 
@@ -59,7 +59,7 @@ No sign-up. No cloud dependency. Your training data lives on your iPhone. Unit w
 WHAT UNIT IS NOT
 — Not an AI coach. You already know what to lift.
 — Not a social platform. No feed, no followers, no sharing.
-— Not a subscription wall on core logging. Set logging, ghost values, rest timer, history, and PRs are free, always.
+— Not a subscription wall on core logging. Set logging, Last time pre-fill, rest timer, history, and PRs are free, always.
 
 Unit Pro adds export (CSV, Markdown), Apple Health sync, custom app icons, and custom template colors. $4.99/month or $29.99/year — 7-day free trial included.
 
@@ -111,7 +111,7 @@ Most gym apps assume you need help. They add an AI coach. A social feed. A recom
 
 Unit removes all of it.
 
-What's left: ghost values that pre-fill your last session, one tap to log a set, a rest timer on your Lock Screen, and your history. Nothing else asked for, nothing else given.
+What's left: last time's numbers already filled in, one tap to log a set, a rest timer on your Lock Screen, and your history. Nothing else asked for, nothing else given.
 ```
 
 ### Full description body
@@ -121,7 +121,7 @@ Most gym apps assume you need help. They add an AI coach. A social feed. A recom
 
 Unit removes all of it.
 
-What's left: ghost values that pre-fill your last session, one tap to log a set, a rest timer on your Lock Screen, and your history. Nothing else asked for, nothing else given.
+What's left: last time's numbers already filled in, one tap to log a set, a rest timer on your Lock Screen, and your history. Nothing else asked for, nothing else given.
 
 NO AI. NO INSTRUCTIONS. NO ALGORITHM.
 Unit does not tell you what to lift, when to progress, or how to structure your week. You already know that. Your job is to show up and execute. Unit's job is to log it and get out of the way.
@@ -133,7 +133,7 @@ NO ACCOUNT REQUIRED. NO CLOUD DEPENDENCY.
 You do not create a profile. You do not log in. Your data lives on your iPhone and works in airplane mode, in basement gyms, in places with no signal. Nothing is sent to a server.
 
 WHAT REMAINS
-Ghost values pre-fill your weight and reps from the last time you did this exercise. You see what you did. You tap Done. The timer starts on your Lock Screen. That is the entire loop, over and over, for every set of every session.
+Last time's weight and reps are already filled in when you open this exercise. You see what you did. You tap Done. The timer starts on your Lock Screen. That is the entire loop, over and over, for every set of every session.
 
 Import your program by pasting it from Notes or WhatsApp. Or build templates manually. No rigid scheduling, no cycle length, no mandatory check-ins.
 
@@ -161,7 +161,7 @@ You don't need another app trying to coach you. Unit trusts you to know what you
 
 **v1.0.0**:
 ```
-Unit is here. No AI, no social, no account required. Log sets in one tap with ghost values, rest timer on your Lock Screen, your program imported or built from scratch. Core logging is free, always. Feedback: support@[domain].
+Unit is here. No AI, no social, no account required. Log sets in one tap — last time's numbers already filled in — rest timer on your Lock Screen, your program imported or built from scratch. Core logging is free, always. Feedback: support@[domain].
 ```
 
 **Future updates template**:
@@ -183,7 +183,7 @@ v[X.Y.Z] — [What changed]. [If relevant: "Still no AI. Still no feed."]
 
 ### Promotional Text (≤170 chars)
 
-**Ghost values pre-fill your last session. Tap Done. Timer starts. 3 seconds, one hand, mid-workout. That's the whole loop — every set, every session.**
+**Last time's numbers are already filled in. Tap Done. Timer starts. 3 seconds, one hand, mid-workout. That's the whole loop — every set, every session.**
 
 `151 chars` ✅
 
@@ -192,7 +192,7 @@ v[X.Y.Z] — [What changed]. [If relevant: "Still no AI. Still no feed."]
 ```
 The Gym Test: one hand, sweaty, under 3 seconds to log a set.
 
-Ghost values pre-fill your last session automatically. You see what you lifted. You tap Done. Timer starts on your Lock Screen. Done.
+Last time's weight and reps are already filled in. You see what you lifted. You tap Done. Timer starts on your Lock Screen. Done.
 
 Unit is built to pass the Gym Test on every set, every session, every time you open it.
 ```
@@ -202,7 +202,7 @@ Unit is built to pass the Gym Test on every set, every session, every time you o
 ```
 The Gym Test: one hand, sweaty, under 3 seconds to log a set.
 
-Ghost values pre-fill your last session automatically. You see what you lifted. You tap Done. Timer starts on your Lock Screen. Done.
+Last time's weight and reps are already filled in. You see what you lifted. You tap Done. Timer starts on your Lock Screen. Done.
 
 Unit is built to pass the Gym Test on every set, every session, every time you open it.
 
@@ -223,7 +223,7 @@ No account, no cloud sync at v1, no waiting for a server. Your data is on your d
 WHAT UNIT IS NOT
 — Not an AI coach. No recommendations, no instructions.
 — Not a social platform. No feed, no followers.
-— Not a subscription wall on speed. Ghost values, one-tap logging, rest timer, history, and PRs are free, always.
+— Not a subscription wall on speed. Last time pre-fill, one-tap logging, rest timer, history, and PRs are free, always.
 
 Unit Pro adds export (CSV, Markdown), Apple Health sync, custom app icons, and custom template colors. $4.99/month or $29.99/year — 7-day free trial included.
 
@@ -242,7 +242,7 @@ Built for the lifter who has 30 seconds between sets and zero tolerance for slow
 
 **v1.0.0**:
 ```
-Unit is here. Ghost values pre-fill your last session. Tap Done, timer starts. Under 3 seconds per set, one-handed. Import your program from Notes or build from scratch. No account, no AI, no social. Core logging is free. Feedback: support@[domain].
+Unit is here. Last time's numbers are already filled in. Tap Done, timer starts. Under 3 seconds per set, one-handed. Import your program from Notes or build from scratch. No account, no AI, no social. Core logging is free. Feedback: support@[domain].
 ```
 
 **Future updates template**:
@@ -272,7 +272,7 @@ Reasoning:
 - Widest searcher comprehension — "gym notebook", "training log", "workout log" are established search terms
 - Notebook metaphor signals expertise without requiring explanation: the reader instantly understands "it's the thing I already use, but better"
 - Anti-bloat (Variant 2) is a strong evergreen but works better once "no AI/no social" is a recognized category in App Store search — it's not yet
-- Speed-first (Variant 3) works best once ghost values are confirmed to land as promised under real-gym conditions — validate in TestFlight first
+- Speed-first (Variant 3) works best once the Last time pre-fill is confirmed to land as promised under real-gym conditions — validate in TestFlight first
 
 ### A/B testing protocol
 

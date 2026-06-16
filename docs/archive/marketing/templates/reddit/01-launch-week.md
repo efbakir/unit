@@ -30,8 +30,9 @@ tracker felt slower than writing. Three months ago I started building Unit —
 a gym logger designed around one rule: log a set in under 3 seconds,
 one-handed, sweaty.
 
-Ghost values prefill your last session so you tap once to confirm. No AI
-coach. No social feed. No algorithm telling you what to lift.
+Every set shows last time's weight and reps under "Last time," so you tap
+once to confirm. No AI coach. No social feed. No algorithm telling you what
+to lift.
 
 Built solo with Swift 6, SwiftUI, SwiftData. RevenueCat for subs.
 Free core logging — never paywalled. Pro is $4.99/mo or $29.99/yr.

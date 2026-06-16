@@ -48,7 +48,7 @@
 
 ## "What Unit does instead" (pick one per video, rotate)
 
-- **Ghost values**: "Last session's weight and reps pre-fill. One tap to confirm."
+- **Last time**: "Last session's weight and reps are right there. One tap to confirm."
 - **Auto-timer**: "Rest timer auto-starts on 'Done'. Lives on the Lock Screen and Dynamic Island."
 - **No coach**: "Shows your last session. Never tells you what to lift next."
 - **3-tap log**: "Weight, reps, done. 2.4 seconds under fatigue."

@@ -35,8 +35,8 @@ years because every tracker felt slower than writing. Three months ago I
 started building Unit — an iOS gym logger built around a single rule:
 log a set in under three seconds, one-handed, sweaty, fatigued.
 
-How it works: pre-fill the weight and reps from your last session as
-ghost values. One tap confirms. The rest timer auto-starts and lives in
+How it works: each set shows last time's weight and reps under "Last
+time." One tap confirms. The rest timer auto-starts and lives in
 the Dynamic Island. No prescriptive AI coach. No social feed. No
 algorithm telling you what to lift next. You bring the program — Unit
 runs the loop.
@@ -59,9 +59,9 @@ Brutal feedback welcome. Reply if you want in.
 | Field | Spec |
 |---|---|
 | Logo | 240×240 PNG, transparent background (Unit app icon — `Unit/Assets.xcassets/AppIcon.appiconset/AppIcon.png` exported at 240) |
-| Cover image | 1200×630 PNG or JPG (≤2 MB), light background, single device frame angled, ghost-fill in motion as the foreground moment, no marketing copy on the image itself |
+| Cover image | 1200×630 PNG or JPG (≤2 MB), light background, single device frame angled, the "Last time" pre-fill in motion as the foreground moment, no marketing copy on the image itself |
 | Screenshot 1 | 1290×2796 (iPhone 6.9") — the "<3s set logged" hero, identical to App Store Screenshot 1 |
-| Screenshot 2 | 1290×2796 — ghost-fill annotated arrow + "tap to confirm" label |
+| Screenshot 2 | 1290×2796 — "Last time" pre-fill annotated arrow + "tap to confirm" label |
 | Screenshot 3 | 1290×2796 — Dynamic Island rest timer in a real gym shot |
 
 Reuse what `capture-app-store-screenshots.sh` produces. Do not generate a separate set — the cross-channel consistency is the point.
@@ -86,7 +86,7 @@ Format: `Show HN: [name] – [one-line value claim, ≤80 chars]`
 Three candidate titles (pick one Tuesday night, A/B test in your head — the one that makes you slightly nervous to post is the right one):
 
 ```
-1. Show HN: Unit – Log a gym set in under 3 seconds, ghost values prefill last session
+1. Show HN: Unit – Log a gym set in under 3 seconds, "Last time" shows your last session
 2. Show HN: Unit – I built a gym logger because every tracker was slower than my paper notebook
 3. Show HN: Unit – A quiet, local-first iOS gym tracker for lifters who already know how to train
 ```
@@ -112,8 +112,8 @@ Pro subscription wired in last week. Light mode only, portrait only,
 iPhone-only at v1. ~3 months of evenings and weekends to ship.
 
 The single thing I built around: log a completed set in under 3
-seconds, one-handed, fatigued. Pre-fill weight + reps from last session
-as ghost values; one tap confirms. Rest timer auto-starts and surfaces
+seconds, one-handed, fatigued. Each set shows last time's weight + reps
+under "Last time"; one tap confirms. Rest timer auto-starts and surfaces
 in Dynamic Island. No coach, no AI plan generator, no social feed — you
 bring the program, Unit runs the loop.
 
@@ -200,8 +200,8 @@ a social feed pretending to be a tool. So I went back to a paper
 notebook for two years before deciding to build the thing I actually
 wanted.
 
-Unit is a calm, local-first iOS gym logger. Pre-fill last session's
-weight and reps as ghost values. One tap confirms. The Dynamic Island
+Unit is a calm, local-first iOS gym logger. Every set shows last time's
+weight and reps under "Last time." One tap confirms. The Dynamic Island
 runs the rest timer. No coach, no plan generator, no social feed.
 
 Free core logging, forever. Pro is $9.99/mo or $49.99/yr with a 7-day
@@ -226,7 +226,7 @@ Description: Unit is a calm, local-first iOS gym logger. Pre-fill last
              logging, forever. Built solo in 3 months.
 First 3 lines (gallery caption / above-the-fold):
   1. Log a set in under 3 seconds, one-handed.
-  2. Ghost values prefill from your last session.
+  2. "Last time" shows your last session's weight and reps.
   3. No AI coach. No feed. Just sets.
 ```
 
@@ -263,8 +263,8 @@ First 3 lines:
 
 | # | Image | Source |
 |---|---|---|
-| 1 | Hero: "Log a set in <3s" — single device frame, ghost-fill mid-tap | App Store Screenshot 1 |
-| 2 | Ghost values annotated — arrow pointing to prefilled weight + reps | App Store Screenshot 2 |
+| 1 | Hero: "Log a set in <3s" — single device frame, "Last time" pre-fill mid-tap | App Store Screenshot 1 |
+| 2 | "Last time" annotated — arrow pointing to last session's weight + reps | App Store Screenshot 2 |
 | 3 | Dynamic Island rest timer — real gym shot, iPhone in hand | App Store Screenshot 3 |
 | 4 | Templates view — Push/Pull/Legs as a clean list, no "Day N" prefix | App Store Screenshot 4 |
 | 5 | History calendar — month view, PRs marked subtly | App Store Screenshot 5 |
@@ -452,7 +452,7 @@ All times Eastern. Set a phone alarm for each row. Treat this as the only docume
 | 12:45 | Resume reply cadence | HN replies, Reddit, X, PH. 10–15 min cadence (slowing from peak) |
 | 13:00–17:00 | Continuous engagement window | Reply to everything. Move bug reports to support@ email. Move feature requests to Discord (open the channel if not already). Avoid arguing |
 | 13:30 | Discord server open (if not already) | Pin the W3 launch summary. DM the link to TestFlight testers. Cap intake at 100 |
-| 14:30 | First TikTok of the day (optional but high-leverage) | 30s screen-record of one ghost-fill confirmation, no music, no voiceover. Caption: "Day 1 on the App Store. [link in bio]" |
+| 14:30 | First TikTok of the day (optional but high-leverage) | 30s screen-record of one "Last time" pre-fill confirmation, no music, no voiceover. Caption: "Day 1 on the App Store. [link in bio]" |
 | 15:00 | LifeOS Türk crossover post (one — Turkish) | Per `launch-plan.md` §3 W2 — *"3 aydır geliştirdiğim spor uygulaması bugün App Store'da..."*. One paragraph, App Store link, that's it |
 | 16:00 | Reply triage — close the loops | Anyone whose question you punted to support@: send the email now. Anyone whose feature request needs the 5-user-rule treatment: log it in the feature-requests file |
 | 18:00 | **Second metrics check** | Same metrics as 11:00. Write the 1-line summary now. Format: "Day 1: [N] installs, [M] trial starts, [K] HN upvotes, [J] PH upvotes, [I] Reddit upvotes." File in W3 retro |

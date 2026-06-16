@@ -1,7 +1,16 @@
 # Anti-patterns
 
-> Codified "won't do" list. When in doubt, this file wins over your gut.
+> Codified "won't do" list. A starting checklist — **not gospel.** Read the trust note before citing any row.
 > Cited from `CLAUDE.md` §2 push-back mandate, `docs/launch-plan.md` §4, `PRODUCT.md` brand voice, and the 2026-04-29 industry research.
+
+## How to trust this file
+
+Two kinds of rows live here, and they are **not** equally reliable:
+
+- **Durable — obey.** Legal (likeness, copyright), brand/voice (your `PRODUCT.md` calls), budget, "won't do this year" decisions. These are law or your own choices; they don't expire.
+- **Tactical — test, don't obey.** Any claim about what the TikTok / IG / Reddit algorithm rewards or punishes *right now* (reach, shadowban, hashtag, timing, frequency). These were digested from **secondary** web research on **2026-04-29** (`../archive/marketing/research/viral-patterns-2026-04-29.md`) and have **never** been tested on Unit's own accounts. Platform behavior shifts monthly. **Live data from `account-studies/` overrides any tactical row** — when it does, fix the row here and log it in `decision-log.md`.
+
+Provenance: written 2026-04-30, last substantive edit 2026-05-10, built from `launch-plan.md` §4/§8 + `PRODUCT.md` + the 2026-04-29 research note. First live-data correction: **2026-06-11** (engagement-bait row split — below), after the doc wrongly rejected the comment-to-DM funnel that drove a friend's 11.3M-view reel.
 
 ## Content & creator anti-patterns
 
@@ -13,11 +22,13 @@
 | ElevenLabs voice + Pexels stock B-roll combo | Slop signature → shadowban. |
 | ElevenLabs voice + AI-generated visuals | Same slop signature. Voice-clone of YOU + REAL screen recording is the only allowed combo (see `elevenlabs-protocol.md`). |
 | Casting UGC for demographic-clickbait reasons | "Woman faces get more views" → thirst-trap aesthetic → breaks `PRODUCT.md` brand voice (calm/expert/honest) and `launch-plan.md` §4 anti-thirst-trap rule. Cast for *authentic lifter signal*, not demographic. |
-| Engagement bait | "Comment X for the link", "Like + follow for part 2" — tanks reach in 2025-2026. |
+| Hollow engagement bait | "Like + follow for part 2", "comment YES if you agree", "wait for it…" — IG de-amplifies these. Still banned. |
 | Stock motivational quotes over stock footage | Generic, ignored, slop-flagged. |
 | "Day in the life of a solo dev #1238" | Saturated format. Original founder-vlog (specific complaints, not generic "today I built") survives; this format doesn't. |
 | Fitness influencer partnerships | `launch-plan.md` §4 ban. Off-brand and expensive. |
 | Repurposed viral clips with text overlay | Copyright + slop combo. Triple risk. |
+
+> **Not an anti-pattern (corrected 2026-06-11).** The "comment a keyword → auto-DM the link" funnel was wrongly swept into "engagement bait" above. It's a Meta-native conversion mechanic — comments are a ranking signal, and captions can't hold clickable links. The source research documented it working (Tony Dinh's Xnapper, `../archive/marketing/research/viral-patterns-2026-04-29.md` line 110); journal.bingen's 11.3M-view reel runs on it. Test it on Unit reels with plain wording ("comment 'Unit', I'll send the link"); keep the link out of the *first* DM (auto-filtered). Full reasoning: `account-studies/journal-bingen/study.md` §5. Open question for Unit is brand-voice fit, not reach-safety.
 
 ## Reddit anti-patterns
 

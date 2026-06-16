@@ -36,7 +36,7 @@
 
 | Path | What it is | Use when |
 |---|---|---|
-| `docs/marketing/README.md` | Marketing infra index — playbooks, templates, anti-patterns, content calendar | Any marketing task — open this first |
+| `docs/marketing/README.md` | The marketing plan — one reel a day to TikTok + IG (slimmed 2026-06-11; old playbooks in `docs/archive/marketing/`) | Any marketing task — open this first |
 | `docs/competitors.md` | 5 direct competitors (Hevy, Strong, Fitbod, sheets, bloatware) — strengths/weaknesses | Understanding market or differentiating |
 | `docs/competitors-analysis.md` | Deeper matrix — features, UX under stress, IA takeaways | Benchmarking a feature or interaction pattern |
 | `docs/app-store-copy.md` | App Store Connect copy — name, subtitle, description, keywords | Updating App Store metadata |
@@ -49,6 +49,12 @@
 | `docs/mental-models.md` | Mental models — identity change, process over goals, simplicity, next step | Defending a UX decision or retention strategy |
 | `docs/cognitive-principles.md` | Psychology — friction, clarity, commitment, consistency | A/B testing copy or onboarding flows |
 | `docs/skills-reference.md` | External skill references (iOS, SwiftUI, HealthKit, fitness) and takeaways | Adjacent-domain research |
+
+## Release & QA
+
+| Path | What it is | Use when |
+|---|---|---|
+| `docs/release-qa.md` | The gauntlet — manual on-device checklist for state persistence, keyboard, lifecycle, empty/max data | Before every TestFlight or App Store submission. Pairs with the `/state-audit` skill. |
 
 ## Agent harness & Claude
 

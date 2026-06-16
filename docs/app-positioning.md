@@ -30,7 +30,7 @@ These athletes often default to the Notes app or a paper notebook — not becaus
 
 ## Key messages (ranked)
 
-1. **Log a set in one tap.** Ghost values pre-fill your weight and reps from last session. Just tap Done.
+1. **Log a set in one tap.** Last time pre-fills your weight and reps from last session. Just tap Done.
 2. **Your program, your way.** Import from Notes/WhatsApp, convert a past workout, or build from scratch. No mandatory cycles or rigid scheduling.
 3. **History is your coach.** See what you lifted last time. You decide when to add weight.
 4. **Works offline, always.** Local-first. No account required. Your data stays on your device.

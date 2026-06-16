@@ -17,6 +17,7 @@
 | 7 | Apple App Analytics | Free | $0 | $0 | already on | Built-in install / retention / source data. |
 | 8 | [Apple Search Ads keywords](https://searchads.apple.com) | Free | $0 | $0 | W3 | Free ASO keyword research baseline. Complements AppFigures (search volumes), doesn't replace it (no rank tracking, no competitor monitoring). |
 | 9 | [ElevenLabs](https://elevenlabs.io) | Starter | $5 | $5 | already set up | Clone your own voice for voiceover over screen recordings (Source C in `content-engine.md`). Unique — no overlap. |
+| 10 | [Apify](https://apify.com) | Free | $0 | $0 | 2026-06-11 | Instagram public-data fetch for `account-studies/` (profile, posts, reels, view counts) via `automation/python/ig_account_fetch.py`. $5/mo free credit renews ≈ 100 studies/month; a study costs ~$0.05. No Instagram login involved. Also covers TikTok scraping if needed later. |
 
 **Tooling subtotal**:
 - Monthly billing: **$60/mo** without Magic Clips, **$79/mo** with.

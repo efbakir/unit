@@ -29,6 +29,9 @@ Required for social scheduling:
 - `BUFFER_ACCESS_TOKEN` — from https://publish.buffer.com → Settings → Apps & Extras → Developer → Create Access Token
 - `BUFFER_TIKTOK_PROFILE_ID`, `BUFFER_IG_PROFILE_ID`, `BUFFER_X_PROFILE_ID` — get from Buffer's `/profiles` API endpoint
 
+Required for Instagram account studies (`ig_account_fetch.py`):
+- `APIFY_TOKEN` — sign up free at https://apify.com ($5/mo credit renews, no card) → Console → Settings → API & Integrations
+
 Optional:
 - `OUTPUT_DIR` — where rendered files land (defaults to `../sample-output/` relative to script)
 
@@ -39,6 +42,7 @@ python3 quote_cards.py --help
 python3 elevenlabs_render.py --help
 python3 buffer_schedule.py --help
 python3 orchestrate_weekly.py --help
+python3 ig_account_fetch.py --help
 ```
 
 Each script supports `--dry-run` so you can verify config without spending API credits.
@@ -60,6 +64,15 @@ Produces:
 - `sample-output/free-tier-promise-card.png`
 
 These are ready to attach to social posts.
+
+### Pull an Instagram account study (Tier 0 of `account-studies/`)
+
+```bash
+python3 ig_account_fetch.py journal.bingen            # profile + last 30 posts
+python3 ig_account_fetch.py noah.rolette --limit 50
+```
+
+Stdlib-only (no pip deps). Saves raw JSON + a hook/cadence/engagement summary into `docs/marketing/account-studies/<handle>/`. Public data, no Instagram login. Cost ~$0.05/study against Apify's $5/mo free credit.
 
 ### Render voice files for the next week's posts
 

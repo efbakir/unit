@@ -6,7 +6,7 @@
 
 ## Primary KPI
 
-**Seconds per set logged** — the time from the moment the user is ready to log a set to the moment it's recorded. Target: ≤ 3 seconds for a ghost-value set (one tap, no typing).
+**Seconds per set logged** — the time from the moment the user is ready to log a set to the moment it's recorded. Target: ≤ 3 seconds for a last-time set (one tap, no typing).
 
 ---
 
@@ -16,7 +16,7 @@
 |------|--------|----------------|
 | **Gym Test** | Log a set in ≤ 3 seconds under physical stress | Manual QA: one-handed, sweaty-finger simulation on device |
 | **Taps to start** | ≤ 2 taps from app launch to first set logged | Count: open → tap Start → tap Done |
-| **Ghost value hit rate** | > 90% of sets logged without keyboard | Analytics: % of sets where weight and reps match ghost value exactly |
+| **Last-time hit rate** | > 90% of sets logged without keyboard | Analytics: % of sets where weight and reps match the last-time pre-fill exactly |
 | **Template creation** | < 2 minutes for any path (paste, redo, manual) | Manual QA: time each onboarding flow end-to-end |
 | **Session completion** | > 80% of started sessions reach "Finish" | Analytics: started vs finished sessions |
 | **App launch to interactive** | < 500ms | Instruments profiling on baseline device |
@@ -36,7 +36,7 @@
 ## v1 scope boundaries
 
 **Ships:**
-- Template-based logging with ghost values
+- Template-based logging with Last time pre-fill
 - Three onboarding paths (text-paste, redo-from-history, manual builder)
 - Auto rest timer with Lock Screen / Dynamic Island
 - History view (list + calendar)

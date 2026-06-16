@@ -23,7 +23,7 @@
 
 **Structure**:
 - 0-3s: screen-record of a real set being logged with a timer overlay ("1.2s… 1.8s… set logged")
-- 3-25s: voiceover narrating what's happening — calm, dry, no music. *"Three taps. Ghost value from last session pre-fills weight and reps. Tap to confirm. Haptic. Done."*
+- 3-25s: voiceover narrating what's happening — calm, dry, no music. *"Three taps. Last time's weight and reps are already there under 'Last time.' Tap to confirm. Haptic. Done."*
 - 25-50s: one specific differentiator from competitors — *"Hevy makes you tap through 4 fields. Strong needs 3. This is one."*
 - 50-60s: closing screen with app icon + name + simple CTA
 
@@ -74,7 +74,7 @@
 
 **Structure**:
 - 0-3s: hand writing in notebook with stopwatch visible
-- 3-15s: cut to Unit — ghost-value tap, haptic, done in 2.4s on overlay timer
+- 3-15s: cut to Unit — "Last time" tap, haptic, done in 2.4s on overlay timer
 - 15-25s: side-by-side numbers — notebook 8.1s, Unit 2.4s
 - 25-30s: closing — *"Faster than paper. Free on App Store."*
 
@@ -92,11 +92,11 @@
 
 **Structure**:
 - 0-3s: contrarian one-liner. *"Every progression engine is broken. Here's the math."*
-- 3-50s: 3-step explanation with screen visuals. Walk through *why* ghost values beat algorithmic recommendations under fatigue.
+- 3-50s: 3-step explanation with screen visuals. Walk through *why* showing last time's numbers beats algorithmic recommendations under fatigue.
 - 50-60s: closing — *"Unit shows your last session. Never tells you what to lift. Free on App Store."*
 
 **Topic options** (rotate):
-- Why ghost values destroy progression engines
+- Why showing last time's numbers destroys progression engines
 - Why "AI coach" recommendations cost you reps
 - The math of "seconds per set logged" (your North Star metric)
 - Why notebooks beat every gym tracker until 2024

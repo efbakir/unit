@@ -97,7 +97,7 @@ CARDS = [
         "size": (1080, 1920),
         "headline": "Core logging.",
         "headline2": "Free forever.",
-        "subtext": "Set logging, ghost values, rest timer, history, PRs — never paywalled.",
+        "subtext": "Set logging, Last time pre-fill, rest timer, history, PRs — never paywalled.",
         "footer": "Pro is for export and Health sync.",
     },
     {
@@ -115,7 +115,7 @@ CARDS = [
         "size": (1080, 1920),
         "headline": "Set logged.",
         "headline2": "2.4 seconds.",
-        "subtext": "Ghost values pre-fill last session. Tap Done. Timer starts.",
+        "subtext": "Last time pre-fills last session. Tap Done. Timer starts.",
         "footer": "Free on App Store",
     },
 ]

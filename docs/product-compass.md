@@ -20,7 +20,7 @@ Build the fastest, most trustworthy gym logging tool for intermediate-to-advance
 |-------|---------------------------|
 | **Speed over features** | Every design and engineering decision is judged by its impact on *seconds per set logged*. If a feature adds friction, it waits. |
 | **Athlete autonomy** | The lifter decides what to lift, when to progress, and how to structure their training. We show history, not instructions. |
-| **Invisible UI** | The best interaction is one the user doesn't notice. Ghost values, haptic confirmation, auto-timers — the app anticipates, not interrogates. |
+| **Invisible UI** | The best interaction is one the user doesn't notice. Last time pre-fill, haptic confirmation, auto-timers — the app anticipates, not interrogates. |
 | **Local trust** | Data lives on-device. No account required, no cloud dependency at v1. The app works in airplane mode, in a basement gym, always. |
 | **Honest simplicity** | No hype, no dark patterns, no social pressure. The voice is direct, the interface is quiet, the product earns attention through utility. |
 
@@ -41,7 +41,7 @@ Build the fastest, most trustworthy gym logging tool for intermediate-to-advance
 | Pillar | Current intent |
 |--------|----------------|
 | **North star** | **Fast, trustworthy logging under fatigue.** Success metric: *seconds per set logged*. We fill the "notebook gap" — faster than paper, smarter than Notes, zero complexity fatigue. Progression insight is a reward for logging, not a prerequisite. |
-| **Non-negotiables** | Gym Test (≤ 3s per set under stress) · Ghost values (pre-filled from last session) · Local-first · No social feed · One-tap "Done" (44×44 pt min) · Haptic confirmation · Auto rest timer with Lock Screen / Dynamic Island |
+| **Non-negotiables** | Gym Test (≤ 3s per set under stress) · Last time (pre-filled from last session) · Local-first · No social feed · One-tap "Done" (44×44 pt min) · Haptic confirmation · Auto rest timer with Lock Screen / Dynamic Island |
 | **MVP boundary** | **Log + template path ships v1.** Templates are lightweight repeatable routines, not bound to weeks or cycles. `ProgressionEngine` deferred to post-v1. Onboarding: text-paste import, redo-from-history, manual builder. |
 | **Voice** | Utility-first, direct, no hype. No competitor-framed copy. *"Faster than paper. Smarter than Notes. Your gym notebook, upgraded."* |
 

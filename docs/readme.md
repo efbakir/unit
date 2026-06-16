@@ -8,7 +8,7 @@ Unit is a zero-friction workout logger for lifters who already know their progra
 
 ## What it does
 
-- **Ghost values** pre-fill weight and reps from your last session. Tap Done. That's it.
+- **Last time** pre-fills weight and reps from your last session. Tap Done. That's it.
 - **Templates** are lightweight routines you repeat — not rigid 8-week plans. Import from Notes, convert a past workout, or build from scratch.
 - **Auto rest timer** starts on every Done tap and follows you to your Lock Screen.
 - **History** shows what you lifted, when, and flags PRs automatically.

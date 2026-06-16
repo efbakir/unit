@@ -32,7 +32,7 @@ gates only off-path stuff (CSV export, Apple Health sync, custom icons).
 
 The math:
 
-- Free tier: full set logging, ghost values, rest timer + Lock Screen
+- Free tier: full set logging, the "Last time" pre-fill, rest timer + Lock Screen
   Live Activity, all templates, full history, PR detection, custom
   exercises. None of that ever moves behind a paywall.
 - Pro ($4.99/mo, $29.99/yr): export, Health sync, custom app icons,

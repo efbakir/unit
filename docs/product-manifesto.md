@@ -25,17 +25,17 @@ The veteran doesn't need more features. They need fewer taps.
 
 **Templates, not plans.** A program is a collection of routines you repeat. It doesn't need to be an 8-week periodisation cycle with auto-increment rules and failure modes. "Push Day A" is enough. Pick it, do it, log it.
 
-**The app should be invisible when you're lifting.** Ghost values pre-fill the weight and reps. The Done button is the biggest thing on screen. The rest timer auto-starts and appears on your Lock Screen. You shouldn't have to look at the app to know it's working.
+**The app should be invisible when you're lifting.** Last time pre-fills the weight and reps. The Done button is the biggest thing on screen. The rest timer auto-starts and appears on your Lock Screen. You shouldn't have to look at the app to know it's working.
 
-**Your data is yours.** Local-first. No account required. No cloud sync at v1. The app works in airplane mode, in a basement, on a mountain. We never hold your training history hostage behind a login.
+**Your data is yours.** Local-first. No account required. No cloud sync at v1. The app works in airplane mode, in a basement, on a mountain. Unit never holds your training history hostage behind a login.
 
 ---
 
 ## What Unit is
 
-A gym logging tool that fills the gap between a paper notebook and a bloated tracker app. We call it the "notebook gap."
+A gym logging tool that fills the gap between a paper notebook and a bloated tracker app. I call it the "notebook gap."
 
-Unit is for the lifter who already knows their program and wants a tool that executes at the speed of thought. One tap to start. One tap per set. Ghost values handle the rest.
+Unit is for the lifter who already knows their program and wants a tool that executes at the speed of thought. One tap to start. One tap per set. Last time's weight and reps handle the rest.
 
 ---
 

@@ -20,7 +20,7 @@
 
 | # | Topic | Hook |
 |---|---|---|
-| 1 | Why ghost values destroy progression engines | *"Every progression engine is broken. Here's the math."* |
+| 1 | Why showing last time's numbers destroys progression engines | *"Every progression engine is broken. Here's the math."* |
 | 2 | Why "AI coach" recommendations cost you reps | *"The 'AI coach' in your gym app is making you weaker."* |
 | 3 | The math of "seconds per set logged" (your North Star metric) | *"3 seconds per set. 50 sets per week. That's 150 seconds. That's your tracker tax."* |
 | 4 | Why notebooks beat every gym tracker until 2024 | *"Pen and paper beats every gym app. Here's why that's the bug, not the feature."* |
@@ -33,7 +33,7 @@
 
 ## Body structure (3 steps)
 
-For topic #1 ("ghost values vs progression engines"):
+For topic #1 ("'Last time' vs progression engines"):
 
 ```
 Step 1 — what progression engines try to do:
@@ -45,8 +45,8 @@ Step 2 — why that breaks under fatigue:
 You feel out the warmup, decide if you've got it, and adjust. The
 engine doesn't know any of that. It just knows the algorithm."
 
-Step 3 — what ghost values do instead:
-"Show last session's weight + reps as ghost text. Athlete decides.
+Step 3 — what "Last time" does instead:
+"Show last session's weight + reps under 'Last time.' Athlete decides.
 One tap to confirm, one to adjust. The engine doesn't need to
 predict — the lifter already knows."
 

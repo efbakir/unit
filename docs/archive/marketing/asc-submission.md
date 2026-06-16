@@ -2,7 +2,80 @@
 
 > Single-source paste sheet for the submission session.
 > Synthesizes [app-store-copy-variants.md](app-store-copy-variants.md) (Variant 1 — Notebook Replacement, locked), [aso-keywords.md](aso-keywords.md) (97-char keywords field, locked), [launch-week-may-11.md](../launch-week-may-11.md) Day 2 + Day 4 specs, and the live legal pages.
-> Resolved 2026-05-11. **Updated 2026-05-31**: App Name changed to `Unit — Gym Notebook` (collision on `Unit`), and Pro IAP decoupled — see updated In-App Purchases section. **Updated 2026-06-03**: Build 1.0 (12) rejected under Guideline 2.1(b) — the binary's Settings → Subscription section + Settings → Data → Export PRO row + Screenshot 5 PRO chip all triggered the "paid content with no IAP" pattern. Surgical fix landed (Settings code strips both Pro surfaces; Screenshot 5 Row 3 replaced with "Tracking: None"). Reply drafted at [`app-review-reply-2026-06-03.md`](app-review-reply-2026-06-03.md). See [`../decision-log.md`](../decision-log.md) 2026-06-03 entry for full rationale.
+
+---
+
+## v2 SUBMISSION OVERRIDE (2026-06-16)
+
+**v2.0 ships with hard paywall.** Everything in the v1.0.0 sections below about "free forever core" + "no IAP" + "subscription wall language stripped" is **superseded for v2 submission**. See [`../decision-log.md`](../../decision-log.md) 2026-06-16 entry. Tracking plan: `~/.claude/plans/i-am-still-unsure-quiet-flame.md`.
+
+### v2 IAP product checklist (ASC actions)
+
+| Product | Reference Name | Product ID | Type | Price | Change vs v1 |
+|---|---|---|---|---|---|
+| Weekly | Unit Weekly | `com.unit.weekly` | Auto-renewable subscription (1 week) | $4.99 | **NEW** — add to `unit-pro` subscription group |
+| Monthly | Unit Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | **$9.99** | Price up from $4.99 |
+| Annual | Unit Annual | `com.unit.annual` | Auto-renewable subscription (1 year) | **$59.99** | Price up from $29.99 |
+| ~~Lifetime~~ | ~~Unit Lifetime~~ | ~~`com.unit.lifetime`~~ | Non-consumable | ~~$44.99~~ | **WITHDRAWN** — remove from ASC (mark "Removed from Sale") |
+
+**No free trial** on any tier (Introductory Offer field stays empty for Weekly / Monthly / Annual).
+
+### v2 reviewer notes (replaces v1.0.0 notes wholesale)
+
+```
+Unit v2 is a local-first gym logger for iPhone. It requires a paid subscription to access the workout-logging features. Onboarding (program setup) runs free — the reviewer can complete the full setup flow without paying and see their program built in the app. The first attempt to start a workout from the Today tab opens the paywall, which cannot be dismissed.
+
+To evaluate:
+1. Open the app. Onboarding walks through six short screens: pick a weight unit (kg or lb), choose paste / build manually / use prior history, then name your training days, pick weekdays, and set up exercises. No personal information is requested.
+2. After onboarding completes, the Today tab loads. Tap "Start workout" — the paywall appears as a full-screen cover with three tier options: Weekly $4.99, Monthly $9.99, Annual $59.99. There is no "Not now" affordance; the only ways out are to subscribe (StoreKit sandbox) or close the app.
+3. Subscribe to any tier via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
+4. To verify cancellation flow: Settings (visible only when subscribed) → Manage subscription → cancel.
+
+There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows price + period + auto-renewal disclosure; the cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
+
+The app does not collect, transmit, or store any personal data. All workout data lives on-device via SwiftData. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality). Privacy is verifiable offline: post-subscription, put the device in airplane mode and every feature still works.
+
+If you have questions during review, please email support@unitlift.app.
+```
+
+### v2 "What's New" copy (≤4000 chars)
+
+```
+Unit v2: now a paid subscription. Three tiers — Weekly, Monthly, Annual. The full app unlocks after one tap on any tier. No free trial. No notebook compromise.
+
+Bug fixes:
+- Onboarding day-name keyboard no longer shoves the screen up
+- History build issue resolved
+- Turkish program imports now parse correctly (tab-separated routines with em-dash placeholders)
+- Personal records detected automatically across history surfaces
+```
+
+### v2 description copy update (description.txt to upload)
+
+The v1.0.0 description below preserves the "WHAT UNIT IS NOT — Not a subscription. Everything in the app is here, free." bullet. That bullet **must be removed for v2**. Replacement bullet:
+
+> — Not a notebook compromise. Subscribe once and Unit replaces the notebook for every set, forever.
+
+Other description paragraphs unchanged.
+
+### v2 screenshot 2.3.3 compliance
+
+The paywall is now a first-class surface every user sees. Two acceptable strategies:
+- **(a) Add the paywall as a carousel slide.** Honest representation; Apple normally accepts. Slot it between current slot 1 (hero) and slot 2 (active logging).
+- **(b) Keep current screenshots; rely on reviewer notes.** Carousel shows the post-paywall app (Today / History / Settings). The "no preview of free functionality in screenshots" risk is acceptable if the reviewer notes are clear (they are above). Faster to ship; we go with this for v2.
+
+Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays — Settings is post-paywall and accurately representative.
+
+### v2 build / version
+
+- `MARKETING_VERSION = 1.1` (already set in `Unit.xcodeproj/project.pbxproj`)
+- `CURRENT_PROJECT_VERSION = 14` (already set; bump to 15 if additional commits land before archive)
+
+---
+
+## v1.0.0 historical record (below this line)
+
+> Resolved 2026-05-11. **Updated 2026-05-31**: App Name changed to `Unit — Gym Notebook` (collision on `Unit`), and Pro IAP decoupled — see updated In-App Purchases section. **Updated 2026-06-03**: Build 1.0 (12) rejected under Guideline 2.1(b) — the binary's Settings → Subscription section + Settings → Data → Export PRO row + Screenshot 5 PRO chip all triggered the "paid content with no IAP" pattern. Surgical fix landed (Settings code strips both Pro surfaces; Screenshot 5 Row 3 replaced with "Tracking: None"). Reply drafted at [`app-review-reply-2026-06-03.md`](app-review-reply-2026-06-03.md). See [`../decision-log.md`](../decision-log.md) 2026-06-03 entry for full rationale. **2026-06-16 — entire v1 reviewer notes + IAP section is SUPERSEDED by the v2 SUBMISSION OVERRIDE block at the top of this file.**
 
 ---
 

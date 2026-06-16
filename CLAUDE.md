@@ -23,7 +23,7 @@ Other source-of-truth docs:
 **Unit is a zero-friction gym logger. Every decision is judged by *seconds per set logged under fatigue*. Everything else is secondary.**
 
 - **Gym Test**: one-handed, sweaty, ≤ 3 seconds to log a set.
-- **Ghost values** (pre-fill from last session) are the primary logging mechanism.
+- **Last time** values (pre-fill from last session; formerly "ghost values", still `metricIsGhost` in code) are the primary logging mechanism.
 - **Templates** are the program unit — not cycles, not weeks, not engines.
 - **Local-first, light-first, quiet UI.** No social, no feeds, no recommendations.
 
@@ -63,14 +63,14 @@ Per compass decision 2026-03-26, these are **removed** or **deferred**. Claude k
 | `ProgressionEngine`, auto-increment, deload rules | Deferred post-v1. |
 | 8-week cycles, `Cycle`, `WeekDetailView`, "Week N of M" | Templates replace cycles. |
 | "Day N ·" rigid numbering prefixes | Use template/routine names. |
-| Target-vs-actual weight UI | Ghost values only. |
+| Target-vs-actual weight UI | Last-time pre-fill only. |
 | Plate calculator | Skipped. |
 | Social / feeds / sharing / community | Anti-persona. |
 | Exercise discovery / recommendation | Athletes choose their own. |
 | Pricing component on landing | Removed. |
 | Conditioning days in imported programs | Filter on import. |
 | CloudKit sync | Post-v1. Local-first only. |
-| Paywall on core logging | Core logging is free. |
+| ~~Paywall on core logging~~ | ~~Core logging is free.~~ **Lifted 2026-06-16** — v2 ships hard paywall after onboarding. See `docs/pricing.md` and `docs/decision-log.md` 2026-06-16. |
 
 Files deleted from repo (don't recreate): see [`docs/claude/scope.md`](docs/claude/scope.md).
 
@@ -184,7 +184,7 @@ If a change grows the design system rather than tightening it, justify the growt
 Three layers of mechanical enforcement so Claude doesn't have to "remember". Full details in [`docs/claude/harness.md`](docs/claude/harness.md).
 
 - **PreToolUse hook** (`.claude/hooks/ui-banned-list.sh`): blocks Edit/Write/MultiEdit when banned patterns hit Swift files under `Unit/` (excluding `DesignSystem.swift`). If it blocks legitimate work → fix the canonical primitive, never the hook.
-- **Skills** (`.claude/skills/`): `/page-audit` (single-screen review), `/component-reuse-check` (before any new component), `/ui-visual-verify` (**user-invoked only** — never auto-trigger; per §6 simulator conflicts under parallel agents). Trigger `/page-audit` and `/component-reuse-check` proactively. `/ui-visual-verify` only when the user asks.
+- **Skills** (`.claude/skills/`): `/page-audit` (single-screen review), `/component-reuse-check` (before any new component), `/state-audit` (codebase sweep for state-loss bugs — view-local `@State` holding user input, keyboard/chrome overlap, persistence gaps; pairs with `docs/release-qa.md`), `/ui-visual-verify` (**user-invoked only** — never auto-trigger; per §6 simulator conflicts under parallel agents). Trigger `/page-audit`, `/component-reuse-check`, and `/state-audit` proactively. `/ui-visual-verify` only when the user asks.
 - **Visual references** (`docs/references/`): aesthetic taste is not text-encodable. Name the closest anchor before any non-trivial UI edit. If no anchor fits, ask before inventing.
 
 ### Order of operations for any UI task
@@ -196,3 +196,15 @@ Three layers of mechanical enforcement so Claude doesn't have to "remember". Ful
 5. Single-screen review/polish? → `/page-audit` at start or end.
 
 Audit mode (overnight cron) details: [`docs/claude/harness.md`](docs/claude/harness.md) §5.
+
+---
+
+## §9. Prose style — low-mana + Demiculus communication
+
+All `.md` files in this repo and all chat replies follow two mental models:
+- **Low-mana** (https://demiculus.com/low-mana/) — minimize the reader's mental energy. Narrow the ask, binary questions, point to specific lines, smaller focused units.
+- **Communication** (https://demiculus.com/communication/) — instant graspability. Pyramid principle (conclusion first), 5-second rule, no euphemism/jargon/inflation, demand specificity, answer directly.
+
+Mechanical enforcement: `.claude/hooks/prose-banned-list.sh` (PreToolUse on Edit/Write/MultiEdit, `.md` only, this repo only) warns — does not block — when these hit: *leverage, synergy, cross-functional, in order to, utilize, operationalize, incentivize, ideate, holistic, robust, seamless/frictionless, best-in-class, cutting-edge, thought leader, paradigm shift, circle back, touch base, low-hanging fruit, move the needle, deep dive, going forward, win-win, downsizing/rightsizing, very, basically/essentially/actually, simply.* Skipped paths: `docs/references/`, `.claude/plans/`, `node_modules/`.
+
+For an explicit tightening pass: invoke the `/low-mana` skill.

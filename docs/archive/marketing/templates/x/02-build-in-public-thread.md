@@ -46,7 +46,7 @@ Pen + paper beat all of them under fatigue.
 ```
 The rule I built around: log a set in under 3 seconds, one-handed, sweaty.
 
-Ghost values from last session. Tap to confirm, tap to adjust, done.
+Last time's weight and reps, right there. Tap to confirm, tap to adjust, done.
 Auto-timer. Lock Screen Live Activity. Local-first.
 
 No AI coach. No social feed. No "Day N of M" rigid programming.

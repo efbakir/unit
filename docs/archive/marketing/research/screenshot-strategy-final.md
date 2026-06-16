@@ -157,7 +157,7 @@ OCR caption:
 
 ---
 
-### Screenshot 4 — Your history. Local. (proof of progression)
+### Screenshot 4 — Every set. Every PR. (proof of progression)
 
 **Purpose**: answer "but does it remember?". Full history is a free-tier feature, must be on the launch listing.
 
@@ -167,8 +167,8 @@ Layout:           Standard device frame, straight-on.
                   Middle 75%: device frame.
 
 Headline (110pt):
-    Every set.
-    Your history. Local.
+    Every set. Every PR.
+    Full history. Local.
 
 Subhead (36pt):
     Full session record on your iPhone. No account. No cloud.
@@ -179,14 +179,15 @@ UI inside frame:
     If calendar: month grid with logged days highlighted, one day expanded
     showing the lifts (exercise rows with weight × reps × sets).
     Highlight one day's totals (heaviest set summary line) to draw the
-    eye — do NOT add a "PR" badge or use the word "PR" anywhere in this
-    frame. The in-app History tab and session-detail surfaces do not
-    render PR badging in v1.0.0 (PR detection lives session-local inside
-    a live workout only). A "PR" badge in the screenshot promises a UI
-    element a reviewer cannot find — exactly the 2.3.3 (Accurate
-    Screenshots) trip-wire that compounded the 2026-06-03 rejection.
-    SUPERSEDED 2026-06-03 from the original PR-badge spec; re-introduce
-    when SessionDetailView renders a real PR indicator (v1.1+).
+    eye. "PR" wording and badging are allowed again as of 2026-06-11:
+    History now renders real PR indicators (ink "PR" AppTag on session
+    list rows, the session-summary header, and per-set detail rows —
+    decision-log 2026-06-11). This reverses the 2026-06-03 "no PR
+    anywhere in this frame" rule, which existed only because v1.0.0
+    rendered no PR badging a reviewer could find (2.3.3 trip-wire).
+    HARD DEPENDENCY: the binary submitted alongside this screenshot
+    must include the History PR badging build — an older archive
+    re-trips 2.3.3 exactly like Build 12.
 
 Device frame:
     Same as 2 and 3.

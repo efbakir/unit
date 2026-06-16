@@ -306,7 +306,7 @@ These guardrails carry PRODUCT.md's anti-references through into pixels. Every "
 - **Don't** ship per-row shadowed cards stacked vertically. A list is one card with N rows, never N cards.
 - **Don't** add a hairline stroke to card chrome. Bond on Milk is the separation; a 1pt border at full opacity is the same failure mode as a drop shadow.
 - **Don't** show "0 kg" for bodyweight exercises. Show "BW". Don't use `–` or `—` placeholder copy.
-- **Don't** build a target-vs-actual weight column UI. Ghost values only.
+- **Don't** build a target-vs-actual weight column UI. Last-time pre-fill only.
 - **Don't** copy the Strong/Hevy/Jefit spreadsheet aesthetic — parallel target/actual columns, dense numeric rows, busy timer chrome. The whole "gym tracker app" visual category is the trap.
 - **Don't** copy Strava / Nike Training Club patterns — feeds, badges, friend activity, share prompts, motivational hero copy, lifestyle photography of athletes mid-jump.
 - **Don't** copy Whoop / Oura aesthetics — dark dashboards, neon data viz arcs, gradient hero metrics, recovery rings, sleep-score chrome. Unit is not a wellness product; it is a working tool.

@@ -18,7 +18,7 @@ Intermediate-to-advanced lifters (1–10+ years training) who already know their
 
 Unit is the fastest, most trustworthy gym logging tool for athletes who already know how to train. It replaces the paper notebook and the Notes app with something that respects the lifter's expertise, survives gym fatigue, and earns its place on the dock through daily utility.
 
-**Success looks like:** a tired user logs a completed set in ≤ 3 seconds, one-handed, without typing — because last session's weight and reps are pre-filled as ghost values and one tap confirms them. The app gets out of the way. The lifter forgets it's there.
+**Success looks like:** a tired user logs a completed set in ≤ 3 seconds, one-handed, without typing — because last time's weight and reps are already filled in and one tap confirms them. The app gets out of the way. The lifter forgets it's there.
 
 The product wins by *removing* — friction, choices, words, screens — not by adding features, recommendations, or social loops.
 
@@ -48,7 +48,7 @@ The shared failure mode across all four is **decoration that pretends to be util
 Strategic principles that should guide every product and design decision. Visual rules live in DESIGN.md — these are about *posture*, not paint.
 
 1. **Speed is the feature.** Every decision is judged against *seconds per set logged under fatigue*. A faster path beats a smarter path. A shorter screen beats a more informative one.
-2. **History, not instructions.** Surface what the lifter did last time (ghost values). Never prescribe what they should do next. Athlete autonomy is non-negotiable; the engine and target-vs-actual UI are explicitly out of scope for that reason.
+2. **History, not instructions.** Surface what the lifter did last time (the "Last time" pre-fill). Never prescribe what they should do next. Athlete autonomy is non-negotiable; the engine and target-vs-actual UI are explicitly out of scope for that reason.
 3. **Invisible UI.** The best interaction is one the user doesn't notice. Anticipate (auto-fill, auto-timer, haptic confirm) instead of interrogating (confirmations, dialogs, "are you sure?"). The hot loop has no friction.
 4. **Local trust.** Data lives on-device. The app works in airplane mode, in basement gyms, in elevators. No account required, no cloud dependency at v1, no telemetry that gates core function.
 5. **Earn attention through utility.** No social pressure, no streaks, no engagement gamification, no notifications that aren't directly useful (PR detected, rest finished). The product earns its dock spot every day by being faster than paper — not by guilt-tripping the user back in.
