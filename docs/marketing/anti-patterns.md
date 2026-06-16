@@ -46,7 +46,7 @@ Provenance: written 2026-04-30, last substantive edit 2026-05-10, built from `la
 
 | ❌ | Why |
 |---|---|
-| Buying ads | `launch-plan.md` §8: "Don't buy ads. Not this year." |
+| Scaling Apple Search Ads / paid acquisition before measuring CAC < LTV with payback < 6 months | Locked 2026-06-17. Indie SaaS discipline: don't pour fuel until measured. Burn-test allowed — small budget (≤$100) to validate ad creative + keyword targeting. Scaling requires: (1) cohort retention data from 100+ paywall views, (2) computed LTV from observed Annual:Monthly:Weekly mix, (3) CAC under that LTV at the candidate channel. Supersedes the earlier `launch-plan.md` §8 "no ads this year" blanket — gating, not banning. See `docs/pricing.md` §Distribution. |
 | Follow/unfollow growth | Algorithmic filter, no signal value. |
 | Comment-stalking competitors' users | Reportable, ToS violation, low yield. |
 | Apollo / Hunter / Smartlead cold email | B2B tools, wrong category for B2C iOS. |

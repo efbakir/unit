@@ -49,6 +49,27 @@ The onboarding flow (splash → unit picker → import method → program build 
 - **Win-back**: $19.99/yr Apple promotional offer (⅔ of Annual), triggered after subscription cancel. Wire via StoreKit 2.
 - **Restore purchases**: standard Apple flow; user signed in with same Apple ID auto-restores entitlement (Required by App Store).
 
+## Distribution
+
+> Pricing is one of two levers that close the paid-acquisition math. The other is LTV. This section codifies how to think about both.
+
+**Target**: $11k MRR ≈ $132k ARR (locked 2026-06-17). At current annual price $59.99 = ~2,200 paying annual subs. At $74.99 = ~1,760.
+
+**Pricing experiment plan** (post-launch):
+1. v2 ships at Weekly $4.99 / Monthly $9.99 / Annual $59.99 — the current committed prices.
+2. Collect baseline conversion data on the first 100-500 paywall views.
+3. **Week 3-4**: if Annual conversion is ≥ 8% of paywall views (fitness category benchmark), bump Annual to **$74.99** via ASC for new subscribers. Existing subs grandfather at $59.99 per Apple price-increase policy.
+4. **Week 5-6**: measure conversion delta. If down ≥ 30%, revert to $59.99. If down ≤ 20%, hold $74.99.
+5. Weekly + Monthly tiers stay unchanged through this experiment. They are short-term / high-churn tiers, not the revenue lever.
+6. Append the result to `docs/decision-log.md` as a dated entry. If it justifies further moves (e.g., $89.99 ceiling test), capture the next experiment here.
+
+**Paid acquisition discipline** (locked 2026-06-17):
+- **Don't scale Apple Search Ads / paid channels until measured CAC < LTV with payback < 6 months.** Indie SaaS rule.
+- A small **burn test** (≤$100) is allowed early to validate ad creative + keyword targeting. Scaling is not.
+- Required inputs before scaling: (a) cohort retention data from 100+ paywall views, (b) computed LTV from observed Annual:Monthly:Weekly tier mix, (c) CAC at the candidate channel comfortably below that LTV.
+- Until those inputs exist, organic channels only. Plan: `docs/marketing/README.md` (daily routine — TikTok / IG / Reddit karma).
+- Cross-link: `docs/marketing/anti-patterns.md` §Distribution anti-patterns first row codifies this.
+
 ## Changing prices
 
 Don't change prices without data. If the numbers above need to move:
