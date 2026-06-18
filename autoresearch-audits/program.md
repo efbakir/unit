@@ -99,7 +99,7 @@ finding_id   iter   skill   severity   file   line   rule   description   verdic
 
 ### Severity rubric
 
-- `critical` — App crashes, data loss, incorrect log write, core `Gym Test` broken (logging > 3s, ghost values missing), App Store submission blocker.
+- `critical` — App crashes, data loss, incorrect log write, core `Gym Test` broken (logging > 3s, Last time values not pre-filled from last session), App Store submission blocker.
 - `major` — Screen doesn't render a reachable empty state, navigation dead end, design-system violation that appears on ≥3 screens, visible bug on happy path.
 - `minor` — Cosmetic, single-screen DS drift, copy nit, edge case most users won't hit.
 

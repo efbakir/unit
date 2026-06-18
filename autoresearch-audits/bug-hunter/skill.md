@@ -63,7 +63,7 @@ Every match is a **candidate**, not a confirmed finding. Read the file around th
 After the grep sweep, read these files in full at least once per session (they're the highest-density bug sources):
 
 - `Unit/Features/Today/ActiveWorkoutView.swift` — set-logging path, session resumption
-- `Unit/Features/Today/TodayView.swift` — ghost values, PR detection, empty state
+- `Unit/Features/Today/TodayView.swift` — Last time values (pre-fill from last session), PR detection, empty state
 - `Unit/Features/Onboarding/OnboardingViewModel.swift` — step advancement, side-effects
 - `Unit/Models/WorkoutSession.swift` — SwiftData model, save semantics
 - `Unit/Models/SetEntry.swift` — unit handling, PR fields

@@ -31,7 +31,7 @@
 
 - **`empty-templates-no-cta`** — `TemplatesView` with zero templates shows nothing or shows a list header with no body. Should present the three onboarding paths: text-paste, redo-from-history, manual builder (per `CLAUDE.md §2 MVP scope`).
 - **`empty-history-no-guidance`** — `HistoryView` with zero sessions. Should explain what to do, not render a blank chart.
-- **`empty-exercise-history-zero-kg`** — a never-logged exercise renders ghost value as `0 kg` instead of the `"No history yet"` prompt.
+- **`empty-exercise-history-zero-kg`** — a never-logged exercise renders the Last time value as `0 kg` instead of the `"No history yet"` prompt.
 - **`empty-calendar-silent`** — `CalendarTabView` with no session data renders a blank heatmap instead of an affordance.
 - **`search-no-results-no-message`** — exercise library / template search that returns zero matches silently. No "no results for X" copy.
 
@@ -116,7 +116,7 @@ Screenshot each step to `audit-screenshots/flows-<iter>-<step>.png`.
 
 Read `docs/goals.md` §v1 scope boundaries. For each "Ships in v1" item, confirm it is reachable from a cold start:
 
-- Template-based logging with ghost values → reachable?
+- Template-based logging with Last time values (pre-filled from last session) → reachable?
 - Three onboarding paths → all three actually selectable and completable?
 - Auto rest timer with Lock Screen / Dynamic Island → visible on lock screen during a set?
 - History view (list + calendar) → both modes reachable?
@@ -158,7 +158,7 @@ Before filing:
 - **Do not** file "missing landscape layout" — portrait-only per `CLAUDE.md §5 Principle 4`.
 - **Do not** file "missing paywall prompt on logging" — core logging is free, paywall is banned on core per `CLAUDE.md §4`.
 - **Do not** file "plate calculator missing" — deferred per `CLAUDE.md §4`.
-- **Do not** file "auto-increment / ProgressionEngine missing from UI" — deferred per `CLAUDE.md §4`. Ghost values are the in-scope alternative.
+- **Do not** file "auto-increment / ProgressionEngine missing from UI" — deferred per `CLAUDE.md §4`. Last time values (pre-filled from last session) are the in-scope alternative.
 - **Do not** file "CloudKit sync missing" — post-v1 per `CLAUDE.md §4`.
 
 If the human marks a finding `false_positive` because it's actually a banned-v1 item, the correct next-iter action is to add it to this exclusion list — not to try to justify it. The v1 scope fence is the source of truth.

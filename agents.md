@@ -5,7 +5,7 @@ Quick orientation for AI agents working on the Unit codebase.
 
 ## What this project is
 
-Unit is a **zero-friction gym logging tool** for iOS. The primary program unit is the **Template** — a lightweight repeatable routine. The core UI paradigm is **ghost values** — the app pre-fills weight and reps from the last session so the user can log a set with a single tap.
+Unit is a **zero-friction gym logging tool** for iOS. The primary program unit is the **Template** — a lightweight repeatable routine. The core UI paradigm is **Last time** — the app pre-fills weight and reps from the last session so the user can log a set with a single tap.
 
 The **Gym Test** applies: logging a set (weight, reps) in **under 3 seconds** under physical stress. `ProgressionEngine`, 8-week cycles, target-vs-actual UI, and weekly increment rules are **out of scope for v1** and have been removed from the codebase. See [`docs/claude/scope.md`](docs/claude/scope.md) for the full banned list.
 
@@ -50,7 +50,7 @@ The **Gym Test** applies: logging a set (weight, reps) in **under 3 seconds** un
 
 - **Light mode only.** No `.preferredColorScheme(.dark)`, no dark-first decisions. Tokens may carry dark values for system compatibility, but visual review and screenshots happen in light mode.
 - **Portrait only.** No landscape support.
-- **Ghost values** are the primary pre-fill mechanism. Look up the last completed session for the same exercise (any template) and pre-fill weight + reps. Never display "0 kg" — bodyweight shows "BW", and unseen exercises show "No history yet".
+- **Last time** is the primary pre-fill mechanism. Look up the last completed session for the same exercise (any template) and pre-fill weight + reps. Never display "0 kg" — bodyweight shows "BW", and unseen exercises show "No history yet".
 - **Templates are the program unit.** Not cycles, not weeks, not engines.
 - **Adaptive appearance via tokens only.** Use `AppColor` / `AppFont` / `AppSpacing` / `AppRadius` / `AppIcon` from `Unit/UI/DesignSystem.swift`. No raw `Color(...)`, hex literals, `.font(.system(...))`, or hardcoded paddings/radii in feature code. The harness PreToolUse hook (`.claude/hooks/ui-banned-list.sh`) enforces this mechanically.
 - **Reuse > extend > create.** Before any new `struct X: View` / `ViewModifier` / variant, grep `DesignSystem.swift` and run the [`/component-reuse-check`](.claude/skills/component-reuse-check/) skill. Parallel implementations are the #1 drift in this codebase.

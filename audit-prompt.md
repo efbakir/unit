@@ -89,7 +89,7 @@ For each screenshot, check:
 - Is “Week N of 8” / cycle progress prominent? (Should not be; compass 2026-03-26)
 - Is “Weekly Increase” visible anywhere? (Should not be in v1)
 - Does the session screen have a prominent Done action with large tap target? (Gym Test)
-- Are ghost values visible (prefilled from last session)?
+- Are last-time values visible (prefilled from last session)?
 - Is the rest timer visible and positioned correctly (and triggered on Done)?
 - Does history show one card per session (not one per exercise)?
 
