@@ -300,7 +300,7 @@ struct OnboardingView: View {
             )
 
         case .exercises:
-            OnboardingExercisesView(
+            OnboardingProgramPreviewView(
                 progressStep: exercisesProgressStep,
                 progressTotal: totalRequiredSteps,
                 isCommitting: isCommitting,

@@ -51,6 +51,7 @@
 		OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */; };
 		OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000022 /* OnboardingLibraryPickerView.swift */; };
 		OB100000000000000000023 /* Onboarding1RMInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000023 /* Onboarding1RMInputView.swift */; };
+		OB100000000000000000024 /* OnboardingProgramPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000024 /* OnboardingProgramPreviewView.swift */; };
 		OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000D /* OnboardingImportMethodView.swift */; };
 		OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000E /* OnboardingProgramImportView.swift */; };
 		OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000020 /* OnboardingUnitPickerView.swift */; };
@@ -156,6 +157,7 @@
 		OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPriceDisclosureView.swift; sourceTree = "<group>"; };
 		OB000000000000000000022 /* OnboardingLibraryPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLibraryPickerView.swift; sourceTree = "<group>"; };
 		OB000000000000000000023 /* Onboarding1RMInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding1RMInputView.swift; sourceTree = "<group>"; };
+		OB000000000000000000024 /* OnboardingProgramPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramPreviewView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000D /* OnboardingImportMethodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingImportMethodView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000E /* OnboardingProgramImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramImportView.swift; sourceTree = "<group>"; };
 		OB000000000000000000020 /* OnboardingUnitPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUnitPickerView.swift; sourceTree = "<group>"; };
@@ -403,6 +405,7 @@
 				OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */,
 				OB000000000000000000022 /* OnboardingLibraryPickerView.swift */,
 				OB000000000000000000023 /* Onboarding1RMInputView.swift */,
+				OB000000000000000000024 /* OnboardingProgramPreviewView.swift */,
 				OB00000000000000000000D /* OnboardingImportMethodView.swift */,
 				OB00000000000000000000E /* OnboardingProgramImportView.swift */,
 				A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */,
@@ -593,6 +596,7 @@
 				OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */,
 				OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */,
 				OB100000000000000000023 /* Onboarding1RMInputView.swift in Sources */,
+				OB100000000000000000024 /* OnboardingProgramPreviewView.swift in Sources */,
 				OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */,
 				OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */,
 				OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */,
