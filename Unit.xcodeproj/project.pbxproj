@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */; };
 		4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842C /* ProgramImportParserTests.swift */; };
+		4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842D /* ProgramImporterTests.swift */; };
 		A10000000000000000000001 /* UnitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UnitApp.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Exercise.swift */; };
@@ -102,6 +103,7 @@
 
 /* Begin PBXFileReference section */
 		165569863085B0817806842C /* ProgramImportParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParserTests.swift; sourceTree = "<group>"; };
+		165569863085B0817806842D /* ProgramImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImporterTests.swift; sourceTree = "<group>"; };
 		544D8D052F5F58C100E4C17E /* Unit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Unit.entitlements; sourceTree = "<group>"; };
 		A20000000000000000000000 /* Unit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* UnitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitApp.swift; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 			isa = PBXGroup;
 			children = (
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
+				165569863085B0817806842D /* ProgramImporterTests.swift */,
 			);
 			name = UnitTests;
 			path = UnitTests;
@@ -594,6 +597,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
+				4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

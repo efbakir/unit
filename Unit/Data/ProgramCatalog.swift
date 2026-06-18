@@ -18,7 +18,22 @@ enum ProgramCatalog {
         fiveThreeOneBBB,
         metallicadpaPPL,
         dumbbellPPL,
-        arnoldSplit
+        arnoldSplit,
+        nSuns531,
+        phul
+    ]
+
+    /// Subset shown in the onboarding library-picker. Locked 2026-06-17 by the
+    /// data-driven Q1 pick: top-5 programs the self-coached intermediate
+    /// persona actually runs (Boostcamp headline list + 104 PPL mentions
+    /// across 1,046 App Store reviews). Hidden programs stay in `all` and
+    /// remain reachable from a future "browse all" filter.
+    static let surfacedInOnboarding: [ProgramTemplate] = [
+        metallicadpaPPL,
+        gzclp,
+        fiveThreeOneBBB,
+        nSuns531,
+        phul
     ]
 
     // MARK: - 1. Starting Strength (Beginner, Strength, 3 days)
@@ -49,7 +64,10 @@ enum ProgramCatalog {
         ]
     )
 
-    // MARK: - 2. GZCLP (Beginner, Strength, 3 days)
+    // MARK: - 2. GZCLP (Beginner, Strength, 3 days) — SURFACED in onboarding library
+    // Starting % per Cody Lefever's GZCL method: T1 (5×3 heavy compound) at 85%
+    // of 1RM; T2 (3×10 volume compound) at 65%. T3 accessories left blank
+    // (no canonical 1RM mapping). Source: r/gzcl wiki.
     private static let gzclp = ProgramTemplate(
         id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
         name: "GZCLP",
@@ -60,18 +78,18 @@ enum ProgramCatalog {
         description: "A linear-progression take on Cody Lefever's GZCL method. Tier 1 is a heavy compound, Tier 2 is a volume compound, Tier 3 is accessory work. A clean next step after Starting Strength.",
         days: [
             ProgramDay(id: UUID(), name: "Day A1", weekday: 2, items: [
-                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 5, repTarget: 3, notes: "Tier 1"),
-                ProgramItem(exerciseName: "Bench Press", setCount: 3, repTarget: 10, notes: "Tier 2"),
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 5, repTarget: 3, notes: "Tier 1", oneRepMaxLift: .squat, startingWeightPct: 0.85),
+                ProgramItem(exerciseName: "Bench Press", setCount: 3, repTarget: 10, notes: "Tier 2", oneRepMaxLift: .bench, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Lat Pulldown", setCount: 3, repTarget: 15, notes: "Tier 3")
             ]),
             ProgramDay(id: UUID(), name: "Day B1", weekday: 4, items: [
-                ProgramItem(exerciseName: "OHP (BB)", setCount: 5, repTarget: 3, notes: "Tier 1"),
-                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 10, notes: "Tier 2"),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 5, repTarget: 3, notes: "Tier 1", oneRepMaxLift: .ohp, startingWeightPct: 0.85),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 10, notes: "Tier 2", oneRepMaxLift: .deadlift, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Single-Arm DB Row", setCount: 3, repTarget: 15, notes: "Tier 3")
             ]),
             ProgramDay(id: UUID(), name: "Day A2", weekday: 6, items: [
-                ProgramItem(exerciseName: "Bench Press", setCount: 5, repTarget: 3, notes: "Tier 1"),
-                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 3, repTarget: 10, notes: "Tier 2"),
+                ProgramItem(exerciseName: "Bench Press", setCount: 5, repTarget: 3, notes: "Tier 1", oneRepMaxLift: .bench, startingWeightPct: 0.85),
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 3, repTarget: 10, notes: "Tier 2", oneRepMaxLift: .squat, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Pull-Up", setCount: 3, repTarget: 15, notes: "Tier 3")
             ])
         ]
@@ -151,7 +169,10 @@ enum ProgramCatalog {
         ]
     )
 
-    // MARK: - 5. 5/3/1 Boring But Big (Intermediate, Hypertrophy, 4 days)
+    // MARK: - 5. 5/3/1 Boring But Big (Intermediate, Hypertrophy, 4 days) — SURFACED
+    // Starting % per Wendler's "Beyond 5/3/1": training max (TM) = 90% of 1RM,
+    // week 1 set 1 main work = 65% of TM = 0.585 of 1RM. BBB volume work
+    // starts at 50% of TM = 0.45 of 1RM. Both on the same main lift each day.
     private static let fiveThreeOneBBB = ProgramTemplate(
         id: UUID(uuidString: "00000000-0000-0000-0000-000000000005")!,
         name: "5/3/1 Boring But Big",
@@ -162,32 +183,37 @@ enum ProgramCatalog {
         description: "Each day hits one of the four main lifts using 5/3/1 percentages, then follows with 5×10 of the same lift at a lighter weight. Brutal volume, simple to run. Treat set counts here as a starting point — follow Wendler's percentage scheme for loading.",
         days: [
             ProgramDay(id: UUID(), name: "Press Day", weekday: 2, items: [
-                ProgramItem(exerciseName: "OHP (BB)", setCount: 3, repTarget: 5, notes: "5/3/1 sets"),
-                ProgramItem(exerciseName: "OHP (BB)", setCount: 5, repTarget: 10, notes: "BBB @ 50%"),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 3, repTarget: 5, notes: "5/3/1 sets", oneRepMaxLift: .ohp, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 5, repTarget: 10, notes: "BBB @ 50%", oneRepMaxLift: .ohp, startingWeightPct: 0.45),
                 ProgramItem(exerciseName: "Pull-Up", setCount: 5, repTarget: 10)
             ]),
             ProgramDay(id: UUID(), name: "Deadlift Day", weekday: 3, items: [
-                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 5, notes: "5/3/1 sets"),
-                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 5, repTarget: 10, notes: "BBB @ 50%"),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 5, notes: "5/3/1 sets", oneRepMaxLift: .deadlift, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 5, repTarget: 10, notes: "BBB @ 50%", oneRepMaxLift: .deadlift, startingWeightPct: 0.45),
                 ProgramItem(exerciseName: "Hanging Leg Raise", setCount: 5, repTarget: 12)
             ]),
             ProgramDay(id: UUID(), name: "Bench Day", weekday: 5, items: [
-                ProgramItem(exerciseName: "Bench Press", setCount: 3, repTarget: 5, notes: "5/3/1 sets"),
-                ProgramItem(exerciseName: "Bench Press", setCount: 5, repTarget: 10, notes: "BBB @ 50%"),
+                ProgramItem(exerciseName: "Bench Press", setCount: 3, repTarget: 5, notes: "5/3/1 sets", oneRepMaxLift: .bench, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Bench Press", setCount: 5, repTarget: 10, notes: "BBB @ 50%", oneRepMaxLift: .bench, startingWeightPct: 0.45),
                 ProgramItem(exerciseName: "Bent Over Row (BB)", setCount: 5, repTarget: 10)
             ]),
             ProgramDay(id: UUID(), name: "Squat Day", weekday: 6, items: [
-                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 3, repTarget: 5, notes: "5/3/1 sets"),
-                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 5, repTarget: 10, notes: "BBB @ 50%"),
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 3, repTarget: 5, notes: "5/3/1 sets", oneRepMaxLift: .squat, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 5, repTarget: 10, notes: "BBB @ 50%", oneRepMaxLift: .squat, startingWeightPct: 0.45),
                 ProgramItem(exerciseName: "Plank", setCount: 3, repTarget: 45)
             ])
         ]
     )
 
-    // MARK: - 6. Metallicadpa PPL (Intermediate, Mixed, 6 days)
+    // MARK: - 6. Metallicadpa PPL (Intermediate, Mixed, 6 days) — SURFACED in onboarding
+    // The "Reddit PPL." Heavy compound working sets at 70% of 1RM (the standard
+    // 5×6-8 rep-range working weight per Metallicadpa's r/Fitness wiki). Volume
+    // day variants at ~65%. Front squat starts ~65% of back-squat 1RM. RDL at
+    // ~65% of deadlift 1RM. Dumbbell + bodyweight accessories left blank.
+    // Source: u/Metallicadpa, r/Fitness PPL wiki.
     private static let metallicadpaPPL = ProgramTemplate(
         id: UUID(uuidString: "00000000-0000-0000-0000-000000000006")!,
-        name: "Metallicadpa PPL",
+        name: "Reddit PPL (Metallicadpa)",
         level: .intermediate,
         goal: .mixed,
         daysPerWeek: 6,
@@ -195,28 +221,28 @@ enum ProgramCatalog {
         description: "High-frequency push/pull/legs with one heavy and one volume rotation per lift. Run two push, two pull, two legs days per week.",
         days: [
             ProgramDay(id: UUID(), name: "Push A (Heavy)", weekday: 2, items: [
-                ProgramItem(exerciseName: "Bench Press", setCount: 4, repTarget: 6),
-                ProgramItem(exerciseName: "OHP (BB)", setCount: 3, repTarget: 8),
+                ProgramItem(exerciseName: "Bench Press", setCount: 4, repTarget: 6, oneRepMaxLift: .bench, startingWeightPct: 0.70),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 3, repTarget: 8, oneRepMaxLift: .ohp, startingWeightPct: 0.70),
                 ProgramItem(exerciseName: "Incline DB Press", setCount: 3, repTarget: 10),
                 ProgramItem(exerciseName: "Triceps Pushdown", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Lateral Raise (DB)", setCount: 3, repTarget: 15)
             ]),
             ProgramDay(id: UUID(), name: "Pull A (Heavy)", weekday: 3, items: [
-                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 5),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 5, oneRepMaxLift: .deadlift, startingWeightPct: 0.70),
                 ProgramItem(exerciseName: "Pull-Up", setCount: 3, repTarget: 8),
                 ProgramItem(exerciseName: "Bent Over Row (BB)", setCount: 3, repTarget: 8),
                 ProgramItem(exerciseName: "Face Pull", setCount: 3, repTarget: 15),
                 ProgramItem(exerciseName: "Barbell Curl", setCount: 3, repTarget: 10)
             ]),
             ProgramDay(id: UUID(), name: "Legs A", weekday: 4, items: [
-                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 4, repTarget: 6),
-                ProgramItem(exerciseName: "Romanian DL", setCount: 3, repTarget: 8),
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 4, repTarget: 6, oneRepMaxLift: .squat, startingWeightPct: 0.70),
+                ProgramItem(exerciseName: "Romanian DL", setCount: 3, repTarget: 8, oneRepMaxLift: .deadlift, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Leg Press", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Hamstring Curl", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Standing Calf Raise", setCount: 4, repTarget: 12)
             ]),
             ProgramDay(id: UUID(), name: "Push B (Volume)", weekday: 5, items: [
-                ProgramItem(exerciseName: "OHP (BB)", setCount: 4, repTarget: 8),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 4, repTarget: 8, oneRepMaxLift: .ohp, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Incline DB Press", setCount: 4, repTarget: 10),
                 ProgramItem(exerciseName: "Pec Dec", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Lateral Raise (DB)", setCount: 4, repTarget: 15),
@@ -230,7 +256,7 @@ enum ProgramCatalog {
                 ProgramItem(exerciseName: "Rear Delt Fly", setCount: 3, repTarget: 15)
             ]),
             ProgramDay(id: UUID(), name: "Legs B", weekday: 7, items: [
-                ProgramItem(exerciseName: "Front Squat", setCount: 4, repTarget: 8),
+                ProgramItem(exerciseName: "Front Squat", setCount: 4, repTarget: 8, oneRepMaxLift: .squat, startingWeightPct: 0.65),
                 ProgramItem(exerciseName: "Hip Thrust", setCount: 3, repTarget: 10),
                 ProgramItem(exerciseName: "Leg Extension", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Bulgarian Split Squat", setCount: 3, repTarget: 10),
@@ -347,6 +373,97 @@ enum ProgramCatalog {
                 ProgramItem(exerciseName: "Leg Extension", setCount: 4, repTarget: 15),
                 ProgramItem(exerciseName: "Walking Lunge", setCount: 3, repTarget: 12),
                 ProgramItem(exerciseName: "Seated Calf Raise", setCount: 5, repTarget: 15)
+            ])
+        ]
+    )
+
+    // MARK: - 9. nSuns 5/3/1 LP (Intermediate, Strength, 4 days) — SURFACED
+    // High-volume 4-day variant of Wendler's 5/3/1 with rotating top-set
+    // AMRAPs. Top set week 1 = 65% of training max (TM = 90% of 1RM) =
+    // 0.585 of 1RM. Secondary lift (T2) runs 50-65% of TM. Sources: nSuns
+    // spreadsheet, r/nSuns wiki. Encoded here as week-1 starting weights;
+    // the rotating AMRAP-driven progression is post-paywall Phase C work.
+    private static let nSuns531 = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000009")!,
+        name: "nSuns 5/3/1",
+        level: .intermediate,
+        goal: .strength,
+        daysPerWeek: 4,
+        summary: "Higher-volume 4-day 5/3/1 variant with rotating top-set AMRAPs.",
+        description: "nSuns's take on Wendler's 5/3/1, with much higher volume on the main lifts (8 sets ramping through %s of training max) plus a secondary lift each session. Top set is an AMRAP that drives weight progression. Bring serious training experience — this is a volume bomb.",
+        days: [
+            ProgramDay(id: UUID(), name: "Bench / OHP", weekday: 2, items: [
+                ProgramItem(exerciseName: "Bench Press", setCount: 8, repTarget: 5, notes: "Top set AMRAP", oneRepMaxLift: .bench, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 6, repTarget: 6, notes: "Ramping sets", oneRepMaxLift: .ohp, startingWeightPct: 0.50),
+                ProgramItem(exerciseName: "Pull-Up", setCount: 4, repTarget: 8),
+                ProgramItem(exerciseName: "Barbell Curl", setCount: 3, repTarget: 10)
+            ]),
+            ProgramDay(id: UUID(), name: "Squat / Sumo DL", weekday: 3, items: [
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 8, repTarget: 5, notes: "Top set AMRAP", oneRepMaxLift: .squat, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 6, repTarget: 5, notes: "Sumo, ramping", oneRepMaxLift: .deadlift, startingWeightPct: 0.50),
+                ProgramItem(exerciseName: "Leg Press", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Standing Calf Raise", setCount: 4, repTarget: 12)
+            ]),
+            ProgramDay(id: UUID(), name: "OHP / Close-Grip Bench", weekday: 5, items: [
+                ProgramItem(exerciseName: "OHP (BB)", setCount: 8, repTarget: 5, notes: "Top set AMRAP", oneRepMaxLift: .ohp, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Close-Grip Bench", setCount: 6, repTarget: 6, notes: "Ramping", oneRepMaxLift: .bench, startingWeightPct: 0.50),
+                ProgramItem(exerciseName: "Pull-Up", setCount: 4, repTarget: 8),
+                ProgramItem(exerciseName: "Lateral Raise (DB)", setCount: 3, repTarget: 12)
+            ]),
+            ProgramDay(id: UUID(), name: "Deadlift / Front Squat", weekday: 6, items: [
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 8, repTarget: 5, notes: "Top set AMRAP", oneRepMaxLift: .deadlift, startingWeightPct: 0.585),
+                ProgramItem(exerciseName: "Front Squat", setCount: 6, repTarget: 5, notes: "Ramping", oneRepMaxLift: .squat, startingWeightPct: 0.50),
+                ProgramItem(exerciseName: "Romanian DL", setCount: 4, repTarget: 8, oneRepMaxLift: .deadlift, startingWeightPct: 0.50),
+                ProgramItem(exerciseName: "Hamstring Curl", setCount: 3, repTarget: 12)
+            ])
+        ]
+    )
+
+    // MARK: - 10. PHUL — Power Hypertrophy Upper Lower (Intermediate, Mixed, 4 days) — SURFACED
+    // Brandon Campbell's 4-day powerbuilding split. Power days hit main lifts
+    // 3×3-5 at 80% of 1RM. Hypertrophy days hit secondary patterns 3×8-12 at
+    // 65% of 1RM. Cleanest entry to intermediate powerbuilding for the
+    // self-coached lifter. Source: Brandon Campbell, bodybuilding.com PHUL.
+    private static let phul = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000010")!,
+        name: "PHUL",
+        level: .intermediate,
+        goal: .mixed,
+        daysPerWeek: 4,
+        summary: "Power Hypertrophy Upper Lower — 2 power days (3-5 reps) + 2 hypertrophy days (8-12 reps).",
+        description: "Brandon Campbell's 4-day split blending Westside-style power sessions with bodybuilding-style volume. Two upper and two lower days per week — each muscle gets hit once heavy, once high-rep. Clean entry point into intermediate powerbuilding.",
+        days: [
+            ProgramDay(id: UUID(), name: "Upper Power", weekday: 2, items: [
+                ProgramItem(exerciseName: "Bench Press", setCount: 4, repTarget: 5, notes: "Power", oneRepMaxLift: .bench, startingWeightPct: 0.80),
+                ProgramItem(exerciseName: "Incline DB Press", setCount: 4, repTarget: 8),
+                ProgramItem(exerciseName: "Bent Over Row (BB)", setCount: 4, repTarget: 5, notes: "Power"),
+                ProgramItem(exerciseName: "Pull-Up", setCount: 3, repTarget: 8),
+                ProgramItem(exerciseName: "Skullcrusher", setCount: 3, repTarget: 10),
+                ProgramItem(exerciseName: "Barbell Curl", setCount: 3, repTarget: 10)
+            ]),
+            ProgramDay(id: UUID(), name: "Lower Power", weekday: 3, items: [
+                ProgramItem(exerciseName: "Back Squat (BB)", setCount: 4, repTarget: 5, notes: "Power", oneRepMaxLift: .squat, startingWeightPct: 0.80),
+                ProgramItem(exerciseName: "Deadlift (Conv)", setCount: 3, repTarget: 5, notes: "Power", oneRepMaxLift: .deadlift, startingWeightPct: 0.80),
+                ProgramItem(exerciseName: "Leg Press", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Hamstring Curl", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Standing Calf Raise", setCount: 4, repTarget: 12)
+            ]),
+            ProgramDay(id: UUID(), name: "Upper Hypertrophy", weekday: 5, items: [
+                ProgramItem(exerciseName: "Incline Bench Press", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "DB Bench Press", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Seated Cable Row", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Lat Pulldown", setCount: 4, repTarget: 12),
+                ProgramItem(exerciseName: "DB Shoulder Press", setCount: 4, repTarget: 10),
+                ProgramItem(exerciseName: "Lateral Raise (DB)", setCount: 3, repTarget: 15),
+                ProgramItem(exerciseName: "DB Curl", setCount: 3, repTarget: 12),
+                ProgramItem(exerciseName: "Triceps Pushdown", setCount: 3, repTarget: 12)
+            ]),
+            ProgramDay(id: UUID(), name: "Lower Hypertrophy", weekday: 6, items: [
+                ProgramItem(exerciseName: "Front Squat", setCount: 4, repTarget: 10, oneRepMaxLift: .squat, startingWeightPct: 0.65),
+                ProgramItem(exerciseName: "Romanian DL", setCount: 4, repTarget: 10, oneRepMaxLift: .deadlift, startingWeightPct: 0.65),
+                ProgramItem(exerciseName: "Bulgarian Split Squat", setCount: 3, repTarget: 10),
+                ProgramItem(exerciseName: "Leg Extension", setCount: 4, repTarget: 12),
+                ProgramItem(exerciseName: "Seated Calf Raise", setCount: 4, repTarget: 15)
             ])
         ]
     )

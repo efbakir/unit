@@ -58,18 +58,53 @@ struct ProgramItem: Identifiable, Hashable {
     let setCount: Int
     let repTarget: Int
     let notes: String?
+    /// Which compound 1RM the user-supplied starting weight is derived from.
+    /// `nil` for accessories (lateral raise, curl) where no canonical 1RM
+    /// mapping exists — those exercises start with a blank weight per Q4.
+    let oneRepMaxLift: OneRepMaxLift?
+    /// Fraction of the user's 1RM (for `oneRepMaxLift`) that the program
+    /// prescribes as the starting weight. `0.65` means 65%. Combined at
+    /// import time: `startingWeight = floor(userOneRM * pct, plate: 2.5kg)`.
+    /// `nil` when the program doesn't have a canonical starting prescription
+    /// for the exercise (accessories, or programs where the user fills first).
+    let startingWeightPct: Double?
 
     init(
         id: UUID = UUID(),
         exerciseName: String,
         setCount: Int,
         repTarget: Int,
-        notes: String? = nil
+        notes: String? = nil,
+        oneRepMaxLift: OneRepMaxLift? = nil,
+        startingWeightPct: Double? = nil
     ) {
         self.id = id
         self.exerciseName = exerciseName
         self.setCount = setCount
         self.repTarget = repTarget
         self.notes = notes
+        self.oneRepMaxLift = oneRepMaxLift
+        self.startingWeightPct = startingWeightPct
+    }
+}
+
+/// The four compound lifts whose 1RM users may enter during onboarding's
+/// program-pick flow. Each surfaced library program's main lifts reference
+/// one of these via `ProgramItem.oneRepMaxLift`. Accessories use `nil`.
+enum OneRepMaxLift: String, CaseIterable, Identifiable, Hashable {
+    case bench
+    case squat
+    case deadlift
+    case ohp
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .bench: return "Bench"
+        case .squat: return "Squat"
+        case .deadlift: return "Deadlift"
+        case .ohp: return "OHP"
+        }
     }
 }
