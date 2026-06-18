@@ -11,7 +11,6 @@ struct OnboardingImportMethodView: View {
     var progressStep: Int
     var progressTotal: Int
     var onSelect: (OnboardingViewModel.ImportMethod) -> Void
-    var hasHistory: Bool = false
     var onBack: () -> Void
 
     var body: some View {
@@ -23,24 +22,21 @@ struct OnboardingImportMethodView: View {
             onBack: onBack
         ) {
             VStack(spacing: AppSpacing.sm) {
+                // 2-choice rewrite (Phase B-3, Q1 + Q3 locked 2026-06-17).
+                // Manual builder DELETED — the self-coached intermediate
+                // persona pastes or picks. Hidden programs still live in
+                // ProgramCatalog.all for a future "browse all" surface.
+                // Use-past-workout (history) path also removed: it required
+                // existing sessions which a brand-new v2 install never has.
                 AppOptionTileCard(
                     icon: .clipboard,
-                    title: "Paste program"
+                    title: "Paste my routine"
                 ) {
                     onSelect(.paste)
                 }
 
-                if hasHistory {
-                    AppOptionTileCard(
-                        icon: .calendarClock,
-                        title: "Use past workout"
-                    ) {
-                        onSelect(.history)
-                    }
-                }
-
-                AppOptionTileCard(icon: .edit, title: "Build manually") {
-                    onSelect(.manual)
+                AppOptionTileCard(icon: .list, title: "Pick a program") {
+                    onSelect(.library)
                 }
             }
         }

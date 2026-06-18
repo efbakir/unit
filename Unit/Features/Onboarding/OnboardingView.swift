@@ -140,16 +140,18 @@ enum OnboardingPreferences {
     private static func rawImportMethod(from method: OnboardingViewModel.ImportMethod) -> String {
         switch method {
         case .paste: return "paste"
-        case .history: return "history"
-        case .manual: return "manual"
+        case .library: return "library"
         }
     }
 
     private static func importMethod(from raw: String) -> OnboardingViewModel.ImportMethod {
         switch raw {
         case "paste": return .paste
-        case "history": return .history
-        default: return .manual
+        // Legacy v1 persistence values map forward to .library — both
+        // "manual" (the old build-from-blank path) and "history" (the
+        // freestyle-conversion path) were removed in v2 Phase B-3.
+        case "library", "manual", "history": return .library
+        default: return .library
         }
     }
 }
@@ -161,6 +163,8 @@ enum OnboardingStep: Hashable {
     case unitPicker
     case importMethod
     case programImport
+    case libraryPicker
+    case oneRMInput
     case splitBuilder
     case schedule
     case exercises
@@ -171,9 +175,6 @@ enum OnboardingStep: Hashable {
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
-    @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
-    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
 
     @AppStorage("unitSystem") private var storedUnitSystem: String = "kg"
 
@@ -241,16 +242,12 @@ struct OnboardingView: View {
                 onSelect: { method in
                     vm.importMethod = method
                     switch method {
-                    case .manual:
-                        push(.splitBuilder)
-                    case .history:
-                        applyMostRecentSessionAsProgram()
-                        push(.exercises)
+                    case .library:
+                        push(.libraryPicker)
                     case .paste:
                         push(.programImport)
                     }
                 },
-                hasHistory: mostRecentReusableSession != nil,
                 onBack: pop
             )
 
@@ -259,6 +256,30 @@ struct OnboardingView: View {
                 progressStep: 3,
                 progressTotal: totalRequiredSteps,
                 onContinue: { push(.schedule) },
+                onBack: pop
+            )
+
+        case .libraryPicker:
+            OnboardingLibraryPickerView(
+                progressStep: 3,
+                progressTotal: totalRequiredSteps,
+                onPick: { template in
+                    vm.applyPickedProgram(template)
+                    push(.oneRMInput)
+                },
+                onBack: pop
+            )
+
+        case .oneRMInput:
+            Onboarding1RMInputView(
+                progressStep: 4,
+                progressTotal: totalRequiredSteps,
+                unitSystem: vm.unitSystem,
+                onContinue: { entered in
+                    vm.oneRMs = entered
+                    vm.applyOneRMs()
+                    push(.exercises)
+                },
                 onBack: pop
             )
 
@@ -289,15 +310,13 @@ struct OnboardingView: View {
         }
     }
 
-    /// History fast-track skips the schedule step (single template auto-takes
-    /// rotation), so the bar caps at 4 steps for that flow and 5 elsewhere.
-    private var totalRequiredSteps: Int {
-        vm.importMethod == .history ? 4 : 5
-    }
+    /// Paste path: 5 steps (unitPicker → importMethod → programImport →
+    /// schedule → exercises). Library path: 5 steps (unitPicker →
+    /// importMethod → libraryPicker → oneRMInput → exercises). Both equal —
+    /// constant 5 since the history fast-track was removed in B-3.
+    private var totalRequiredSteps: Int { 5 }
 
-    private var exercisesProgressStep: Int {
-        vm.importMethod == .history ? 4 : 5
-    }
+    private var exercisesProgressStep: Int { 5 }
 
     // MARK: - Step navigation
 
@@ -340,46 +359,6 @@ struct OnboardingView: View {
         }
     }
 
-    private var mostRecentReusableSession: WorkoutSession? {
-        sessions.first { session in
-            session.setEntries.contains { $0.isCompleted && !$0.isWarmup }
-        }
-    }
-
-    private func applyMostRecentSessionAsProgram() {
-        guard let session = mostRecentReusableSession else { return }
-
-        let exerciseByID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
-        let entries = session.setEntries
-            .filter { $0.isCompleted && !$0.isWarmup }
-            .sorted { $0.setIndex < $1.setIndex }
-        let grouped = Dictionary(grouping: entries, by: \.exerciseId)
-
-        let importedExercises = grouped.compactMap { exerciseID, sets -> (index: Int, exercise: ImportedProgramExercise)? in
-            guard let firstIndex = sets.map(\.setIndex).min(),
-                  let last = sets.sorted(by: { $0.setIndex < $1.setIndex }).last else {
-                return nil
-            }
-            let fallbackName = exerciseByID[exerciseID]?.displayName ?? "Exercise \(firstIndex + 1)"
-            return (
-                firstIndex,
-                ImportedProgramExercise(
-                    name: fallbackName,
-                    sets: sets.count,
-                    reps: max(last.reps, OnboardingExercise.defaultPlannedReps),
-                    weightKg: last.weight
-                )
-            )
-        }
-        .sorted { $0.index < $1.index }
-        .map(\.exercise)
-
-        guard !importedExercises.isEmpty else { return }
-        let templateName = templates.first(where: { $0.id == session.templateId })?.displayName ?? "Workout 1"
-        vm.applyImportedProgram([
-            ImportedProgramDay(name: templateName, exercises: importedExercises)
-        ])
-    }
 }
 
 // MARK: - Flow container
