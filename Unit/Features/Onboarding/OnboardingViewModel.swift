@@ -50,7 +50,7 @@ struct OnboardingExercise: Identifiable, Equatable, Hashable, Codable {
     /// (rep ranges, RPE %, Wendler 5/3/1, ChatGPT verbose form, markdown
     /// tables) before they commit to a real Split. Empty string is the
     /// canonical "no source line" sentinel — manually-added exercises
-    /// from `OnboardingExerciseSearchSheet` carry "", so the row stays clean.
+    /// from the deleted v1 search sheet carry "", so the row stays clean.
     /// Codable default "" same pattern as `note` above; no migration.
     var originalLine: String = ""
 }

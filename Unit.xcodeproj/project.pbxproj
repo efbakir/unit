@@ -46,7 +46,6 @@
 		OB100000000000000000003 /* OnboardingShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000003 /* OnboardingShell.swift */; };
 		OB100000000000000000004 /* OnboardingSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000004 /* OnboardingSplashView.swift */; };
 		OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000007 /* OnboardingSplitBuilderView.swift */; };
-		OB100000000000000000008 /* OnboardingExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000008 /* OnboardingExercisesView.swift */; };
 		OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000009 /* OnboardingScheduleView.swift */; };
 		OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */; };
 		OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000022 /* OnboardingLibraryPickerView.swift */; };
@@ -152,7 +151,6 @@
 		OB000000000000000000003 /* OnboardingShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingShell.swift; sourceTree = "<group>"; };
 		OB000000000000000000004 /* OnboardingSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplashView.swift; sourceTree = "<group>"; };
 		OB000000000000000000007 /* OnboardingSplitBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplitBuilderView.swift; sourceTree = "<group>"; };
-		OB000000000000000000008 /* OnboardingExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingExercisesView.swift; sourceTree = "<group>"; };
 		OB000000000000000000009 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
 		OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPriceDisclosureView.swift; sourceTree = "<group>"; };
 		OB000000000000000000022 /* OnboardingLibraryPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLibraryPickerView.swift; sourceTree = "<group>"; };
@@ -399,7 +397,6 @@
 				OB000000000000000000003 /* OnboardingShell.swift */,
 				OB000000000000000000004 /* OnboardingSplashView.swift */,
 				OB000000000000000000007 /* OnboardingSplitBuilderView.swift */,
-				OB000000000000000000008 /* OnboardingExercisesView.swift */,
 				OB000000000000000000009 /* OnboardingScheduleView.swift */,
 				OB000000000000000000020 /* OnboardingUnitPickerView.swift */,
 				OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */,
@@ -591,7 +588,6 @@
 				OB100000000000000000003 /* OnboardingShell.swift in Sources */,
 				OB100000000000000000004 /* OnboardingSplashView.swift in Sources */,
 				OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */,
-				OB100000000000000000008 /* OnboardingExercisesView.swift in Sources */,
 				OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */,
 				OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */,
 				OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */,
