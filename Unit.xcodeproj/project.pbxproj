@@ -48,6 +48,7 @@
 		OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000007 /* OnboardingSplitBuilderView.swift */; };
 		OB100000000000000000008 /* OnboardingExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000008 /* OnboardingExercisesView.swift */; };
 		OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000009 /* OnboardingScheduleView.swift */; };
+		OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */; };
 		OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000D /* OnboardingImportMethodView.swift */; };
 		OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000E /* OnboardingProgramImportView.swift */; };
 		OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000020 /* OnboardingUnitPickerView.swift */; };
@@ -150,6 +151,7 @@
 		OB000000000000000000007 /* OnboardingSplitBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplitBuilderView.swift; sourceTree = "<group>"; };
 		OB000000000000000000008 /* OnboardingExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingExercisesView.swift; sourceTree = "<group>"; };
 		OB000000000000000000009 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
+		OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPriceDisclosureView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000D /* OnboardingImportMethodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingImportMethodView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000E /* OnboardingProgramImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramImportView.swift; sourceTree = "<group>"; };
 		OB000000000000000000020 /* OnboardingUnitPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUnitPickerView.swift; sourceTree = "<group>"; };
@@ -394,6 +396,7 @@
 				OB000000000000000000008 /* OnboardingExercisesView.swift */,
 				OB000000000000000000009 /* OnboardingScheduleView.swift */,
 				OB000000000000000000020 /* OnboardingUnitPickerView.swift */,
+				OB000000000000000000021 /* OnboardingPriceDisclosureView.swift */,
 				OB00000000000000000000D /* OnboardingImportMethodView.swift */,
 				OB00000000000000000000E /* OnboardingProgramImportView.swift */,
 				A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */,
@@ -581,6 +584,7 @@
 				OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */,
 				OB100000000000000000008 /* OnboardingExercisesView.swift in Sources */,
 				OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */,
+				OB100000000000000000021 /* OnboardingPriceDisclosureView.swift in Sources */,
 				OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */,
 				OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */,
 				OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */,
