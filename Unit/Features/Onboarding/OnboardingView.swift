@@ -164,7 +164,6 @@ enum OnboardingStep: Hashable {
     case importMethod
     case programImport
     case libraryPicker
-    case oneRMInput
     case splitBuilder
     case schedule
     case exercises
@@ -265,19 +264,6 @@ struct OnboardingView: View {
                 progressTotal: totalRequiredSteps,
                 onPick: { template in
                     vm.applyPickedProgram(template)
-                    push(.oneRMInput)
-                },
-                onBack: pop
-            )
-
-        case .oneRMInput:
-            Onboarding1RMInputView(
-                progressStep: 4,
-                progressTotal: totalRequiredSteps,
-                unitSystem: vm.unitSystem,
-                onContinue: { entered in
-                    vm.oneRMs = entered
-                    vm.applyOneRMs()
                     push(.exercises)
                 },
                 onBack: pop
@@ -311,12 +297,12 @@ struct OnboardingView: View {
     }
 
     /// Paste path: 5 steps (unitPicker → importMethod → programImport →
-    /// schedule → exercises). Library path: 5 steps (unitPicker →
-    /// importMethod → libraryPicker → oneRMInput → exercises). Both equal —
-    /// constant 5 since the history fast-track was removed in B-3.
-    private var totalRequiredSteps: Int { 5 }
+    /// schedule → exercises). Library path: 4 steps (unitPicker →
+    /// importMethod → libraryPicker → exercises) since the 1RM screen was
+    /// removed 2026-06-18 (weights are edited inline on the preview instead).
+    private var totalRequiredSteps: Int { vm.importMethod == .paste ? 5 : 4 }
 
-    private var exercisesProgressStep: Int { 5 }
+    private var exercisesProgressStep: Int { totalRequiredSteps }
 
     // MARK: - Step navigation
 

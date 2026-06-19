@@ -7,7 +7,7 @@
 //  row treatment the in-app `ProgramLibraryView` already uses (Level / Goal /
 //  Days dropdown chips above an `AppCardList` of `PreviewListRow`s), so the
 //  onboarding picker and the post-paywall program library read as one surface.
-//  One tap → `Onboarding1RMInputView`.
+//  One tap → `OnboardingProgramPreviewView` (weights filled in inline there).
 //
 //  No manual-build escape hatch on this screen. If the user wants a program
 //  not on this list, they take the Paste path from `OnboardingImportMethodView`.

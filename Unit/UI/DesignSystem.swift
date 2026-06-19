@@ -807,17 +807,16 @@ struct AppListRowValueLabel: View {
 }
 
 /// Inline single-line decimal-pad weight field with a trailing unit suffix
-/// ("kg" / "lb"). The canonical weight input for onboarding — 1RM entry
-/// (`Onboarding1RMInputView`) and program-preview weight edit
-/// (`OnboardingProgramPreviewView`) previously hand-rolled this identical
-/// `TextField` + suffix pair and silently diverged on width, inner spacing,
-/// and placeholder. One recipe lives here so they cannot drift again.
+/// ("kg" / "lb"). The canonical weight input for onboarding — used by the
+/// program-preview weight edit (`OnboardingProgramPreviewView`). The value sits
+/// on a light filled background so it reads as a tappable input; without it a
+/// bare number looks like static label text beside the exercise's sets×reps.
 ///
 /// Empty state shows no placeholder digit: no em dash (a banned placeholder,
 /// §4) and no bare "0" (reads as a real entered value, the sibling of the
-/// banned "0 kg"). The trailing unit suffix is the affordance. The caller
-/// binds a plain string and owns any unit conversion (kg <-> lb) at its
-/// boundary.
+/// banned "0 kg"). The filled field plus the trailing unit suffix are the
+/// affordance. The caller binds a plain string and owns any unit conversion
+/// (kg <-> lb) at its boundary.
 struct AppInlineWeightField: View {
     @Binding var text: String
     let unitSuffix: String
@@ -830,7 +829,13 @@ struct AppInlineWeightField: View {
                 .monospacedDigit()
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: 80)
+                .frame(minWidth: 44, maxWidth: 72)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xs)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                        .fill(AppColor.controlBackground)
+                )
 
             Text(unitSuffix)
                 .font(AppFont.caption.font)

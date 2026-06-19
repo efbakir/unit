@@ -123,19 +123,11 @@ final class OnboardingViewModel {
 
     // MARK: Library path (Phase B-3)
 
-    /// Program template picked from the onboarding library (Q1 surfaced set:
-    /// Reddit PPL / GZCLP / 5/3/1 BBB / nSuns / PHUL). nil until the user
-    /// taps a card on `OnboardingLibraryPickerView`. Drives the 1RM screen
-    /// (which only fires for library path) and the program preview's
-    /// starting-weight stamping.
+    /// Program template picked from the onboarding library (the surfaced set:
+    /// Full Body / Upper / Lower / 5/3/1 / Power + Size / Push Pull Legs). nil
+    /// until the user taps a card on `OnboardingLibraryPickerView`. Drives the
+    /// program preview, where the user fills in their own weights inline.
     var pickedProgram: ProgramTemplate? = nil
-
-    /// User-entered compound 1RMs from `Onboarding1RMInputView`. Keyed by
-    /// lift; skipped lifts are absent. Threaded into `ProgramImporter`'s
-    /// `oneRMs:` parameter at commit time to stamp starting weights into
-    /// `DayTemplate.plannedWeightByExerciseId`. Empty dictionary = user
-    /// skipped all 4 lifts → program preview shows blank weights.
-    var oneRMs: [OneRepMaxLift: Double] = [:]
 
     // MARK: Units
 
@@ -461,14 +453,12 @@ extension OnboardingViewModel {
 
     /// Library-pick adapter (Phase B-3). Translates a `ProgramTemplate` from
     /// `ProgramCatalog.surfacedInOnboarding` into the in-memory onboarding
-    /// state shared with paste + (legacy) manual paths, so the downstream
-    /// exercises/preview step renders the picked program through the same
-    /// pipeline that paste uses. Starting weights are NOT computed here —
-    /// they fill in via `applyOneRMs()` after the user types their 1RMs
-    /// on `Onboarding1RMInputView`.
+    /// state shared with the paste path, so the downstream preview step renders
+    /// the picked program through the same pipeline paste uses. Weights start
+    /// blank (`plannedWeightKg: nil`); the user fills them in inline on the
+    /// program preview. The 1RM-entry screen was removed 2026-06-18.
     func applyPickedProgram(_ template: ProgramTemplate) {
         pickedProgram = template
-        oneRMs = [:]
         importWarnings = []
 
         let templateDays = template.days
@@ -493,27 +483,6 @@ extension OnboardingViewModel {
                 )
             }
         })
-    }
-
-    /// Walks the currently-picked program's items and stamps starting weights
-    /// onto `dayExercises[].plannedWeightKg` wherever a 1RM mapping +
-    /// percentage exists AND the user supplied that 1RM in `oneRMs`. Items
-    /// without a stamp keep `nil` and show blank on first log per Q4 fallback.
-    /// Idempotent — safe to call repeatedly if the user re-enters 1RMs.
-    func applyOneRMs() {
-        guard let template = pickedProgram else { return }
-        let templateDays = template.days.prefix(dayCount)
-        for (dayIndex, day) in templateDays.enumerated() where dayIndex < dayExercises.count {
-            var dayItems = Array(zip(day.items, dayExercises[dayIndex]))
-            for (itemIndex, pair) in dayItems.enumerated() {
-                let (programItem, onboardingExercise) = pair
-                let stamped = ProgramImporter.startingWeight(for: programItem, oneRMs: oneRMs)
-                var updated = onboardingExercise
-                updated.plannedWeightKg = stamped
-                dayItems[itemIndex] = (programItem, updated)
-            }
-            dayExercises[dayIndex] = dayItems.map(\.1)
-        }
     }
 
     private func normalizedExerciseName(_ name: String) -> String {

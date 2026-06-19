@@ -20,6 +20,19 @@
 
 ---
 
+## 2026-06-18 — Onboarding library refinements: clear program names, reuse the program-library filter, remove the 1RM screen
+
+**Decision:** Three founder-driven changes to the library-pick onboarding path, all reversing or refining the 2026-06-17 grill:
+1. **Clear program names (reverses Q1's data-picked jargon set).** The surfaced set is re-curated to the five clearest universal structures, ordered by days: Full Body, Upper / Lower, 5/3/1, Power + Size, Push Pull Legs. The founder rejected the insider codenames (Metallicadpa / GZCLP / nSuns / PHUL / Boring But Big) as unreadable. Catalog titles renamed; any insider name now lives only in a program's description. Non-surfaced jargon also cleaned (GZCLP → Beginner Linear, nSuns 5/3/1 → High-Volume 5/3/1).
+2. **Picker reuses the existing filter.** `OnboardingLibraryPickerView` was rewritten to mirror the in-app `ProgramLibraryView` exactly: an `AppFilterChipBar` of Level / Goal / Days `AppDropdownChip`s over the surfaced set, then `AppCardList` + `PreviewListRow`. Replaces a bespoke `AppCard` + `AppTag` layout, so onboarding and the post-paywall program library read as one surface.
+3. **Removed the 1RM screen (reverses Q2 + Q4).** `Onboarding1RMInputView` is deleted. Rationale: almost nobody knows their true 1RM, so the screen was an unanswerable wall whose only job was to pre-fill library weights. Library picks now go straight to the program preview with blank weights; the user types their own weight inline next to each lift (the preview already supports inline editing, now with a filled-background affordance so the field reads as editable). The strong "we know your numbers" wow stays on the paste path, where weights come from the user's actual pasted routine. The founder weighed the rep-max-input alternative (enter a 5RM, derive the max via Epley) and chose to drop the step entirely rather than keep any weight-entry screen.
+
+**Why:** Founder feedback over three messages on 2026-06-18: the jargon names read as "I don't know what the fuck that is"; the picker should reuse the filter the app already has; and "why do we really need the one rep max" when most people can't answer it. All three accepted as product calls.
+
+**Implication:** Library path is now 4 onboarding steps (was 5); paste path stays 5. The 1RM-derivation substrate is left DORMANT but intact: `ProgramItem.oneRepMaxLift` / `startingWeightPct`, the per-program percentages in `ProgramCatalog`, `ProgramImporter.startingWeight(for:oneRMs:)`, and `ProgramImporterTests` all remain (tested, unused by the running app) so the rep-max idea can be added later with no re-derivation. The `OnboardingViewModel.oneRMs` property + `applyOneRMs()` were removed as dead flow code. `AppInlineWeightField` is now single-caller (the preview) but kept as the canonical weight input. Updated `ProgramImporterTests` to assert the five clear names and guard against the jargon codenames returning.
+
+---
+
 ## 2026-06-18 — D0 pre-onboarding price-disclosure splash REMOVED (reverses the 2026-06-17 D0 decision)
 
 **Decision:** Deleted `OnboardingPriceDisclosureView` (the "Before you start — I built Unit as a paid app…" splash) and reverted `ContentView` to a single paywall-only `fullScreenCover` gate. Removed the `hasSeenPriceDisclosure` `@AppStorage` flag, the `OnboardingGate` enum, and the stacked-cover logic; the gate is back to the simple `paywallGate` binding (`!needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased`). The "D1" half of the 2026-06-17 decision (paste-first + 5-program library, manual builder deleted, 1RM-derived weights, program-preview wow surface) **stands unchanged** — only the D0 splash is removed. Onboarding now opens directly into the existing splash → unit picker → import method, and the only paywall touch is the hard wall after the program preview.
