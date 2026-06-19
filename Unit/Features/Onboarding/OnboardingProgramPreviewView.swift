@@ -42,8 +42,11 @@ struct OnboardingProgramPreviewView: View {
         OnboardingShell(
             title: previewTitle,
             subtitle: previewSubtitle,
+            ctaLabel: ctaLabel,
+            ctaEnabled: ctaEnabled,
             progressStep: progressStep,
             progressTotal: progressTotal,
+            onContinue: ctaAction,
             onBack: onBack
         ) {
             if hasAnyExercise {
@@ -52,6 +55,23 @@ struct OnboardingProgramPreviewView: View {
                 emptyParseState
             }
         }
+    }
+
+    // Sticky CTA — routed through OnboardingShell's pinned bottom button (the
+    // same AppScreen(primaryButton:) every other onboarding step uses) so the
+    // button stays at the screen edge instead of scrolling off with the program
+    // list when every day is expanded.
+    private var ctaLabel: String {
+        guard hasAnyExercise else { return "Back to import" }
+        return isCommitting ? "Starting…" : "Start your first workout"
+    }
+
+    private var ctaEnabled: Bool {
+        hasAnyExercise ? !isCommitting : true
+    }
+
+    private var ctaAction: () -> Void {
+        hasAnyExercise ? onContinue : onBack
     }
 
     private var previewTitle: String {
@@ -88,13 +108,6 @@ struct OnboardingProgramPreviewView: View {
                     }
                 }
             }
-
-            AppPrimaryButton(
-                isCommitting ? "Starting…" : "Start your first workout",
-                isLoading: isCommitting,
-                action: onContinue
-            )
-            .disabled(isCommitting)
         }
     }
 
@@ -278,8 +291,6 @@ struct OnboardingProgramPreviewView: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-
-            AppPrimaryButton("Back to import", action: onBack)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.xl)
