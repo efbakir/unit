@@ -20,6 +20,16 @@
 
 ---
 
+## 2026-06-18 — D0 pre-onboarding price-disclosure splash REMOVED (reverses the 2026-06-17 D0 decision)
+
+**Decision:** Deleted `OnboardingPriceDisclosureView` (the "Before you start — I built Unit as a paid app…" splash) and reverted `ContentView` to a single paywall-only `fullScreenCover` gate. Removed the `hasSeenPriceDisclosure` `@AppStorage` flag, the `OnboardingGate` enum, and the stacked-cover logic; the gate is back to the simple `paywallGate` binding (`!needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased`). The "D1" half of the 2026-06-17 decision (paste-first + 5-program library, manual builder deleted, 1RM-derived weights, program-preview wow surface) **stands unchanged** — only the D0 splash is removed. Onboarding now opens directly into the existing splash → unit picker → import method, and the only paywall touch is the hard wall after the program preview.
+
+**Why:** Founder pushback (2026-06-18): an in-app "this app is paid" screen at the very start is redundant because the App Store product page already surfaces the subscription / in-app purchases before download, and front-loading the price reads as worse UX than letting the user build their program first and meet the wall at the natural commitment point. Accepted as the founder's product call. Noted residual risk (the same one D0 was meant to mitigate): the App Store "In-App Purchases" label does not communicate that the app is *fully* gated, so a sliver of the Fitbod-review "wait, I can't use anything?" pattern remains at the paywall — traded for a cleaner first run. The 2026-06-17 §2 user-voice research (Fitbod 3★ "Paywall after onboarding") is the cited risk; the founder is accepting it.
+
+**Implication:** `Q3` and `Q8` of the 2026-06-17 grill (D0 copy + D0-wraps-paywall-for-v1-users) are void. v1 users upgrading to v2 now go straight to the paywall on first cold launch with no disclosure splash — same as the pre-D0 Phase A behavior. No onboarding step renumbering needed: D0 was a `ContentView` cover, never an `OnboardingShell` progress step, so `progressStep`/`progressTotal` on the library/1RM/preview screens are unchanged. The Phase B plan file (`~/.claude/plans/v2-phase-b-onboarding-redesign.md`) D0/B-2 section is now historical. ASC reviewer notes in `docs/archive/marketing/asc-submission.md` still accurately describe the after-onboarding paywall (they never depended on D0).
+
+---
+
 ## 2026-06-17 — v2 onboarding direction D0 + D1 locked; pricing experiment plan; paid-ads gating discipline; $11k MRR milestone anchored
 
 **Decision:** Three linked decisions, all driven by Phase B research (`docs/onboarding-redesign-research.md`):

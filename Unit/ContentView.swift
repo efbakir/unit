@@ -12,18 +12,14 @@ struct ContentView: View {
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
 
-    @AppStorage("hasSeenPriceDisclosure") private var hasSeenPriceDisclosure: Bool = false
-
     @State private var selectedTab: RootTab = .today
     @State private var store: StoreManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Uses `UserDefaults.standard` in the app; pass an isolated suite in `#Preview` so canvas state does not touch real onboarding flags.
-    init(userDefaults: UserDefaults = .standard) {
+    init() {
         _splits = Query(sort: \Split.name)
         _sessions = Query(sort: \WorkoutSession.date, order: .reverse)
         _store = State(initialValue: StoreManager())
-        _hasSeenPriceDisclosure = AppStorage(wrappedValue: false, "hasSeenPriceDisclosure", store: userDefaults)
     }
 
     private var hasActiveSession: Bool {
@@ -53,25 +49,20 @@ struct ContentView: View {
         }
         .appAnimation(.appEnter, value: needsOnboarding, reduceMotion: reduceMotion)
         .background(AppColor.background.ignoresSafeArea())
-        // Stacked gates — one fullScreenCover whose item is computed from
-        // (a) D0 price-disclosure has not been seen, and (b) the StoreKit
-        // entitlement check has resolved without finding a Pro entitlement.
-        // D0 always sits ABOVE the paywall — new users and v1 users alike
-        // see it first per Q8 (2026-06-17 decision). Setter is a no-op; the
-        // only exits are tapping "Continue setup" (flips
-        // `hasSeenPriceDisclosure`) or completing a purchase (flips
-        // `store.isPurchased`). Both cause `get` to return a different
-        // value, which SwiftUI handles as a cover dismiss + re-present.
-        .fullScreenCover(item: onboardingGate) { gate in
-            switch gate {
-            case .priceDisclosure:
-                OnboardingPriceDisclosureView {
-                    hasSeenPriceDisclosure = true
-                }
-            case .paywall:
-                PaywallView { /* dismiss flows via store.isPurchased onChange */ }
-                    .environment(store)
-            }
+        // Hard paywall — presented once onboarding is complete and the
+        // StoreKit entitlement check has resolved without finding a Pro
+        // entitlement. There is no pre-onboarding price-disclosure screen:
+        // the App Store listing already surfaces the subscription before
+        // download, so an in-app "this app is paid" splash is redundant
+        // (2026-06-18 reversal of the 2026-06-17 D0 decision — see
+        // docs/decision-log.md). The `hasCheckedEntitlement` guard avoids
+        // flashing the paywall over a subscribed user on cold launch before
+        // the async check returns. Setter is a no-op; the user cannot dismiss
+        // the wall — the only exit is a completed purchase flipping
+        // `store.isPurchased`, which makes `get` return false.
+        .fullScreenCover(isPresented: paywallGate) {
+            PaywallView { /* dismiss flows via store.isPurchased onChange */ }
+                .environment(store)
         }
         .onAppear {
             configureNavigationBarAppearance()
@@ -80,42 +71,12 @@ struct ContentView: View {
         }
     }
 
-    /// Distinct gating states the user passes through before reaching the
-    /// main app. Order matters: `.priceDisclosure` (D0) always wins when it
-    /// applies — even over the paywall — so v1 users get the disclosure
-    /// before the wall.
-    private enum OnboardingGate: Identifiable, Hashable {
-        case priceDisclosure
-        case paywall
-        var id: Self { self }
-    }
-
-    /// Reactive gate selector — re-evaluated on every render. Returns the
-    /// highest-priority gate that should be presented, or `nil` if the user
-    /// is free to use the main app. Setter is a no-op; SwiftUI cannot
-    /// dismiss the cover programmatically via this binding.
-    private var onboardingGate: Binding<OnboardingGate?> {
+    /// Reactive gate — true once onboarding is complete and the StoreKit
+    /// entitlement check has resolved without finding a Pro entitlement.
+    /// Setter is a no-op; SwiftUI cannot dismiss the cover programmatically.
+    private var paywallGate: Binding<Bool> {
         Binding(
-            get: {
-                // Step 1: D0 disclosure shows if it hasn't been acknowledged
-                // and the user isn't already subscribed. Fires before the
-                // entitlement check so it lands fast on cold launch; the
-                // potential redundancy of showing D0 to a subscribed user
-                // who deleted UserDefaults is acceptable and uncommon.
-                if !hasSeenPriceDisclosure && !store.isPurchased {
-                    return .priceDisclosure
-                }
-                // Step 2: paywall shows after D0 has been acknowledged,
-                // onboarding is complete, and the StoreKit check has
-                // confirmed there is no Pro entitlement. The
-                // `hasCheckedEntitlement` guard avoids flashing the paywall
-                // over a subscribed user on cold launch before the async
-                // check returns.
-                if !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased {
-                    return .paywall
-                }
-                return nil
-            },
+            get: { !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased },
             set: { _ in }
         )
     }
@@ -247,13 +208,7 @@ enum RootTab: String, CaseIterable, Hashable {
     }
 }
 
-private enum ContentViewPreviewDefaults {
-    static var userDefaults: UserDefaults {
-        UserDefaults(suiteName: "unit.preview.ContentView")!
-    }
-}
-
 #Preview {
-    ContentView(userDefaults: ContentViewPreviewDefaults.userDefaults)
+    ContentView()
         .modelContainer(PreviewSampleData.makePreviewContainer())
 }
