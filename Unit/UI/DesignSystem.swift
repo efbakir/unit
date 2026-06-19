@@ -806,17 +806,21 @@ struct AppListRowValueLabel: View {
     }
 }
 
-/// Inline single-line decimal-pad weight field with a trailing unit suffix
-/// ("kg" / "lb"). The canonical weight input for onboarding — used by the
-/// program-preview weight edit (`OnboardingProgramPreviewView`). The value sits
-/// on a light filled background so it reads as a tappable input; without it a
-/// bare number looks like static label text beside the exercise's sets×reps.
+/// Inline single-line decimal-pad weight field with its unit suffix ("kg" / "lb")
+/// shown *inside* the field. The canonical weight input for onboarding, used by
+/// the program-preview weight edit (`OnboardingProgramPreviewView`). Value and
+/// unit sit together on a light inset fill (`cardRowFill`, the Milk recess used
+/// for anything nested inside an `AppCard`, not the darker `controlBackground`
+/// stepper gray that read as too dark on the white preview card) with a hairline
+/// border, so the cell reads as a tappable input without going heavy. Keeping
+/// the suffix inside the box makes "82 kg" read as one value instead of a label
+/// floating detached to the right.
 ///
 /// Empty state shows no placeholder digit: no em dash (a banned placeholder,
 /// §4) and no bare "0" (reads as a real entered value, the sibling of the
-/// banned "0 kg"). The filled field plus the trailing unit suffix are the
-/// affordance. The caller binds a plain string and owns any unit conversion
-/// (kg <-> lb) at its boundary.
+/// banned "0 kg"). The bordered fill plus the inline unit is the affordance.
+/// The caller binds a plain string and owns any unit conversion (kg / lb) at
+/// its boundary.
 struct AppInlineWeightField: View {
     @Binding var text: String
     let unitSuffix: String
@@ -829,19 +833,23 @@ struct AppInlineWeightField: View {
                 .monospacedDigit()
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
-                .frame(minWidth: 44, maxWidth: 72)
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, AppSpacing.xs)
-                .background(
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(AppColor.controlBackground)
-                )
+                .frame(maxWidth: .infinity)
 
             Text(unitSuffix)
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
-                .frame(minWidth: 22, alignment: .leading)
         }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, AppSpacing.xs)
+        .frame(width: 96)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                .fill(AppColor.cardRowFill)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                .strokeBorder(AppColor.border, lineWidth: 1)
+        )
     }
 }
 
@@ -2351,7 +2359,7 @@ struct AppSelectableTierCard: View {
 
     var body: some View {
         Button(action: handleTap) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
                 // Badge slot is always reserved — even on tiers with no
                 // badge — so a row of three cards keeps a single visual
                 // baseline. Previously, only the badged card (annual)
@@ -2372,34 +2380,40 @@ struct AppSelectableTierCard: View {
                 }
                 .accessibilityHidden(badge == nil)
 
-                HStack(spacing: AppSpacing.xs) {
-                    Text(label)
-                        .appCapsLabel(.smallLabel)
-                        .foregroundStyle(AppColor.textSecondary)
+                // Eyebrow + price + sublabel grouped so the outer VStack's
+                // `md` gap (16) separates the badge from this block, while
+                // the block itself stays tight at `xs` (4). Mirrors the
+                // Figma AppSelectableTierCard structure (node 341-18).
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack(spacing: AppSpacing.xs) {
+                        Text(label)
+                            .appCapsLabel(.smallLabel)
+                            .foregroundStyle(AppColor.textSecondary)
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
 
-                    if isSelected {
-                        AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
-                            .foregroundStyle(AppColor.accent)
-                            .accessibilityHidden(true)
+                        if isSelected {
+                            AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
+                                .foregroundStyle(AppColor.accent)
+                                .accessibilityHidden(true)
+                        }
                     }
+
+                    Text(price)
+                        .font(AppFont.productHeading.font)
+                        .tracking(AppFont.productHeading.tracking)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .allowsTightening(true)
+
+                    Text(sublabel)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.65)
+                        .multilineTextAlignment(.leading)
                 }
-
-                Text(price)
-                    .font(AppFont.productHeading.font)
-                    .tracking(AppFont.productHeading.tracking)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .allowsTightening(true)
-
-                Text(sublabel)
-                    .font(AppFont.muted.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.65)
-                    .multilineTextAlignment(.leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, AppSpacing.md)
@@ -4223,10 +4237,12 @@ struct AppScreen<Content: View>: View {
                 .frame(maxWidth: .infinity)
                 .background(AppScreenChromeBackground(surface: chromeSurface))
                 // Opaque always: the chrome is a VStack sibling above the
-                // ScrollView, so scroll content can't pass behind it. The
-                // soft fade where scroll content meets this chrome's bottom
-                // edge is handled by `.scrollEdgeEffectStyle(.soft, for: .top)`
-                // on the ScrollView via `appScrollEdgeSoft`.
+                // ScrollView, so scroll content can't pass behind it. The soft
+                // fade where scroll content meets this chrome's bottom edge is
+                // drawn by `topScrollFade` (an explicit gradient). The OS
+                // `.scrollEdgeEffectStyle(.soft)` only renders against real
+                // system bars, so it is a no-op at this VStack-sibling boundary
+                // and left a hard cut — the gradient is what actually softens it.
         }
     }
 
@@ -4284,10 +4300,10 @@ struct AppScreen<Content: View>: View {
             .frame(maxWidth: .infinity)
             .background(AppScreenChromeBackground(surface: chromeSurface))
             // Opaque always: VStack-sibling chrome sits below the
-            // ScrollView, scroll content never passes behind it. The
-            // soft fade above this CTA bar is handled by
-            // `.scrollEdgeEffectStyle(.soft, for: .bottom)` on the
-            // ScrollView via `appScrollEdgeSoft`.
+            // ScrollView, scroll content never passes behind it. The soft
+            // fade above this CTA bar is drawn by `bottomScrollFade` (an
+            // explicit gradient) — see `topScrollFade` for why the OS
+            // scroll-edge effect can't do it in this layout.
         }
     }
 
@@ -4307,6 +4323,49 @@ struct AppScreen<Content: View>: View {
                 .transition(
                     .opacity.combined(with: .offset(y: 12))
                 )
+        }
+    }
+
+    /// Soft gradient where scroll content meets the fixed top chrome
+    /// (customHeader / nav bar). The OS `.scrollEdgeEffectStyle(.soft)` only
+    /// renders against real system bars; AppScreen's chrome is a VStack sibling,
+    /// so the OS effect is a no-op at that boundary and content was clipped with
+    /// a hard edge. This explicit gradient — canonical, system-level, lives only
+    /// here per CLAUDE.md §4 — restores the soft fade for every screen routed
+    /// through AppScreen. Gated on `chromeBackdropVisible` so it appears only
+    /// once the user scrolls (the first row stays crisp at rest), matching the
+    /// nav-bar backdrop's scroll-driven reveal.
+    @ViewBuilder
+    private var topScrollFade: some View {
+        if usesOuterScroll, customHeader != nil || !hidesNavigationBar || showsNativeNavigationBar {
+            LinearGradient(
+                colors: [chromeSurface, chromeSurface.opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: AppSpacing.lg)
+            .opacity(chromeBackdropVisible ? 1 : 0)
+            .animation(.appState, value: chromeBackdropVisible)
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// Soft gradient where scroll content meets the fixed bottom chrome (primary
+    /// CTA / floating pill). Same rationale as `topScrollFade`. Not gated: it
+    /// only darkens content within `lg` of the bottom edge, which is exactly the
+    /// content sliding under the CTA — short content that stops short of the bar
+    /// sits over the transparent half of the gradient, so there is no at-rest
+    /// artifact to gate away.
+    @ViewBuilder
+    private var bottomScrollFade: some View {
+        if usesOuterScroll, hasBottomChrome {
+            LinearGradient(
+                colors: [chromeSurface.opacity(0), chromeSurface],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: AppSpacing.lg)
+            .allowsHitTesting(false)
         }
     }
 
@@ -4332,6 +4391,8 @@ struct AppScreen<Content: View>: View {
             }
             scrollContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(alignment: .top) { topScrollFade }
+                .overlay(alignment: .bottom) { bottomScrollFade }
                 .overlay(alignment: .bottom) {
                     floatingAccessoryOverlay
                 }
