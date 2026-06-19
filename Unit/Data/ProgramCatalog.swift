@@ -2,7 +2,7 @@
 //  ProgramCatalog.swift
 //  Unit
 //
-//  Eight curated starter programs. Each program references exercises from
+//  Ten curated starter programs. Each program references exercises from
 //  ExerciseCatalog by displayName/alias — ProgramImporter resolves these to
 //  real Exercise models on import.
 //
@@ -21,22 +21,6 @@ enum ProgramCatalog {
         arnoldSplit,
         nSuns531,
         phul
-    ]
-
-    /// Subset shown in the onboarding library-picker. Re-curated 2026-06-18 for
-    /// clear, jargon-free names: the founder rejected "Metallicadpa", "GZCLP",
-    /// "nSuns", "PHUL" as insider codenames a normal lifter cannot read. The
-    /// surfaced set is the five clearest universal structures — Full Body,
-    /// Upper / Lower, 5/3/1, Power + Size, Push Pull Legs — ordered by days per
-    /// week. Any insider name lives only in a program's description for people
-    /// who search it. Hidden programs stay in `all` for the post-paywall
-    /// program library.
-    static let surfacedInOnboarding: [ProgramTemplate] = [
-        startingStrength,
-        upperLower4Day,
-        fiveThreeOneBBB,
-        phul,
-        metallicadpaPPL
     ]
 
     // MARK: - 1. Full Body (Beginner, Strength, 3 days) — SURFACED
@@ -186,7 +170,7 @@ enum ProgramCatalog {
         goal: .hypertrophy,
         daysPerWeek: 4,
         summary: "Wendler's 5/3/1 paired with 5×10 volume work on the main lift.",
-        description: "Each day hits one of the four main lifts using 5/3/1 percentages, then follows with 5×10 of the same lift at a lighter weight. Brutal volume, simple to run. Treat set counts here as a starting point — follow Wendler's percentage scheme for loading.",
+        description: "Each day hits one of the four main lifts using 5/3/1 percentages, then follows with 5×10 of the same lift at a lighter weight. Brutal volume, simple to run. Treat set counts here as a starting point. Follow Wendler's percentage scheme for loading.",
         days: [
             ProgramDay(id: UUID(), name: "Press Day", weekday: 2, items: [
                 ProgramItem(exerciseName: "OHP (BB)", setCount: 3, repTarget: 5, notes: "5/3/1 sets", oneRepMaxLift: .ohp, startingWeightPct: 0.585),
@@ -274,7 +258,7 @@ enum ProgramCatalog {
     // MARK: - 7. Dumbbell PPL (Intermediate, Hypertrophy, 6 days)
     private static let dumbbellPPL = ProgramTemplate(
         id: UUID(uuidString: "00000000-0000-0000-0000-000000000007")!,
-        name: "Dumbbell PPL",
+        name: "Dumbbell Push Pull Legs",
         level: .intermediate,
         goal: .hypertrophy,
         daysPerWeek: 6,
@@ -396,7 +380,7 @@ enum ProgramCatalog {
         goal: .strength,
         daysPerWeek: 4,
         summary: "A higher-volume 4-day strength program with heavy top sets.",
-        description: "nSuns's take on Wendler's 5/3/1, with much higher volume on the main lifts (8 sets ramping through %s of training max) plus a secondary lift each session. Top set is an AMRAP that drives weight progression. Bring serious training experience — this is a volume bomb.",
+        description: "nSuns's take on Wendler's 5/3/1, with much higher volume on the main lifts (8 sets ramping through %s of training max) plus a secondary lift each session. Top set is an AMRAP that drives weight progression. Bring serious training experience. This is a volume bomb.",
         days: [
             ProgramDay(id: UUID(), name: "Bench / OHP", weekday: 2, items: [
                 ProgramItem(exerciseName: "Bench Press", setCount: 8, repTarget: 5, notes: "Top set AMRAP", oneRepMaxLift: .bench, startingWeightPct: 0.585),
@@ -437,7 +421,7 @@ enum ProgramCatalog {
         goal: .mixed,
         daysPerWeek: 4,
         summary: "Two heavy power days and two higher-rep size days.",
-        description: "Brandon Campbell's 4-day split blending Westside-style power sessions with bodybuilding-style volume. Two upper and two lower days per week — each muscle gets hit once heavy, once high-rep. Clean entry point into intermediate powerbuilding.",
+        description: "Brandon Campbell's 4-day split blending Westside-style power sessions with bodybuilding-style volume. Two upper and two lower days per week. Each muscle gets hit once heavy, once high-rep. Clean entry point into intermediate powerbuilding.",
         days: [
             ProgramDay(id: UUID(), name: "Upper Power", weekday: 2, items: [
                 ProgramItem(exerciseName: "Bench Press", setCount: 4, repTarget: 5, notes: "Power", oneRepMaxLift: .bench, startingWeightPct: 0.80),

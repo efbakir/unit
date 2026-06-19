@@ -452,7 +452,7 @@ extension OnboardingViewModel {
     }
 
     /// Library-pick adapter (Phase B-3). Translates a `ProgramTemplate` from
-    /// `ProgramCatalog.surfacedInOnboarding` into the in-memory onboarding
+    /// `ProgramCatalog.all` into the in-memory onboarding
     /// state shared with the paste path, so the downstream preview step renders
     /// the picked program through the same pipeline paste uses. Weights start
     /// blank (`plannedWeightKg: nil`); the user fills them in inline on the

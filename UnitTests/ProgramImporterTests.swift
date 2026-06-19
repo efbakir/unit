@@ -230,37 +230,35 @@ final class ProgramImporterTests: XCTestCase {
 
     // MARK: - Real catalog coverage (smoke test against shipped programs)
 
-    /// Every surfaced program in the onboarding library subset should have at
-    /// least one main lift with a non-nil oneRepMaxLift + startingWeightPct.
-    /// Catches a regression where %s get accidentally stripped from the
-    /// catalog (which would silently degrade the wow moment to blank fields).
-    func testSurfacedPrograms_eachHasAtLeastOneStampedLift() {
-        for program in ProgramCatalog.surfacedInOnboarding {
-            let stampedItems = program.days.flatMap(\.items).filter {
+    /// The catalog keeps the dormant 1RM-derivation substrate on its strength
+    /// programs (oneRepMaxLift + startingWeightPct). The 1RM onboarding screen
+    /// was removed 2026-06-18, but these stamps and the math are kept for a
+    /// future rep-max-input feature; this guards against them being stripped
+    /// wholesale by accident.
+    func testCatalog_retainsDormant1RMSubstrate() {
+        let stampedPrograms = ProgramCatalog.all.filter { program in
+            program.days.flatMap(\.items).contains {
                 $0.oneRepMaxLift != nil && $0.startingWeightPct != nil
             }
-            XCTAssertFalse(
-                stampedItems.isEmpty,
-                "Program '\(program.name)' has no 1RM-stamped items — wow moment broken"
-            )
         }
+        XCTAssertGreaterThanOrEqual(stampedPrograms.count, 5)
     }
 
-    /// The surfaced subset should have exactly 5 programs (the clear universal
-    /// set re-curated 2026-06-18: Full Body, Upper / Lower, 5/3/1, Power + Size,
-    /// Push Pull Legs).
-    func testSurfacedPrograms_countIsFive() {
-        XCTAssertEqual(ProgramCatalog.surfacedInOnboarding.count, 5)
-    }
-
-    /// The surfaced set must carry the clear, jargon-free names. Guards against
-    /// a regression that reintroduces the insider codenames the founder rejected
-    /// (Metallicadpa / GZCLP / nSuns / PHUL / Boring But Big).
-    func testSurfacedPrograms_useClearNames() {
-        let names = Set(ProgramCatalog.surfacedInOnboarding.map(\.name))
-        XCTAssertEqual(
-            names,
-            ["Full Body", "Upper / Lower", "5/3/1", "Power + Size", "Push Pull Legs"]
-        )
+    /// Every program name shown in the app must be clear and jargon-free. The
+    /// onboarding picker and the in-app program library both render
+    /// `ProgramCatalog.all`, so this guards against a regression that
+    /// reintroduces the insider codenames the founder rejected (Metallicadpa /
+    /// GZCLP / nSuns / PHUL / Boring But Big / Reddit / the bare "PPL").
+    func testCatalog_namesAreJargonFree() {
+        let banned = ["metallicadpa", "gzclp", "nsuns", "phul", "boring but big", "reddit", "ppl"]
+        for program in ProgramCatalog.all {
+            let lowered = program.name.lowercased()
+            for term in banned {
+                XCTAssertFalse(
+                    lowered.contains(term),
+                    "Program name '\(program.name)' contains banned jargon '\(term)'"
+                )
+            }
+        }
     }
 }

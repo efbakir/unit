@@ -2,11 +2,12 @@
 //  OnboardingLibraryPickerView.swift
 //  Unit
 //
-//  Library path's first screen (Phase B-3). Shows the surfaced starter
-//  programs from `ProgramCatalog.surfacedInOnboarding` with the SAME filter +
-//  row treatment the in-app `ProgramLibraryView` already uses (Level / Goal /
-//  Days dropdown chips above an `AppCardList` of `PreviewListRow`s), so the
-//  onboarding picker and the post-paywall program library read as one surface.
+//  Library path's first screen (Phase B-3). Shows the full starter-program
+//  catalog (`ProgramCatalog.all`, the same list the in-app program library
+//  renders) with the SAME filter + row treatment the in-app `ProgramLibraryView`
+//  already uses (Level / Goal / Days dropdown chips above an `AppCardList` of
+//  `PreviewListRow`s), so the onboarding picker and the post-paywall program
+//  library read as one surface. The filter keeps the list scannable.
 //  One tap → `OnboardingProgramPreviewView` (weights filled in inline there).
 //
 //  No manual-build escape hatch on this screen. If the user wants a program
@@ -25,7 +26,7 @@ struct OnboardingLibraryPickerView: View {
     @State private var selectedGoal: ProgramTemplate.Goal? = nil
     @State private var selectedDays: Int? = nil
 
-    private var programs: [ProgramTemplate] { ProgramCatalog.surfacedInOnboarding }
+    private var programs: [ProgramTemplate] { ProgramCatalog.all }
 
     private var filteredPrograms: [ProgramTemplate] {
         programs.filter { program in
