@@ -60,7 +60,7 @@ struct PaywallView: View {
                     benefitRow("Lock Screen rest timer")
                     benefitRow("All your training history, forever")
                     benefitRow("Paste your program from Notes or WhatsApp")
-                    benefitRow("Local-first — no account, no cloud")
+                    benefitRow("Local-first. No account, no cloud")
                 }
                 .padding(.top, AppSpacing.xl)
 

@@ -246,16 +246,21 @@ final class ProgramImporterTests: XCTestCase {
         }
     }
 
-    /// The surfaced subset should have exactly 5 programs (the data-driven
-    /// pick from Q1: Reddit PPL, GZCLP, 5/3/1 BBB, nSuns, PHUL).
+    /// The surfaced subset should have exactly 5 programs (the clear universal
+    /// set re-curated 2026-06-18: Full Body, Upper / Lower, 5/3/1, Power + Size,
+    /// Push Pull Legs).
     func testSurfacedPrograms_countIsFive() {
         XCTAssertEqual(ProgramCatalog.surfacedInOnboarding.count, 5)
     }
 
-    /// nSuns and PHUL must be in the catalog (they were added in Phase B-1).
-    func testCatalog_includesNewlyAddedPrograms() {
-        let names = ProgramCatalog.all.map(\.name)
-        XCTAssertTrue(names.contains("nSuns 5/3/1"))
-        XCTAssertTrue(names.contains("PHUL"))
+    /// The surfaced set must carry the clear, jargon-free names. Guards against
+    /// a regression that reintroduces the insider codenames the founder rejected
+    /// (Metallicadpa / GZCLP / nSuns / PHUL / Boring But Big).
+    func testSurfacedPrograms_useClearNames() {
+        let names = Set(ProgramCatalog.surfacedInOnboarding.map(\.name))
+        XCTAssertEqual(
+            names,
+            ["Full Body", "Upper / Lower", "5/3/1", "Power + Size", "Push Pull Legs"]
+        )
     }
 }

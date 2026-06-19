@@ -22,7 +22,6 @@ struct Onboarding1RMInputView: View {
     var onBack: () -> Void
 
     @State private var entries: [OneRepMaxLift: String] = [:]
-    @FocusState private var focusedLift: OneRepMaxLift?
 
     private let lifts: [OneRepMaxLift] = [.bench, .squat, .deadlift, .ohp]
 
@@ -62,22 +61,10 @@ struct Onboarding1RMInputView: View {
                     row(for: lift)
                 }
 
-                Button {
-                    focusedLift = nil
-                    onContinue(oneRMsKg)
-                } label: {
-                    Text("Skip all")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .padding(.vertical, AppSpacing.sm)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(ScaleButtonStyle())
-                .accessibilityLabel("Skip all 1-rep maxes")
-
+                // One CTA. Continue accepts 0-4 entries (the subtitle already
+                // says "Skip any you don't know"), so a separate "Skip all"
+                // button was redundant — it called the exact same action.
                 AppPrimaryButton("Continue") {
-                    focusedLift = nil
                     onContinue(oneRMsKg)
                 }
             }
@@ -87,33 +74,13 @@ struct Onboarding1RMInputView: View {
     @ViewBuilder
     private func row(for lift: OneRepMaxLift) -> some View {
         AppListRow(title: lift.displayName) {
-            HStack(spacing: AppSpacing.xs) {
-                TextField(
-                    "",
-                    text: Binding(
-                        get: { entries[lift] ?? "" },
-                        set: { entries[lift] = $0 }
-                    ),
-                    prompt: Text("0").foregroundStyle(AppColor.textSecondary)
-                )
-                .keyboardType(.decimalPad)
-                .focused($focusedLift, equals: lift)
-                .multilineTextAlignment(.trailing)
-                .monospacedDigit()
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: 80)
-                .submitLabel(.done)
-
-                Text(unitSuffix)
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(minWidth: 22, alignment: .leading)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            focusedLift = lift
+            AppInlineWeightField(
+                text: Binding(
+                    get: { entries[lift] ?? "" },
+                    set: { entries[lift] = $0 }
+                ),
+                unitSuffix: unitSuffix
+            )
         }
     }
 }

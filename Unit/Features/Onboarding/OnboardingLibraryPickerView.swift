@@ -2,13 +2,15 @@
 //  OnboardingLibraryPickerView.swift
 //  Unit
 //
-//  Library path's first screen (Phase B-3). Shows the 5 surfaced programs
-//  from `ProgramCatalog.surfacedInOnboarding` (Q1 data-driven lock 2026-06-17:
-//  Reddit PPL, GZCLP, 5/3/1 BBB, nSuns, PHUL). One tap → `Onboarding1RMInputView`.
+//  Library path's first screen (Phase B-3). Shows the surfaced starter
+//  programs from `ProgramCatalog.surfacedInOnboarding` with the SAME filter +
+//  row treatment the in-app `ProgramLibraryView` already uses (Level / Goal /
+//  Days dropdown chips above an `AppCardList` of `PreviewListRow`s), so the
+//  onboarding picker and the post-paywall program library read as one surface.
+//  One tap → `Onboarding1RMInputView`.
 //
-//  No manual-build escape hatch on this screen — Phase B-3 deletes that path
-//  per Q1. If the user wants a program not on this list, they take the
-//  Paste path from `OnboardingImportMethodView`.
+//  No manual-build escape hatch on this screen. If the user wants a program
+//  not on this list, they take the Paste path from `OnboardingImportMethodView`.
 //
 
 import SwiftUI
@@ -19,8 +21,23 @@ struct OnboardingLibraryPickerView: View {
     var onPick: (ProgramTemplate) -> Void
     var onBack: () -> Void
 
-    private var programs: [ProgramTemplate] {
-        ProgramCatalog.surfacedInOnboarding
+    @State private var selectedLevel: ProgramTemplate.Level? = nil
+    @State private var selectedGoal: ProgramTemplate.Goal? = nil
+    @State private var selectedDays: Int? = nil
+
+    private var programs: [ProgramTemplate] { ProgramCatalog.surfacedInOnboarding }
+
+    private var filteredPrograms: [ProgramTemplate] {
+        programs.filter { program in
+            if let level = selectedLevel, program.level != level { return false }
+            if let goal = selectedGoal, program.goal != goal { return false }
+            if let days = selectedDays, program.daysPerWeek != days { return false }
+            return true
+        }
+    }
+
+    private var daysOptions: [Int] {
+        Array(Set(programs.map(\.daysPerWeek))).sorted()
     }
 
     var body: some View {
@@ -31,45 +48,73 @@ struct OnboardingLibraryPickerView: View {
             progressTotal: progressTotal,
             onBack: onBack
         ) {
-            VStack(spacing: AppSpacing.sm) {
-                ForEach(programs) { program in
-                    Button {
-                        onPick(program)
-                    } label: {
-                        programCard(for: program)
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                filterBar
+
+                if filteredPrograms.isEmpty {
+                    AppEmptyHint("No programs match these filters.")
+                } else {
+                    AppCardList(filteredPrograms) { program in
+                        Button {
+                            onPick(program)
+                        } label: {
+                            programRow(program)
+                        }
+                        .buttonStyle(ScaleButtonStyle())
+                        .accessibilityHint("Sets up the program and asks for your 1-rep maxes.")
                     }
-                    .buttonStyle(ScaleButtonStyle())
-                    .accessibilityHint("Sets up the program and asks for your 1-rep maxes.")
                 }
             }
         }
     }
 
-    @ViewBuilder
-    private func programCard(for program: ProgramTemplate) -> some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                    Text(program.name)
-                        .font(AppFont.title.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    AppTag(
-                        text: "\(program.daysPerWeek) days",
-                        style: .muted,
-                        layout: .compactCapsule
-                    )
+    // Mirrors ProgramLibraryView.filterBar — same dropdown-chip filter so the
+    // two program surfaces stay consistent (CLAUDE.md §4 reuse rule).
+    private var filterBar: some View {
+        AppFilterChipBar {
+            AppDropdownChip(
+                label: selectedLevel?.displayName ?? "Level",
+                isActive: selectedLevel != nil
+            ) {
+                Picker("Level", selection: $selectedLevel) {
+                    Text("All").tag(ProgramTemplate.Level?.none)
+                    ForEach(ProgramTemplate.Level.allCases) { level in
+                        Text(level.displayName).tag(Optional(level))
+                    }
                 }
+            }
 
-                Text(program.summary)
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+            AppDropdownChip(
+                label: selectedGoal?.displayName ?? "Goal",
+                isActive: selectedGoal != nil
+            ) {
+                Picker("Goal", selection: $selectedGoal) {
+                    Text("All").tag(ProgramTemplate.Goal?.none)
+                    ForEach(ProgramTemplate.Goal.allCases) { goal in
+                        Text(goal.displayName).tag(Optional(goal))
+                    }
+                }
+            }
+
+            AppDropdownChip(
+                label: selectedDays.map { "\($0) days" } ?? "Days/week",
+                isActive: selectedDays != nil
+            ) {
+                Picker("Days/week", selection: $selectedDays) {
+                    Text("All").tag(Int?.none)
+                    ForEach(daysOptions, id: \.self) { days in
+                        Text("\(days) days").tag(Optional(days))
+                    }
+                }
             }
         }
+    }
+
+    private func programRow(_ program: ProgramTemplate) -> some View {
+        PreviewListRow(
+            title: program.name,
+            subtitle: "\(program.level.displayName) · \(program.goal.displayName) · \(program.daysPerWeek) days/week"
+        )
     }
 }
 

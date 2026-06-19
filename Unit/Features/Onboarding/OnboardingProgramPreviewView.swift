@@ -81,19 +81,10 @@ struct OnboardingProgramPreviewView: View {
                 } content: {
                     VStack(spacing: 0) {
                         AppDivider()
-                        VStack(spacing: 0) {
-                            ForEach(Array(exercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
-                                exerciseRow(
-                                    dayIndex: dayIndex,
-                                    exerciseIndex: exerciseIndex,
-                                    exercise: exercise
-                                )
-                                if exerciseIndex < exercises.count - 1 {
-                                    AppDivider()
-                                }
-                            }
+                        AppDividedList(exercises) { exercise in
+                            exerciseRow(dayIndex: dayIndex, exercise: exercise)
+                                .appCardRowChrome()
                         }
-                        .padding(.vertical, AppSpacing.xs)
                     }
                 }
             }
@@ -136,7 +127,6 @@ struct OnboardingProgramPreviewView: View {
     @ViewBuilder
     private func exerciseRow(
         dayIndex: Int,
-        exerciseIndex: Int,
         exercise: OnboardingExercise
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
@@ -162,10 +152,8 @@ struct OnboardingProgramPreviewView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            weightField(dayIndex: dayIndex, exerciseIndex: exerciseIndex, exercise: exercise)
+            weightField(dayIndex: dayIndex, exercise: exercise)
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.vertical, AppSpacing.md)
     }
 
     /// Heuristic for Q6's "name-only with default sets/reps" hint. Triggers
@@ -182,31 +170,15 @@ struct OnboardingProgramPreviewView: View {
     @ViewBuilder
     private func weightField(
         dayIndex: Int,
-        exerciseIndex: Int,
         exercise: OnboardingExercise
     ) -> some View {
-        let bound = Binding<String>(
-            get: { formatted(exercise.plannedWeightKg) },
-            set: { newValue in commit(weight: newValue, dayIndex: dayIndex, exerciseIndex: exerciseIndex) }
+        AppInlineWeightField(
+            text: Binding(
+                get: { formatted(exercise.plannedWeightKg) },
+                set: { commit(weight: $0, dayIndex: dayIndex, exerciseID: exercise.id) }
+            ),
+            unitSuffix: vm.unitSystem
         )
-
-        HStack(spacing: AppSpacing.xxs) {
-            TextField(
-                "",
-                text: bound,
-                prompt: Text("—").foregroundStyle(AppColor.textSecondary)
-            )
-            .keyboardType(.decimalPad)
-            .multilineTextAlignment(.trailing)
-            .monospacedDigit()
-            .font(AppFont.body.font)
-            .foregroundStyle(AppColor.textPrimary)
-            .frame(maxWidth: 70)
-
-            Text(vm.unitSystem)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
-        }
     }
 
     /// Displays kg internally; converts to lb at the boundary if user picked lb.
@@ -220,17 +192,17 @@ struct OnboardingProgramPreviewView: View {
         return String(format: "%.1f", display)
     }
 
-    private func commit(weight raw: String, dayIndex: Int, exerciseIndex: Int) {
+    private func commit(weight raw: String, dayIndex: Int, exerciseID: UUID) {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard dayIndex < vm.dayExercises.count,
-              exerciseIndex < vm.dayExercises[dayIndex].count else { return }
+              let idx = vm.dayExercises[dayIndex].firstIndex(where: { $0.id == exerciseID }) else { return }
         if trimmed.isEmpty {
-            vm.dayExercises[dayIndex][exerciseIndex].plannedWeightKg = nil
+            vm.dayExercises[dayIndex][idx].plannedWeightKg = nil
             return
         }
         guard let value = Double(trimmed), value > 0 else { return }
         let kg = vm.unitSystem == "lb" ? value / 2.20462 : value
-        vm.dayExercises[dayIndex][exerciseIndex].plannedWeightKg = kg
+        vm.dayExercises[dayIndex][idx].plannedWeightKg = kg
     }
 
     private func bindingForDay(_ index: Int) -> Binding<Bool> {
@@ -301,7 +273,7 @@ struct OnboardingProgramPreviewView: View {
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Try paste again, or pick a program from the library.")
+            Text("Try paste again or pick a program from the library.")
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)

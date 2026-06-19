@@ -806,6 +806,40 @@ struct AppListRowValueLabel: View {
     }
 }
 
+/// Inline single-line decimal-pad weight field with a trailing unit suffix
+/// ("kg" / "lb"). The canonical weight input for onboarding — 1RM entry
+/// (`Onboarding1RMInputView`) and program-preview weight edit
+/// (`OnboardingProgramPreviewView`) previously hand-rolled this identical
+/// `TextField` + suffix pair and silently diverged on width, inner spacing,
+/// and placeholder. One recipe lives here so they cannot drift again.
+///
+/// Empty state shows no placeholder digit: no em dash (a banned placeholder,
+/// §4) and no bare "0" (reads as a real entered value, the sibling of the
+/// banned "0 kg"). The trailing unit suffix is the affordance. The caller
+/// binds a plain string and owns any unit conversion (kg <-> lb) at its
+/// boundary.
+struct AppInlineWeightField: View {
+    @Binding var text: String
+    let unitSuffix: String
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xs) {
+            TextField("", text: $text)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .frame(maxWidth: 80)
+
+            Text(unitSuffix)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(minWidth: 22, alignment: .leading)
+        }
+    }
+}
+
 /// − / value / + stepper — compact rounded control with 44pt hit targets.
 /// Used for set counts, rest-duration seconds, reps, etc. Value is a pre-formatted
 /// string (monospaced digits) so callers own unit rendering ("12 reps" vs "12").
