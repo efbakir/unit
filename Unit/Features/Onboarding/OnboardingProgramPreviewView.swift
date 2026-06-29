@@ -469,12 +469,12 @@ struct OnboardingProgramPreviewView: View {
     @ViewBuilder
     private var emptyParseState: some View {
         VStack(spacing: AppSpacing.md) {
-            Text("We couldn't read your routine.")
+            Text("Unit couldn't read your routine.")
                 .font(AppFont.title.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("Try paste again or pick a program from the library.")
+            Text("Paste it again or pick a program from the library.")
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)

@@ -53,7 +53,7 @@ For each step (splash → unit → import method → paste/build → schedule �
 - [ ] Mid-set, force-quit the app. Re-open. Active workout resumes on the same exercise / set / rest timer state.
 - [ ] Rest timer running, background the app for 30 seconds, re-open. Timer reflects real elapsed time (does not pause silently).
 - [ ] Phone call interrupts mid-set. Workout state intact when call ends.
-- [ ] Tap **+ 1 rep** suggestion, sheet opens with bumped target. Dismiss without saving. Suggestion preview clears (no stale "+1 rep" badge stuck on the screen).
+- [ ] Confirm there are no **+1 rep** / **+ weight** suggestion chips. Current-set logging should use the last-time/planned prefill or open AdjustResultSheet for manual entry.
 - [ ] Finish a workout with an empty day (no sets logged). Confirm finish flow handles it (no save crash, history shows or omits cleanly).
 
 ---
