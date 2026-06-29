@@ -153,17 +153,10 @@ struct TemplatesView: View {
     }
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("No active program")
-                    .appFont(.largeTitle)
-                    .foregroundStyle(AppColor.textPrimary)
-
-                Text("Add your training days and exercises so Unit can show your last session before every set.")
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-
+        EmptyStateCard(
+            title: "No active program",
+            message: "Add your training days and exercises so Unit can show your last session before every set."
+        ) {
             VStack(spacing: AppSpacing.xs) {
                 AppPrimaryButton("Create program") {
                     showingOnboarding = true
@@ -175,7 +168,6 @@ struct TemplatesView: View {
                 .buttonStyle(ScaleButtonStyle())
             }
         }
-        .appCardStyle()
     }
 
     private func activeProgramCard(split: Split, days: [DayTemplate]) -> some View {

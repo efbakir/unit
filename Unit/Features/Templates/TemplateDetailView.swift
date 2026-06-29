@@ -55,10 +55,10 @@ struct TemplateDetailView: View {
                     AppCardList(orderedExercises) { exercise in
                         exerciseRow(exercise)
                     }
-                }
 
-                AppGhostButton(AppCopy.Workout.addExercise) {
-                    showingAddExercise = true
+                    AppGhostButton(AppCopy.Workout.addExercise) {
+                        showingAddExercise = true
+                    }
                 }
             }
             .appScreenEnter()

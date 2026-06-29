@@ -438,15 +438,15 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var termsLink: some View {
-        if let termsURL = URL(string: "https://unitlift.app/terms") {
-            Link("Terms of Use", destination: termsURL)
+        if let termsURL = AppCopy.Legal.termsOfServiceURL {
+            Link(AppCopy.Legal.termsOfService, destination: termsURL)
         }
     }
 
     @ViewBuilder
     private var privacyLink: some View {
-        if let privacyURL = URL(string: "https://unitlift.app/privacy") {
-            Link("Privacy Policy", destination: privacyURL)
+        if let privacyURL = AppCopy.Legal.privacyPolicyURL {
+            Link(AppCopy.Legal.privacyPolicy, destination: privacyURL)
         }
     }
 

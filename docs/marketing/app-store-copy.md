@@ -40,6 +40,11 @@ No account. No ads. No social feed. Your training stays on your iPhone.
 
 A gym notebook, not a platform.
 
+Unit requires a paid purchase after setup. Weekly, monthly, and yearly auto-renewing subscriptions are available. Optional Lifetime appears only if available. Prices are shown in the app before purchase. There is no free trial.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://unitlift.app/privacy
+
 ---
 
 ## Subtitle (30 char)

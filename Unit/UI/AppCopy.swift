@@ -159,6 +159,17 @@ enum AppCopy {
         static let tryAgain = "Try again"
     }
 
+    enum Legal {
+        static let termsOfService = "Terms of Service"
+        static let privacyPolicy = "Privacy Policy"
+
+        /// Unit uses Apple's standard EULA in App Store Connect. Keep this URL
+        /// visible in-app and in the App Store description to satisfy the
+        /// subscription metadata checklist.
+        static let termsOfServiceURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+        static let privacyPolicyURL = URL(string: "https://unitlift.app/privacy")
+    }
+
     enum Session {
         static let markComplete = "Mark complete"
         static let discard = "Discard"

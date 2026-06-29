@@ -86,10 +86,6 @@ struct ActiveWorkoutView: View {
     /// Bound to `appToast(message:)` on the screen root; the watcher on
     /// `editingSetPayload` sets it to the hint copy and clears the AppStorage flag.
     @State private var setEditHintToast: String? = nil
-    /// Active when the lifter has just tapped a "+ 1 rep" / "+ 2.5 kg" suggestion
-    /// chip — drives the metric-hero numeric cross-fade to the bumped target while
-    /// the AdjustResultSheet opens. Cleared on sheet dismiss; never persisted.
-    @State private var pendingSuggestionPreview: PendingSuggestionPreview? = nil
     /// Plus / minus on the rest timer adjust by this many seconds (minimum rest stays 30s).
     private static let restTimerAdjustStepSeconds = 30
 
@@ -129,96 +125,9 @@ struct ActiveWorkoutView: View {
                 lastActualText: lastActualText(for: exercise),
                 entries: entries,
                 prefill: prefill,
-                plannedSetCount: plannedSetCount,
-                suggestion: setSuggestion(from: prefill, isBodyweight: exercise.isBodyweight),
-                priorSessionSetCount: priorSessionSetCount(for: exercise)
+                plannedSetCount: plannedSetCount
             )
         }
-    }
-
-    /// Compute the progressive-overload nudge for this section, if any. Only
-    /// fires for prior-session prefills — once a set lands in the current
-    /// session, the supporting slot empties and the chips disappear with it.
-    private func setSuggestion(from prefill: SetPrefill?, isBodyweight: Bool) -> SetSuggestion? {
-        guard let prefill, prefill.source == .priorSession else { return nil }
-        let unitSystem = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
-        return SetSuggestion.compute(
-            lastWeightKg: prefill.weight,
-            lastReps: prefill.reps,
-            isBodyweight: isBodyweight,
-            unitSystem: unitSystem
-        )
-    }
-
-    /// Number of working sets the lifter logged for this exercise in their most
-    /// recent completed session. Feeds the metric hero's "Last 3×8×80kg"
-    /// formatting so a chip-tap preview keeps the same set-count component
-    /// (only reps or weight changes) and the per-glyph cross-fade lands cleanly.
-    private func priorSessionSetCount(for exercise: Exercise) -> Int? {
-        guard let lastSession = sessions.first(where: {
-            $0.id != session.id &&
-            $0.isCompleted &&
-            $0.setEntries.contains(where: { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup })
-        }) else { return nil }
-        let count = lastSession.setEntries.filter {
-            $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup
-        }.count
-        return count > 0 ? count : nil
-    }
-
-    /// Open the existing AdjustResultSheet pre-filled to the bumped target,
-    /// and stage the same target as a `pendingSuggestionPreview` so the metric
-    /// hero cross-fades to the new value while the sheet opens. The preview
-    /// is cleared by the sheet's `onDismiss`. Reuses the same surface as
-    /// `onSecondaryAction` ("Adjust") — the chip is just a smarter prefill,
-    /// not a new sheet.
-    private func presentSuggestionSheet(
-        for section: WorkoutExerciseSectionModel,
-        kind: SetSuggestionKind
-    ) {
-        guard let suggestion = section.suggestion else { return }
-        let bumped: SetPrefill
-        switch kind {
-        case .reps:
-            bumped = suggestion.repBumpedPrefill
-        case .weight:
-            guard let weightPrefill = suggestion.weightBumpedPrefill else { return }
-            bumped = weightPrefill
-        }
-        withAnimation(reduceMotion ? nil : .appReveal) {
-            pendingSuggestionPreview = PendingSuggestionPreview(
-                exerciseId: section.exercise.id,
-                bumpedWeight: bumped.weight,
-                bumpedReps: bumped.reps
-            )
-        }
-        adjustResultPayload = AdjustResultPayload(
-            exercise: section.exercise,
-            prefill: bumped
-        )
-    }
-
-    /// Build the chip row passed to `WorkoutCommandCard`. One entry for the
-    /// rep bump (always available when there's a prior-session anchor) and an
-    /// optional second entry for the weight bump (suppressed for bodyweight).
-    private func suggestionActions(
-        for section: WorkoutExerciseSectionModel
-    ) -> [WorkoutCommandCard.SuggestionAction] {
-        guard let suggestion = section.suggestion else { return [] }
-        var actions: [WorkoutCommandCard.SuggestionAction] = []
-        actions.append(
-            WorkoutCommandCard.SuggestionAction(label: suggestion.repChipLabel) {
-                presentSuggestionSheet(for: section, kind: .reps)
-            }
-        )
-        if suggestion.nextWeightKg != nil {
-            actions.append(
-                WorkoutCommandCard.SuggestionAction(label: suggestion.weightChipLabel) {
-                    presentSuggestionSheet(for: section, kind: .weight)
-                }
-            )
-        }
-        return actions
     }
 
     private var recommendedExerciseIndex: Int {
@@ -359,8 +268,7 @@ struct ActiveWorkoutView: View {
                 timerState: timerControlState,
                 onTimerDecrease: adjustRestTimerAction,
                 onTimerToggle: toggleRestTimerAction,
-                onTimerIncrease: increaseRestTimerAction,
-                suggestionActions: suggestionActions(for: section)
+                onTimerIncrease: increaseRestTimerAction
             )
 
             if isFreestyleSession {
@@ -378,16 +286,6 @@ struct ActiveWorkoutView: View {
     }
 
     private func metricValue(for section: WorkoutExerciseSectionModel) -> String {
-        if let preview = pendingSuggestionPreview,
-           preview.exerciseId == section.exercise.id,
-           let setCount = section.priorSessionSetCount {
-            return WorkoutTargetFormatter.lastText(
-                weightKg: preview.bumpedWeight,
-                setCount: setCount,
-                reps: preview.bumpedReps,
-                isBodyweight: section.exercise.isBodyweight
-            )
-        }
         if let lastValues = lastLoggedValues(for: section.exercise.id) {
             return WorkoutTargetFormatter.setMetricText(
                 weightKg: lastValues.weight,
@@ -542,11 +440,7 @@ struct ActiveWorkoutView: View {
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()
         }
-        .sheet(item: $adjustResultPayload, onDismiss: {
-            withAnimation(reduceMotion ? nil : .appReveal) {
-                pendingSuggestionPreview = nil
-            }
-        }) { payload in
+        .sheet(item: $adjustResultPayload) { payload in
             AdjustResultSheet(
                 exerciseName: payload.exercise.displayName,
                 isBodyweight: payload.exercise.isBodyweight,
@@ -712,22 +606,12 @@ struct ActiveWorkoutView: View {
     }
 
     private var addExercisePrompt: some View {
-        AppCard {
-            VStack(alignment: .center, spacing: AppSpacing.md) {
-                Text(AppCopy.Workout.addFirstExerciseTitle)
-                    .font(AppFont.productHeading.font)
-                    .foregroundStyle(AppColor.textPrimary)
-
-                Text(AppCopy.Workout.addFirstExerciseHint)
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.center)
-
-                AppPrimaryButton(AppCopy.Workout.addExercise) {
-                    showsAddExercise = true
-                }
-            }
-            .frame(maxWidth: .infinity)
+        EmptyStateCard(
+            title: AppCopy.Workout.addFirstExerciseTitle,
+            message: AppCopy.Workout.addFirstExerciseHint,
+            buttonLabel: AppCopy.Workout.addExercise
+        ) {
+            showsAddExercise = true
         }
     }
 
@@ -744,45 +628,21 @@ struct ActiveWorkoutView: View {
             dismissActionPlacement: .confirmation,
             onDismissAction: { showLineup = false }
         ) {
-            VStack(spacing: AppSpacing.sm) {
-                ForEach(exerciseLineupFragments) { fragment in
-                    switch fragment {
-                    case .grouped(let pairs):
-                        AppCardList(data: pairs.map { LineupRowItem(index: $0.index, section: $0.section) }, id: \.id) { item in
-                            Button {
-                                selectedExerciseIndex = item.index
-                                showLineup = false
-                            } label: {
-                                exerciseLineupRowContent(index: item.index, section: item.section)
-                            }
-                            .buttonStyle(ScaleButtonStyle())
-                            .accessibilityLabel(
-                                exerciseLineupAccessibilityLabel(
-                                    name: item.section.exercise.displayName,
-                                    isCurrent: item.index == selectedExerciseIndex,
-                                    isDone: item.section.hasReachedPlannedSetGoal
-                                )
-                            )
-                        }
-                    case .rich(let index, let section):
-                        AppCardList(data: [LineupRowItem(index: index, section: section)], id: \.id) { item in
-                            Button {
-                                selectedExerciseIndex = item.index
-                                showLineup = false
-                            } label: {
-                                exerciseLineupRowContent(index: item.index, section: item.section)
-                            }
-                            .buttonStyle(ScaleButtonStyle())
-                            .accessibilityLabel(
-                                exerciseLineupAccessibilityLabel(
-                                    name: item.section.exercise.displayName,
-                                    isCurrent: item.index == selectedExerciseIndex,
-                                    isDone: item.section.hasReachedPlannedSetGoal
-                                )
-                            )
-                        }
-                    }
+            AppCardList(data: exerciseLineupRows, id: \.id) { item in
+                Button {
+                    selectedExerciseIndex = item.index
+                    showLineup = false
+                } label: {
+                    exerciseLineupRowContent(index: item.index, section: item.section)
                 }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel(
+                    exerciseLineupAccessibilityLabel(
+                        name: item.section.exercise.displayName,
+                        isCurrent: item.index == selectedExerciseIndex,
+                        isDone: item.section.hasReachedPlannedSetGoal
+                    )
+                )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -794,41 +654,10 @@ struct ActiveWorkoutView: View {
         var id: UUID { section.id }
     }
 
-    private enum ExerciseLineupFragment: Identifiable {
-        case grouped([(index: Int, section: WorkoutExerciseSectionModel)])
-        case rich(index: Int, section: WorkoutExerciseSectionModel)
-
-        var id: String {
-            switch self {
-            case .grouped(let pairs):
-                "g-" + pairs.map { "\($0.index)-\($0.section.id.uuidString)" }.joined(separator: "|")
-            case .rich(let index, let section):
-                "r-\(index)-\(section.id.uuidString)"
-            }
+    private var exerciseLineupRows: [LineupRowItem] {
+        sectionModels.enumerated().map { index, section in
+            LineupRowItem(index: index, section: section)
         }
-    }
-
-    /// Name-only rows are merged into one card with hairlines; rows with last-session subtitle stay on their own card.
-    private var exerciseLineupFragments: [ExerciseLineupFragment] {
-        var result: [ExerciseLineupFragment] = []
-        var nameOnlyRun: [(index: Int, section: WorkoutExerciseSectionModel)] = []
-
-        func flushRun() {
-            guard !nameOnlyRun.isEmpty else { return }
-            result.append(.grouped(nameOnlyRun))
-            nameOnlyRun = []
-        }
-
-        for (index, section) in sectionModels.enumerated() {
-            if exerciseListSubtitle(for: section) != nil {
-                flushRun()
-                result.append(.rich(index: index, section: section))
-            } else {
-                nameOnlyRun.append((index: index, section: section))
-            }
-        }
-        flushRun()
-        return result
     }
 
     @ViewBuilder
@@ -1264,102 +1093,12 @@ private struct WorkoutExerciseSectionModel: Identifiable {
     let entries: [SetEntry]
     let prefill: SetPrefill?
     let plannedSetCount: Int
-    /// Non-nil only when `prefill.source == .priorSession` — i.e. there's a
-    /// prior-session anchor to bump from. Drives the `+ 1 rep` / `+ 2.5 kg`
-    /// chips rendered in `WorkoutCommandCard.metricSupportingSlot`.
-    let suggestion: SetSuggestion?
-    /// Number of working sets the lifter logged for this exercise in their most
-    /// recent completed session — feeds the `pendingSuggestionPreview` cross-fade
-    /// so a chip tap keeps the same set-count component (only weight or reps
-    /// changes).
-    let priorSessionSetCount: Int?
 
     var id: UUID { exercise.id }
 
     var hasReachedPlannedSetGoal: Bool {
         entries.count >= plannedSetCount
     }
-}
-
-/// Presentation-only progressive-overload nudge — derived from the most recent
-/// completed prior-session set, recomputed on every render, never persisted.
-/// Pairs with the suggestion chips in `WorkoutCommandCard.metricSupportingSlot`.
-///
-/// Both `+ 1 rep` and `+ 2.5 kg` (or `+ 5 lb`) chips render side by side for
-/// weighted exercises so the lifter picks which axis to push without the app
-/// deciding for them. Bodyweight exercises only expose the rep chip — no
-/// plates to add. The chip is the only progression-suggestion surface in the
-/// app by doctrine: PRODUCT.md principle 2 ("History, not instructions") is
-/// partially relaxed here, scoped to two tap-to-accept hints. No engine, no
-/// rule storage, no per-exercise progression model. If a future request asks
-/// for a "third chip", "configurable increment", or "auto-accept" — push back.
-struct SetSuggestion: Equatable {
-    let lastWeightKg: Double
-    let lastReps: Int
-    /// One more than `lastReps`. Always available — every lift can take a rep.
-    let nextReps: Int
-    /// `lastWeightKg` plus the smallest legal increment for the user's unit.
-    /// `nil` for bodyweight (no plates to add).
-    let nextWeightKg: Double?
-
-    /// Smallest legal weight increment in kilograms, sized to the user's unit
-    /// system. Internal storage is kg; lb users see "+ 5 lb" because
-    /// 5 lb ≈ 2.268 kg.
-    static func smallestIncrementKg(unitSystem: String) -> Double {
-        unitSystem == "lb" ? 5.0 / 2.20462 : 2.5
-    }
-
-    static func compute(
-        lastWeightKg: Double,
-        lastReps: Int,
-        isBodyweight: Bool,
-        unitSystem: String
-    ) -> SetSuggestion {
-        SetSuggestion(
-            lastWeightKg: lastWeightKg,
-            lastReps: lastReps,
-            nextReps: lastReps + 1,
-            nextWeightKg: isBodyweight
-                ? nil
-                : lastWeightKg + smallestIncrementKg(unitSystem: unitSystem)
-        )
-    }
-
-    var repChipLabel: String { "+ 1 rep" }
-
-    var weightChipLabel: String {
-        let unit = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
-        return unit == "lb" ? "+ 5 lb" : "+ 2.5 kg"
-    }
-
-    /// Bumped prefill for the rep chip — same weight, +1 rep.
-    var repBumpedPrefill: SetPrefill {
-        SetPrefill(weight: lastWeightKg, reps: nextReps, source: .priorSession)
-    }
-
-    /// Bumped prefill for the weight chip — same reps, +smallest increment.
-    /// `nil` when `nextWeightKg` is unavailable (bodyweight exercise).
-    var weightBumpedPrefill: SetPrefill? {
-        nextWeightKg.map {
-            SetPrefill(weight: $0, reps: lastReps, source: .priorSession)
-        }
-    }
-}
-
-/// Which axis the lifter chose to push when tapping a suggestion chip.
-enum SetSuggestionKind {
-    case reps
-    case weight
-}
-
-/// Transient preview state — when the lifter taps a suggestion chip, the
-/// metric hero shows the bumped target (animated via `numericText` cross-fade)
-/// while the AdjustResultSheet opens for confirmation. Cleared on sheet
-/// dismiss; never persisted.
-private struct PendingSuggestionPreview: Equatable {
-    let exerciseId: UUID
-    let bumpedWeight: Double
-    let bumpedReps: Int
 }
 
 private struct AdjustResultPayload: Identifiable {

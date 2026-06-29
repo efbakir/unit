@@ -1380,10 +1380,9 @@ private struct AppFloatingPillShadow: ViewModifier {
 /// neutral labels; `.accent` to emphasize. For toggle-able filter pills, use
 /// `AppFilterChip` — not this component.
 ///
-/// Pass `onTap` to turn the tag into a tap-to-accept affordance (e.g. the
-/// progressive-overload "+ 1 rep" suggestion) without forking a new chip
-/// primitive. The visible capsule keeps its compact size; the hit area
-/// expands invisibly to the 44pt Gym Test floor.
+/// Pass `onTap` to turn the tag into a compact tappable status affordance
+/// without forking a new chip primitive. The visible capsule keeps its compact
+/// size; the hit area expands invisibly to the 44pt Gym Test floor.
 struct AppTag: View {
     let text: String
     var style: Style = .default
@@ -2783,6 +2782,17 @@ extension EmptyStateCard where Content == EmptyView {
         self.content = { EmptyView() }
     }
 
+    /// CTA-bearing empty state without an eyebrow.
+    init(title: String, message: String, buttonLabel: String, action: @escaping () -> Void) {
+        self.eyebrow = nil
+        self.title = title
+        self.message = message
+        self.note = nil
+        self.buttonLabel = buttonLabel
+        self.action = action
+        self.content = { EmptyView() }
+    }
+
     /// Hero variant without inline content or CTA — used by Today's rest-day card
     /// (eyebrow + title + subtitle, nothing else).
     init(eyebrow: String, title: String, message: String) {
@@ -2797,6 +2807,23 @@ extension EmptyStateCard where Content == EmptyView {
 }
 
 extension EmptyStateCard {
+    /// Content-bearing empty state where the caller owns the full action block
+    /// (for example, primary + secondary actions). Keeps the canonical empty-state
+    /// card chrome without forcing the built-in single-primary CTA slot.
+    init(
+        title: String,
+        message: String,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.eyebrow = nil
+        self.title = title
+        self.message = message
+        self.note = nil
+        self.buttonLabel = nil
+        self.action = nil
+        self.content = content
+    }
+
     /// Hero variant with an inline content slot above the CTA — used by Today's
     /// "Up next" card to embed a tappable preview list. Optional `note:` renders
     /// a caption beneath the subtitle (e.g. "Different routine for today").
@@ -3206,17 +3233,6 @@ struct WorkoutCommandCard: View {
         case disabled
     }
 
-    /// One progressive-overload nudge rendered as a flat caps text-button in
-    /// `metricSupportingSlot`. The label reads "+ 1 rep" / "+ 2.5 kg" /
-    /// "+ 5 lb"; the tap handler opens the AdjustResultSheet pre-filled to
-    /// the bumped target. Visual style mirrors the in-hero "Adjust" caps
-    /// label so both affordances read as siblings — same component vocabulary,
-    /// just different prefills.
-    struct SuggestionAction {
-        let label: String
-        let onTap: () -> Void
-    }
-
     let progressSteps: [SetProgressIndicator.Step]
     let exerciseName: String
     let metricValue: String
@@ -3225,7 +3241,7 @@ struct WorkoutCommandCard: View {
     var metricIsHint: Bool = false
     /// Pre-fill from a prior session (no working set logged this session yet). Renders the
     /// metric in `textSecondary` so users can tell at a glance whether the number is a
-    /// suggestion to beat or a value already committed. Recolors via `appReveal` when
+    /// prior value or a value already committed. Recolors via `appReveal` when
     /// the first set lands and the value transitions to logged.
     var metricIsGhost: Bool = false
     var state: State = .active
@@ -3253,13 +3269,6 @@ struct WorkoutCommandCard: View {
     var onTimerDecrease: (() -> Void)? = nil
     var onTimerToggle: (() -> Void)? = nil
     var onTimerIncrease: (() -> Void)? = nil
-    /// Progressive-overload nudges rendered in `metricSupportingSlot` as a row of
-    /// flat caps text-buttons matching the in-hero "Adjust" affordance. Each entry
-    /// is a label + tap handler; the card iterates and renders one button per
-    /// entry. Empty array → slot falls back to `metricSupportingText` (or empty).
-    /// Source-of-truth logic for *what* to suggest lives in `SetSuggestion`
-    /// (Features/Today/ActiveWorkoutView.swift) — this card is presentation only.
-    var suggestionActions: [SuggestionAction] = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Toggles for ~800ms each time `setPRSignal` increments — replaces the quiet
     /// `metricSupportingText` line ("Last session …") with a Verde "Personal record"
@@ -3370,27 +3379,6 @@ struct WorkoutCommandCard: View {
                     priorBestText.map { "\(AppCopy.Workout.personalRecord). \($0)." }
                         ?? AppCopy.Workout.personalRecord
                 )
-            } else if !suggestionActions.isEmpty {
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(Array(suggestionActions.enumerated()), id: \.offset) { _, action in
-                        Button(action: action.onTap) {
-                            Text(action.label)
-                                .appCapsLabel(.smallLabel)
-                                .foregroundStyle(AppColor.textPrimary)
-                                .padding(.horizontal, AppSpacing.md)
-                                .padding(.vertical, AppSpacing.smd)
-                                .frame(minHeight: 44)
-                                .background(
-                                    AppColor.controlBackground,
-                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                )
-                                .contentShape(
-                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                )
-                        }
-                        .buttonStyle(ScaleButtonStyle())
-                    }
-                }
             } else if let metricSupportingText, !metricSupportingText.isEmpty {
                 Text(metricSupportingText)
                     .font(AppFont.caption.font)

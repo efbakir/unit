@@ -43,6 +43,9 @@ No account required. No cloud dependency. Your training data lives on your devic
 SUBSCRIPTION
 Unit offers weekly, monthly, and yearly auto-renewing subscriptions, plus optional Lifetime if available. Prices are shown in the app before purchase. Payment is charged to your Apple Account. Manage or cancel subscriptions anytime in App Store settings.
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://unitlift.app/privacy
+
 WHAT UNIT IS NOT
 - Not an AI coach. Unit doesn't tell you what to lift.
 - Not a social platform. No feed, no followers, no likes.

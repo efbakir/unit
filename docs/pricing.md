@@ -44,6 +44,25 @@ The onboarding flow (splash → unit picker → import method → program build 
 - History (browse past sessions, PR chart, calendar)
 - Settings (manage subscription, export, theming, etc.)
 
+## App Review metadata checklist
+
+Apple's subscription review surface is not just the in-app paywall. Before every subscription submission:
+
+1. Paste the Terms of Use (EULA) URL into the visible App Store description text: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`.
+2. Keep the Privacy Policy URL in App Store Connect's dedicated Privacy Policy field: `https://unitlift.app/privacy`.
+3. Keep the paywall footer and Settings legal section using full labels: `Terms of Service` and `Privacy Policy`.
+4. If Apple repeats a boilerplate 3.1.2 rejection after the metadata is fixed, reply in Resolution Center with screenshots and a screen recording proving the current description and in-app legal links are visible.
+
+## StoreKit sandbox verification checklist
+
+Run this on the exact archive/build submitted for review, using products attached to the App Store Connect version and a sandbox Apple ID:
+
+1. Fresh install → complete onboarding → confirm the app lands on `PaywallView`, not `TodayView`.
+2. Start a purchase from the default Weekly plan, cancel the Apple purchase sheet, and confirm the user remains on `PaywallView`.
+3. Complete a sandbox purchase for Weekly and confirm the app enters the main tab UI.
+4. Delete and reinstall the app, tap `Restore Purchases`, and confirm entitlement restores access to the main tab UI.
+5. Cancel the sandbox subscription from App Store subscription management, relaunch after StoreKit reflects the cancellation, and confirm inactive entitlement returns to `PaywallView`.
+
 ## Win-back
 
 - **Win-back**: $19.99/yr Apple promotional offer (about ⅔ of Yearly), triggered after subscription cancel. Wire via StoreKit 2.

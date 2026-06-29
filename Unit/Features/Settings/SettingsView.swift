@@ -34,16 +34,24 @@ private enum SubscriptionRow: String, CaseIterable, Identifiable {
 }
 
 private enum LegalRow: String, CaseIterable, Identifiable {
-    case privacy = "Privacy Policy"
-    case terms = "Terms of Service"
+    case privacy
+    case terms
     case contact = "Contact me"
 
     var id: String { rawValue }
 
+    var title: String {
+        switch self {
+        case .privacy: AppCopy.Legal.privacyPolicy
+        case .terms: AppCopy.Legal.termsOfService
+        case .contact: rawValue
+        }
+    }
+
     var url: URL? {
         switch self {
-        case .privacy: URL(string: "https://unitlift.app/privacy")
-        case .terms: URL(string: "https://unitlift.app/terms")
+        case .privacy: AppCopy.Legal.privacyPolicyURL
+        case .terms: AppCopy.Legal.termsOfServiceURL
         case .contact: SupportMailto.composedURL()
         }
     }
@@ -268,7 +276,7 @@ struct SettingsView: View {
             AppDividedList(LegalRow.allCases) { row in
                 if let url = row.url {
                     Link(destination: url) {
-                        AppListRow(title: row.rawValue)
+                        AppListRow(title: row.title)
                     }
                 }
             }

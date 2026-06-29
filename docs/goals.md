@@ -17,7 +17,7 @@
 | **Gym Test** | Log a set in ≤ 3 seconds under physical stress | Manual QA: one-handed, sweaty-finger simulation on device |
 | **Taps to start** | ≤ 2 taps from app launch to first set logged | Count: open → tap Start → tap Done |
 | **Last-time hit rate** | > 90% of sets logged without keyboard | Analytics: % of sets where weight and reps match the last-time pre-fill exactly |
-| **Template creation** | < 2 minutes for any path (paste, redo, manual) | Manual QA: time each onboarding flow end-to-end |
+| **Template creation** | < 2 minutes for either path (paste import, starter library) | Manual QA: time each onboarding flow end-to-end |
 | **Session completion** | > 80% of started sessions reach "Finish" | Analytics: started vs finished sessions |
 | **App launch to interactive** | < 500ms | Instruments profiling on baseline device |
 
@@ -37,27 +37,29 @@
 
 **Ships:**
 - Template-based logging with Last time pre-fill
-- Three onboarding paths (text-paste, redo-from-history, manual builder)
+- Two onboarding paths: text-paste import and starter program library
 - Auto rest timer with Lock Screen / Dynamic Island
 - History view (list + calendar)
 - Exercise library with search and custom exercise creation
 - Haptic confirmation on set logged
 - PR detection and notification
+- Current access model follows `docs/pricing.md`: onboarding is free; post-onboarding app access is gated
 
 **Does not ship:**
 - ProgressionEngine (auto-increment, fail modes, deload)
 - CloudKit sync
 - Social features (feed, profiles, sharing)
 - Exercise discovery / recommendation
-- Subscription paywall on core logging
+- Manual-builder onboarding as a first-run path
+- Redo-from-history onboarding as a first-run path
 
 ---
 
 ## Design constraints (always active)
 
 - Swift 6, SwiftUI, SwiftData, local-first
-- Atomic design system (`DESIGN_SYSTEM.md`) — no raw values in view files
-- Light-first, follows system appearance
+- Atomic design system (`DESIGN.md`, `docs/claude/design-system.md`, `Unit/UI/DesignSystem.swift`) — no raw values in view files
+- Light-only visual system
 - 44×44 pt minimum touch targets
-- No chevrons anywhere in the app
+- No navigation chevrons for routine rows; calendar/back-forward controls must use `AppIcon.back` / `AppIcon.forward`.
 - Every screen uses `AppScreen` wrapper

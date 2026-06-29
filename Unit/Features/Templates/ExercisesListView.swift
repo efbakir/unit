@@ -476,11 +476,8 @@ struct ExerciseDetailView: View {
                     .appCardStyle()
 
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Past sessions")
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-
-                        ForEach(summaries) { summary in
+                        AppSectionHeader("Past sessions")
+                        AppCardList(summaries) { summary in
                             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                 HStack {
                                     Text(summary.templateName)
@@ -498,14 +495,8 @@ struct ExerciseDetailView: View {
                                     .foregroundStyle(AppColor.textSecondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, AppSpacing.sm)
-
-                            if summary.id != summaries.last?.id {
-                                AppDivider()
-                            }
                         }
                     }
-                    .appCardStyle()
                 }
             }
             .appScreenEnter()
