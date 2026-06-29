@@ -34,6 +34,7 @@ struct OnboardingProgramPreviewView: View {
     /// names can be edited post-paywall and we don't want state to leak.
     @State private var expandedDays: [Int: Bool] = [0: true]
     @State private var editingExercise: PreviewExerciseEditTarget?
+    @State private var demoSetLogged = false
 
     private struct PreviewExerciseEditTarget: Identifiable {
         let dayIndex: Int
@@ -61,6 +62,9 @@ struct OnboardingProgramPreviewView: View {
             } else {
                 emptyParseState
             }
+        }
+        .appHaptic(.setLogged, trigger: demoSetLogged) { old, new in
+            !old && new
         }
         .sheet(item: $editingExercise) { target in
             AppSheetScreen(
@@ -109,6 +113,7 @@ struct OnboardingProgramPreviewView: View {
     private var content: some View {
         VStack(spacing: AppSpacing.md) {
             warningBanner
+            loggingDemoCard
 
             ForEach(Array(vm.dayExercises.enumerated()), id: \.offset) { dayIndex, exercises in
                 AppDisclosureCard(
@@ -126,6 +131,79 @@ struct OnboardingProgramPreviewView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var loggingDemoCard: some View {
+        if let exercise = demoExercise {
+            AppCard {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                            Text("Ready to log set #1?")
+                                .font(AppFont.sectionHeader.font)
+                                .foregroundStyle(AppColor.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if demoSetLogged {
+                                AppIcon.checkmarkFilled.image(size: 15, weight: .semibold)
+                                    .foregroundStyle(AppColor.accent)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+
+                        Text(exercise.name)
+                            .font(AppFont.body.font)
+                            .foregroundStyle(AppColor.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("Last time: \(demoValueText(for: exercise))")
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .monospacedDigit()
+                    }
+
+                    if demoSetLogged {
+                        HStack(spacing: AppSpacing.sm) {
+                            AppIcon.checkmarkFilled.image(size: 15, weight: .semibold)
+                                .foregroundStyle(AppColor.accent)
+                                .accessibilityHidden(true)
+
+                            Text("Set logged")
+                                .font(AppFont.body.font)
+                                .foregroundStyle(AppColor.accent)
+                        }
+                        .frame(minHeight: 44)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                                .fill(AppColor.accentSoft)
+                        )
+                    } else {
+                        AppPrimaryButton("Same as last time") {
+                            // Demo only: visual state + haptic. No model write,
+                            // no WorkoutSession, no SetEntry, no history.
+                            demoSetLogged = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var demoExercise: OnboardingExercise? {
+        for exercises in vm.dayExercises {
+            if let exercise = exercises.first { return exercise }
+        }
+        return nil
+    }
+
+    private func demoValueText(for exercise: OnboardingExercise) -> String {
+        let weight = formatted(exercise.plannedWeightKg)
+        guard !weight.isEmpty else {
+            return "\(exercise.plannedReps) reps"
+        }
+        return "\(weight)\(vm.unitSystem) × \(exercise.plannedReps)"
     }
 
     private var dayName: (Int) -> String {

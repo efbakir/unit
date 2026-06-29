@@ -33,7 +33,11 @@ struct ContentView: View {
     }
 
     private var shouldShowPaywall: Bool {
-        false
+        !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased
+    }
+
+    private var shouldShowEntitlementLoading: Bool {
+        !needsOnboarding && !store.hasCheckedEntitlement
     }
 
     var body: some View {
@@ -43,11 +47,11 @@ struct ContentView: View {
         ZStack {
             if needsOnboarding {
                 OnboardingView()
+            } else if shouldShowEntitlementLoading {
+                entitlementLoadingView
             } else if shouldShowPaywall {
-                NavigationStack {
-                    PaywallView { /* root swap happens via store.isPurchased */ }
-                        .environment(store)
-                }
+                PaywallView { /* root swap happens via store.isPurchased */ }
+                    .environment(store)
             } else {
                 mainTabView
             }
@@ -62,6 +66,14 @@ struct ContentView: View {
             Button("Continue temporarily", role: .cancel) { }
         } message: {
             Text("Unit couldn't open the local training store. Your existing data was left untouched, but changes in this session won't be saved. Close the app and contact support before logging another workout.")
+        }
+    }
+
+    private var entitlementLoadingView: some View {
+        ZStack {
+            AppColor.background.ignoresSafeArea()
+            ProgressView()
+                .tint(AppColor.accent)
         }
     }
 

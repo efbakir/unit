@@ -147,7 +147,7 @@ struct PaywallView: View {
                 .appCapsLabel(.smallLabel)
                 .foregroundStyle(AppColor.textSecondary)
 
-            Text(store.isPurchased ? "Unit Pro active" : "Unlock Unit")
+            Text(store.isPurchased ? "Unit Pro active" : "Your program is ready")
                 .appFont(.largeTitle)
                 .foregroundStyle(AppColor.textPrimary)
 
@@ -166,7 +166,7 @@ struct PaywallView: View {
             }
             return "Your subscription is active. Manage or cancel anytime in App Store settings."
         }
-        return "Set up your program once. Log every workout fast."
+        return "Subscribe to log your first workout."
     }
 
     // MARK: - CTA
