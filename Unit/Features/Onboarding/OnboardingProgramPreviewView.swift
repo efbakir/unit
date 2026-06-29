@@ -180,7 +180,7 @@ struct OnboardingProgramPreviewView: View {
                                 .fill(AppColor.accentSoft)
                         )
                     } else {
-                        AppPrimaryButton("Same as last time") {
+                        AppGhostButton("Same as last time") {
                             // Demo only: visual state + haptic. No model write,
                             // no WorkoutSession, no SetEntry, no history.
                             demoSetLogged = true

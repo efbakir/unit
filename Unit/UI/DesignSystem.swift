@@ -1043,6 +1043,8 @@ struct AppPrimaryButton: View {
             // so VoiceOver still hears the underlying disabled button.
             if !isEnabled && !isLoading {
                 Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 60)
                     .contentShape(Rectangle())
                     .onTapGesture { disabledTapTrigger &+= 1 }
                     .accessibilityHidden(true)
@@ -2363,25 +2365,12 @@ struct AppSelectableTierCard: View {
     var body: some View {
         Button(action: handleTap) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                // Badge slot is always reserved — even on tiers with no
-                // badge — so a row of three cards keeps a single visual
-                // baseline. Previously, only the badged card (annual)
-                // took up the badge-row height, leaving the un-badged
-                // cards visibly shorter; in `HStack(alignment: .top)`
-                // the annual card then extended past the others and its
-                // price + sublabel got clipped by the surrounding
-                // scroll-edge fade. `.hidden()` keeps the AppTag's
-                // exact footprint without rendering pixels, so any
-                // future AppTag size change auto-syncs.
-                Group {
-                    if let badge {
-                        AppTag(text: badge, style: .accent, layout: .compactCapsule)
-                    } else {
-                        AppTag(text: " ", style: .accent, layout: .compactCapsule)
-                            .hidden()
-                    }
+                // No reserved empty badge slot. Paywall tiers are stacked
+                // vertically, so unbadged cards should keep their natural
+                // compact height and leave room for legal copy + CTA.
+                if let badge {
+                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
                 }
-                .accessibilityHidden(badge == nil)
 
                 // Eyebrow + price + sublabel grouped so the outer VStack's
                 // `md` gap (16) separates the badge from this block, while
@@ -3102,6 +3091,31 @@ struct AppCardListAddRow: View {
 }
 
 // MARK: - Reorderable rows
+
+/// Floating drag-preview chrome for rows that already use `appReorderable`.
+/// This owns only the preview shell: reorder glyph, card fill, fixed preview
+/// width, and minimum height. The row content stays at the call site so routine
+/// rows and exercise rows can keep their own typography/trailing values.
+struct AppReorderDragPreview<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            AppIcon.reorder.image(size: 15, weight: .semibold)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 44, alignment: .leading)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .frame(maxWidth: 320, minHeight: 56)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(AppColor.cardBackground)
+        )
+    }
+}
 
 /// Canonical drag-to-reorder row recipe. Apply to a row inside `AppCardList`
 /// to make the **entire row** the drag affordance (not just a 44pt icon),

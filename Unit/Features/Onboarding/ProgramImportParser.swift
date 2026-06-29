@@ -346,10 +346,19 @@ enum ProgramImportParser {
         // Prefix match — `push day` matches `push`; `day 1: pull` matches
         // `day 1`. Sorted longest-first so `post striking 1` beats `post
         // striking` when both prefix-match.
+        let hasPrescriptionData = looksLikeExercise(line)
         let sorted = Vocabulary.dayHeadings.sorted { $0.count > $1.count }
         for name in sorted {
-            if stripped == name
-                || stripped.hasPrefix("\(name):")
+            if stripped == name {
+                return titleCaseHeading(line)
+            }
+
+            // Do not let broad body-part headings steal prescribed exercise
+            // lines. Without this, `Back Squat 3x5 100kg` matched the `back`
+            // day-heading prefix and became a bogus day name.
+            guard !hasPrescriptionData else { continue }
+
+            if stripped.hasPrefix("\(name):")
                 || stripped.hasPrefix("\(name) ")
                 || stripped.hasPrefix("\(name)—")
                 || stripped.hasPrefix("\(name) —")

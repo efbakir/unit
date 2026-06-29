@@ -158,26 +158,18 @@ struct TemplateDetailView: View {
 
     @ViewBuilder
     private func exerciseDragPreview(for exercise: Exercise) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            AppIcon.reorder.image(size: 15, weight: .semibold)
-                .foregroundStyle(AppColor.textSecondary)
-                .frame(width: 44, alignment: .leading)
+        AppReorderDragPreview {
+            HStack(spacing: AppSpacing.sm) {
+                Text(exercise.displayName)
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
 
-            Text(exercise.displayName)
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .lineLimit(1)
+                Spacer(minLength: AppSpacing.sm)
 
-            Spacer(minLength: AppSpacing.sm)
-
-            exerciseTargetSubtitle(for: exercise)
+                exerciseTargetSubtitle(for: exercise)
+            }
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .frame(maxWidth: 320, minHeight: 56)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(AppColor.cardBackground)
-        )
     }
 
     @ViewBuilder

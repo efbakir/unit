@@ -294,4 +294,12 @@ Code surfaces shipped today: `Unit/UnitApp.swift` (InstallProvenance + Security 
 
 ---
 
+## 2026-06-29 - Widget typography stays widget-native for v1
+
+**Decision:** Do not refactor `UnitWidget` typography into app `AppFont` tokens for v1. The widget target can continue using widget-native SwiftUI typography until a shared token package exists.
+**Why:** The app design-system cleanup should not force widget code to import app UI primitives or create a parallel token bridge during the monetization/onboarding pass.
+**Implication:** Treat widget typography drift as explicitly out of scope for v1 consistency cleanup. Revisit only when the app and widget share a proper token package.
+
+---
+
 <!-- new entries above this line -->

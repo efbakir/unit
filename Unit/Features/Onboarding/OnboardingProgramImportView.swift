@@ -67,10 +67,7 @@ struct OnboardingProgramImportView: View {
             subtitle: ProgramPasteFormatGuide.subtitle,
             ctaLabel: parseLabel,
             ctaEnabled: canParse && !isParsing,
-            // No gate caption: the placeholder ("Push / Bench press 4x8 60 /
-            // …") + the disabled "Read program" label make the requirement
-            // self-evident; the extra line just doubles the chrome above the
-            // CTA.
+            ctaDisabledReason: canParse ? nil : "Paste or type your program first.",
             progressStep: progressStep,
             progressTotal: progressTotal,
             onContinue: { Task { await parseProgram() } },
