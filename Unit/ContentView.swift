@@ -33,7 +33,7 @@ struct ContentView: View {
     }
 
     private var shouldShowPaywall: Bool {
-        !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased
+        false
     }
 
     var body: some View {
