@@ -28,7 +28,6 @@ enum FreestyleSessionSupport {
     ) {
         let referencedTemplateIds = Set(sessions.map(\.templateId))
         for template in templates where template.name == templateName
-            && template.orderedExerciseIds.isEmpty
             && !referencedTemplateIds.contains(template.id) {
             modelContext.delete(template)
         }

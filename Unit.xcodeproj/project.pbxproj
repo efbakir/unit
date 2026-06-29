@@ -47,11 +47,11 @@
 		OB100000000000000000004 /* OnboardingSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000004 /* OnboardingSplashView.swift */; };
 		OB100000000000000000007 /* OnboardingSplitBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000007 /* OnboardingSplitBuilderView.swift */; };
 		OB100000000000000000009 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000009 /* OnboardingScheduleView.swift */; };
-		OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000022 /* OnboardingLibraryPickerView.swift */; };
-		OB100000000000000000024 /* OnboardingProgramPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000024 /* OnboardingProgramPreviewView.swift */; };
 		OB10000000000000000000D /* OnboardingImportMethodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000D /* OnboardingImportMethodView.swift */; };
 		OB10000000000000000000E /* OnboardingProgramImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB00000000000000000000E /* OnboardingProgramImportView.swift */; };
 		OB100000000000000000020 /* OnboardingUnitPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000020 /* OnboardingUnitPickerView.swift */; };
+		OB100000000000000000022 /* OnboardingLibraryPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000022 /* OnboardingLibraryPickerView.swift */; };
+		OB100000000000000000024 /* OnboardingProgramPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000024 /* OnboardingProgramPreviewView.swift */; };
 		PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCAT200000000000000000001 /* ProgramCatalog.swift */; };
 		PIMP100000000000000000001 /* ProgramImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = PIMP200000000000000000001 /* ProgramImporter.swift */; };
 		PLDT100000000000000000001 /* ProgramLibraryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */; };
@@ -67,7 +67,7 @@
 		WE100000000000000000001 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* RestTimerLiveActivity.swift */; };
 		WE100000000000000000002 /* UnitWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* UnitWidgetBundle.swift */; };
 		WE100000000000000000003 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* RestTimerAttributes.swift */; };
-		WE100000000000000000004 /* UnitWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = WE000000000000000000001 /* UnitWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		WE100000000000000000004 /* UnitWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = WE000000000000000000001 /* UnitWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		WRMP100000000000000000001 /* WarmupGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = WRMP200000000000000000001 /* WarmupGenerator.swift */; };
 /* End PBXBuildFile section */
 
@@ -89,15 +89,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		WE900000000000000000001 /* Embed App Extensions */ = {
+		WE900000000000000000001 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				WE100000000000000000004 /* UnitWidgetExtension.appex in Embed App Extensions */,
+				WE100000000000000000004 /* UnitWidgetExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -150,11 +150,11 @@
 		OB000000000000000000004 /* OnboardingSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplashView.swift; sourceTree = "<group>"; };
 		OB000000000000000000007 /* OnboardingSplitBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplitBuilderView.swift; sourceTree = "<group>"; };
 		OB000000000000000000009 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
-		OB000000000000000000022 /* OnboardingLibraryPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLibraryPickerView.swift; sourceTree = "<group>"; };
-		OB000000000000000000024 /* OnboardingProgramPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramPreviewView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000D /* OnboardingImportMethodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingImportMethodView.swift; sourceTree = "<group>"; };
 		OB00000000000000000000E /* OnboardingProgramImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramImportView.swift; sourceTree = "<group>"; };
 		OB000000000000000000020 /* OnboardingUnitPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUnitPickerView.swift; sourceTree = "<group>"; };
+		OB000000000000000000022 /* OnboardingLibraryPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLibraryPickerView.swift; sourceTree = "<group>"; };
+		OB000000000000000000024 /* OnboardingProgramPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgramPreviewView.swift; sourceTree = "<group>"; };
 		PCAT200000000000000000001 /* ProgramCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramCatalog.swift; sourceTree = "<group>"; };
 		PIMP200000000000000000001 /* ProgramImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramImporter.swift; sourceTree = "<group>"; };
 		PLDT200000000000000000001 /* ProgramLibraryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramLibraryDetailView.swift; sourceTree = "<group>"; };
@@ -203,7 +203,6 @@
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
 				165569863085B0817806842D /* ProgramImporterTests.swift */,
 			);
-			name = UnitTests;
 			path = UnitTests;
 			sourceTree = "<group>";
 		};
@@ -450,7 +449,7 @@
 				A50000000000000000000002 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A50000000000000000000003 /* Resources */,
-				WE900000000000000000001 /* Embed App Extensions */,
+				WE900000000000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -487,7 +486,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 2630;
+				LastUpgradeCheck = 2700;
 			};
 			buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXProject "Unit" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -636,7 +635,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -660,7 +659,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -871,6 +870,7 @@
 		WE700000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
@@ -903,6 +903,7 @@
 		WE700000000000000000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;

@@ -20,7 +20,10 @@ struct ActiveWorkoutView: View {
 
     @State private var viewModel = ActiveWorkoutViewModel()
     @State private var restTimer = RestTimerManager()
-    @State private var restDurationSeconds = 30
+    /// Persist the preferred rest duration across workouts. Two minutes is a
+    /// useful strength-training default and avoids three `+30` taps every time
+    /// a new session starts.
+    @AppStorage("restDurationSeconds") private var restDurationSeconds = 120
     @State private var showLineup = false
     @State private var adjustResultPayload: AdjustResultPayload?
     @State private var selectedExerciseIndex = 0
@@ -631,10 +634,11 @@ struct ActiveWorkoutView: View {
         }
         .alert(AppCopy.Workout.finishWorkoutTitle, isPresented: $showsFinishConfirmation) {
             Button(AppCopy.Workout.finishWorkout) {
-                finishWorkout()
                 if template?.name == FreestyleSessionSupport.templateName {
                     renameDraft = ""
                     showsRenamePrompt = true
+                } else {
+                    finishWorkout()
                 }
             }
             Button(AppCopy.Nav.cancel, role: .cancel) {}
@@ -650,6 +654,7 @@ struct ActiveWorkoutView: View {
                     try? modelContext.save()
                 }
                 renameDraft = ""
+                finishWorkout()
             }
             Button(AppCopy.Session.skipNaming, role: .cancel) {
                 // Skip with a typed draft is the lossy path — funnel through a
@@ -659,6 +664,8 @@ struct ActiveWorkoutView: View {
                 // nothing to discard.
                 if !renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     showsDiscardRenamePrompt = true
+                } else {
+                    finishWorkout()
                 }
             }
         } message: {
@@ -670,6 +677,7 @@ struct ActiveWorkoutView: View {
         ) {
             Button(AppCopy.Session.discardWorkoutNameAction, role: .destructive) {
                 renameDraft = ""
+                finishWorkout()
             }
             Button(AppCopy.Workout.keepEditing, role: .cancel) {
                 // Re-open the rename alert with the typed draft intact so the
@@ -695,9 +703,6 @@ struct ActiveWorkoutView: View {
         .onChange(of: restTimer.completionCount) { _, newValue in
             guard newValue > 0 else { return }
             showsReadyState = true
-        }
-        .onDisappear {
-            restTimer.stop()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active, restTimer.endDate != nil {
@@ -1022,7 +1027,8 @@ struct ActiveWorkoutView: View {
         exercise: Exercise,
         prefill: SetPrefill?
     ) {
-        if let prefill, prefill.source != .planned {
+        if let prefill,
+           prefill.source != .planned || exercise.isBodyweight || prefill.weight > 0 {
             completeSet(
                 exercise: exercise,
                 weight: prefill.weight,
@@ -1211,14 +1217,17 @@ struct ActiveWorkoutView: View {
         if let custom = customSetCounts[exerciseID] {
             return custom
         }
+        // The user's explicit routine plan is authoritative. History only
+        // fills gaps for legacy/freestyle routines without a stored plan; an
+        // early-finished session must not permanently shrink the next workout.
+        if let templatePlan = template?.plannedSets(for: exerciseID), templatePlan > 0 {
+            return templatePlan
+        }
         if let latestTemplateCount = latestCompletedSetCount(for: exerciseID, matchingTemplate: true) {
             return latestTemplateCount
         }
         if let latestAnyCount = latestCompletedSetCount(for: exerciseID, matchingTemplate: false) {
             return latestAnyCount
-        }
-        if let templatePlan = template?.plannedSets(for: exerciseID), templatePlan > 0 {
-            return templatePlan
         }
         return 3
     }
@@ -1421,26 +1430,27 @@ private struct AdjustResultSheet: View {
         || noteText != seededNoteText
     }
 
-    private var parsedWeight: Double {
+    private var parsedDisplayWeight: Double {
         Double(weightText.replacingOccurrences(of: ",", with: ".")) ?? 0
     }
 
-    private func seedWeightText(_ value: Double) -> String {
+    /// SetEntry stores kilograms regardless of the user's display unit.
+    private var parsedWeightKg: Double {
+        unitSystem == "lb" ? parsedDisplayWeight / 2.20462 : parsedDisplayWeight
+    }
+
+    private func seedWeightText(_ weightKg: Double) -> String {
         let separator = Locale.current.decimalSeparator ?? "."
-        return value.weightString.replacingOccurrences(of: ".", with: separator)
+        let displayValue = unitSystem == "lb" ? weightKg * 2.20462 : weightKg
+        return displayValue.weightString.replacingOccurrences(of: ".", with: separator)
     }
 
     private var parsedReps: Int {
         Int(repsText) ?? 0
     }
 
-    private var effectiveIsBodyweight: Bool {
-        guard parsedWeight == 0 else { return false }
-        return isBodyweight ? weightText.isEmpty : !weightText.isEmpty
-    }
-
     private var canSave: Bool {
-        parsedReps > 0
+        parsedReps > 0 && (isBodyweight || parsedWeightKg > 0)
     }
 
     private var isEditMode: Bool {
@@ -1478,7 +1488,7 @@ private struct AdjustResultSheet: View {
                 label: primaryLabel,
                 isEnabled: canSave,
                 action: {
-                    onSave(parsedWeight, parsedReps, noteText)
+                    onSave(parsedWeightKg, parsedReps, noteText)
                     dismiss()
                 }
             ),
@@ -1496,7 +1506,7 @@ private struct AdjustResultSheet: View {
                         title: AppCopy.Workout.weightLabel(isBodyweight: isBodyweight, unitSystem: unitSystem),
                         text: $weightText,
                         keyboardType: .decimalPad,
-                        suffix: effectiveIsBodyweight ? AppCopy.Workout.bodyweightAbbrev : nil
+                        suffix: isBodyweight ? AppCopy.Workout.bodyweightAbbrev : nil
                     )
 
                     manualInputField(
@@ -1720,9 +1730,7 @@ final class ActiveWorkoutViewModel {
             // stores kg; the logging pipeline (SetEntry / SetPrefill weight)
             // is in the lifter's display unit, so convert kg → display here.
             let seededKg = plannedWeightKg ?? 0
-            let unit = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
-            let displayWeight = (seededKg > 0 && unit == "lb") ? seededKg * 2.20462 : seededKg
-            return SetPrefill(weight: displayWeight, reps: plannedReps, source: .planned)
+            return SetPrefill(weight: seededKg, reps: plannedReps, source: .planned)
         }
 
         return nil

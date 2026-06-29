@@ -3,15 +3,17 @@
 //  Unit
 //
 //  Hard paywall presented after onboarding, before first workout log.
-//  Three tiers: Weekly, Monthly, Annual. No free trial. No dismissal.
+//  Weekly, Monthly, Yearly subscriptions plus optional Lifetime purchase.
+//  No free trial. No dismissal.
 //  Pricing authority: docs/pricing.md.
 //
 
+import StoreKit
 import SwiftUI
 
 struct PaywallView: View {
     @Environment(StoreManager.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showingManageSubscriptions = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -19,73 +21,19 @@ struct PaywallView: View {
         // is to subscribe (or kill the app). `onDismiss` is invoked only via
         // the `.onChange(of: store.isPurchased)` post-subscribe handler below.
         AppScreen(
-            primaryButton: PrimaryButtonConfig(
-                label: ctaTitle,
-                isEnabled: !store.products.isEmpty,
-                isLoading: store.isLoading,
-                action: { Task { await store.purchase() } }
-            ),
+            primaryButton: primaryButtonConfig,
             hidesNavigationBar: true
         ) {
-            VStack(alignment: .leading, spacing: 0) {
-
-                // MARK: - Top Area
-
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Unit")
-                        .appCapsLabel(.smallLabel)
-                        .foregroundStyle(AppColor.textSecondary)
-
-                    Text("Your gym notebook")
-                        .font(AppFont.numericDisplay.font)
-                        .tracking(AppFont.numericDisplay.tracking)
-                        .foregroundStyle(AppColor.textPrimary)
-                }
-                .padding(.top, AppSpacing.xl)
-
-                Text("Log every set, see every PR. Built for lifters who actually train.")
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, AppSpacing.smd)
-
-                // MARK: - Benefits
-                //
-                // Hard paywall — these are product capabilities, not "Pro extras".
-                // Authority: docs/pricing.md §Hard paywall.
-
-                VStack(spacing: 0) {
-                    benefitRow("One-tap set logging with last-time pre-fill")
-                    benefitRow("Personal records, detected automatically")
-                    benefitRow("Lock Screen rest timer")
-                    benefitRow("All your training history, forever")
-                    benefitRow("Paste your program from Notes or WhatsApp")
-                    benefitRow("Local-first. No account, no cloud")
-                }
-                .padding(.top, AppSpacing.xl)
-
-                // MARK: - Tiers
-
-                tierSelector
-                    .padding(.top, AppSpacing.xl)
-
-                // MARK: - Disclosure
-
-                subscriptionDisclosure
-                    .padding(.top, AppSpacing.lg)
-
-                // MARK: - Footer
-
-                footer
-                    .padding(.top, AppSpacing.xl)
-
-                if store.products.isEmpty && !store.isLoading {
-                    loadFailureBanner
-                        .padding(.top, AppSpacing.lg)
-                }
+            // No .appScreenEnter() here: the root gate owns the transition.
+            // Adding a second opacity-0→1 entrance risks the content staying
+            // invisible if onAppear misfires on iOS 26's re-present cycle.
+            if store.isPurchased {
+                activeSubscriptionContent
+            } else {
+                purchaseContent
             }
-            .appScreenEnter()
         }
+        .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
         .task {
             await store.loadProducts()
         }
@@ -129,12 +77,131 @@ struct PaywallView: View {
         )
     }
 
-    // MARK: - CTA title
+    // MARK: - Content
+
+    private var purchaseContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+
+            VStack(spacing: 0) {
+                benefitRow("Fast set logging")
+                benefitRow("Last-session numbers ready")
+                benefitRow("Rest timer on your iPhone")
+            }
+            .padding(.top, AppSpacing.xl)
+
+            tierSelector
+                .padding(.top, AppSpacing.xl)
+
+            subscriptionDisclosure
+                .padding(.top, AppSpacing.lg)
+
+            footer
+                .padding(.top, AppSpacing.xl)
+
+            if store.hasAttemptedProductLoad && store.products.isEmpty && !store.isLoading {
+                loadFailureBanner
+                    .padding(.top, AppSpacing.lg)
+            }
+
+            if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
+                partialLoadBanner
+                    .padding(.top, AppSpacing.lg)
+            }
+        }
+    }
+
+    private var activeSubscriptionContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+
+            AppCard {
+                VStack(alignment: .leading, spacing: AppSpacing.smd) {
+                    Text("Unit Pro active")
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+
+                    Text("Current plan: \(activePlanName)")
+                        .font(AppFont.body.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.top, AppSpacing.xl)
+
+            if canManageActiveSubscription {
+                AppGhostButton("Manage Subscription") {
+                    showingManageSubscriptions = true
+                }
+                .padding(.top, AppSpacing.md)
+            }
+
+            footer
+                .padding(.top, AppSpacing.xl)
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.smd) {
+            Text(store.isPurchased ? "Unit Pro" : "Unit")
+                .appCapsLabel(.smallLabel)
+                .foregroundStyle(AppColor.textSecondary)
+
+            Text(store.isPurchased ? "Unit Pro active" : "Unlock Unit")
+                .appFont(.largeTitle)
+                .foregroundStyle(AppColor.textPrimary)
+
+            Text(headerSubtitle)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.top, AppSpacing.xl)
+    }
+
+    private var headerSubtitle: String {
+        if store.isPurchased {
+            if store.activeTier == .lifetime {
+                return "Lifetime access is active. Restore purchases anytime with the same Apple Account."
+            }
+            return "Your subscription is active. Manage or cancel anytime in App Store settings."
+        }
+        return "Set up your program once. Log every workout fast."
+    }
+
+    // MARK: - CTA
+
+    private var primaryButtonConfig: PrimaryButtonConfig? {
+        guard !store.isPurchased else { return nil }
+        return PrimaryButtonConfig(
+            label: ctaTitle,
+            isEnabled: store.selectedProduct != nil,
+            isLoading: store.isLoading,
+            disabledReason: ctaDisabledReason,
+            contextLabel: selectedPlanSummary,
+            action: { Task { await store.purchase() } }
+        )
+    }
 
     private var ctaTitle: String {
-        // Hard paywall — no trial copy. Same verb for every tier; the tier
-        // card itself communicates the cadence.
-        return "Subscribe"
+        switch store.selectedTier {
+        case .weekly, .monthly, .annual:
+            return "Continue with \(ctaPlanName(for: store.selectedTier))"
+        case .lifetime:
+            return "Buy Lifetime"
+        }
+    }
+
+    private var ctaDisabledReason: String? {
+        if store.hasAttemptedProductLoad {
+            return "This plan is unavailable. Try another plan."
+        }
+        return "Loading subscriptions."
+    }
+
+    private var selectedPlanSummary: String? {
+        guard let billedPrice = selectedSummaryPriceText(for: store.selectedTier) else { return nil }
+        return "Selected: \(ctaPlanName(for: store.selectedTier)) · \(billedPrice)"
     }
 
     // MARK: - Benefit Row
@@ -158,23 +225,14 @@ struct PaywallView: View {
     // MARK: - Tier Selector
 
     private var tierSelector: some View {
-        // ViewThatFits falls back to a vertical stack at narrow widths or
-        // larger Dynamic Type sizes — on SE (375pt) with three equal-flex
-        // cards (~109pt each) labels like "Annually"/"Lifetime" + scaled
-        // price text otherwise overflow.
-        ViewThatFits {
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                tierCards
-            }
-            VStack(spacing: AppSpacing.sm) {
-                tierCards
-            }
+        VStack(spacing: AppSpacing.sm) {
+            tierCards
         }
     }
 
     @ViewBuilder
     private var tierCards: some View {
-        ForEach(StoreManager.Tier.allCases) { tier in
+        ForEach(visibleTiers) { tier in
             AppSelectableTierCard(
                 label: label(for: tier),
                 price: priceText(for: tier),
@@ -186,42 +244,110 @@ struct PaywallView: View {
         }
     }
 
+    private var visibleTiers: [StoreManager.Tier] {
+        var tiers = StoreManager.requiredTiers
+        if store.product(for: .lifetime) != nil {
+            tiers.append(.lifetime)
+        }
+        return tiers
+    }
+
+    private var hasMissingRequiredProducts: Bool {
+        StoreManager.requiredTiers.contains { store.product(for: $0) == nil }
+    }
+
+    private var canManageActiveSubscription: Bool {
+        guard let activeTier = store.activeTier else { return store.isPurchased }
+        return activeTier.isSubscription
+    }
+
     // MARK: - Tier copy
 
     private func label(for tier: StoreManager.Tier) -> String {
         switch tier {
         case .weekly: return "Weekly"
         case .monthly: return "Monthly"
-        case .annual: return "Annually"
+        case .annual: return "Yearly"
+        case .lifetime: return "Lifetime"
         }
     }
 
     private func priceText(for tier: StoreManager.Tier) -> String {
-        if let product = store.product(for: tier) {
-            return product.displayPrice
-        }
-        // Fallback prices only shown when StoreKit product load fails —
-        // primary authority is the live ASC price returned by `product(for:)`.
-        // Authority: docs/pricing.md (2026-06-16 hard-paywall rewrite).
-        switch tier {
-        case .weekly: return "$4.99"
-        case .monthly: return "$9.99"
-        case .annual: return "$59.99"
-        }
+        if let billedPrice = billedPriceText(for: tier) { return billedPrice }
+        return store.hasAttemptedProductLoad ? "Unavailable" : "Loading…"
     }
 
     private func sublabel(for tier: StoreManager.Tier) -> String {
         switch tier {
-        case .weekly: return "Per week"
-        case .monthly: return "Per month"
-        case .annual: return "~$5/mo"
+        case .weekly: return "Auto-renews weekly"
+        case .monthly: return "Auto-renews monthly"
+        case .annual: return "Auto-renews yearly"
+        case .lifetime: return "One-time purchase"
         }
     }
 
-    private func badgeText(for tier: StoreManager.Tier) -> String? {
+    private func badgeText(for _: StoreManager.Tier) -> String? {
+        nil
+    }
+
+    private func ctaPlanName(for tier: StoreManager.Tier) -> String {
         switch tier {
-        case .annual: return "Save 50%"
-        default: return nil
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        case .annual: return "Yearly"
+        case .lifetime: return "Lifetime"
+        }
+    }
+
+    private var activePlanName: String {
+        guard let activeTier = store.activeTier else { return "Active" }
+        return ctaPlanName(for: activeTier)
+    }
+
+    private func billedPriceText(for tier: StoreManager.Tier) -> String? {
+        guard let product = store.product(for: tier) else { return nil }
+        guard tier.isSubscription, product.subscription != nil else {
+            return product.displayPrice
+        }
+        return "\(product.displayPrice)/\(billingUnitText(for: product, fallbackTier: tier))"
+    }
+
+    private func selectedSummaryPriceText(for tier: StoreManager.Tier) -> String? {
+        guard let product = store.product(for: tier) else { return nil }
+        guard tier.isSubscription, product.subscription != nil else {
+            return "\(product.displayPrice) one-time"
+        }
+        return billedPriceText(for: tier)
+    }
+
+    private func billingUnitText(for product: Product, fallbackTier: StoreManager.Tier) -> String {
+        guard let period = product.subscription?.subscriptionPeriod else {
+            return fallbackBillingUnitText(for: fallbackTier)
+        }
+
+        let unit: String
+        switch period.unit {
+        case .day:
+            unit = period.value == 1 ? "day" : "days"
+        case .week:
+            unit = period.value == 1 ? "week" : "weeks"
+        case .month:
+            unit = period.value == 1 ? "month" : "months"
+        case .year:
+            unit = period.value == 1 ? "year" : "years"
+        @unknown default:
+            return fallbackBillingUnitText(for: fallbackTier)
+        }
+
+        return period.value == 1 ? unit : "\(period.value) \(unit)"
+    }
+
+    private func fallbackBillingUnitText(for tier: StoreManager.Tier) -> String {
+        switch tier {
+        case .weekly: return "week"
+        case .monthly: return "month"
+        case .annual: return "year"
+        case .lifetime: return "one-time"
         }
     }
 
@@ -240,23 +366,17 @@ struct PaywallView: View {
     }
 
     private var disclosureCopy: String {
-        switch store.selectedTier {
-        case .weekly:
-            return "Weekly subscription. Auto-renews weekly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
-        case .monthly:
-            return "Monthly subscription. Auto-renews monthly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
-        case .annual:
-            return "Annual subscription. Auto-renews yearly at the price shown above unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in App Store Settings > Apple ID > Subscriptions."
+        if store.selectedTier == .lifetime {
+            return "Lifetime is a one-time purchase. Subscriptions auto-renew unless cancelled. Payment is charged to your Apple Account. You can manage or cancel your subscription in App Store settings."
         }
+        return "Subscriptions auto-renew unless cancelled. Payment is charged to your Apple Account. You can manage or cancel your subscription in App Store settings."
     }
 
     // MARK: - Load failure banner
     //
     // Shown when StoreKit product loading has finished but products are empty
-    // (network failure, App Store outage). Without this, the CTA renders with
-    // hardcoded fallback prices but `purchase()` silently no-ops because
-    // `product(for:)` returns nil — a guaranteed App Store reject. The CTA
-    // is also disabled in this state via `PrimaryButtonConfig.isEnabled`.
+    // (network failure, App Store outage). Without this, the disabled CTA
+    // would leave the user with no recovery path.
 
     private var loadFailureBanner: some View {
         VStack(spacing: AppSpacing.sm) {
@@ -264,7 +384,19 @@ struct PaywallView: View {
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
             AppGhostButton("Try again") {
-                Task { await store.loadProducts() }
+                Task { await store.loadProducts(force: true) }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var partialLoadBanner: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Text("Some plans couldn't load.")
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+            AppGhostButton("Try again") {
+                Task { await store.loadProducts(force: true) }
             }
         }
         .frame(maxWidth: .infinity)
@@ -274,11 +406,10 @@ struct PaywallView: View {
 
     private var footer: some View {
         VStack(spacing: AppSpacing.sm) {
-            // ViewThatFits falls back to vertical stacking on narrow widths
-            // / large Dynamic Type. The decorative "·" separators are dropped
-            // in the vertical fallback since they only frame the horizontal
-            // arrangement.
-            ViewThatFits {
+            // ViewThatFits(in: .horizontal) — same axis rationale as
+            // tierSelector above. Decorative "·" separators are dropped in
+            // the vertical fallback since they only frame horizontal layout.
+            ViewThatFits(in: .horizontal) {
                 HStack(spacing: AppSpacing.md) {
                     restoreButton
                     middot
@@ -299,22 +430,23 @@ struct PaywallView: View {
     }
 
     private var restoreButton: some View {
-        Button("Restore purchases") {
+        Button("Restore Purchases") {
             Task { await store.restore() }
         }
+        .disabled(store.isLoading)
     }
 
     @ViewBuilder
     private var termsLink: some View {
         if let termsURL = URL(string: "https://unitlift.app/terms") {
-            Link("Terms", destination: termsURL)
+            Link("Terms of Use", destination: termsURL)
         }
     }
 
     @ViewBuilder
     private var privacyLink: some View {
         if let privacyURL = URL(string: "https://unitlift.app/privacy") {
-            Link("Privacy", destination: privacyURL)
+            Link("Privacy Policy", destination: privacyURL)
         }
     }
 

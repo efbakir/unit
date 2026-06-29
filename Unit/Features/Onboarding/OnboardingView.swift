@@ -34,6 +34,8 @@ enum OnboardingPreferencesKeys {
     static let importMethod = "onboarding.importMethod"
     static let dayExercises = "onboarding.dayExercises"
     static let pastedProgramText = "onboarding.pastedProgramText"
+    static let currentStep = "onboarding.currentStep"
+    static let stepHistory = "onboarding.stepHistory"
 }
 
 /// Persists the in-flight onboarding state to UserDefaults so a quit-and-relaunch
@@ -41,7 +43,12 @@ enum OnboardingPreferencesKeys {
 /// doesn't reset the user to the splash with empty hands. `OnboardingView` writes
 /// a snapshot on every step transition and on commit success.
 enum OnboardingPreferences {
-    static func save(from viewModel: OnboardingViewModel, defaults: UserDefaults = .standard) {
+    static func save(
+        from viewModel: OnboardingViewModel,
+        currentStep: OnboardingStep,
+        history: [OnboardingStep],
+        defaults: UserDefaults = .standard
+    ) {
         defaults.set(viewModel.dayCount, forKey: OnboardingPreferencesKeys.dayCount)
         defaults.set(viewModel.dayNames, forKey: OnboardingPreferencesKeys.dayNames)
         defaults.set(rawStartOption(from: viewModel.startOption), forKey: OnboardingPreferencesKeys.startOption)
@@ -50,10 +57,36 @@ enum OnboardingPreferences {
         defaults.set(viewModel.useFlexibleSchedule, forKey: OnboardingPreferencesKeys.useFlexibleSchedule)
         defaults.set(rawImportMethod(from: viewModel.importMethod), forKey: OnboardingPreferencesKeys.importMethod)
         defaults.set(viewModel.pastedProgramText, forKey: OnboardingPreferencesKeys.pastedProgramText)
+        defaults.set(currentStep.rawValue, forKey: OnboardingPreferencesKeys.currentStep)
+        defaults.set(history.map(\.rawValue), forKey: OnboardingPreferencesKeys.stepHistory)
 
         if let exercisesData = try? JSONEncoder().encode(viewModel.dayExercises) {
             defaults.set(exercisesData, forKey: OnboardingPreferencesKeys.dayExercises)
         }
+    }
+
+    static func loadNavigation(defaults: UserDefaults = .standard) -> (step: OnboardingStep, history: [OnboardingStep]) {
+        let step = defaults.string(forKey: OnboardingPreferencesKeys.currentStep)
+            .flatMap(OnboardingStep.init(rawValue:)) ?? .splash
+        let history = defaults.stringArray(forKey: OnboardingPreferencesKeys.stepHistory)?
+            .compactMap(OnboardingStep.init(rawValue:)) ?? []
+        return (step, history)
+    }
+
+    static func clear(defaults: UserDefaults = .standard) {
+        [
+            OnboardingPreferencesKeys.dayCount,
+            OnboardingPreferencesKeys.dayNames,
+            OnboardingPreferencesKeys.startOption,
+            OnboardingPreferencesKeys.customStartDate,
+            OnboardingPreferencesKeys.dayWeekdays,
+            OnboardingPreferencesKeys.useFlexibleSchedule,
+            OnboardingPreferencesKeys.importMethod,
+            OnboardingPreferencesKeys.dayExercises,
+            OnboardingPreferencesKeys.pastedProgramText,
+            OnboardingPreferencesKeys.currentStep,
+            OnboardingPreferencesKeys.stepHistory
+        ].forEach { defaults.removeObject(forKey: $0) }
     }
 
     static func load(into viewModel: OnboardingViewModel, defaults: UserDefaults = .standard) {
@@ -158,7 +191,7 @@ enum OnboardingPreferences {
 
 // MARK: - Step
 
-enum OnboardingStep: Hashable {
+enum OnboardingStep: String, Hashable {
     case splash
     case unitPicker
     case importMethod
@@ -209,6 +242,9 @@ struct OnboardingView: View {
             guard !didLoadPreferences else { return }
             vm.unitSystem = storedUnitSystem
             OnboardingPreferences.load(into: vm)
+            let navigation = OnboardingPreferences.loadNavigation()
+            step = navigation.step
+            history = navigation.history
             didLoadPreferences = true
         }
     }
@@ -264,7 +300,7 @@ struct OnboardingView: View {
                 progressTotal: totalRequiredSteps,
                 onPick: { template in
                     vm.applyPickedProgram(template)
-                    push(.exercises)
+                    push(.schedule)
                 },
                 onBack: pop
             )
@@ -296,11 +332,10 @@ struct OnboardingView: View {
         }
     }
 
-    /// Paste path: 5 steps (unitPicker → importMethod → programImport →
-    /// schedule → exercises). Library path: 4 steps (unitPicker →
-    /// importMethod → libraryPicker → exercises) since the 1RM screen was
-    /// removed 2026-06-18 (weights are edited inline on the preview instead).
-    private var totalRequiredSteps: Int { vm.importMethod == .paste ? 5 : 4 }
+    /// Both paths use five stable steps. Library programs now review their
+    /// supplied weekdays in the same schedule screen instead of changing the
+    /// progress denominator halfway through onboarding.
+    private var totalRequiredSteps: Int { 5 }
 
     private var exercisesProgressStep: Int { totalRequiredSteps }
 
@@ -313,7 +348,7 @@ struct OnboardingView: View {
         // Snapshot on every transition: a quit-and-relaunch (notably mid-paste,
         // after the Vision OCR parse populated the viewmodel) restores the
         // user's work on the next entry instead of dropping them at splash.
-        OnboardingPreferences.save(from: vm)
+        OnboardingPreferences.save(from: vm, currentStep: step, history: history)
     }
 
     private func pop() {
@@ -322,7 +357,7 @@ struct OnboardingView: View {
         guard let previous = history.popLast() else { return }
         direction = .back
         step = previous
-        OnboardingPreferences.save(from: vm)
+        OnboardingPreferences.save(from: vm, currentStep: step, history: history)
     }
 
     // MARK: - Commit
@@ -337,7 +372,7 @@ struct OnboardingView: View {
         do {
             try vm.commit(modelContext: modelContext)
             storedUnitSystem = vm.unitSystem
-            OnboardingPreferences.save(from: vm)
+            OnboardingPreferences.clear()
             dismiss()
         } catch {
             isCommitting = false

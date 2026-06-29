@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-06-29 — Founder pricing override: weekly default, $4.99 monthly, $29.99 yearly, optional lifetime
+
+**Decision:** Supersedes the 2026-06-17 annual-default experiment and the 2026-06-16 "drop Lifetime" line for v2 pricing. v2 now ships Weekly $4.99/week, Monthly $4.99/month, Yearly $29.99/year (`com.unit.annual`), and optional Lifetime $44.99 one-time (`com.unit.lifetime`) only if the non-consumable is already configured in App Store Connect and returned by StoreKit. Weekly is the default selected plan. The paywall must keep Weekly / Monthly / Yearly visible, derive every visible price from StoreKit, and never show fake fallback prices.
+
+**Why:** Founder override during the pricing-page review work: reduce App Review risk by making the purchase surface explicit, StoreKit-derived, and non-dismissible after onboarding, while preserving the opener + three-slide onboarding carousel before the setup flow.
+
+**Implication:** `docs/pricing.md`, `PaywallView`, `StoreManager`, and the ASC reviewer paste sheet are the current source of truth. Older text saying Annual is default, Monthly is $9.99, Yearly is $59.99, or Lifetime is withdrawn is historical only. Future pricing changes require this log plus App Store Connect changes first, then code.
+
 ## 2026-06-18 — Onboarding library refinements: clear program names, reuse the program-library filter, remove the 1RM screen
 
 **Decision:** Three founder-driven changes to the library-pick onboarding path, all reversing or refining the 2026-06-17 grill:

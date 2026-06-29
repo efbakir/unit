@@ -59,6 +59,10 @@ final class Exercise {
     var aliasesData: Data?
     var notes: String
     var isBodyweight: Bool
+    /// Hidden from pickers after deletion while remaining available to resolve
+    /// historical set names. Deleting the model would turn old sessions into
+    /// anonymous "Exercise" rows because SetEntry stores only the UUID.
+    var isArchived: Bool = false
     var muscleGroupRaw: String = MuscleGroup.fullBody.rawValue
     var equipmentRaw: String = Equipment.other.rawValue
 
@@ -68,6 +72,7 @@ final class Exercise {
         aliases: [String] = [],
         notes: String = "",
         isBodyweight: Bool = false,
+        isArchived: Bool = false,
         muscleGroup: MuscleGroup = .fullBody,
         equipment: Equipment = .other
     ) {
@@ -76,6 +81,7 @@ final class Exercise {
         self.aliasesData = (try? JSONEncoder().encode(aliases)) ?? nil
         self.notes = notes
         self.isBodyweight = isBodyweight
+        self.isArchived = isArchived
         self.muscleGroupRaw = muscleGroup.rawValue
         self.equipmentRaw = equipment.rawValue
     }

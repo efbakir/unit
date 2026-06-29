@@ -200,7 +200,12 @@ private struct UnitPillar: Shape {
     enum Slant { case left, right }
     let slant: Slant
 
-    func path(in rect: CGRect) -> Path {
+    // `nonisolated` because this target builds with
+    // SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor, which would otherwise make
+    // UnitPillar @MainActor and break `Shape`'s nonisolated `path(in:)`
+    // requirement. The path is pure geometry — no main-actor state — so opting
+    // this witness out of the actor is always safe.
+    nonisolated func path(in rect: CGRect) -> Path {
         let topInset = rect.width * 0.22
         var path = Path()
         switch slant {

@@ -14,24 +14,24 @@
 | Product | Reference Name | Product ID | Type | Price | Change vs v1 |
 |---|---|---|---|---|---|
 | Weekly | Unit Weekly | `com.unit.weekly` | Auto-renewable subscription (1 week) | $4.99 | **NEW** — add to `unit-pro` subscription group |
-| Monthly | Unit Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | **$9.99** | Price up from $4.99 |
-| Annual | Unit Annual | `com.unit.annual` | Auto-renewable subscription (1 year) | **$59.99** | Price up from $29.99 |
-| ~~Lifetime~~ | ~~Unit Lifetime~~ | ~~`com.unit.lifetime`~~ | Non-consumable | ~~$44.99~~ | **WITHDRAWN** — remove from ASC (mark "Removed from Sale") |
+| Monthly | Unit Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | $4.99 | Current founder override |
+| Yearly | Unit Yearly | `com.unit.annual` | Auto-renewable subscription (1 year) | $29.99 | Current founder override |
+| Lifetime | Unit Lifetime | `com.unit.lifetime` | Non-consumable | $44.99 | Optional — show only if already configured and returned by StoreKit |
 
-**No free trial** on any tier (Introductory Offer field stays empty for Weekly / Monthly / Annual).
+**No free trial** on any tier unless a real Introductory Offer is configured in App Store Connect and StoreKit returns it. Lifetime is a non-consumable, not part of the subscription group.
 
 ### v2 reviewer notes (replaces v1.0.0 notes wholesale)
 
 ```
-Unit v2 is a local-first gym logger for iPhone. It requires a paid subscription to access the workout-logging features. Onboarding (program setup) runs free — the reviewer can complete the full setup flow without paying and see their program built in the app. The first attempt to start a workout from the Today tab opens the paywall, which cannot be dismissed.
+Unit v2 is a local-first gym logger for iPhone. It requires a paid purchase to access the workout-logging features. Onboarding runs free — the reviewer can complete the opener, the three-slide carousel, and the full program setup flow without paying. After setup is saved, the paywall appears full-screen and cannot be dismissed.
 
 To evaluate:
-1. Open the app. Onboarding walks through six short screens: pick a weight unit (kg or lb), choose paste / build manually / use prior history, then name your training days, pick weekdays, and set up exercises. No personal information is requested.
-2. After onboarding completes, the Today tab loads. Tap "Start workout" — the paywall appears as a full-screen cover with three tier options: Weekly $4.99, Monthly $9.99, Annual $59.99. There is no "Not now" affordance; the only ways out are to subscribe (StoreKit sandbox) or close the app.
-3. Subscribe to any tier via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
-4. To verify cancellation flow: Settings (visible only when subscribed) → Manage subscription → cancel.
+1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then program setup. No personal information is requested.
+2. After onboarding completes, the paywall appears with these StoreKit products: Weekly `com.unit.weekly` $4.99/week, Monthly `com.unit.monthly` $4.99/month, Yearly `com.unit.annual` $29.99/year, and Lifetime `com.unit.lifetime` $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
+3. Subscribe to any recurring tier, or buy Lifetime if visible, via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
+4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
 
-There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows price + period + auto-renewal disclosure; the cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
+There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows product title, full StoreKit price, and billing period; the selected billed amount remains visible directly above the CTA; auto-renewal and cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
 
 The app does not collect, transmit, or store any personal data. All workout data lives on-device via SwiftData. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality). Privacy is verifiable offline: post-subscription, put the device in airplane mode and every feature still works.
 
@@ -41,7 +41,7 @@ If you have questions during review, please email support@unitlift.app.
 ### v2 "What's New" copy (≤4000 chars)
 
 ```
-Unit v2: now a paid subscription. Three tiers — Weekly, Monthly, Annual. The full app unlocks after one tap on any tier. No free trial. No notebook compromise.
+Unit v2: now a paid app after setup. Plans are shown before purchase: Weekly, Monthly, Yearly, and optional Lifetime if configured. No free trial. No notebook compromise.
 
 Bug fixes:
 - Onboarding day-name keyboard no longer shoves the screen up
@@ -245,21 +245,24 @@ Final rating: **4+**.
 >
 > **Original 2026-05-30 Option B plan (DO NOT EXECUTE):** configure all 3 records, attach them to the v1.0.0 build for review, keep the Pro paragraph in the description. The cost is review surface — see **Review risk** below.
 
-**Verified clean 2026-05-30** — product IDs and prices match across all three sources, so there is no silent `Product.products(for:)` failure waiting in review:
+**Superseded by v2 current pricing (2026-06-29).** The current executable configuration is Weekly / Monthly / Yearly / optional Lifetime in the v2 override at the top of this file. The old v1.0.0 deferral history below is preserved for context only.
 
-| Source | Monthly | Annual | Lifetime |
-|---|---|---|---|
-| `StoreManager.swift:19-21` | `com.unit.monthly` | `com.unit.annual` | `com.unit.lifetime` |
-| `docs/pricing.md` | `com.unit.monthly` · $4.99 | `com.unit.annual` · $29.99 | `com.unit.lifetime` · $44.99 |
-| This sheet | ✓ | ✓ | ✓ |
+**Current clean set for v2** — product IDs and prices match across code, pricing docs, and this sheet, so there is no silent `Product.products(for:)` drift waiting in review:
+
+| Source | Weekly | Monthly | Yearly | Lifetime |
+|---|---|---|---|---|
+| `StoreManager.swift` | `com.unit.weekly` | `com.unit.monthly` | `com.unit.annual` | `com.unit.lifetime` |
+| `docs/pricing.md` | $4.99/week | $4.99/month | $29.99/year | $44.99 one-time, optional |
+| This sheet | ✓ | ✓ | ✓ | ✓ |
 
 Pulled directly from [pricing.md](../pricing.md) and verified against `Unit/Features/Subscription/StoreManager.swift` `Tier` enum:
 
 | Product | Reference Name | Product ID | Type | Price |
 |---|---|---|---|---|
-| Monthly | Unit Pro Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | $4.99 |
-| Annual | Unit Pro Annual | `com.unit.annual` | Auto-renewable subscription (1 year) | $29.99 |
-| Lifetime | Unit Pro Lifetime | `com.unit.lifetime` | Non-consumable | $44.99 |
+| Weekly | Unit Weekly | `com.unit.weekly` | Auto-renewable subscription (1 week) | $4.99 |
+| Monthly | Unit Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | $4.99 |
+| Yearly | Unit Yearly | `com.unit.annual` | Auto-renewable subscription (1 year) | $29.99 |
+| Lifetime | Unit Lifetime | `com.unit.lifetime` | Non-consumable | $44.99 |
 
 These IDs are load-bearing — `StoreManager.swift:18–24` requests products by these exact strings. Any drift between the StoreManager enum and the ASC product configuration breaks `Product.products(for:)` silently in review.
 
@@ -269,21 +272,23 @@ No App Store Connect API key or fastlane config exists in the repo, so this is a
 
 0. **Prerequisite — Paid Applications Agreement must be active.** Business → Agreements, Tax, and Banking → the "Paid Applications" agreement is signed and not "Pending". No IAP can be created or submitted until it is. First-time accounts often have only the free agreement; sign it now or the whole sequence is blocked.
 1. **Create the subscription group.** Features → Subscriptions → create group, reference name `unit-pro`, group display name `Unit Pro` (this is user-visible in Manage Subscriptions).
-2. **Monthly** (in the `unit-pro` group). Reference Name `Unit Pro Monthly` · Product ID `com.unit.monthly` · Duration 1 month · Price $4.99 · Introductory Offer: **Free, 7 days**.
-3. **Annual** (in the `unit-pro` group). Reference Name `Unit Pro Annual` · Product ID `com.unit.annual` · Duration 1 year · Price $29.99 · Introductory Offer: **Free, 7 days**.
-4. **Lifetime** (Features → In-App Purchases, **Non-Consumable** — NOT in the subscription group). Reference Name `Unit Pro Lifetime` · Product ID `com.unit.lifetime` · Price $44.99 · no trial.
-5. **Per product, fill the localized display name + description** (table below) and **upload one review screenshot** — a capture of `PaywallView` covers all three.
-6. **Attach all 3 to the v1.0.0 version for review.** App Store tab → the v1.0.0 version page → "In-App Purchases and Subscriptions" → select all three. First-time IAPs are reviewed *with* the binary; if you skip this they sit unreviewed and the description references purchases nobody can make (metadata-mismatch rejection). This is why Option B attaches rather than leaving them in draft.
+2. **Weekly** (in the `unit-pro` group). Reference Name `Unit Weekly` · Product ID `com.unit.weekly` · Duration 1 week · Price $4.99 · Introductory Offer: empty unless a real offer is intentionally configured.
+3. **Monthly** (in the `unit-pro` group). Reference Name `Unit Monthly` · Product ID `com.unit.monthly` · Duration 1 month · Price $4.99 · Introductory Offer: empty unless a real offer is intentionally configured.
+4. **Yearly** (in the `unit-pro` group). Reference Name `Unit Yearly` · Product ID `com.unit.annual` · Duration 1 year · Price $29.99 · Introductory Offer: empty unless a real offer is intentionally configured.
+5. **Lifetime** (Features → In-App Purchases, **Non-Consumable** — NOT in the subscription group). Reference Name `Unit Lifetime` · Product ID `com.unit.lifetime` · Price $44.99 · no trial. Optional: configure only if this product already exists / should stay live.
+6. **Per product, fill the localized display name + description** (table below) and **upload one review screenshot** — a capture of `PaywallView` covers all products.
+7. **Attach all configured products to the v2 version for review.** App Store tab → the v2 version page → "In-App Purchases and Subscriptions" → select Weekly / Monthly / Yearly and Lifetime if configured. First-time IAPs are reviewed *with* the binary; if you skip this they sit unreviewed and the description references purchases nobody can make (metadata-mismatch rejection).
 
-**Free trial:** 7 days on Monthly and Annual. Configure via Introductory Offer (Free, 7 days) in ASC. Lifetime has no trial — it is one-time.
+**Free trial:** none by default. Only mention a trial if a real Introductory Offer is configured in ASC and visible through StoreKit. Lifetime has no trial — it is one-time.
 
-**Subscription group:** Monthly + Annual belong to one auto-renewable group (suggested name: `unit-pro`). Lifetime is non-consumable and does NOT belong to the subscription group.
+**Subscription group:** Weekly + Monthly + Yearly belong to one auto-renewable group (suggested name: `unit-pro`). Lifetime is non-consumable and does NOT belong to the subscription group.
 
 **Display name + description** (each ≤30 / ≤45 chars, per Apple):
 
-- `com.unit.monthly` — `Unit Pro Monthly` / `Support Unit + lock your founding rate`
-- `com.unit.annual` — `Unit Pro Annual` / `Support Unit + lock your founding rate`
-- `com.unit.lifetime` — `Unit Pro Lifetime` / `Support Unit forever. One-time purchase`
+- `com.unit.weekly` — `Unit Weekly` / `Unlock Unit weekly`
+- `com.unit.monthly` — `Unit Monthly` / `Unlock Unit monthly`
+- `com.unit.annual` — `Unit Yearly` / `Unlock Unit yearly`
+- `com.unit.lifetime` — `Unit Lifetime` / `Unlock Unit forever`
 
 (Each description ≤45 chars, framed around what a purchase delivers *today* — founding-rate support — not the forthcoming features, per the Review-risk resolution below.)
 
@@ -302,7 +307,7 @@ Two distinct Apple exposures:
 
 **Mitigation — resolved 2026-05-30: timing-honest reframe applied.** The description paragraph, the in-app paywall (`PaywallView.swift` subhead + benefit rows — forthcoming features now tagged "coming soon" to match Settings), and the 3 IAP localized descriptions above all now frame the features as forthcoming free updates, with the founding-rate lock as the present-tense benefit. The reviewer notes still carry the rollout explanation as backup. Residual 3.1.1 risk is reduced but not zero (a strict reviewer may still question charging ahead of features) — if it bounces, the next lever is shipping one cosmetic feature (custom app icons or accent colors) before re-submit.
 
-**Win-back offer** (post-launch, not at W3 submission): $19.99/yr Apple promotional offer on the Annual product, triggered after trial expiry without conversion or after cancellation. Configure under the Annual product's "Promotional Offers" in ASC. Wire via StoreKit 2 or RevenueCat per [launch-plan.md](../launch-plan.md) §2.
+**Win-back offer** (post-launch, not at W3 submission): $19.99/yr Apple promotional offer on the Yearly product, triggered after cancellation. Configure under the Yearly product's "Promotional Offers" in ASC. Wire via StoreKit 2 per [launch-plan.md](../launch-plan.md) §2.
 
 ---
 

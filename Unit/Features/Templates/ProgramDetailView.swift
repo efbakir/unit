@@ -34,35 +34,41 @@ struct ProgramDetailView: View {
     }
 
     var body: some View {
-        AppScreen(showsNativeNavigationBar: true) {
+        AppScreen(
+            // Primary action pinned to the canonical bottom CTA slot — the same
+            // placement every onboarding step and sheet uses — instead of sitting
+            // inline after the card, where a short routine floated it mid-screen
+            // (CLAUDE.md §4: one rule for CTA placement). Nil while the program is
+            // already active, so AppScreen renders no bottom bar at all.
+            primaryButton: isActive ? nil : PrimaryButtonConfig(
+                label: "Use this program",
+                action: { showingActivateConfirmation = true }
+            ),
+            showsNativeNavigationBar: true
+        ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 if isActive {
                     AppTag(text: "Active", style: .muted, layout: .compactCapsule)
                 }
                 routineDaysCard
-                if !isActive {
-                    AppPrimaryButton("Use this program") {
-                        showingActivateConfirmation = true
-                    }
-                    .confirmationDialog(
-                        "Switch to \(displayName)?",
-                        isPresented: $showingActivateConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Use this program") {
-                            ActiveSplitStore.setCurrent(split.id)
-                            activeSplitIdString = split.id.uuidString
-                        }
-                        Button(AppCopy.Nav.cancel, role: .cancel) {}
-                    } message: {
-                        Text("Switches Today and your schedule to this program.")
-                    }
-                }
             }
             .appScreenEnter()
         }
         .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Switch to \(displayName)?",
+            isPresented: $showingActivateConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Use this program") {
+                ActiveSplitStore.setCurrent(split.id)
+                activeSplitIdString = split.id.uuidString
+            }
+            Button(AppCopy.Nav.cancel, role: .cancel) {}
+        } message: {
+            Text("Switches Today and your schedule to this program.")
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingEdit = true } label: {

@@ -33,6 +33,13 @@ struct OnboardingProgramPreviewView: View {
     /// tap); the rest open on demand. Keyed by day index, not by name —
     /// names can be edited post-paywall and we don't want state to leak.
     @State private var expandedDays: [Int: Bool] = [0: true]
+    @State private var editingExercise: PreviewExerciseEditTarget?
+
+    private struct PreviewExerciseEditTarget: Identifiable {
+        let dayIndex: Int
+        let exerciseID: UUID
+        var id: UUID { exerciseID }
+    }
 
     private var hasAnyExercise: Bool {
         vm.dayExercises.flatMap { $0 }.isEmpty == false
@@ -55,6 +62,19 @@ struct OnboardingProgramPreviewView: View {
                 emptyParseState
             }
         }
+        .sheet(item: $editingExercise) { target in
+            AppSheetScreen(
+                title: "Edit exercise",
+                dismissLabel: AppCopy.Nav.done,
+                dismissActionPlacement: .confirmation,
+                onDismissAction: { editingExercise = nil },
+                usesOuterScroll: false
+            ) {
+                exerciseEditor(for: target)
+            }
+            .presentationDetents([.medium])
+            .appBottomSheetChrome()
+        }
     }
 
     // Sticky CTA — routed through OnboardingShell's pinned bottom button (the
@@ -63,7 +83,7 @@ struct OnboardingProgramPreviewView: View {
     // list when every day is expanded.
     private var ctaLabel: String {
         guard hasAnyExercise else { return "Back to import" }
-        return isCommitting ? "Starting…" : "Start your first workout"
+        return isCommitting ? "Opening plans…" : "Choose a plan"
     }
 
     private var ctaEnabled: Bool {
@@ -82,10 +102,7 @@ struct OnboardingProgramPreviewView: View {
     }
 
     private var previewSubtitle: String {
-        switch vm.importMethod {
-        case .library: return "Tap a weight to adjust before starting."
-        case .paste: return "Tap a weight to adjust before starting."
-        }
+        "Review every field now. A subscription is required before logging."
     }
 
     @ViewBuilder
@@ -156,17 +173,110 @@ struct OnboardingProgramPreviewView: View {
                         .monospacedDigit()
 
                     if isParserDefault(exercise) {
-                        Text("✱")
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .accessibilityLabel("Defaulted sets and reps; tap to override post-subscribe")
+                        Text("Check sets and reps")
+                            .font(AppFont.muted.font)
+                            .foregroundStyle(AppColor.warningOnSoft)
                     }
+                }
+
+                if vm.importMethod == .paste, !exercise.originalLine.isEmpty {
+                    Text("From: \(exercise.originalLine)")
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textTertiary)
+                        .lineLimit(2)
+                }
+
+                if !exercise.note.isEmpty {
+                    Text(exercise.note)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            Button {
+                editingExercise = PreviewExerciseEditTarget(
+                    dayIndex: dayIndex,
+                    exerciseID: exercise.id
+                )
+            } label: {
+                AppIcon.edit.image(size: 15, weight: .semibold)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel("Edit \(exercise.name), sets, and reps")
+
             weightField(dayIndex: dayIndex, exercise: exercise)
         }
+    }
+
+    @ViewBuilder
+    private func exerciseEditor(for target: PreviewExerciseEditTarget) -> some View {
+        if let index = exerciseIndex(for: target) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    AppSectionHeader("Exercise")
+                    TextField(
+                        "Exercise name",
+                        text: Binding(
+                            get: { vm.dayExercises[target.dayIndex][index].name },
+                            set: { vm.dayExercises[target.dayIndex][index].name = $0 }
+                        )
+                    )
+                    .font(AppFont.body.font)
+                    .textInputAutocapitalization(.words)
+                    .appInputFieldStyle()
+                }
+
+                AppCardList(data: ["Sets", "Reps"], id: \.self) { label in
+                    HStack(spacing: AppSpacing.md) {
+                        Text(label)
+                            .font(AppFont.body.font)
+                            .foregroundStyle(AppColor.textPrimary)
+                        Spacer(minLength: 0)
+                        previewStepper(label: label, target: target, index: index)
+                    }
+                }
+            }
+        } else {
+            AppEmptyHint("Exercise unavailable")
+        }
+    }
+
+    private func previewStepper(label: String, target: PreviewExerciseEditTarget, index: Int) -> some View {
+        let exercise = vm.dayExercises[target.dayIndex][index]
+        let value = label == "Sets" ? exercise.plannedSets : exercise.plannedReps
+        let range = label == "Sets"
+            ? OnboardingExercise.plannedSetsRange
+            : OnboardingExercise.plannedRepsRange
+
+        return AppStepper(
+            value: "\(value)",
+            isDecrementEnabled: value > range.lowerBound,
+            isIncrementEnabled: value < range.upperBound,
+            onDecrement: {
+                if label == "Sets" {
+                    vm.dayExercises[target.dayIndex][index].plannedSets = max(range.lowerBound, value - 1)
+                } else {
+                    vm.dayExercises[target.dayIndex][index].plannedReps = max(range.lowerBound, value - 1)
+                }
+            },
+            onIncrement: {
+                if label == "Sets" {
+                    vm.dayExercises[target.dayIndex][index].plannedSets = min(range.upperBound, value + 1)
+                } else {
+                    vm.dayExercises[target.dayIndex][index].plannedReps = min(range.upperBound, value + 1)
+                }
+            }
+        )
+    }
+
+    private func exerciseIndex(for target: PreviewExerciseEditTarget) -> Int? {
+        guard vm.dayExercises.indices.contains(target.dayIndex) else { return nil }
+        return vm.dayExercises[target.dayIndex].firstIndex { $0.id == target.exerciseID }
     }
 
     /// Heuristic for Q6's "name-only with default sets/reps" hint. Triggers

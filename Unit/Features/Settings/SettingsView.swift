@@ -26,8 +26,9 @@ private enum DataRow: String, CaseIterable, Identifiable {
 }
 
 private enum SubscriptionRow: String, CaseIterable, Identifiable {
-    case restore = "Restore purchases"
-    case manage = "Manage subscription"
+    case status = "Unit Pro"
+    case restore = "Restore Purchases"
+    case manage = "Manage Subscription"
 
     var id: String { rawValue }
 }
@@ -156,16 +157,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             dataSection
             preferencesSection
-            // `subscriptionSection` is intentionally NOT rendered in v1.0.0.
-            // Per docs/decision-log.md 2026-06-03 (App Review rejection for
-            // Build 12 under Guideline 2.1(b)): showing "Restore purchases" +
-            // "Manage subscription" rows while no IAPs are configured in
-            // App Store Connect creates a metadata-vs-binary mismatch — the
-            // reviewer cannot evaluate a subscription that does not exist.
-            // The ViewBuilder + SubscriptionRow enum are retained as dead
-            // code (zero render-time cost) so the v1.1+ Pro launch can
-            // re-enable this section by simply re-adding `subscriptionSection`
-            // to the layout, without re-implementing it.
+            subscriptionSection
             legalSection
 
             #if DEBUG
@@ -224,8 +216,10 @@ struct SettingsView: View {
     @ViewBuilder
     private var subscriptionSection: some View {
         SettingsSection(title: "Subscription", contentInset: AppSpacing.sm) {
-            AppDividedList(SubscriptionRow.allCases) { row in
+            AppDividedList(subscriptionRows) { row in
                 switch row {
+                case .status:
+                    AppListRow(title: row.rawValue, value: subscriptionStatusValue)
                 case .restore:
                     Button {
                         Task { await runRestore() }
@@ -242,10 +236,9 @@ struct SettingsView: View {
                     .disabled(store.isLoading)
                 case .manage:
                     // Native iOS subscription management sheet (in-app, no
-                    // Safari handoff). Apple presents an empty state if the
-                    // user has no subscriptions for Unit, so this is safe to
-                    // show always — including in Phase 0 before the paywall
-                    // flips on. Per CLAUDE.md §4: prefer iOS-native.
+                    // Safari handoff). Settings is post-paywall in v2, so this
+                    // is the right place for the required manage entry.
+                    // Per CLAUDE.md §4: prefer iOS-native.
                     Button {
                         showingManageSubscriptions = true
                     } label: {
@@ -255,6 +248,18 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var subscriptionRows: [SubscriptionRow] {
+        SubscriptionRow.allCases.filter { row in
+            row != .manage || canShowManageSubscriptions
+        }
+    }
+
+    private var canShowManageSubscriptions: Bool {
+        guard store.isPurchased else { return false }
+        guard let activeTier = store.activeTier else { return true }
+        return activeTier.isSubscription
     }
 
     @ViewBuilder
@@ -297,6 +302,19 @@ struct SettingsView: View {
         await store.restore()
         if !wasPurchased && store.isPurchased {
             showingRestoreSuccess = true
+        }
+    }
+
+    private var subscriptionStatusValue: String {
+        guard let activeTier = store.activeTier else {
+            return store.isPurchased ? "Active" : "Inactive"
+        }
+
+        switch activeTier {
+        case .weekly: return "Weekly active"
+        case .monthly: return "Monthly active"
+        case .annual: return "Yearly active"
+        case .lifetime: return "Lifetime active"
         }
     }
 

@@ -300,6 +300,7 @@ final class OnboardingViewModel {
                 let key = displayName.lowercased()
                 let isBodyweight = isBodyweightExercise(named: displayName)
                 if let match = nameToExercise[key] {
+                    match.isArchived = false
                     if isBodyweight && !match.isBodyweight {
                         match.isBodyweight = true
                     }

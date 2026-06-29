@@ -171,6 +171,7 @@ enum TrainingWeekProgressBuilder {
         now: Date = Date(),
         routineTemplateIDs: [UUID],
         scheduledWeekdays: Set<Int>,
+        scheduleStartDate: Date? = nil,
         sessions: [WorkoutSession]
     ) -> Bool {
         guard !routineTemplateIDs.isEmpty else { return false }
@@ -178,6 +179,9 @@ enum TrainingWeekProgressBuilder {
         let dayStart = calendar.startOfDay(for: date)
         let startOfToday = calendar.startOfDay(for: now)
         guard dayStart < startOfToday else { return false }
+        if let scheduleStartDate {
+            guard dayStart >= calendar.startOfDay(for: scheduleStartDate) else { return false }
+        }
         if calendar.isDateInToday(date) { return false }
 
         let weekday = calendar.component(.weekday, from: dayStart)

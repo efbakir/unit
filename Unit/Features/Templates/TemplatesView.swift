@@ -247,10 +247,13 @@ struct EditProgramView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
+    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
 
     @State private var showDeleteConfirmation = false
     @State private var showAddDay = false
     @State private var draggedTemplateID: UUID?
+
+    private static let weekdayOrder = [2, 3, 4, 5, 6, 7, 1]
 
     private var baseTemplates: [DayTemplate] {
         let byID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
@@ -352,6 +355,13 @@ struct EditProgramView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             AppSectionHeader("Routines")
             routinesList
+            AppGhostButton(isWeekdayScheduled ? "Use flexible schedule" : "Add weekly schedule") {
+                if isWeekdayScheduled {
+                    clearSchedule()
+                } else {
+                    applyDefaultSchedule()
+                }
+            }
         }
     }
 
@@ -377,14 +387,38 @@ struct EditProgramView: View {
     }
 
     private func weekdayRoutineRow(_ template: DayTemplate) -> some View {
-        NavigationLink(value: template) {
-            PreviewListRow(
-                title: template.displayName,
-                subtitle: subtitle(for: template),
-                trailingLabel: weekdayShort(template.scheduledWeekday)
-            )
+        HStack(spacing: AppSpacing.sm) {
+            NavigationLink(value: template) {
+                PreviewListRow(
+                    title: template.displayName,
+                    subtitle: subtitle(for: template)
+                )
+            }
+            .buttonStyle(ScaleButtonStyle())
+
+            Menu {
+                ForEach(Self.weekdayOrder, id: \.self) { weekday in
+                    Button {
+                        template.scheduledWeekday = weekday
+                        try? modelContext.save()
+                    } label: {
+                        if template.scheduledWeekday == weekday {
+                            Label(weekdayName(weekday), systemImage: AppIcon.checkmark.systemName)
+                        } else {
+                            Text(weekdayName(weekday))
+                        }
+                    }
+                    .disabled(isWeekdayTaken(weekday, excluding: template.id))
+                }
+            } label: {
+                Text(weekdayShort(template.scheduledWeekday) ?? "Day")
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Change weekday for \(template.displayName)")
         }
-        .buttonStyle(ScaleButtonStyle())
     }
 
     private func draggableRoutineRow(_ template: DayTemplate) -> some View {
@@ -463,6 +497,29 @@ struct EditProgramView: View {
         return Calendar.current.shortWeekdaySymbols[weekday - 1]
     }
 
+    private func weekdayName(_ weekday: Int) -> String {
+        guard weekday >= 1, weekday <= 7 else { return "Day" }
+        return Calendar.current.weekdaySymbols[weekday - 1]
+    }
+
+    private func isWeekdayTaken(_ weekday: Int, excluding templateID: UUID) -> Bool {
+        orderedTemplates.contains { $0.id != templateID && $0.scheduledWeekday == weekday }
+    }
+
+    private func applyDefaultSchedule() {
+        for (index, template) in baseTemplates.prefix(Self.weekdayOrder.count).enumerated() {
+            template.scheduledWeekday = Self.weekdayOrder[index]
+        }
+        try? modelContext.save()
+    }
+
+    private func clearSchedule() {
+        for template in baseTemplates {
+            template.scheduledWeekday = 0
+        }
+        try? modelContext.save()
+    }
+
     private func syncTemplateOrderIfNeeded() {
         if split.orderedTemplateIds.isEmpty {
             split.orderedTemplateIds = templates
@@ -475,8 +532,15 @@ struct EditProgramView: View {
     private func deleteProgram() {
         let splitId = split.id
         let templatesToDelete = templates.filter { $0.splitId == splitId }
+        let referencedTemplateIDs = Set(sessions.map(\.templateId))
         for t in templatesToDelete {
-            modelContext.delete(t)
+            if referencedTemplateIDs.contains(t.id) {
+                // Keep the historical name resolvable without exposing this
+                // routine in any live program.
+                t.splitId = nil
+            } else {
+                modelContext.delete(t)
+            }
         }
         modelContext.delete(split)
         try? modelContext.save()

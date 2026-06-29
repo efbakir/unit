@@ -62,7 +62,7 @@ struct OnboardingLibraryPickerView: View {
                             programRow(program)
                         }
                         .buttonStyle(ScaleButtonStyle())
-                        .accessibilityHint("Sets up the program and asks for your 1-rep maxes.")
+                        .accessibilityHint("Opens the schedule and program review steps.")
                     }
                 }
             }

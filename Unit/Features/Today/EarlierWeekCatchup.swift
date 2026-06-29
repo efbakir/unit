@@ -20,6 +20,7 @@ enum EarlierWeekCatchup {
     /// Routines scheduled on an earlier weekday this week that have not been completed yet (Mon–Sun week).
     static func incompleteItems(
         orderedTemplates: [DayTemplate],
+        scheduleStartDate: Date? = nil,
         sessions: [WorkoutSession]
     ) -> [EarlierWeekRoutineInfo] {
         let calendar = Calendar.current
@@ -51,6 +52,10 @@ enum EarlierWeekCatchup {
             }
             if !wasPerformed {
                 let scheduledDate = calendar.date(byAdding: .day, value: templateOffset - todayOffset, to: today) ?? today
+                if let scheduleStartDate,
+                   scheduledDate < calendar.startOfDay(for: scheduleStartDate) {
+                    continue
+                }
                 items.append(EarlierWeekRoutineInfo(
                     templateName: template.displayName,
                     templateId: template.id,

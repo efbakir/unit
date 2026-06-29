@@ -13,15 +13,21 @@ final class Split {
     var id: UUID
     var name: String
     var orderedTemplateIdsData: Data?
+    /// Earliest date this program can generate schedule-derived "missed" days.
+    /// Existing stores receive the migration-time default, which is safer than
+    /// inventing missed workouts before Unit knew about the program.
+    var createdAt: Date = Date()
 
     init(
         id: UUID = UUID(),
         name: String,
-        orderedTemplateIds: [UUID] = []
+        orderedTemplateIds: [UUID] = [],
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.name = name
         self.orderedTemplateIdsData = (try? JSONEncoder().encode(orderedTemplateIds.map { $0.uuidString })) ?? nil
+        self.createdAt = createdAt
     }
 
     var orderedTemplateIds: [UUID] {

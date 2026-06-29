@@ -202,6 +202,10 @@ struct RecentSessionsView: View {
         ActiveSplitStore.resolve(from: splits)?.orderedTemplateIds ?? []
     }
 
+    private var scheduleStartDate: Date? {
+        ActiveSplitStore.resolve(from: splits)?.createdAt
+    }
+
     /// Weekdays (1=Sun … 7=Sat) the active split actually pins a routine to.
     /// Excludes 0 (rotation) so `isMissedTrainingDay` only flags days the
     /// lifter committed to. Empty for flexible-schedule splits — nothing is
@@ -222,7 +226,11 @@ struct RecentSessionsView: View {
         guard let split = ActiveSplitStore.resolve(from: splits) else { return [] }
         let ordered = EarlierWeekCatchup.orderedTemplates(for: split, templates: templates)
         guard ordered.contains(where: { $0.scheduledWeekday > 0 }) else { return [] }
-        return EarlierWeekCatchup.incompleteItems(orderedTemplates: ordered, sessions: sessions)
+        return EarlierWeekCatchup.incompleteItems(
+            orderedTemplates: ordered,
+            scheduleStartDate: split.createdAt,
+            sessions: sessions
+        )
     }
 
     var body: some View {
@@ -403,7 +411,7 @@ struct RecentSessionsView: View {
 
     private var historyFilterChips: some View {
         AppFilterChipBar {
-            ForEach(SessionHistoryFilter.allCases.filter { $0 != .all }) { option in
+            ForEach(SessionHistoryFilter.allCases.filter { $0 == .completed || $0 == .missed }) { option in
                 AppFilterChip(
                     label: option.rawValue,
                     isSelected: filter == option,
@@ -431,6 +439,7 @@ struct RecentSessionsView: View {
                         selectedDate: selectedDate,
                         routineTemplateIDs: routineTemplateIDs,
                         scheduledWeekdays: scheduledWeekdays,
+                        scheduleStartDate: scheduleStartDate,
                         sessions: sessions,
                         onSelect: { day in
                             guard day.status.isTappable else { return }
@@ -467,6 +476,7 @@ struct RecentSessionsView: View {
             date: day,
             routineTemplateIDs: routineTemplateIDs,
             scheduledWeekdays: scheduledWeekdays,
+            scheduleStartDate: scheduleStartDate,
             sessions: sessions
         )
     }
@@ -623,7 +633,7 @@ private struct EarlierWeekRoutineRow: View {
             AppSessionHighlightCard(
                 eyebrow: info.scheduledDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()),
                 title: info.templateName,
-                caption: "Planned for \(info.scheduledDayName)"
+                caption: "Planned for \(info.scheduledDayName) · Tap to start"
             ) {
                 AppTag(text: "Missed", style: .warning, layout: .compactCapsule)
             }
@@ -644,30 +654,18 @@ struct SessionSummarySheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    ForEach(payload.sessions) { snapshot in
-                        SessionSummaryCard(snapshot: snapshot)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.bottom, AppSpacing.lg)
-            }
-            .appScrollEdgeSoft()
-            .navigationTitle(headerTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) {
-                        dismiss()
-                    }
-                    .appToolbarTextStyle()
+        AppSheetScreen(
+            title: headerTitle,
+            dismissLabel: AppCopy.Nav.done,
+            dismissActionPlacement: .confirmation,
+            onDismissAction: { dismiss() }
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                ForEach(payload.sessions) { snapshot in
+                    SessionSummaryCard(snapshot: snapshot)
                 }
             }
-            .appNavigationBarChrome()
         }
-        .background(AppColor.background.ignoresSafeArea())
     }
 }
 
@@ -871,6 +869,7 @@ private struct CalendarGrid: View {
     let selectedDate: Date?
     let routineTemplateIDs: [UUID]
     let scheduledWeekdays: Set<Int>
+    let scheduleStartDate: Date?
     let sessions: [WorkoutSession]
     let onSelect: (CalendarDayCellModel) -> Void
 
@@ -907,6 +906,7 @@ private struct CalendarGrid: View {
                 date: date,
                 routineTemplateIDs: routineTemplateIDs,
                 scheduledWeekdays: scheduledWeekdays,
+                scheduleStartDate: scheduleStartDate,
                 sessions: sessions
             ) {
                 status = .missed

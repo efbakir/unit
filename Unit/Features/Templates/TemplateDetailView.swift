@@ -63,20 +63,10 @@ struct TemplateDetailView: View {
             }
             .appScreenEnter()
         }
-        .navigationTitle("")
+        .navigationBarTitleTruncated(navigationTitleRaw)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(navigationTitleRaw)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.82)
-            }
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .appNavigationBarChrome()
         .sheet(isPresented: $showingAddExercise) {
             AppExercisePickerSheet(
                 existingIds: Set(template.orderedExerciseIds)

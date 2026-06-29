@@ -132,6 +132,9 @@ struct TodayView: View {
                 ),
                 presenting: staleSessionPrompt
             ) { session in
+                Button(AppCopy.Workout.continueWorkout, role: .cancel) {
+                    staleSessionPrompt = nil
+                }
                 Button(AppCopy.Session.markComplete) {
                     saveStaleSession(session)
                 }
@@ -161,7 +164,6 @@ struct TodayView: View {
             // Hero: Up Next / Rest Day / Empty state — always the first, most
             // prominent surface on screen (compass: Today → Start in ≤ 2 taps).
             stateCard(for: state)
-                .appScreenEnter()
         }
         .navigationTitle("Today")
         .navigationBarTitleDisplayMode(.inline)
@@ -284,8 +286,11 @@ struct TodayView: View {
             EmptyStateCard(
                 eyebrow: "Rest day",
                 title: "Nothing today.",
-                message: context.programName
-            )
+                message: context.programName,
+                buttonLabel: "Choose routine"
+            ) {
+                showsRoutinePickSheet = true
+            }
         }
     }
 

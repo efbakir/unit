@@ -3,7 +3,7 @@
 //  Unit
 //
 //  Handles StoreKit 2 product loading, purchasing, and restore
-//  for the three Unit subscription tiers: Weekly, Monthly, Annual.
+//  for Unit's subscription tiers plus optional Lifetime purchase.
 //  Pricing authority: docs/pricing.md.
 //
 
@@ -15,29 +15,47 @@ import OSLog
 final class StoreManager {
     // MARK: - Product IDs
 
-    enum Tier: String, CaseIterable, Identifiable {
+    enum Tier: String, CaseIterable, Identifiable, Sendable {
         case weekly = "com.unit.weekly"
         case monthly = "com.unit.monthly"
         case annual = "com.unit.annual"
+        case lifetime = "com.unit.lifetime"
 
         var id: String { rawValue }
+
+        var isSubscription: Bool {
+            switch self {
+            case .weekly, .monthly, .annual: true
+            case .lifetime: false
+            }
+        }
     }
 
     nonisolated static let weeklyProductID = Tier.weekly.rawValue
     nonisolated static let monthlyProductID = Tier.monthly.rawValue
     nonisolated static let annualProductID = Tier.annual.rawValue
+    nonisolated static let lifetimeProductID = Tier.lifetime.rawValue
+
+    nonisolated static let requiredTiers: [Tier] = [
+        .weekly,
+        .monthly,
+        .annual
+    ]
 
     nonisolated private static let allProductIDs: [String] = [
         Tier.weekly.rawValue,
         Tier.monthly.rawValue,
-        Tier.annual.rawValue
+        Tier.annual.rawValue,
+        Tier.lifetime.rawValue
     ]
 
     // MARK: - State
 
     var products: [String: Product] = [:]
     var isLoading = false
+    var hasAttemptedProductLoad = false
     var isPurchased = false
+    var activeTier: Tier?
     /// Flips true the first time `checkEntitlement()` completes (success or no
     /// entitlement). Read by `ContentView` to avoid flashing the hard paywall
     /// over `mainTabView` on cold launch before the StoreKit check returns.
@@ -47,8 +65,8 @@ final class StoreManager {
     /// "No purchases to restore." after a benign restore call.
     var infoMessage: String?
 
-    /// Currently selected tier in the paywall. Default = Annual (recommended).
-    var selectedTier: Tier = .annual
+    /// Currently selected tier in the paywall. Default = Weekly.
+    var selectedTier: Tier = .weekly
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.unitlift", category: "StoreManager")
     @ObservationIgnored nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
@@ -80,10 +98,16 @@ final class StoreManager {
     // MARK: - Load Products
 
     @MainActor
-    func loadProducts() async {
-        guard products.isEmpty else { return }
+    func loadProducts(force: Bool = false) async {
+        guard products.isEmpty || force else {
+            hasAttemptedProductLoad = true
+            return
+        }
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasAttemptedProductLoad = true
+        }
 
         do {
             let loaded = try await Product.products(for: Self.allProductIDs)
@@ -168,15 +192,16 @@ final class StoreManager {
 
     @MainActor
     func checkEntitlement() async {
-        var hasEntitlement = false
+        var entitlementTier: Tier?
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
-               Self.allProductIDs.contains(transaction.productID) {
-                hasEntitlement = true
+               let tier = Tier(rawValue: transaction.productID) {
+                entitlementTier = tier
                 break
             }
         }
-        isPurchased = hasEntitlement
+        activeTier = entitlementTier
+        isPurchased = entitlementTier != nil
         hasCheckedEntitlement = true
     }
 

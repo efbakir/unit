@@ -39,21 +39,22 @@ struct UnitApp: App {
         do {
             let storeURL = try persistentStoreURL()
             let configuration = ModelConfiguration(schema: schema, url: storeURL)
-            return try makePersistentContainer(configuration: configuration)
+            let container = try makePersistentContainer(configuration: configuration)
+            UserDefaults.standard.set(false, forKey: PersistenceRecoveryState.noticeKey)
+            return container
         } catch {
             logger.error("Persistent ModelContainer failed. Falling back to in-memory store. Error: \(String(describing: error), privacy: .public)")
+            // Never delete the user's local training store automatically. A
+            // migration/open failure is recoverable; erased workout history is
+            // not. The in-memory fallback keeps the UI alive while ContentView
+            // presents a clear warning that changes will not persist.
+            UserDefaults.standard.set(true, forKey: PersistenceRecoveryState.noticeKey)
             return makeInMemoryContainer(orDieWith: "Could not create fallback ModelContainer.")
         }
     }
 
     private static func makePersistentContainer(configuration: ModelConfiguration) throws -> ModelContainer {
-        do {
-            return try ModelContainer(for: schema, configurations: [configuration])
-        } catch {
-            logger.error("Persistent store open failed. Resetting local store. Error: \(String(describing: error), privacy: .public)")
-            resetStoreFiles(at: configuration.url)
-            return try ModelContainer(for: schema, configurations: [configuration])
-        }
+        try ModelContainer(for: schema, configurations: [configuration])
     }
 
     private static func makeInMemoryContainer(orDieWith message: String) -> ModelContainer {
@@ -80,23 +81,6 @@ struct UnitApp: App {
         return directoryURL.appendingPathComponent("Unit.store")
     }
 
-    private static func resetStoreFiles(at storeURL: URL) {
-        let fileManager = FileManager.default
-        let sidecarURLs = [
-            storeURL,
-            URL(fileURLWithPath: storeURL.path + "-shm"),
-            URL(fileURLWithPath: storeURL.path + "-wal")
-        ]
-
-        for url in sidecarURLs where fileManager.fileExists(atPath: url.path) {
-            do {
-                try fileManager.removeItem(at: url)
-            } catch {
-                logger.error("Failed to remove store file at \(url.path, privacy: .public): \(String(describing: error), privacy: .public)")
-            }
-        }
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -104,6 +88,10 @@ struct UnitApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+}
+
+enum PersistenceRecoveryState {
+    static let noticeKey = "unit.persistenceRecoveryNotice"
 }
 
 enum PreviewSampleData {

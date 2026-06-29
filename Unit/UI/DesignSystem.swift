@@ -2239,8 +2239,9 @@ struct AppCard<Content: View>: View {
 /// bubble (`AppIconCircle` on `accentSoft` surface), a centered title row,
 /// and an optional trailing accent badge. Auto-presses via the canonical
 /// `ScaleButtonStyle`, fires a selection haptic at press time, and holds
-/// the action by 110ms so the press-state dim is visibly underway when the
-/// step-swap slide takes over.
+/// the action by 50ms so a couple frames of press-state dim register before
+/// the step-swap slide takes over — kept below the ~100ms perceptible-delay
+/// threshold so it never reads as latency.
 ///
 /// This was previously `OnboardingOptionCard` in
 /// `Unit/Features/Onboarding/OnboardingImportMethodView.swift`. Promoted to
@@ -2258,7 +2259,7 @@ struct AppOptionTileCard: View {
     var badge: String? = nil
     let action: () -> Void
 
-    /// Re-entrancy guard. While the 110ms press-visibility hold is running,
+    /// Re-entrancy guard. While the 50ms press-visibility hold is running,
     /// a second tap should no-op rather than queueing another navigation.
     /// Reset isn't strictly required because the step swap destroys the
     /// view, but resetting after `action()` keeps the card safe in the
@@ -2300,14 +2301,17 @@ struct AppOptionTileCard: View {
         // animation begins (via `ScaleButtonStyle`). Visual + tactile
         // together so the tap feels received in two senses.
         UISelectionFeedbackGenerator().selectionChanged()
-        // Hold the action by 110ms so the press-state dim from
-        // `ScaleButtonStyle` is visibly underway when the slide transition
-        // (`appEnter` 0.32s) takes over. Without this, navigation cards
-        // (kg / lb / paste / build manually / use past workout) auto-advance
-        // before the eye registers the press. CTAs that stay in place
-        // (Continue, Read program) don't need this hold — the press is
-        // visible during finger-down because the screen doesn't move.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.11) {
+        // Hold the action by 50ms so a couple of frames of press-state dim
+        // from `ScaleButtonStyle` register before the forward transition
+        // slides the card fully off-screen and fades it
+        // (`.move(.leading) + .opacity`, OnboardingView). 50ms sits below the
+        // ~100ms threshold where a delay starts to read as latency (Nielsen),
+        // so the step feels instant while the press still gets a moment. The
+        // tap is already acknowledged on finger-down — this only keeps the dim
+        // from being swallowed by the aggressive exit, it is not the feedback
+        // itself. CTAs that stay in place (Continue, Read program) don't need
+        // it — the press is visible during finger-down because nothing moves.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             action()
             isProcessingTap = false
         }
@@ -2346,7 +2350,7 @@ struct AppOptionTileCard: View {
 /// 14pt checkmark glyph alone.
 ///
 /// Accessibility: the `.isSelected` trait fires on the underlying button so
-/// VoiceOver announces "Selected, Annually" without an extra label hack.
+/// VoiceOver announces the selected tier without an extra label hack.
 struct AppSelectableTierCard: View {
     let label: String
     let price: String
@@ -3168,8 +3172,14 @@ struct AppDisclosureCard<Header: View, Content: View>: View {
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .appAnimation(.appState, value: isExpanded, reduceMotion: reduceMotion)
                 }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
+                // Header padding matches the canonical disclosure spec in Figma
+                // (node 344-23): lg (24pt) sides, md (16pt) top/bottom. The 24pt
+                // sides line the collapsed title up with the expanded exercise
+                // rows below (`appCardRowChrome` is also lg); the 16pt vertical
+                // (was sm/8pt) un-cramps the container height into a taller tap
+                // target — the airy row rhythm the rest of the cards already use.
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())
@@ -3685,11 +3695,16 @@ struct SettingsSection<Content: View>: View {
 /// `AppColor.textSecondary`) directly above the button when the button is
 /// disabled and not loading. Use it to turn a silent grey CTA into a
 /// diagnostic — pair with strings under `AppCopy.FormHint`.
+///
+/// `contextLabel` is rendered in the same quiet slot when present and the
+/// button is enabled — for example, a selected-plan summary above a purchase
+/// CTA. Keep it short; the button label remains the action.
 struct PrimaryButtonConfig {
     let label: String
     var isEnabled: Bool = true
     var isLoading: Bool = false
     var disabledReason: String? = nil
+    var contextLabel: String? = nil
     let action: () -> Void
 }
 
@@ -3939,7 +3954,7 @@ struct AppExercisePickerSheet: View {
     }
 
     private var filteredExercises: [Exercise] {
-        let available = exercises.filter { !existingIds.contains($0.id) }
+        let available = exercises.filter { !$0.isArchived && !existingIds.contains($0.id) }
         guard !trimmedQuery.isEmpty else { return available }
         let needle = trimmedQuery.lowercased()
         return available.filter { exercise in
@@ -3958,9 +3973,39 @@ struct AppExercisePickerSheet: View {
         }
     }
 
+    private var archivedExactMatch: Exercise? {
+        guard !trimmedQuery.isEmpty else { return nil }
+        return exercises.first {
+            $0.isArchived &&
+            $0.displayName.compare(
+                trimmedQuery,
+                options: [.caseInsensitive, .diacriticInsensitive]
+            ) == .orderedSame
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
+                if let archivedExactMatch {
+                    Button {
+                        archivedExactMatch.isArchived = false
+                        try? modelContext.save()
+                        onSelect(archivedExactMatch)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            AppIcon.addCircle.image()
+                                .foregroundStyle(AppColor.accent)
+                            Text("Restore \"\(archivedExactMatch.displayName)\"")
+                                .font(AppFont.body.font)
+                                .foregroundStyle(AppColor.textPrimary)
+                        }
+                        .frame(minHeight: 44, alignment: .leading)
+                    }
+                    .appPlainListRowChrome()
+                }
+
                 if canCreateNew {
                     Button {
                         createAndSelect(name: trimmedQuery)
@@ -4004,7 +4049,7 @@ struct AppExercisePickerSheet: View {
                     .appPlainListRowChrome()
                 }
 
-                if filteredExercises.isEmpty && !canCreateNew {
+                if filteredExercises.isEmpty && !canCreateNew && archivedExactMatch == nil {
                     Text(trimmedQuery.isEmpty
                          ? AppCopy.Search.noExercisesYet
                          : AppCopy.Search.noMatchingExercises)
@@ -4265,6 +4310,16 @@ struct AppScreen<Content: View>: View {
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
                             .accessibilityLabel(reason)
+                    }
+                    if primaryButton.isEnabled,
+                       let contextLabel = primaryButton.contextLabel,
+                       !contextLabel.isEmpty {
+                        Text(contextLabel)
+                            .font(AppFont.muted.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityLabel(contextLabel)
                     }
                     AppPrimaryButton(
                         primaryButton.label,

@@ -16,6 +16,7 @@ private struct PendingExerciseDeletion: Identifiable {
     let exerciseId: UUID
     let exerciseName: String
     let affectedTemplateCount: Int
+    let hasHistory: Bool
 }
 
 struct ExercisesListView: View {
@@ -31,6 +32,7 @@ struct ExercisesListView: View {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let needle = trimmed.lowercased()
         return exercises.filter { exercise in
+            guard !exercise.isArchived else { return false }
             if let muscle = selectedMuscle, exercise.muscleGroup != muscle { return false }
             if let equipment = selectedEquipment, exercise.equipment != equipment { return false }
             guard !trimmed.isEmpty else { return true }
@@ -125,7 +127,9 @@ struct ExercisesListView: View {
             }
             Button(AppCopy.Nav.cancel, role: .cancel) {}
         } message: { pending in
-            if pending.affectedTemplateCount > 0 {
+            if pending.hasHistory {
+                Text("Removes this exercise from routines and the exercise library. Its name stays attached to past sessions.")
+            } else if pending.affectedTemplateCount > 0 {
                 Text(AppCopy.Exercises.deleteImpactMessage(routineCount: pending.affectedTemplateCount))
             } else {
                 Text(AppCopy.Exercises.deleteUnusedMessage)
@@ -160,11 +164,16 @@ struct ExercisesListView: View {
         guard let firstOffset = offsets.first else { return }
         let exercise = filteredExercises[firstOffset]
         let allTemplates = (try? modelContext.fetch(FetchDescriptor<DayTemplate>())) ?? []
+        let allSessions = (try? modelContext.fetch(FetchDescriptor<WorkoutSession>())) ?? []
         let affected = allTemplates.filter { $0.orderedExerciseIds.contains(exercise.id) }.count
+        let hasHistory = allSessions.contains { session in
+            session.setEntries.contains { $0.exerciseId == exercise.id }
+        }
         pendingDeletion = PendingExerciseDeletion(
             exerciseId: exercise.id,
             exerciseName: exercise.displayName,
-            affectedTemplateCount: affected
+            affectedTemplateCount: affected,
+            hasHistory: hasHistory
         )
     }
 
@@ -177,7 +186,11 @@ struct ExercisesListView: View {
             template.orderedExerciseIds.removeAll { $0 == pending.exerciseId }
         }
         if let exercise = exercises.first(where: { $0.id == pending.exerciseId }) {
-            modelContext.delete(exercise)
+            if pending.hasHistory {
+                exercise.isArchived = true
+            } else {
+                modelContext.delete(exercise)
+            }
         }
         try? modelContext.save()
     }
@@ -370,9 +383,9 @@ struct ExerciseDetailView: View {
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
 
     private var summaries: [ExerciseSessionSummary] {
-        sessions.compactMap { session in
+        sessions.filter(\.isCompleted).compactMap { session in
             let entries = session.setEntries
-                .filter { $0.exerciseId == exercise.id && $0.isCompleted }
+                .filter { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup }
                 .sorted { $0.setIndex < $1.setIndex }
 
             guard !entries.isEmpty else { return nil }
@@ -380,25 +393,23 @@ struct ExerciseDetailView: View {
             let oneRMs = entries.map { estimateOneRM(weight: $0.weight, reps: $0.reps) }
             let topOneRM = oneRMs.max() ?? 0
             let totalVolume = entries.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-            let topSet = entries.max { lhs, rhs in
+            guard let topSet = entries.max(by: { lhs, rhs in
                 if lhs.weight == rhs.weight {
                     return lhs.reps < rhs.reps
                 }
                 return lhs.weight < rhs.weight
-            }
+            }) else { return nil }
 
             return ExerciseSessionSummary(
                 id: session.id,
                 sessionDate: session.date,
                 templateName: templateName(for: session.templateId),
-                topSetText: topSet.map {
-                    WorkoutTargetFormatter.actualText(
-                        weightKg: $0.weight,
-                        setCount: 1,
-                        reps: $0.reps,
-                        isBodyweight: exercise.isBodyweight
-                    )
-                } ?? "-",
+                topSetText: WorkoutTargetFormatter.actualText(
+                    weightKg: topSet.weight,
+                    setCount: 1,
+                    reps: topSet.reps,
+                    isBodyweight: exercise.isBodyweight
+                ),
                 estimatedOneRM: topOneRM,
                 totalVolume: totalVolume
             )

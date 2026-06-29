@@ -14,7 +14,7 @@ struct ContentView: View {
 
     @State private var selectedTab: RootTab = .today
     @State private var store: StoreManager
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(PersistenceRecoveryState.noticeKey) private var showsPersistenceRecoveryNotice = false
 
     init() {
         _splits = Query(sort: \Split.name)
@@ -32,53 +32,37 @@ struct ContentView: View {
         splits.isEmpty
     }
 
+    private var shouldShowPaywall: Bool {
+        !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased
+    }
+
     var body: some View {
-        // Soft cross-fade between onboarding shells and the main tab view.
-        // The native tap on the system tab bar is intentionally instant
-        // (iOS-native expectation, see CLAUDE.md §4 "Prefer iOS-native"); this
-        // transition only fires on the onboarding → main hand-off, which is a
-        // root-view swap, not a tab swipe.
+        // Root swaps must be immediate. SwiftData-backed @Query values can
+        // hydrate after the first frame; opacity transitions here can leave
+        // the whole root invisible on iOS 27's Xcode launcher path.
         ZStack {
             if needsOnboarding {
                 OnboardingView()
-                    .transition(.opacity)
+            } else if shouldShowPaywall {
+                NavigationStack {
+                    PaywallView { /* root swap happens via store.isPurchased */ }
+                        .environment(store)
+                }
             } else {
                 mainTabView
-                    .transition(.opacity)
             }
         }
-        .appAnimation(.appEnter, value: needsOnboarding, reduceMotion: reduceMotion)
         .background(AppColor.background.ignoresSafeArea())
-        // Hard paywall — presented once onboarding is complete and the
-        // StoreKit entitlement check has resolved without finding a Pro
-        // entitlement. There is no pre-onboarding price-disclosure screen:
-        // the App Store listing already surfaces the subscription before
-        // download, so an in-app "this app is paid" splash is redundant
-        // (2026-06-18 reversal of the 2026-06-17 D0 decision — see
-        // docs/decision-log.md). The `hasCheckedEntitlement` guard avoids
-        // flashing the paywall over a subscribed user on cold launch before
-        // the async check returns. Setter is a no-op; the user cannot dismiss
-        // the wall — the only exit is a completed purchase flipping
-        // `store.isPurchased`, which makes `get` return false.
-        .fullScreenCover(isPresented: paywallGate) {
-            PaywallView { /* dismiss flows via store.isPurchased onChange */ }
-                .environment(store)
-        }
         .onAppear {
             configureNavigationBarAppearance()
             configureSegmentedControlAppearance()
             configureTabBarAppearance()
         }
-    }
-
-    /// Reactive gate — true once onboarding is complete and the StoreKit
-    /// entitlement check has resolved without finding a Pro entitlement.
-    /// Setter is a no-op; SwiftUI cannot dismiss the cover programmatically.
-    private var paywallGate: Binding<Bool> {
-        Binding(
-            get: { !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased },
-            set: { _ in }
-        )
+        .alert("Training data unavailable", isPresented: $showsPersistenceRecoveryNotice) {
+            Button("Continue temporarily", role: .cancel) { }
+        } message: {
+            Text("Unit couldn't open the local training store. Your existing data was left untouched, but changes in this session won't be saved. Close the app and contact support before logging another workout.")
+        }
     }
 
     private var mainTabView: some View {

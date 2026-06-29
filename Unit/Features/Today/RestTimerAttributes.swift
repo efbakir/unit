@@ -13,7 +13,13 @@ import ActivityKit
 
 /// Attributes for the rest timer Live Activity.
 /// Include this file in both Unit and UnitWidgetExtension targets so the same type is used.
-public struct RestTimerAttributes: ActivityAttributes {
+///
+/// `nonisolated` because this target builds with SWIFT_DEFAULT_ACTOR_ISOLATION =
+/// MainActor, which would otherwise make this type @MainActor and produce a
+/// "main actor-isolated conformance to 'ActivityAttributes'" error. ActivityKit
+/// reads the attributes (and their `ContentState`) off the main actor, so the
+/// conformance must be nonisolated & Sendable. Pure data — always safe.
+public nonisolated struct RestTimerAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable, Sendable {
         /// When the rest period started — required by `Text(timerInterval:pauseTime:countsDown:)`
         /// so the system can clamp the display at 0:00 instead of counting up after `endDate`.

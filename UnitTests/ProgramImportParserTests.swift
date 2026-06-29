@@ -589,10 +589,10 @@ final class ProgramImportParserTests: XCTestCase {
         XCTAssertEqual(prefill?.reps, 5)
     }
 
-    /// The seed is stored in kg but the logging pipeline is in the lifter's
-    /// display unit — so an lb user's first-session ghost converts kg → lb.
-    /// (Regression guard for the kg-into-lb-field bug.)
-    func testWeightSeed_Prefill_ConvertsKgToDisplayUnitForLb() {
+    /// Prefills stay in canonical kilograms for every display unit. Conversion
+    /// belongs at the text-field/formatter boundary so logging 225 lb cannot be
+    /// persisted as 225 kg and converted a second time.
+    func testWeightSeed_Prefill_RemainsCanonicalKgForLb() {
         UserDefaults.standard.set("lb", forKey: "unitSystem")
         defer { UserDefaults.standard.set("kg", forKey: "unitSystem") }
         let vm = ActiveWorkoutViewModel()
@@ -604,8 +604,8 @@ final class ProgramImportParserTests: XCTestCase {
             plannedReps: 5,
             plannedWeightKg: 100
         )
-        XCTAssertEqual(prefill?.weight ?? -1, 100 * 2.20462, accuracy: 0.1,
-                       "100 kg seed must display as ~220 lb for an lb user, not 100")
+        XCTAssertEqual(prefill?.weight ?? -1, 100, accuracy: 0.01,
+                       "Prefill storage must remain kilograms; the UI converts it to lb")
     }
 
     /// No seed → weight 0 (blank): the unchanged behaviour for manually-built

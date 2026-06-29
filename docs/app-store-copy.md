@@ -11,13 +11,15 @@
 
 ## Subtitle (30 chars max)
 
-**Log sets in one tap. No typing.**
+**Log every set in one tap.**
 
 ## Promotional Text (170 chars, updatable without review)
 
 You already know your program. Unit logs it faster than paper — last time's numbers are already filled in, every set one tap. No AI. No social. Just your numbers.
 
 ## Description
+
+Unit requires a paid purchase after setup. There is no free trial.
 
 Your tracker is slower than paper. Unit isn't.
 
@@ -27,7 +29,7 @@ ONE TAP PER SET
 Last time's weight and reps are already filled in. See what you did. Tap Done. That's it. No typing, no dropdowns, no menus. Under 3 seconds per set.
 
 YOUR PROGRAM, YOUR WAY
-Import from Notes or WhatsApp — paste your routine and Unit reads it, weights and all, so day one is already filled in. Or build from scratch in under 2 minutes. No rigid cycles. No mandatory scheduling. Just your days and your exercises.
+Import from Notes or WhatsApp — paste your routine and Unit reads it, weights and all, so day one is already filled in. Or pick a starter program. No rigid cycles. Just your days and your exercises.
 
 REST TIMER ON YOUR LOCK SCREEN
 Timer auto-starts when you finish a set. Shows on your Lock Screen and Dynamic Island. You don't need to reopen the app between sets.
@@ -36,7 +38,10 @@ HISTORY YOU CAN SEE
 Calendar view shows every training day. Tap a date to see what you lifted. PR library tracks your personal bests automatically.
 
 LOCAL. PRIVATE. ALWAYS WORKS.
-No account required. No cloud dependency. Your data lives on your device. Works offline, in a basement gym, on airplane mode.
+No account required. No cloud dependency. Your training data lives on your device. After subscription verification, logging works offline, in a basement gym, and in airplane mode.
+
+SUBSCRIPTION
+Unit offers weekly, monthly, and yearly auto-renewing subscriptions, plus optional Lifetime if available. Prices are shown in the app before purchase. Payment is charged to your Apple Account. Manage or cancel subscriptions anytime in App Store settings.
 
 WHAT UNIT IS NOT
 - Not an AI coach. Unit doesn't tell you what to lift.
@@ -66,3 +71,9 @@ Paste import reads table-style programs now — including Turkish ones. Headers,
 Onboarding: pick any 1–7 training days, day naming no longer fights the keyboard, and a crash on force-quit during setup is fixed.
 
 Cleanups: removed a stray Done button on the set sheet; Start workout now lives only on Today.
+
+## What's New (for v2.0)
+
+Unit 2 adds a faster paste-first setup, starter programs, editable program previews, persistent rest timing, and clearer workout history.
+
+Unit now requires a paid purchase after setup. Weekly, monthly, yearly, and optional Lifetime options are shown before purchase; there is no free trial. Existing training data remains on this iPhone.

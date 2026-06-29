@@ -15,12 +15,15 @@ struct SessionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
+    @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     /// Full session history — the PR baseline must replay every completed
     /// session, not just the one on display.
     @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]
 
     private var exerciseSnapshots: [SessionExerciseSnapshot] {
         let prIDs = PRHistory.prSetEntryIDs(in: allSessions)
+        let templateOrder = templates.first(where: { $0.id == session.templateId })?.orderedExerciseIds ?? []
+        let orderByID = Dictionary(uniqueKeysWithValues: templateOrder.enumerated().map { ($0.element, $0.offset) })
         let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
         return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
             guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
@@ -42,7 +45,11 @@ struct SessionDetailView: View {
                 sets: sets
             )
         }
-        .sorted { $0.name < $1.name }
+        .sorted { lhs, rhs in
+            let left = orderByID[lhs.id] ?? Int.max
+            let right = orderByID[rhs.id] ?? Int.max
+            return left == right ? lhs.name < rhs.name : left < right
+        }
     }
 
     var body: some View {
