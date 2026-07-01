@@ -11,7 +11,8 @@
 //   - Vertical day cards stacked (not tabs / not swipe).
 //   - First day expanded, others collapsed (user-picked over my "all expanded").
 //   - Inline weight edit only — exercise names + sets/reps stay fixed.
-//   - Sticky bottom "Start your first workout" CTA — one action.
+//   - Sticky bottom "Choose a plan" CTA — one action; commits the program
+//     and hands off to the hard paywall (subscription required before logging).
 //   - Paste warnings inline: banner for noisy lines + dropped conditioning;
 //     ✱ hint on rows where sets/reps look like a parser default (3×10).
 //   - Empty-state fallback when parse produced zero exercises.
@@ -383,7 +384,7 @@ struct OnboardingProgramPreviewView: View {
     }
 
     /// Displays kg internally; converts to lb at the boundary if user picked lb.
-    /// Empty string for nil — TextField shows the "—" prompt then.
+    /// Empty string for nil — the inline field renders an empty input then.
     private func formatted(_ kg: Double?) -> String {
         guard let kg, kg > 0 else { return "" }
         let display = vm.unitSystem == "lb" ? kg * 2.20462 : kg

@@ -112,6 +112,11 @@ final class StoreManager {
         do {
             let loaded = try await Product.products(for: Self.allProductIDs)
             products = Dictionary(uniqueKeysWithValues: loaded.map { ($0.id, $0) })
+            let selectableTiers = Self.requiredTiers + [Tier.lifetime]
+            if selectedProduct == nil,
+               let firstAvailableTier = selectableTiers.first(where: { product(for: $0) != nil }) {
+                selectedTier = firstAvailableTier
+            }
         } catch {
             logger.error("Failed to load products: \(error.localizedDescription)")
         }

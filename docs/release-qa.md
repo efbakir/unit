@@ -119,6 +119,38 @@ For every TextField / TextEditor in the app:
 
 ---
 
+## §9 Paywall & StoreKit — local dev config
+
+`Unit/Unit.storekit` is a **development-only** StoreKit configuration, wired into the scheme's
+**Run** action only. Archive/Release ignore it, so it never ships. It lets the paywall load real
+prices and complete test purchases in the Simulator without a sandbox Apple ID.
+
+If Xcode shows the config as missing: **Product → Scheme → Edit Scheme → Run → Options →
+StoreKit Configuration → select `Unit.storekit`.**
+
+Walk this on a fresh install, from Xcode (⌘R), on **iPhone SE (3rd gen)**, a regular iPhone, and
+a **Pro Max**, at default Dynamic Type and one AX size:
+
+- [ ] Complete onboarding (paste a routine OR pick a starter program → schedule → preview →
+      **Choose a plan**). The app saves the program and lands on **PaywallView**, not the tabs.
+- [ ] Paywall shows **Weekly / Monthly / Yearly** with real prices ($4.99/week, $4.99/month,
+      $29.99/year), Weekly pre-selected. Lifetime ($44.99) appears only if returned by StoreKit.
+- [ ] No clipped tier card; no CTA below the fold (CTA is pinned, body scrolls). The legal footer
+      (**Restore Purchases · Terms of Service · Privacy Policy**) is reachable by scrolling even
+      while the CTA is disabled.
+- [ ] Tap **Continue with Weekly** → complete the StoreKit test purchase → the app enters the main
+      tabs (unlock). Re-launch → still unlocked.
+- [ ] Delete + reinstall → **Restore Purchases** re-unlocks. With no purchase, Restore shows
+      "No purchases to restore."
+- [ ] Force a load failure (delete the products from the config, or Editor → StoreKit → fail
+      transactions): paywall shows the "Couldn't load subscriptions" card with **Try again**; the
+      CTA reads "Subscribe to continue" and is disabled with a reason. No fake prices, no trial copy.
+
+No iPhone SE simulator installed? `xcrun simctl create "iPhone SE (3rd gen)" "iPhone SE (3rd generation)"`
+— 375pt wide, the real narrow-screen clipping test (installed sims start at 390pt).
+
+---
+
 ## Where the bug classes come from
 
 When this checklist catches something, the fix usually lives at one of:

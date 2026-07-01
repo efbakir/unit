@@ -2364,7 +2364,7 @@ struct AppSelectableTierCard: View {
 
     var body: some View {
         Button(action: handleTap) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 // No reserved empty badge slot. Paywall tiers are stacked
                 // vertically, so unbadged cards should keep their natural
                 // compact height and leave room for legal copy + CTA.
@@ -2373,7 +2373,7 @@ struct AppSelectableTierCard: View {
                 }
 
                 // Eyebrow + price + sublabel grouped so the outer VStack's
-                // `md` gap (16) separates the badge from this block, while
+                // `sm` gap separates the badge from this block, while
                 // the block itself stays tight at `xs` (4). Mirrors the
                 // Figma AppSelectableTierCard structure (node 341-18).
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -2408,7 +2408,7 @@ struct AppSelectableTierCard: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, AppSpacing.md)
+            .padding(.vertical, AppSpacing.smd)
             .padding(.horizontal, AppSpacing.smd)
             .background(isSelected ? AppColor.accentSoft : AppColor.cardBackground)
             // 1.5pt accent border on selected — a second WCAG-friendly cue
