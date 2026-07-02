@@ -84,30 +84,31 @@ struct PaywallView: View {
             header
 
             VStack(spacing: 0) {
-                benefitRow("Fast set logging")
+                benefitRow("Log a set in 3 seconds")
                 benefitRow("Last-session numbers ready")
-                benefitRow("Rest timer on your iPhone")
+                benefitRow("Rest timer on your Lock Screen")
             }
             .padding(.top, AppSpacing.xl)
 
-            tierSelector
-                .padding(.top, AppSpacing.xl)
+            if hasNoLoadedProducts {
+                loadFailureBanner
+                    .padding(.top, AppSpacing.xl)
+            } else {
+                tierSelector
+                    .padding(.top, AppSpacing.xl)
 
-            subscriptionDisclosure
-                .padding(.top, AppSpacing.lg)
+                if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
+                    partialLoadBanner
+                        .padding(.top, AppSpacing.md)
+                }
+
+                subscriptionDisclosure
+                    .padding(.top, AppSpacing.md)
+            }
 
             footer
-                .padding(.top, AppSpacing.xl)
-
-            if store.hasAttemptedProductLoad && store.products.isEmpty && !store.isLoading {
-                loadFailureBanner
-                    .padding(.top, AppSpacing.lg)
-            }
-
-            if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
-                partialLoadBanner
-                    .padding(.top, AppSpacing.lg)
-            }
+                .padding(.top, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
         }
     }
 
@@ -184,6 +185,10 @@ struct PaywallView: View {
     }
 
     private var ctaTitle: String {
+        if hasNoLoadedProducts {
+            return "Subscribe to continue"
+        }
+
         switch store.selectedTier {
         case .weekly, .monthly, .annual:
             return "Continue with \(ctaPlanName(for: store.selectedTier))"
@@ -193,8 +198,11 @@ struct PaywallView: View {
     }
 
     private var ctaDisabledReason: String? {
+        if hasNoLoadedProducts {
+            return "Subscriptions couldn't load. Try again."
+        }
         if store.hasAttemptedProductLoad {
-            return "This plan is unavailable. Try another plan."
+            return "Choose an available plan."
         }
         return "Loading subscriptions."
     }
@@ -245,6 +253,14 @@ struct PaywallView: View {
     }
 
     private var visibleTiers: [StoreManager.Tier] {
+        if store.hasAttemptedProductLoad {
+            var loadedTiers = StoreManager.requiredTiers.filter { store.product(for: $0) != nil }
+            if store.product(for: .lifetime) != nil {
+                loadedTiers.append(.lifetime)
+            }
+            return loadedTiers
+        }
+
         var tiers = StoreManager.requiredTiers
         if store.product(for: .lifetime) != nil {
             tiers.append(.lifetime)
@@ -254,6 +270,10 @@ struct PaywallView: View {
 
     private var hasMissingRequiredProducts: Bool {
         StoreManager.requiredTiers.contains { store.product(for: $0) == nil }
+    }
+
+    private var hasNoLoadedProducts: Bool {
+        store.hasAttemptedProductLoad && store.products.isEmpty && !store.isLoading
     }
 
     private var canManageActiveSubscription: Bool {
@@ -379,19 +399,28 @@ struct PaywallView: View {
     // would leave the user with no recovery path.
 
     private var loadFailureBanner: some View {
-        VStack(spacing: AppSpacing.sm) {
-            Text("Couldn't load subscriptions.")
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
-            AppGhostButton("Try again") {
-                Task { await store.loadProducts(force: true) }
+        AppCard {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("Couldn't load subscriptions")
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+
+                    Text("The App Store couldn't load subscriptions. Try again in a moment.")
+                        .font(AppFont.body.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                AppGhostButton("Try again") {
+                    Task { await store.loadProducts(force: true) }
+                }
             }
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var partialLoadBanner: some View {
-        VStack(spacing: AppSpacing.sm) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Some plans couldn't load.")
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
@@ -399,7 +428,7 @@ struct PaywallView: View {
                 Task { await store.loadProducts(force: true) }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Footer
