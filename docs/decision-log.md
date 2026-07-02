@@ -20,7 +20,17 @@
 
 ---
 
+## 2026-07-02 — Weekly drops to $2.99: kill the dominated-default optics before v2 submits
+
+**Decision:** Supersedes the 2026-06-29 prices (only the prices — weekly-default, all-tiers-visible, StoreKit-derivation, and optional-Lifetime rules all stand). v2 ships Weekly **$2.99/week**, Monthly $4.99/month, Yearly $29.99/year, optional Lifetime $44.99. Weekly stays the default selected plan.
+
+**Why:** Founder manual QA + external review flagged the $4.99-weekly / $4.99-monthly tie as trust-damaging: Monthly strictly dominated Weekly at the same sticker, and the dominated option was pre-selected — reads as broken or manipulative on the first paid screen of a hard-paywall app whose brand is "fast, clear, no bullshit." At $2.99 the default becomes the smallest number on screen ("lowest commitment first"), preserving the weekly-default call with honest optics. Timing: before the wall meets real traffic and before baseline-conversion data collection starts, so the first 100–500 paywall views baseline the ladder we believe in. The "don't change prices without data" rule targets post-launch reactive changes, not pre-launch menu coherence; change routed per `docs/pricing.md` §Changing prices.
+
+**Implication:** ASC price change on `com.unit.weekly` ($4.99 → $2.99) is required **before v2 submits** — founder action, ASC first, nothing else moves. No app-code change: all visible prices are StoreKit-derived; Weekly default already in `StoreManager`. Updated: `docs/pricing.md` (tiers + math), `Unit/Unit.storekit` dev config (QA runs show the new ladder). Weekly math: $2.99 × 52 ≈ $155/yr — still a premium vs Monthly's $59.88/yr, which is the normal weekly-tier tradeoff (commitment, not trickery).
+
 ## 2026-06-29 — Founder pricing override: weekly default, $4.99 monthly, $29.99 yearly, optional lifetime
+
+**Prices SUPERSEDED by 2026-07-02 (Weekly → $2.99). Weekly-default, all-tiers-visible, StoreKit-derivation, and optional-Lifetime rules still stand.**
 
 **Decision:** Supersedes the 2026-06-17 annual-default experiment and the 2026-06-16 "drop Lifetime" line for v2 pricing. v2 now ships Weekly $4.99/week, Monthly $4.99/month, Yearly $29.99/year (`com.unit.annual`), and optional Lifetime $44.99 one-time (`com.unit.lifetime`) only if the non-consumable is already configured in App Store Connect and returned by StoreKit. Weekly is the default selected plan. The paywall must keep Weekly / Monthly / Yearly visible, derive every visible price from StoreKit, and never show fake fallback prices.
 
