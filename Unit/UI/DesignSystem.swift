@@ -4193,8 +4193,12 @@ struct AppScreen<Content: View>: View {
                 // header chrome. iOS-native bars do this automatically;
                 // `safeAreaInset` doesn't, so we opt in explicitly.
                 .scrollBounceBehavior(.basedOnSize)
+                // Top fade is unconditional: even with the nav bar hidden
+                // (PaywallView), content still scrolls under the *status bar*,
+                // and without the fade it collides with the clock / Dynamic
+                // Island. Every nav-bar-showing caller had this true already.
                 .appScrollEdgeSoft(
-                    top: customHeader != nil || !hidesNavigationBar || showsNativeNavigationBar,
+                    top: true,
                     bottom: hasBottomChrome
                 )
                 .onScrollGeometryChange(for: CGFloat.self) { geometry in

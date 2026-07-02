@@ -39,7 +39,21 @@ This QA pass:
 
 ## E) Bugs found
 
-No user-facing bugs. Only stale comments contradicting the current hard-paywall flow (design-system QA checklist item):
+**Founder manual QA (2026-07-02, iPhone 17, StoreKit config live):**
+1. **Paywall scroll content collided with the status bar / Dynamic Island** — scrolled benefit
+   rows rendered opaque under the clock. Root cause at the atom layer: `AppScreen` disabled the
+   top scroll fade when the nav bar is hidden, and `PaywallView` is the app's only
+   `hidesNavigationBar: true` screen. **Fixed:** `appScrollEdgeSoft(top: true)` unconditionally
+   (`DesignSystem.swift`) — behavior-identical on every other screen (all evaluated true already).
+2. **Reported: pinned CTA "overlays" the Lifetime card — NOT a bug.** The CTA is a VStack
+   sibling *below* the ScrollView (`AppScreen.contentWithChrome`); content cannot render behind
+   it. The faded card at the fold is the canonical bottom scroll fade; the founder's own
+   scrolled screenshot shows Lifetime + disclosure + Restore/Terms/Privacy fully above the CTA.
+
+Also aligned paywall benefit copy with the validated App Store language ("Log a set in
+3 seconds", "Rest timer on your Lock Screen").
+
+**Static audit:** no user-facing bugs. Only stale comments contradicting the current hard-paywall flow (design-system QA checklist item):
 1. `OnboardingProgramPreviewView.swift` header — described a "Start your first workout" CTA; the CTA is "Choose a plan" and leads to the paywall.
 2. `OnboardingViewModel.swift` header — referenced a non-existent "Create My Program" button.
 3. `OnboardingProgramPreviewView.swift` — claimed the inline weight field shows a "—" prompt; `AppInlineWeightField` actually uses an empty placeholder (verified — so the banned-list dash-placeholder concern was a false alarm).

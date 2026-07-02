@@ -84,9 +84,9 @@ struct PaywallView: View {
             header
 
             VStack(spacing: 0) {
-                benefitRow("Fast set logging")
+                benefitRow("Log a set in 3 seconds")
                 benefitRow("Last-session numbers ready")
-                benefitRow("Rest timer on your iPhone")
+                benefitRow("Rest timer on your Lock Screen")
             }
             .padding(.top, AppSpacing.xl)
 
