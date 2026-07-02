@@ -64,7 +64,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "Unit/Unit.storekit">
+         identifier = "../../Unit/Unit.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

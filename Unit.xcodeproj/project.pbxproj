@@ -106,6 +106,7 @@
 		165569863085B0817806842C /* ProgramImportParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParserTests.swift; sourceTree = "<group>"; };
 		165569863085B0817806842D /* ProgramImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImporterTests.swift; sourceTree = "<group>"; };
 		544D8D052F5F58C100E4C17E /* Unit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Unit.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000013 /* Unit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unit.storekit; sourceTree = "<group>"; };
 		A20000000000000000000000 /* Unit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* UnitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -239,6 +240,7 @@
 				FT000000000000000000005 /* Info.plist */,
 				PRV000000000000000000001 /* PrivacyInfo.xcprivacy */,
 				544D8D052F5F58C100E4C17E /* Unit.entitlements */,
+				A20000000000000000000013 /* Unit.storekit */,
 				A20000000000000000000001 /* UnitApp.swift */,
 				A20000000000000000000002 /* ContentView.swift */,
 				UI200000000000000000001 /* UI */,
