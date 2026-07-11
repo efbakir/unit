@@ -1,6 +1,6 @@
 # App Store localization + regional pricing — strategy
 
-> Decision doc + rollout plan. Written 2026-07-11. Supersedes the "defer localization until $5k MRR" line in `docs/archive/marketing/asc-submission.md` §Localization.
+> Decision doc + rollout plan. Written 2026-07-11. Supersedes the earlier "defer localization until $5k MRR" position (from the v1 submission doc, since deleted — git history has it).
 > Three separate tracks. Do not mix them: shipping track 1 does **not** mean the app is translated.
 
 **The plan in one paragraph:** Localize App Store **metadata only**, in 5 languages (German, Spanish-MX, Portuguese-BR, French, Turkish), riding the v2 submission. Screenshots stay English. All prices stay on Apple's automatic conversion from the USD base — no custom storefront prices. The in-app UI stays English; UI localization is a separate future project with its own infra and QA gate. Every localized description states, honestly, that the app UI is in English.

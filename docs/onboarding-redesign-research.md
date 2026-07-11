@@ -58,7 +58,7 @@ The 2026-06-09 day-one pre-fill wedge ("on day one Unit already knows your numbe
 > [Fitbod, 3★ 2026-06-11, "Paywall after onboarding"] **Waste of my time. This is an only paid app not "free with in app purchases". They offer a free 7 days with a mandatory subscription after they make you do an onboarding process. Would be nice to know that before starting to not waste time.** From what I can see app looks legit but I was under the assumption there was a free tier or version which is what I was looking for and this app did say it was free.
 
 This is Unit v2's exact strategy — paid app + after-onboarding paywall — already getting punished in another app. Two takeaways:
-1. **App Store listing must be unambiguous** that v2 is paid. The 2026-06-11 reviewer expected free, got walled. Reviewer-notes update in `docs/archive/marketing/asc-submission.md` already calls this out; ASC product copy must reinforce it.
+1. **App Store listing must be unambiguous** that v2 is paid. The 2026-06-11 reviewer expected free, got walled. Reviewer notes (now canonical in `docs/app-store-copy.md` §Reviewer notes) already call this out; ASC product copy must reinforce it.
 2. **Onboarding splash must hint at the paywall upfront.** Not as a sell — as honesty. "Set up your program (free) — start logging ($4.99/wk)." Removes the bait-and-switch perception.
 
 ### The "what NOT to do" canonical complaints
