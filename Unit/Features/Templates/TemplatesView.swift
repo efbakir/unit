@@ -451,30 +451,22 @@ struct EditProgramView: View {
 
     @ViewBuilder
     private func routineDragPreview(for template: DayTemplate) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            AppIcon.reorder.image(size: 15, weight: .semibold)
-                .foregroundStyle(AppColor.textSecondary)
-                .frame(width: 44, alignment: .leading)
+        AppReorderDragPreview {
+            HStack(spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(template.displayName)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(1)
+                    Text(subtitle(for: template))
+                        .font(AppFont.body.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(1)
+                }
 
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(template.displayName)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(1)
-                Text(subtitle(for: template))
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .lineLimit(1)
+                Spacer(minLength: AppSpacing.sm)
             }
-
-            Spacer(minLength: AppSpacing.sm)
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .frame(maxWidth: 320, minHeight: 56)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(AppColor.cardBackground)
-        )
     }
 
     // MARK: - Helpers

@@ -23,7 +23,13 @@ struct AddTemplateView: View {
     var body: some View {
         AppSheetScreen(
             title: "New day",
-            primaryButton: PrimaryButtonConfig(label: "Create Day", isEnabled: canSave, isLoading: isSaving, action: save),
+            primaryButton: PrimaryButtonConfig(
+                label: "Create Day",
+                isEnabled: canSave,
+                isLoading: isSaving,
+                disabledReason: AppCopy.FormHint.dayNameRequired,
+                action: save
+            ),
             dismissLabel: AppCopy.Nav.close,
             onDismissAction: { dismiss() },
             usesOuterScroll: false

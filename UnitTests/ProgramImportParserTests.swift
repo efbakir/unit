@@ -368,6 +368,28 @@ final class ProgramImportParserTests: XCTestCase {
         XCTAssertEqual(result[1].name, "Pull")
     }
 
+    func testHeading_CommonPushPullLowerSplit_DetectsLowerDay() {
+        let input = """
+        Push
+        Bench Press 4x8 60kg
+        Incline DB Press 3x10 22kg
+
+        Pull
+        Deadlift 3x5 100kg
+        Pull-Up 4x8 BW
+
+        Lower
+        Back Squat 3x5 100kg
+        Romanian Deadlift 3x8 80kg
+        """
+
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+
+        XCTAssertEqual(result.days.count, 3)
+        XCTAssertEqual(result.days.map(\.name), ["Push", "Pull", "Lower"])
+        XCTAssertEqual(result.days[2].exercises.map(\.name), ["Back Squat", "Romanian Deadlift"])
+    }
+
     // MARK: - Real-world failure modes (release-audit 2026-05-13 §1.2)
     //
     // Each test below pins one of the eight silent bugs traced during the

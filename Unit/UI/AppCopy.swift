@@ -246,6 +246,10 @@ enum AppCopy {
         static let onboardingScheduleRequired = "Pick a weekday for every workout."
         /// `canParse` on the program-import step — paste field is empty.
         static let onboardingImportPasteRequired = "Paste your program above to continue."
+        /// Add-day sheet — day name field is empty.
+        static let dayNameRequired = "Name the day to create it."
+        /// Add-exercise sheet — exercise name field is empty.
+        static let exerciseNameRequired = "Name the exercise to save it."
     }
 
     /// Shared transient-toast copy. The pill is narrow and time-bound, so the

@@ -3,7 +3,8 @@
 //  Unit
 //
 //  Transient onboarding state. No SwiftData @Model — all writes happen
-//  atomically in commit() when the user taps "Create My Program".
+//  atomically in commit() when the user taps "Choose a plan" on the program
+//  preview (which saves the program, then presents the hard paywall).
 //
 
 import Foundation

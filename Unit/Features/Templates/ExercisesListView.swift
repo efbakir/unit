@@ -275,6 +275,7 @@ struct AddExerciseView: View {
             primaryButton: PrimaryButtonConfig(
                 label: AppCopy.Nav.save,
                 isEnabled: canSave,
+                disabledReason: AppCopy.FormHint.exerciseNameRequired,
                 action: save
             ),
             dismissLabel: AppCopy.Nav.cancel,
@@ -372,6 +373,7 @@ private struct ExerciseSessionSummary: Identifiable {
     let sessionDate: Date
     let templateName: String
     let topSetText: String
+    let bestReps: Int
     let estimatedOneRM: Double
     let totalVolume: Double
 }
@@ -410,6 +412,7 @@ struct ExerciseDetailView: View {
                     reps: topSet.reps,
                     isBodyweight: exercise.isBodyweight
                 ),
+                bestReps: topSet.reps,
                 estimatedOneRM: topOneRM,
                 totalVolume: totalVolume
             )
@@ -428,7 +431,7 @@ struct ExerciseDetailView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(exercise.displayName)
                         .appFont(.largeTitle)
-                    Text("Brzycki 1RM and session volume")
+                    Text(exercise.isBodyweight ? "Best reps and session history" : "Brzycki 1RM and session volume")
                         .font(AppFont.caption.font)
                         .foregroundStyle(AppColor.textSecondary)
                 }
@@ -441,18 +444,18 @@ struct ExerciseDetailView: View {
                     )
                 } else {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Estimated 1RM trend")
+                        Text(exercise.isBodyweight ? "Best reps trend" : "Estimated 1RM trend")
                             .font(AppFont.sectionHeader.font)
                             .foregroundStyle(AppColor.textPrimary)
                         Chart(trendAscending) { item in
                             LineMark(
                                 x: .value("Date", item.sessionDate),
-                                y: .value("1RM", item.estimatedOneRM)
+                                y: .value(exercise.isBodyweight ? "Reps" : "1RM", trendValue(for: item))
                             )
                             .foregroundStyle(AppColor.textPrimary)
                             PointMark(
                                 x: .value("Date", item.sessionDate),
-                                y: .value("1RM", item.estimatedOneRM)
+                                y: .value(exercise.isBodyweight ? "Reps" : "1RM", trendValue(for: item))
                             )
                             .foregroundStyle(AppColor.textPrimary)
                         }
@@ -460,20 +463,22 @@ struct ExerciseDetailView: View {
                     }
                     .appCardStyle()
 
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Session volume")
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-                        Chart(trendAscending) { item in
-                            BarMark(
-                                x: .value("Date", item.sessionDate),
-                                y: .value("Volume", item.totalVolume)
-                            )
-                            .foregroundStyle(AppColor.accentSoft)
+                    if !exercise.isBodyweight {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text("Session volume")
+                                .font(AppFont.sectionHeader.font)
+                                .foregroundStyle(AppColor.textPrimary)
+                            Chart(trendAscending) { item in
+                                BarMark(
+                                    x: .value("Date", item.sessionDate),
+                                    y: .value("Volume", item.totalVolume)
+                                )
+                                .foregroundStyle(AppColor.accentSoft)
+                            }
+                            .frame(height: 160)
                         }
-                        .frame(height: 160)
+                        .appCardStyle()
                     }
-                    .appCardStyle()
 
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         AppSectionHeader("Past sessions")
@@ -490,7 +495,7 @@ struct ExerciseDetailView: View {
                                 Text("Top set: \(summary.topSetText)")
                                     .font(AppFont.caption.font)
                                     .foregroundStyle(AppColor.textSecondary)
-                                Text("Est. 1RM: \(WorkoutTargetFormatter.weightDisplay(summary.estimatedOneRM)) • Volume: \(Int(summary.totalVolume))")
+                                Text(sessionSummaryDetail(for: summary))
                                     .font(AppFont.caption.font)
                                     .foregroundStyle(AppColor.textSecondary)
                             }
@@ -517,8 +522,15 @@ struct ExerciseDetailView: View {
         return weight / denominator
     }
 
-    private func formatWeight(_ value: Double) -> String {
-        value == floor(value) ? "\(Int(value))" : String(format: "%.1f", value)
+    private func trendValue(for summary: ExerciseSessionSummary) -> Double {
+        exercise.isBodyweight ? Double(summary.bestReps) : summary.estimatedOneRM
+    }
+
+    private func sessionSummaryDetail(for summary: ExerciseSessionSummary) -> String {
+        if exercise.isBodyweight {
+            return "Best reps: \(summary.bestReps)"
+        }
+        return "Est. 1RM: \(WorkoutTargetFormatter.weightDisplay(summary.estimatedOneRM)) • Volume: \(Int(summary.totalVolume))"
     }
 }
 

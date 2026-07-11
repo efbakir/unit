@@ -30,7 +30,27 @@
 
 ---
 
+## 2026-07-11 — App Store listing name: `Unit — Gym Workout Log` (supersedes 2026-05-31 `Unit — Gym Notebook`)
+
+**Decision:** App Store Connect App Name field is `Unit — Gym Workout Log`. Home-screen display name is unchanged (`Unit` via `INFOPLIST_KEY_CFBundleDisplayName`).
+
+**Why:** Founder call, ASO over brand — "workout" and "log" are high-traffic search terms the previous name didn't carry. Raised as an open decision blocking the v2 App Information panel in `docs/marketing/app-store-copy.md`.
+
+**Implication:** Update the App Name field in App Store Connect before submitting v2 (founder action). `docs/app-store-copy.md` and `docs/marketing/app-store-copy.md` updated to reflect the new name. `docs/archive/marketing/asc-submission.md` keeps the old name — it's a superseded historical record, not touched.
+
+---
+
+## 2026-07-02 — Weekly drops to $2.99: kill the dominated-default optics before v2 submits
+
+**Decision:** Supersedes the 2026-06-29 prices (only the prices — weekly-default, all-tiers-visible, StoreKit-derivation, and optional-Lifetime rules all stand). v2 ships Weekly **$2.99/week**, Monthly $4.99/month, Yearly $29.99/year, optional Lifetime $44.99. Weekly stays the default selected plan.
+
+**Why:** Founder manual QA + external review flagged the $4.99-weekly / $4.99-monthly tie as trust-damaging: Monthly strictly dominated Weekly at the same sticker, and the dominated option was pre-selected — reads as broken or manipulative on the first paid screen of a hard-paywall app whose brand is "fast, clear, no bullshit." At $2.99 the default becomes the smallest number on screen ("lowest commitment first"), preserving the weekly-default call with honest optics. Timing: before the wall meets real traffic and before baseline-conversion data collection starts, so the first 100–500 paywall views baseline the ladder we believe in. The "don't change prices without data" rule targets post-launch reactive changes, not pre-launch menu coherence; change routed per `docs/pricing.md` §Changing prices.
+
+**Implication:** ASC price change on `com.unit.weekly` ($4.99 → $2.99) is required **before v2 submits** — founder action, ASC first, nothing else moves. No app-code change: all visible prices are StoreKit-derived; Weekly default already in `StoreManager`. Updated: `docs/pricing.md` (tiers + math), `Unit/Unit.storekit` dev config (QA runs show the new ladder). Weekly math: $2.99 × 52 ≈ $155/yr — still a premium vs Monthly's $59.88/yr, which is the normal weekly-tier tradeoff (commitment, not trickery).
+
 ## 2026-06-29 — Founder pricing override: weekly default, $4.99 monthly, $29.99 yearly, optional lifetime
+
+**Prices SUPERSEDED by 2026-07-02 (Weekly → $2.99). Weekly-default, all-tiers-visible, StoreKit-derivation, and optional-Lifetime rules still stand.**
 
 **Decision:** Supersedes the 2026-06-17 annual-default experiment and the 2026-06-16 "drop Lifetime" line for v2 pricing. v2 now ships Weekly $4.99/week, Monthly $4.99/month, Yearly $29.99/year (`com.unit.annual`), and optional Lifetime $44.99 one-time (`com.unit.lifetime`) only if the non-consumable is already configured in App Store Connect and returned by StoreKit. Weekly is the default selected plan. The paywall must keep Weekly / Monthly / Yearly visible, derive every visible price from StoreKit, and never show fake fallback prices.
 
@@ -301,6 +321,14 @@ Code surfaces shipped today: `Unit/UnitApp.swift` (InstallProvenance + Security 
 **Decision:** unitlift.app renders the launched state everywhere. The flip no longer depends on the Vercel env var: `lib/launchState.ts` hardcodes the live listing URL (`https://apps.apple.com/us/app/unit-gym-notebook/id6775008893`) as the default — `NEXT_PUBLIC_APP_STORE_URL` still overrides, and an empty-string override previews the pre-launch waitlist state. Shipped with the flip: Apple's official badge artwork replaces the inline stub (brand-guideline requirement noted in the old component), crops of the five approved App Store screenshots (pulled from Apple's CDN, headline band removed) fill the hero stack and feature cards, an App Store QR sits in the `#download` section for desktop visitors, the iOS Smart App Banner is on via `itunes` metadata, the header CTA reads "Download", TrustBand says "Now on the App Store", and the changelog v1.0 entry is dated June 11, 2026.
 **Why:** Launch is one-way. An env-var-driven flip left production dependent on Vercel dashboard state that couldn't be set from this machine (no Vercel CLI, no token, browser extension disconnected). Hardcoding makes git the single source of truth: push → deploy → launched.
 **Implication:** Setting `NEXT_PUBLIC_APP_STORE_URL` in the Vercel dashboard is optional belt-and-braces now; if set, keep it equal to the listing URL. The waitlist machinery (WaitlistForm, Resend counter, `getWaitlistCount`) is dead code post-launch — removal candidate for a later cleanup, kept for now as the pre-launch preview path. The FounderStory maker-photo slot is the page's last placeholder; it needs a real photo of the founder, not a stock substitute.
+
+---
+
+## 2026-06-29 - Widget typography stays widget-native for v1
+
+**Decision:** Do not refactor `UnitWidget` typography into app `AppFont` tokens for v1. The widget target can continue using widget-native SwiftUI typography until a shared token package exists.
+**Why:** The app design-system cleanup should not force widget code to import app UI primitives or create a parallel token bridge during the monetization/onboarding pass.
+**Implication:** Treat widget typography drift as explicitly out of scope for v1 consistency cleanup. Revisit only when the app and widget share a proper token package.
 
 ---
 

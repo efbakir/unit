@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Is Unit free?",
     answer:
-      "Yes — completely free at launch. No ads, no account, no paywall on any logging feature. I may add a small Pro tier later for power-user extras; if I do, core logging stays free.",
+      "No. Setup is free — bring your program and see it built in the app — then a subscription unlocks logging. Weekly, monthly, and yearly plans; every price is shown in the app before you pay. No free trial, no ads, no account.",
   },
   {
     question: "How does Unit fill in my numbers?",
@@ -61,7 +61,7 @@ const faqs = [
   {
     question: "How do I import my program?",
     answer:
-      "During onboarding, choose 'Paste text' and paste your routine from Notes or WhatsApp. Unit reads exercise names, sets, reps, and weights automatically. You can also take a photo of your program or build from scratch.",
+      "During onboarding, choose 'Paste my routine' and paste from Notes, WhatsApp, or anywhere else. Unit reads exercise names, sets, reps, and weights automatically. Or pick a proven starter program from the built-in library.",
   },
   {
     question: "What programs does Unit support?",
@@ -76,7 +76,7 @@ const faqs = [
   {
     question: "Where can I download Unit?",
     answer:
-      "Unit is live on the App Store as “Unit — Gym Notebook”. Tap any download button on this page, or search the App Store directly. Free to download, no account needed.",
+      "Unit is live on the App Store as “Unit — Gym Workout Log”. Tap any download button on this page, or search the App Store directly. Free to download; a subscription unlocks logging after setup. No account needed.",
   },
 ]
 
@@ -385,8 +385,8 @@ export default async function LandingPage() {
                 body: "Unit assumes you know your way around a barbell. That's a feature, not a limitation.",
               },
               {
-                title: "Not subscription-locked.",
-                body: "Core logging is free. Your workout data is never held hostage.",
+                title: "Not free.",
+                body: "Setup is free; logging is a subscription. That's the entire business model — no ads, no selling your data, no feature bait.",
               },
             ].map((item) => (
               <div
