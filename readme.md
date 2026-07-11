@@ -67,7 +67,7 @@ The following were intentionally cut or deferred — see [`docs/claude/scope.md`
 - Target-vs-actual weight columns → last-time pre-fill only
 - Plate calculator, social / feeds / sharing, exercise discovery → not for this product
 - CloudKit sync → local-first only
-- Paywall on core logging → core logging is free
+- ~~Paywall on core logging~~ → lifted 2026-06-16; v2 ships a hard paywall after onboarding (see `docs/pricing.md`)
 
 ## Build and run
 
