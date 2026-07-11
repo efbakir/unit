@@ -73,7 +73,7 @@ Simulator screenshot = **⌘S** (saves to Desktop).
 ```
 Push
 Bench Press 4x8 80
-Overhead Press 3x8 50
+Overhead Press 3x10 40
 Incline DB Press 3x10 24
 
 Pull
@@ -83,8 +83,10 @@ Lat Pulldown 3x10 55
 
 Legs
 Back Squat 3x5 120
-Romanian Deadlift 3x8 90
+Romanian Deadlift 3x10 90
 Leg Press 3x10 160
+
+> No line may be exactly **3x8** — the preview flags 3x8 as "Check sets and reps" (parser-default false positive) and the warning ruins the shot.
 ```
 
 **After capture:** drop both raws into the Figma marketing file, apply the canonical captions (`Paste your program, start lifting` / `Your rest timer, on the lock screen`), export 1290×2796, upload to the 6.9" slot in ASC Media Manager replacing slots 2 and 5.
