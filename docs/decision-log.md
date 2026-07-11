@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-11 — Release build renumbered 16 → 35 (ASC already holds pre-fix builds 24–34)
+
+**Decision:** `CURRENT_PROJECT_VERSION` bumped 16 → 35 across all 6 pbxproj configs. The v2.0 release candidate is **2.0 (35)**, superseding the "2.0 (16)" plan in the copy-freeze entry below.
+
+**Why:** ASC reconnaissance (2026-07-11) found TestFlight already holds builds 24–34 for version 2.0 — Xcode Cloud numbers independently of the pbxproj value, so "16" was already stale, and every one of those builds was uploaded before the launch-hang fix (`4fe1edd`, the UserDefaults-write-during-body loop that froze launch on iOS 27). Reusing a number ≤34 would make it ambiguous whether the submitted binary contains the fix; 35 is the first unambiguous post-fix candidate.
+
+**Implication:** Archive ships as **2.0 (35)** from a `main` that includes `4fe1edd`. Never select builds 24–34 on the 2.0 version record. `final-submit-checklist.md`, `INDEX.md`, and `asc-execution-status.md` updated; historical docs left as-is.
+
 ## 2026-07-11 — English App Store copy FROZEN; build bumped to 16
 
 **Decision:** `docs/app-store-copy.md` is frozen, founder-approved, with two final honesty fixes: "Paste **your** program" (was "any" — the parser caps at 6 days and drops cardio, so "any" over-promised) and What's New bullet 3 now ends at "your program built in under a minute" (the old "first logged set" claim crossed the paywall). Subtitle challenge resolved: `Strength tracker for lifters` stands (the name owns *workout*; the subtitle must add new indexed terms). `CURRENT_PROJECT_VERSION` bumped 15 → 16 — ASC verification showed the live 1.0 already consumed build 15 via Xcode Cloud's independent numbering.

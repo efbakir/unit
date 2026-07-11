@@ -35,6 +35,6 @@ Everything else from the first re-derivation stands. Descriptions untouched (the
 
 ## Still true from the aborted preflight
 
-1. No v2.0 version record existed in ASC — it appears when build 16 is uploaded (or create it manually first; build bumped 15 → 16 per the freeze entry).
+1. No v2.0 version record existed in ASC — it appears when build 35 is uploaded (or create it manually first; build renumbered 16 → 35 per decision log 2026-07-11: ASC already held Xcode Cloud builds 24–34, all pre-dating the launch-hang fix).
 2. The live listing name showed **"Unit: Gym Notebook"** (colon) — consistent with the adopted colon separator; all five locale names use `Unit: …`.
 3. Localization remains **optional for the v2 submission** — English-only metadata is complete and unblocked today; locales can ride any later metadata update.
