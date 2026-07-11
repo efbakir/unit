@@ -1,6 +1,6 @@
 # Portuguese — Brazil (pt-BR) — Tier 1 App Store metadata
 
-> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
+> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
 > Register: "você" (implicit), Brazilian vocabulary. No "nós"-forms (first-person-singular rule).
 > Storefront reach: Brazil. Portugal uses pt-PT (not planned; Brazil is the market).
 
@@ -10,7 +10,7 @@
 Unit: Diário de Treino
 ```
 
-22 chars. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Ficha de Treino" (the paper workout sheet), which carried the superseded metaphor; *ficha* keeps its search value from the keyword field instead.
+22 chars. Candidate pending native review. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`); translation hypothesis requiring native validation. Replaces "Ficha de Treino" (the paper workout sheet — a plan/prescription object more than a log); *ficha* keeps its search value in the keyword field instead.
 
 ## Subtitle (30 max)
 
@@ -53,7 +53,7 @@ Política de privacidade: https://unitlift.app/privacy
 academia,musculação,hipertrofia,progressão,supino,agachamento,peso,anotar,ficha,halteres
 ```
 
-88 chars. Re-deduped 2026-07-11 against the new name (*diário*) and subtitle (*registro, cargas, séries*): removed `diário`, `carga`; added `ficha` (displaced from the name — still the high-volume cultural term) and `halteres` (dumbbells). Intent notes:
+88 chars. Re-deduped 2026-07-11 against the new name (*diário*) and subtitle (*registro, cargas, séries*): removed `diário`, `carga`; added `ficha` (displaced from the name — the culturally specific term for the gym workout sheet; requires native validation) and `halteres` (dumbbells). Intent notes:
 - "academia" — Brazilian for gym; the category's anchor term.
 - "musculação" — weight training as Brazilians name it; category term Unit must rank for.
 - "anotar" — "anotar treino" (write down the workout) is the notebook behavior in verb form.

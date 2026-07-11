@@ -1,6 +1,6 @@
-# ASC execution status — RE-DERIVED, AWAITING PER-LOCALE APPROVAL
+# ASC execution status — TR NAME APPROVED; FOUR LOCALES AWAIT NATIVE REVIEW
 
-> Updated 2026-07-11 (second update). **English copy is frozen** (`docs/app-store-copy.md`, canonical since commit `49e4f36`) and the founder confirmed the direction ("the app is *workout log* now — see the bigger picture"). The resume protocol ran: all five locale files are re-derived from the frozen canonical. **Nothing is pasted into ASC yet** — every locale requires explicit founder approval first (tr by the founder directly; de/es-MX/pt-BR/fr each need one native-speaker read).
+> Updated 2026-07-11 (second update). **English copy is frozen** (`docs/app-store-copy.md`, canonical since commit `49e4f36`) and the founder confirmed the direction ("the app is *workout log* now — see the bigger picture"). The resume protocol ran: all five locale files are re-derived from the frozen canonical. **Nothing is pasted into ASC yet.** Turkish is founder-reviewed and approved (2026-07-11 naming audit — name final: `Unit: Antrenman Günlüğü`) but still needs the explicit "paste tr" go-ahead. de/es-MX/pt-BR/fr each need one native-speaker read; their names are candidates. Founder naming rule (2026-07-11): competitor differentiation is not a naming criterion — natural local wording, log-vs-plan accuracy, and native comprehension decide.
 
 ## Changed fields per locale (re-derivation, 2026-07-11)
 
@@ -29,12 +29,12 @@ Everything else from the first re-derivation stands. Descriptions untouched (the
 
 ## Gate before any ASC paste
 
-- [ ] Founder reads + approves **tr** (native).
+- [x] Founder reads + approves **tr** (native) — **approved 2026-07-11, name final `Unit: Antrenman Günlüğü`.** Explicit "paste tr" still required before any ASC action.
 - [ ] One native read each: **de-DE**, **es-MX**, **pt-BR**, **fr-FR** (register notes are in each file's header; fr has the open tu/vous question).
 - [ ] Founder says "paste locale X" per locale — no blanket approval.
 
 ## Still true from the aborted preflight
 
-1. No v2.0 version record existed in ASC — it appears when build 15 is uploaded (or create it manually first).
-2. The live listing name showed **"Unit: Gym Notebook"** (colon) — precedent for the colon separator choice on the new name; whichever separator the founder picks, apply it in all five locale names too.
+1. No v2.0 version record existed in ASC — it appears when build 16 is uploaded (or create it manually first; build bumped 15 → 16 per the freeze entry).
+2. The live listing name showed **"Unit: Gym Notebook"** (colon) — consistent with the adopted colon separator; all five locale names use `Unit: …`.
 3. Localization remains **optional for the v2 submission** — English-only metadata is complete and unblocked today; locales can ride any later metadata update.

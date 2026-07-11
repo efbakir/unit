@@ -1,6 +1,6 @@
 # German (de-DE) — Tier 1 App Store metadata
 
-> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
+> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
 > Register: informal "du" (standard for German fitness apps). No "wir"-forms anywhere (first-person-singular rule).
 > Storefront reach: Germany, Austria, Switzerland (de is the primary metadata language on all three).
 
@@ -10,7 +10,7 @@
 Unit: Trainingstagebuch
 ```
 
-23 chars. "Trainingstagebuch" (training log/diary) — survives the 2026-07-11 re-derivation unchanged: it is already the log-family term (the German for "workout log"), not the notebook metaphor the EN name moved away from.
+23 chars. Candidate pending native review. "Trainingstagebuch" (training log/diary) — the log-family term, externally attested: the market leader's German listing title is "Hevy - Gym & Trainingstagebuch". Not the notebook metaphor the EN name moved away from.
 
 ## Subtitle (30 max)
 
@@ -18,7 +18,7 @@ Unit: Trainingstagebuch
 Krafttraining-Tracker
 ```
 
-21 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *Krafttraining* + *Tracker* — the two highest-volume German category terms not yet indexed. The old "3 Sekunden" claim lives on in the description's first line.
+21 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *Krafttraining* + *Tracker* — both externally attested category terms (the market leader's German subtitle uses *Krafttraining*); search volume not independently verified. The old "3 Sekunden" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 

@@ -1,6 +1,6 @@
 # Turkish (tr) — Tier 1 App Store metadata
 
-> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — founder must re-review before ASC paste (native speaker; no external review needed).**
+> Status: **founder-reviewed and approved 2026-07-11 — the name is final. ASC paste still requires the founder's explicit "paste tr" go-ahead.**
 > Register: "sen". No "biz"-forms (first-person-singular rule).
 > Storefront reach: Turkey.
 
@@ -10,7 +10,7 @@
 Unit: Antrenman Günlüğü
 ```
 
-23 chars. "Antrenman günlüğü" = training log — the standard Turkish term and the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor.
+23 chars. **Founder-approved Turkish wording (native review complete 2026-07-11).** "Antrenman günlüğü" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor. Alternatives weighed in the 2026-07-11 naming audit: "Antrenman Kaydı" (rejected — *kayıt* also reads as enrollment/recording), "Antrenman Takibi" (rejected — collides with the subtitle's *takibi*).
 
 ## Subtitle (30 max)
 

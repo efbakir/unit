@@ -1,6 +1,6 @@
 # Spanish — Mexico (es-MX) — Tier 1 App Store metadata
 
-> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
+> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
 > Register: informal "tú", neutral Latin American Spanish. No "nosotros"-forms (first-person-singular rule).
 > Storefront reach: Mexico + most Latin American storefronts use es-MX metadata. Spain uses es-ES (Tier 2). Bonus: the **US storefront also indexes the es-MX keyword field** — see note at the bottom.
 
@@ -10,7 +10,7 @@
 Unit: Diario de Gym
 ```
 
-19 chars. "Diario de gym" — survives the 2026-07-11 re-derivation unchanged: *diario* is already the log-family term (the EN name moved to "Gym Workout Log"), and Mexican gym-goers say "gym" more than "gimnasio".
+19 chars. Candidate pending native review. "Diario de gym" — *diario* carries the log-family identity (the EN name moved to "Gym Workout Log"). "Gym" over "gimnasio" is a translation hypothesis requiring native validation (the market leader's MX listing name uses *gym*; its subtitle uses *gimnasio* — both are live). The native reader should also weigh *diario* vs *bitácora* (2026-07-11 audit).
 
 ## Subtitle (30 max)
 

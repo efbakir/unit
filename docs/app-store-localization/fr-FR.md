@@ -1,6 +1,6 @@
 # French (fr-FR) — Tier 1 App Store metadata
 
-> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
+> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
 > Register: "vous" — safer default for a paid app. **Open question for the native reader:** French lifter culture leans "tu"; if the reviewer says "tu" reads better for this audience, switch the description + promo consistently. No "nous"-forms (first-person-singular rule).
 > Storefront reach: France (+ fr-FR shown in Belgium, Luxembourg, francophone Africa storefronts). Canada uses fr-CA (not planned).
 
@@ -10,7 +10,7 @@
 Unit: Journal de Muscu
 ```
 
-22 chars. "Journal de muscu" = lifting log — the log-family identity the EN name moved to (`Gym Workout Log`), keeping "muscu" as the colloquial category anchor. Replaces "Carnet de Muscu" (notebook), which carried the superseded metaphor.
+22 chars. Candidate pending native review. "Journal de muscu" = lifting log — the log-family identity the EN name moved to (`Gym Workout Log`), keeping "muscu" as the colloquial anchor. Both *journal* and *carnet* are externally attested category terms (the market leader's French title uses "Carnet de Musculation"; its subtitle uses "Journal d'Entraînement"). Per the founder rule (2026-07-11), competitor differentiation is not a naming criterion — the native reader adjudicates *journal* vs *carnet* on natural wording and log-meaning alone.
 
 ## Subtitle (30 max)
 
@@ -53,8 +53,8 @@ Politique de confidentialité : https://unitlift.app/privacy
 entraînement,fitness,salle,haltères,squat,répétitions,poids,programme,musculation,développé
 ```
 
-92 chars. Re-deduped 2026-07-11 against the new name (*journal, muscu*) and subtitle (*suivi, force, séries*): removed `force`, `séries`; added `musculation` (displaced from the old subtitle — the category's biggest term) and `développé` (bench-press family). Intent notes:
-- "salle" — "la salle" is how French lifters say the gym; short and high volume.
+92 chars. Re-deduped 2026-07-11 against the new name (*journal, muscu*) and subtitle (*suivi, force, séries*): removed `force`, `séries`; added `musculation` (displaced from the old subtitle — externally attested category term) and `développé` (bench-press family). Intent notes:
+- "salle" — "la salle" is common French lifter shorthand for the gym (translation hypothesis; requires native validation).
 - "entraînement" — the training category term.
 - "squat" — exercise-name search with app intent.
 
@@ -91,4 +91,4 @@ Group display name: `Unit Pro` (unchanged — brand).
 
 - The tu/vous call is the main register risk — resolve with the native reader before paste (see header).
 - French typography uses a space before `:` and `!`; kept above. ASC renders it fine.
-- "Muscu" in the app name is informal; if App Review or the native reader objects, fallback name: `Unit — Journal d'entraînement` (29 chars).
+- "Muscu" in the app name is informal; if App Review or the native reader objects, fallback name: `Unit: Journal d'entraînement` (28 chars).
