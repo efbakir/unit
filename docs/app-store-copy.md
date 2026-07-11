@@ -1,84 +1,136 @@
-# Unit — App Store Copy
+# Unit — App Store copy (canonical)
 
-> Draft for App Store Connect. Source of truth: `product-compass.md`, `app-positioning.md`.
-> Last updated: 2026-07-11.
+> **The single source of truth for every App Store Connect text field.** If a string isn't here, it isn't canon.
+> Process (what to click, in what order): `docs/app-store-submission/final-submit-checklist.md`.
+> Localized metadata derives from this file — see `docs/app-store-localization/README.md`.
+> Consolidated 2026-07-11 from `docs/marketing/app-store-copy.md` (deleted), the old draft here, and `source-en.md`. Conflicting variants live in git history only.
 
 ---
 
-## App Name
+## App name (30)
 
-**Unit — Gym Workout Log** (App Store Connect listing name; home-screen icon stays `Unit` via `INFOPLIST_KEY_CFBundleDisplayName`)
+```
+Unit — Gym Workout Log
+```
 
-Locked 2026-07-11, superseding the 2026-05-31 collision fallback `Unit — Gym Notebook`. See `docs/decision-log.md` 2026-07-11 entry.
+Locked 2026-07-11 (ASO over brand), superseding `Unit — Gym Notebook`. Home-screen icon stays `Unit` (`INFOPLIST_KEY_CFBundleDisplayName`).
+Separator is cosmetic (identical keyword indexing): the colon form `Unit: Gym Workout Log` is the category norm and scans better at list size — founder picks at paste time. If you paste the colon, update this block after.
 
-## Subtitle (30 chars max)
+## Subtitle (30)
 
-**Log every set in one tap.**
+```
+Strength tracker for lifters
+```
 
-## Promotional Text (170 chars, updatable without review)
+Why: the new app name already owns *gym, workout, log* — Apple ignores duplicated keywords across name/subtitle, so the subtitle must add fresh terms. This adds *strength, tracker, lifters*. 28 chars.
+Superseded alternates (git history): live v1 `Log a set in 3 seconds` (no new keywords), `Fast workout & strength log` (duplicates name terms), `Log every set in one tap.` (near-dupe of live).
 
+## Promotional text (170, editable anytime without review)
+
+```
 You already know your program. Unit logs it faster than paper — last time's numbers are already filled in, every set one tap. No AI. No social. Just your numbers.
+```
 
-## Description
+Evergreen (reads right for cold visitors after launch week too). Update-announcement variants belong in What's New, not here.
 
-Unit requires a paid purchase after setup. There is no free trial.
+## Description (4000)
 
-Your tracker is slower than paper. Unit isn't.
+```
+Log a set in 3 seconds and get back under the bar.
 
-Built for lifters who already know their program — not beginners looking for guidance. You bring the routine. Unit makes logging instant.
+Your weights from last time are already filled in — confirm, adjust, done. Paste any program and your working numbers are ready from day one.
 
-ONE TAP PER SET
-Last time's weight and reps are already filled in. See what you did. Tap Done. That's it. No typing, no dropdowns, no menus. Under 3 seconds per set.
+No account. No ads. No social feed. Your training stays on your iPhone.
 
-YOUR PROGRAM, YOUR WAY
-Import from Notes or WhatsApp — paste your routine and Unit reads it, weights and all, so day one is already filled in. Or pick a starter program. No rigid cycles. Just your days and your exercises.
+A gym notebook, not a platform.
 
-REST TIMER ON YOUR LOCK SCREEN
-Timer auto-starts when you finish a set. Shows on your Lock Screen and Dynamic Island. You don't need to reopen the app between sets.
-
-HISTORY YOU CAN SEE
-Calendar view shows every training day. Tap a date to see what you lifted. PR library tracks your personal bests automatically.
-
-LOCAL. PRIVATE. ALWAYS WORKS.
-No account required. No cloud dependency. Your training data lives on your device. After subscription verification, logging works offline, in a basement gym, and in airplane mode.
-
-SUBSCRIPTION
-Unit offers weekly, monthly, and yearly auto-renewing subscriptions, plus optional Lifetime if available. Prices are shown in the app before purchase. Payment is charged to your Apple Account. Manage or cancel subscriptions anytime in App Store settings.
+Unit requires a paid purchase after setup. Weekly, monthly, and yearly auto-renewing subscriptions are available. Optional Lifetime appears only if available. Prices are shown in the app before purchase. There is no free trial.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy Policy: https://unitlift.app/privacy
+```
 
-WHAT UNIT IS NOT
-- Not an AI coach. Unit doesn't tell you what to lift.
-- Not a social platform. No feed, no followers, no likes.
-- Not a beginner's guide. I assume you know your way around a barbell.
+Short on purpose: iOS descriptions are conversion-only (not search-indexed) and only ~3 lines show before "more". The paid-purchase paragraph + both legal URLs are Guideline 3.1.2(b) compliance — **never trim them**.
 
-Faster than paper. Smarter than Notes. Your gym notebook, upgraded.
+## Keywords (100, comma-separated, no spaces)
 
-## Keywords (100 chars)
+```
+lifting,powerlifting,exercise,routine,reps,barbell,fitness,training,planner,5x5,hypertrophy,squat
+```
 
-gym tracker,workout log,set logging,weight training,strength training,gym notebook,rep tracker,lifting
+97 chars. Deduped against name (*gym, workout, log*) and subtitle (*strength, tracker, lifters*) — duplicates index once, so every slot here adds a new term.
 
-## Category
+## What's New — v2.0
 
-Health & Fitness
+```
+• Log a set in 3 seconds — last time's weights are already filled in
+• Paste any program and start with real working numbers from day one
+• Rebuilt first run: from install to your first logged set in under a minute
 
-## What's New (for v1.0)
+Unit now requires a paid purchase after setup — plans are shown before you pay. No free trial. Existing training data stays on this iPhone.
+```
 
-Unit is here. Log your sets in one tap, import your program from Notes, and track your progress — all without leaving the gym floor. Built for lifters who already know what they're doing.
+The paid paragraph is deliberate: v1 users read What's New before updating, and this is the only channel that warns them about the wall. The data-stays line is the reassurance that matters to them.
 
-## What's New (for v1.1)
+## Screenshot captions (5 slots — caption is the only text on the shot)
 
-PR badges in History. Every set that beat your best now carries a PR mark — in the session list, the day view, and on the exact set that earned it. Works retroactively on everything you've already logged.
+| # | Caption | Image |
+|---|---|---|
+| 1 | `3 seconds, back under the bar` | ✅ live — logging screen, last time's weights pre-filled, one set ticked |
+| 2 | `Paste your program, start lifting` | ⚠️ recapture — program preview right after a paste import (days + exercises + weights filled). Current shot shows the set editor, which doesn't match the caption |
+| 3 | `No account. Works offline.` | ✅ live — no-signup proof + "Stored on this iPhone"; airplane glyph as quiet secondary |
+| 4 | `A notebook, not a feed` | 🟡 acceptable (History calendar) once #5 stops duplicating it; stronger alternative: the calm Today screen |
+| 5 | `Your rest timer, on the lock screen` | ⚠️ recapture — real Lock Screen with the rest-timer Live Activity counting down. Current shot duplicates #4's calendar |
 
-Paste import reads table-style programs now — including Turkish ones. Headers, rest columns, and "67,5" decimals all parse. Cardio lines are set aside so your lifting days stay clean.
+Screenshots don't block the binary upload. If recaptures aren't ready at submission, reuse the current approved set (strategy (b): reviewer notes carry the paywall story) and swap shots in a later metadata update.
 
-Onboarding: pick any 1–7 training days, day naming no longer fights the keyboard, and a crash on force-quit during setup is fixed.
+## Reviewer notes (App Review Information → Notes)
 
-Cleanups: removed a stray Done button on the set sheet; Start workout now lives only on Today.
+```
+Unit v2 is a local-first gym logger for iPhone. It requires a paid purchase to access the workout-logging features. Onboarding runs free — the reviewer can complete the opener, the three-slide carousel, and the full program setup flow without paying. After setup is saved, the paywall appears full-screen and cannot be dismissed.
 
-## What's New (for v2.0)
+To evaluate:
+1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then program setup. No personal information is requested.
+2. After onboarding completes, the paywall appears with these StoreKit products: Weekly com.unit.weekly $2.99/week, Monthly com.unit.monthly $4.99/month, Yearly com.unit.annual $29.99/year, and Lifetime com.unit.lifetime $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
+3. Subscribe to any recurring tier, or buy Lifetime if visible, via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
+4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
 
-Unit 2 adds a faster paste-first setup, starter programs, editable program previews, persistent rest timing, and clearer workout history.
+There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows product title, full StoreKit price, and billing period; the selected billed amount remains visible directly above the CTA; auto-renewal and cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
 
-Unit now requires a paid purchase after setup. Weekly, monthly, yearly, and optional Lifetime options are shown before purchase; there is no free trial. Existing training data remains on this iPhone.
+The app does not collect, transmit, or store any personal data. All workout data lives on-device via SwiftData. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality). Privacy is verifiable offline: post-subscription, put the device in airplane mode and every feature still works.
+
+If you have questions during review, please email support@unitlift.app.
+```
+
+## Subscription group + products (ASC display fields)
+
+Group: reference name `unit-pro` (immutable) · display name `Unit Pro`.
+
+| Product ID | Display name (≤30) | Description (≤45) | Price (USD base) |
+|---|---|---|---|
+| `com.unit.weekly` | `Unit Weekly` | `Weekly access to Unit.` | **$2.99** (default selection) |
+| `com.unit.monthly` | `Unit Monthly` | `Monthly access to Unit.` | $4.99 |
+| `com.unit.annual` | `Unit Yearly` | `Yearly access to Unit.` | $29.99 |
+| `com.unit.lifetime` | `Unit Lifetime` | `One-time purchase. Lifetime access.` | $44.99 (optional — only if already configured) |
+
+Pricing authority: `docs/pricing.md`. Product IDs never change. No introductory offers — there is no trial.
+
+## URLs / fixed fields
+
+| Field | Value |
+|---|---|
+| Support URL | `https://unitlift.app/support` |
+| Marketing URL | `https://unitlift.app` |
+| Privacy Policy URL | `https://unitlift.app/privacy` |
+| Category | Health & Fitness |
+| Age rating | 4+ |
+| Copyright | 2026 Efe Bakir |
+
+## Shipped What's New history
+
+**v1.1:** PR badges in History; paste import reads table-style + Turkish programs; onboarding day-count 1–7, keyboard fix, force-quit crash fix; stray Done button removed; Start workout only on Today.
+**v1.0:** "Unit is here. Log your sets in one tap, import your program from Notes, and track your progress — all without leaving the gym floor."
+
+## Voice rules (apply to every field above)
+
+First-person singular only (`I / me / my`) — never `we / us / our` (PRODUCT.md §Brand Personality). No trial/discount/urgency language anywhere. No coaching or progression claims.

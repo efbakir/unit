@@ -53,7 +53,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
       },
       {
         feature: "Pricing",
-        unit: "Core logging is free forever. Pro is $4.99/mo or $29.99/yr.",
+        unit: "One subscription, everything included — $2.99/wk, $4.99/mo, or $29.99/yr. Setup is free.",
         competitor: "Free with a workout cap; Pro unlocks unlimited workouts.",
       },
       {
@@ -101,7 +101,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
       },
       {
         feature: "Pricing",
-        unit: "Free for core logging. Pro is $4.99/mo or $29.99/yr.",
+        unit: "One subscription, everything included — $2.99/wk, $4.99/mo, or $29.99/yr. Setup is free.",
         competitor: "Free tier with limits; Pro unlocks routines and analytics.",
       },
       {
@@ -154,7 +154,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
       },
       {
         feature: "Pricing",
-        unit: "Free for core logging. Pro is $4.99/mo or $29.99/yr.",
+        unit: "One subscription, everything included — $2.99/wk, $4.99/mo, or $29.99/yr. Setup is free.",
         competitor: "Free with ads; Elite removes ads and unlocks features.",
       },
       {

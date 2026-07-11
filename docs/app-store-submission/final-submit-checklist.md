@@ -22,13 +22,7 @@
 
 ## 2. App name
 
-Paste into App Information → Name:
-
-```
-Unit: Gym Workout Log
-```
-
-Per the 2026-07-11 submission goal. **Separator flag:** the decision log and both copy docs write this name with an em-dash (`Unit — Gym Workout Log`). Same words, same ASO value — keywords index identically; the separator is cosmetic. Pick one at paste time; if you keep the colon, align `docs/app-store-copy.md` + `docs/marketing/app-store-copy.md` after. Home-screen icon stays `Unit` (`INFOPLIST_KEY_CFBundleDisplayName`) either way.
+Paste from **`docs/app-store-copy.md` §App name** (the single copy source). Separator (em-dash vs colon) is cosmetic and founder-picked at paste time — the note there covers it. Home-screen icon stays `Unit` (`INFOPLIST_KEY_CFBundleDisplayName`) either way.
 
 ## 3. Subscription products (must match exactly)
 
@@ -46,80 +40,19 @@ Group: reference name `unit-pro`, display name `Unit Pro`.
 - [ ] No introductory offer on any tier.
 - [ ] Lifetime: only if the non-consumable is already configured. Do not create it for this submission.
 
-## 4. Reviewer notes — paste verbatim
+## 4. Reviewer notes
 
-App Review Information → Notes:
+Paste verbatim from **`docs/app-store-copy.md` §Reviewer notes** into App Review Information → Notes. ($2.99 Weekly price is correct there.)
 
-```
-Unit v2 is a local-first gym logger for iPhone. It requires a paid purchase to access the workout-logging features. Onboarding runs free — the reviewer can complete the opener, the three-slide carousel, and the full program setup flow without paying. After setup is saved, the paywall appears full-screen and cannot be dismissed.
+## 5. English metadata
 
-To evaluate:
-1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then program setup. No personal information is requested.
-2. After onboarding completes, the paywall appears with these StoreKit products: Weekly com.unit.weekly $2.99/week, Monthly com.unit.monthly $4.99/month, Yearly com.unit.annual $29.99/year, and Lifetime com.unit.lifetime $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
-3. Subscribe to any recurring tier, or buy Lifetime if visible, via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
-4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
-
-There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows product title, full StoreKit price, and billing period; the selected billed amount remains visible directly above the CTA; auto-renewal and cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
-
-The app does not collect, transmit, or store any personal data. All workout data lives on-device via SwiftData. The PrivacyInfo manifest declares only UserDefaults (reason CA92.1 — app functionality). Privacy is verifiable offline: post-subscription, put the device in airplane mode and every feature still works.
-
-If you have questions during review, please email support@unitlift.app.
-```
-
-(Adapted from the v2 block in `docs/archive/marketing/asc-submission.md` with the corrected $2.99 Weekly price.)
-
-## 5. English metadata — paste verbatim
-
-Source: `docs/marketing/app-store-copy.md` (paste-ready v2).
-
-**Subtitle (30):**
-
-```
-Fast workout & strength log
-```
-
-**Promotional text (170, editable anytime):**
-
-```
-New in v2: paste your program and start with real working numbers from day one. Still no account, no ads — just fast logging that lives on your iPhone.
-```
-
-**Description:**
-
-```
-Log a set in 3 seconds and get back under the bar.
-
-Your weights from last time are already filled in — confirm, adjust, done. Paste any program and your working numbers are ready from day one.
-
-No account. No ads. No social feed. Your training stays on your iPhone.
-
-A gym notebook, not a platform.
-
-Unit requires a paid purchase after setup. Weekly, monthly, and yearly auto-renewing subscriptions are available. Optional Lifetime appears only if available. Prices are shown in the app before purchase. There is no free trial.
-
-Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-Privacy Policy: https://unitlift.app/privacy
-```
-
-**Keywords (100, no spaces):**
-
-```
-lifting,tracker,powerlifting,exercise,routine,reps,barbell,fitness,training,planner,5x5,hypertrophy
-```
-
-**What's New:**
-
-```
-• Log a set in 3 seconds — last time's weights are already filled in
-• Paste any program and start with real working numbers from day one
-• Rebuilt first run: from install to your first logged set in under a minute
-```
+Paste every field verbatim from **`docs/app-store-copy.md`** — subtitle, promotional text, description, keywords, What's New. That file is the single copy source; this checklist deliberately embeds no strings so they can't drift.
 
 The description's paid-purchase paragraph and the two legal URLs are Guideline 3.1.2(b) compliance — never trim them.
 
 ## 6. Screenshot set
 
-**Reuse the 5 English screenshots currently live on the listing (1290×2796, approved with v1.1). Upload nothing new.** This is strategy (b) from the v2 override in `docs/archive/marketing/asc-submission.md` §2.3.3: the carousel shows the post-paywall app; the reviewer notes carry the paywall explanation. Spec record: `docs/archive/marketing/research/screenshot-strategy-final.md`. Do not edit, re-crop, or localize screenshots for this submission.
+Captions + per-slot image specs: **`docs/app-store-copy.md` §Screenshot captions**. Two recaptures are planned (slot 2: preview-after-paste; slot 5: Lock Screen rest timer — currently a duplicate of slot 4). Screenshots never block the binary upload: if the recaptures aren't ready at submission, **reuse the 5 approved English screenshots currently live** (strategy (b) — reviewer notes carry the paywall story) and swap shots in a later metadata update. Do not localize screenshots for this submission.
 
 ## 7. IAP / subscription attachment checklist
 

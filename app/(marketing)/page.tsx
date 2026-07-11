@@ -473,7 +473,7 @@ export default async function LandingPage() {
             )}
           </div>
           {isLaunched && (
-            <p className="eyebrow mt-unit-md">Free. No account. No ads.</p>
+            <p className="eyebrow mt-unit-md">No account. No ads. No AI.</p>
           )}
         </div>
       </section>

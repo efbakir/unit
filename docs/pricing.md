@@ -94,7 +94,8 @@ Don't change prices without data. If the numbers above need to move:
 1. Update this file first.
 2. Update the App Store Connect product config (Weekly / Monthly / Yearly / optional Lifetime prices).
 3. Confirm `PaywallView.priceText(for:)` still pulls all visible prices from StoreKit (`Product.displayPrice` + subscription period); no hardcoded visible prices.
-4. Note the change in `docs/decision-log.md` with the date and the evidence that justified it.
+4. Update the two places prices are hardcoded outside the app: `Unit/Unit.storekit` (dev QA config) and the marketing site's `app/(marketing)/compare/data.ts` pricing rows.
+5. Note the change in `docs/decision-log.md` with the date and the evidence that justified it.
 
 ## History (superseded models)
 

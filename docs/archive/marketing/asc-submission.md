@@ -7,6 +7,8 @@
 
 ## v2 SUBMISSION OVERRIDE (2026-06-16)
 
+> **2026-07-11 — strings superseded.** All paste-able copy (reviewer notes, What's New, description, subscription display fields) now lives canonically in `docs/app-store-copy.md`; the submission runbook is `docs/app-store-submission/final-submit-checklist.md`. The blocks below are the historical record — do not paste from here.
+
 **v2.0 ships with hard paywall.** Everything in the v1.0.0 sections below about "free forever core" + "no IAP" + "subscription wall language stripped" is **superseded for v2 submission**. See [`../decision-log.md`](../../decision-log.md) 2026-06-16 entry. Tracking plan: `~/.claude/plans/i-am-still-unsure-quiet-flame.md`.
 
 ### v2 IAP product checklist (ASC actions)
@@ -82,7 +84,7 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 - [ ] Reviewer notes: paste the v2 block above (with $2.99) into App Review notes.
 - [ ] Description: remove the v1 "Not a subscription… free" bullet per §v2 description copy update.
 - [ ] Privacy labels: unchanged ("Data Not Collected") — purchases run through Apple, the app still collects nothing.
-- [ ] Screenshots: keep current set (strategy (b) above). Optional, not blocking: replace slot 5's duplicate calendar shot with the Lock-Screen rest-timer capture per `docs/marketing/app-store-copy.md`.
+- [ ] Screenshots: keep current set (strategy (b) above). Optional, not blocking: recapture slots 2 + 5 per `docs/app-store-copy.md` §Screenshot captions.
 - [ ] Archive **Release** (build 15) — the dev `Unit.storekit` config only attaches to Xcode Run, never to archives — and upload.
 
 ---

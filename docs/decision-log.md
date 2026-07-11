@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-11 — App Store copy consolidated to one canonical file
+
+**Decision:** `docs/app-store-copy.md` is the single source of truth for every App Store Connect text field (name, subtitle, promo, description, keywords, What's New, screenshot captions, reviewer notes, subscription display fields, URLs). Deleted `docs/marketing/app-store-copy.md`; `source-en.md` and `final-submit-checklist.md` and the archive `asc-submission.md` now point instead of duplicating. Resolved forks: subtitle → `Strength tracker for lifters` (name owns gym/workout/log, so the subtitle adds strength/tracker/lifters); promo → the evergreen paper-comparison line; description → the short hook-first version; What's New → benefit bullets + an honest paid-purchase paragraph for updating v1 users; keywords deduped against name+subtitle (97 chars).
+
+**Why:** Two sessions produced three diverging copy docs plus a localization source that mirrored one of them — subtitle, promo, description, and What's New all disagreed, which risks pasting inconsistent metadata during the ASC session. Founder: "I want only one source of truth."
+
+**Implication:** Copy edits happen in `docs/app-store-copy.md` only; the checklist embeds no strings by design. Also fixed the last free-forever remnants on the marketing site (`compare/data.ts` pricing rows ×3, download-section eyebrow) and added site/dev-config price locations to `docs/pricing.md` §Changing prices so the next price change can't strand them.
+
 ## 2026-07-11 — App Store international rollout: 5-language metadata tier, English screenshots, auto-converted pricing
 
 **Decision:** Localize App Store **metadata only** in five languages riding the v2 submission — German, Spanish (Mexico), Portuguese (Brazil), French, Turkish — with paste-ready copy in `docs/app-store-localization/`. Screenshots stay English (ASC inherits them per locale). All four products keep Apple's automatic price conversion from the USD base ladder (Weekly $2.99 / Monthly $4.99 / Yearly $29.99 / optional Lifetime $44.99, per the 2026-07-02 entry on the `release/onboarding-paywall-qa` branch); no custom storefront prices. The in-app UI stays English, and every localized description says so in one honest line. Japanese/Korean deferred behind a paid-native-translation gate; Simplified Chinese rejected pending an ICP-filing decision (China mainland listing requires one since 2024). Supersedes the "defer localization until $5k MRR" line in `docs/archive/marketing/asc-submission.md` §Localization.
