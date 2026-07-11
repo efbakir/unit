@@ -12,11 +12,20 @@ enum TodayRoutineOverride {
     private static let dayKey = "unit.todayRoutineOverride.dayAnchor"
 
     /// Returns a stored override only when its day anchor matches today and the template is still in the program.
+    ///
+    /// Called from `TodayView.body` via `dashboardState`, so it must not touch
+    /// UserDefaults unless a stored value actually exists: a redundant
+    /// `removeObject` during view update re-invalidates the view and locks the
+    /// main thread in an infinite body → write → body loop (hard hang on
+    /// launch, observed on iOS 27).
     static func effectiveTemplateId(orderedTemplateIds: [UUID]) -> UUID? {
         let ud = UserDefaults.standard
+        guard ud.string(forKey: dayKey) != nil || ud.string(forKey: templateKey) != nil else {
+            return nil
+        }
         let todayAnchor = dayAnchor(for: Date())
         guard ud.string(forKey: dayKey) == todayAnchor else {
-            clearStaleStorage(matchingDay: todayAnchor, ud: ud)
+            clear()
             return nil
         }
         guard let raw = ud.string(forKey: templateKey),
@@ -38,13 +47,6 @@ enum TodayRoutineOverride {
         let ud = UserDefaults.standard
         ud.removeObject(forKey: templateKey)
         ud.removeObject(forKey: dayKey)
-    }
-
-    private static func clearStaleStorage(matchingDay todayAnchor: String, ud: UserDefaults) {
-        if ud.string(forKey: dayKey) != todayAnchor {
-            ud.removeObject(forKey: templateKey)
-            ud.removeObject(forKey: dayKey)
-        }
     }
 
     private static func dayAnchor(for date: Date) -> String {
