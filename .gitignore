@@ -43,3 +43,8 @@ lerna-debug.log*
 
 # TS incremental build cache
 tsconfig.tsbuildinfo
+
+# Audit-harness runtime artifacts (audit-prompt.md writes here)
+audit-screenshots/
+audit-*.log
+tsconfig.tsbuildinfo
