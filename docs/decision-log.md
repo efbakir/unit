@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-11 — App name separator resolved: `Unit: Gym Workout Log` (colon)
+
+**Decision:** The ASC App Name field uses the colon form `Unit: Gym Workout Log` (21 chars). Supersedes the em-dash rendering in the earlier 2026-07-11 name entry — the words and the ASO rationale stand; only the separator is resolved. Locale names take the same separator at their next regeneration pass.
+
+**Why:** Founder pick ("preferred") during the English-copy freeze. Zero keyword-indexing difference; the colon is the category norm, scans better at App Store list sizes, and matches how the live 1.0 listing already renders (verified in ASC 2026-07-11: the Apps menu shows `Unit: Gym Notebook`).
+
+**Implication:** `docs/app-store-copy.md` §App name updated. ASC paste uses the colon. The five locale files still carry `Unit — …` names — separator swap rides the next locale regeneration (do not edit them piecemeal).
+
 ## 2026-07-11 — App Store copy consolidated to one canonical file
 
 **Decision:** `docs/app-store-copy.md` is the single source of truth for every App Store Connect text field (name, subtitle, promo, description, keywords, What's New, screenshot captions, reviewer notes, subscription display fields, URLs). Deleted `docs/marketing/app-store-copy.md`; `source-en.md` and `final-submit-checklist.md` and the archive `asc-submission.md` now point instead of duplicating. Resolved forks: subtitle → `Strength tracker for lifters` (name owns gym/workout/log, so the subtitle adds strength/tracker/lifters); promo → the evergreen paper-comparison line; description → the short hook-first version; What's New → benefit bullets + an honest paid-purchase paragraph for updating v1 users; keywords deduped against name+subtitle (97 chars).

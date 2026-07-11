@@ -10,11 +10,11 @@
 ## App name (30)
 
 ```
-Unit — Gym Workout Log
+Unit: Gym Workout Log
 ```
 
-Locked 2026-07-11 (ASO over brand), superseding `Unit — Gym Notebook`. Home-screen icon stays `Unit` (`INFOPLIST_KEY_CFBundleDisplayName`).
-Separator is cosmetic (identical keyword indexing): the colon form `Unit: Gym Workout Log` is the category norm and scans better at list size — founder picks at paste time. If you paste the colon, update this block after.
+21 chars. Locked 2026-07-11 (ASO over brand), superseding `Unit: Gym Notebook`. **Separator resolved to the colon** (2026-07-11, see decision log): identical keyword indexing either way, but the colon is the category norm, scans better at list size, and matches how the live 1.0 listing already renders (`Unit: Gym Notebook`). Home-screen icon stays `Unit` (`INFOPLIST_KEY_CFBundleDisplayName`).
+Locale names take the same separator — flagged for the next locale regeneration pass (do not edit locale files outside that pass).
 
 ## Subtitle (30)
 
@@ -126,10 +126,10 @@ Pricing authority: `docs/pricing.md`. Product IDs never change. No introductory 
 | Age rating | 4+ |
 | Copyright | 2026 Efe Bakir |
 
-## Shipped What's New history
+## What's New history
 
-**v1.1:** PR badges in History; paste import reads table-style + Turkish programs; onboarding day-count 1–7, keyboard fix, force-quit crash fix; stray Done button removed; Start workout only on Today.
-**v1.0:** "Unit is here. Log your sets in one tap, import your program from Notes, and track your progress — all without leaving the gym floor."
+**v1.1 — prepared, never shipped** (ASC shows 1.0 as the only released version; verified live 2026-07-11): PR badges in History; paste import reads table-style + Turkish programs; onboarding day-count 1–7, keyboard fix, force-quit crash fix; stray Done button removed; Start workout only on Today. Fold anything still relevant into the v2.0 notes if wanted.
+**v1.0 (live):** "Unit is here. Log your sets in one tap, import your program from Notes, and track your progress — all without leaving the gym floor."
 
 ## Voice rules (apply to every field above)
 
