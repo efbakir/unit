@@ -49,6 +49,19 @@ final class StoreManager {
         Tier.lifetime.rawValue
     ]
 
+    /// Last entitlement answer, persisted across launches. Absent = StoreKit
+    /// has never answered on this install; "" = answered "no entitlement";
+    /// otherwise a `Tier` rawValue. Lets the launch gate open from the cached
+    /// answer instead of blocking on `Transaction.currentEntitlements`, which
+    /// can hang indefinitely (wedged simulator StoreKit session, broken App
+    /// Store connection).
+    nonisolated private static let lastKnownEntitlementKey = "storeManager.lastKnownEntitlement"
+
+    /// How long the first-ever entitlement check may block the launch gate
+    /// before the app gives up and shows the paywall. The check keeps running
+    /// and corrects the state whenever it completes.
+    nonisolated private static let entitlementGateTimeout: Duration = .seconds(5)
+
     // MARK: - State
 
     var products: [String: Product] = [:]
@@ -75,8 +88,14 @@ final class StoreManager {
 
     init() {
         guard !ProcessInfo.processInfo.isSwiftUIPreview else { return }
+        if let cached = UserDefaults.standard.string(forKey: Self.lastKnownEntitlementKey) {
+            activeTier = Tier(rawValue: cached)
+            isPurchased = activeTier != nil
+            hasCheckedEntitlement = true
+        }
         transactionListener = listenForTransactions()
         Task { await checkEntitlement() }
+        Task { await releaseEntitlementGateAfterTimeout() }
     }
 
     /// Nonisolated for the same back-deploy-shim SIGABRT as
@@ -208,6 +227,19 @@ final class StoreManager {
         activeTier = entitlementTier
         isPurchased = entitlementTier != nil
         hasCheckedEntitlement = true
+        UserDefaults.standard.set(entitlementTier?.rawValue ?? "", forKey: Self.lastKnownEntitlementKey)
+    }
+
+    /// First-install fallback: no cached answer exists yet, so the launch gate
+    /// is blocking on `checkEntitlement()`. If StoreKit hasn't answered within
+    /// the timeout, release the gate unpurchased — the paywall (with Restore)
+    /// is recoverable; an infinite spinner is not.
+    private func releaseEntitlementGateAfterTimeout() async {
+        try? await Task.sleep(for: Self.entitlementGateTimeout)
+        if !hasCheckedEntitlement {
+            logger.error("Entitlement check did not answer within \(Self.entitlementGateTimeout.components.seconds)s; releasing launch gate unpurchased.")
+            hasCheckedEntitlement = true
+        }
     }
 
     // MARK: - Transaction Listener
