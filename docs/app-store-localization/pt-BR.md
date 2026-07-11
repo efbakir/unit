@@ -7,10 +7,10 @@
 ## App name (30 max)
 
 ```
-Unit — Diário de Treino
+Unit: Diário de Treino
 ```
 
-23 chars. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Ficha de Treino" (the paper workout sheet), which carried the superseded metaphor; *ficha* keeps its search value from the keyword field instead.
+22 chars. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Ficha de Treino" (the paper workout sheet), which carried the superseded metaphor; *ficha* keeps its search value from the keyword field instead.
 
 ## Subtitle (30 max)
 
@@ -63,8 +63,8 @@ academia,musculação,hipertrofia,progressão,supino,agachamento,peso,anotar,fic
 
 ```
 • Registre uma série em 3 segundos — as cargas da última vez já vêm preenchidas
-• Cole qualquer ficha e comece do primeiro dia com suas cargas reais
-• Primeiro uso refeito: da instalação à primeira série registrada em menos de um minuto
+• Cole sua ficha e comece do primeiro dia com suas cargas reais
+• Primeiro uso refeito: da instalação à sua ficha montada em menos de um minuto
 
 O Unit agora exige uma compra paga após a configuração — os planos aparecem antes de pagar. Não há teste grátis. Seus dados de treino ficam neste iPhone.
 ```

@@ -7,10 +7,10 @@
 ## App name (30 max)
 
 ```
-Unit — Antrenman Günlüğü
+Unit: Antrenman Günlüğü
 ```
 
-24 chars. "Antrenman günlüğü" = training log — the standard Turkish term and the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor.
+23 chars. "Antrenman günlüğü" = training log — the standard Turkish term and the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor.
 
 ## Subtitle (30 max)
 
@@ -63,8 +63,8 @@ gym,fitness,vücut,geliştirme,egzersiz,program,spor,salonu,demir,kayıt,halter,
 
 ```
 • Bir seti 3 saniyede kaydet — geçen seferki ağırlıkların zaten dolu
-• Herhangi bir programı yapıştır, ilk günden gerçek çalışma ağırlıklarınla başla
-• Yenilenen ilk kurulum: yüklemeden ilk kayıtlı sete bir dakikadan kısa sürede
+• Programını yapıştır, ilk günden gerçek çalışma ağırlıklarınla başla
+• Yenilenen ilk kurulum: yüklemeden programın hazır olmasına bir dakikadan kısa sürede
 
 Unit artık kurulumdan sonra ücretli satın alma gerektiriyor — planlar ödemeden önce gösterilir. Ücretsiz deneme yok. Mevcut antrenman verilerin bu iPhone'da kalır.
 ```

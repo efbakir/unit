@@ -7,10 +7,10 @@
 ## App name (30 max)
 
 ```
-Unit — Trainingstagebuch
+Unit: Trainingstagebuch
 ```
 
-24 chars. "Trainingstagebuch" (training log/diary) — survives the 2026-07-11 re-derivation unchanged: it is already the log-family term (the German for "workout log"), not the notebook metaphor the EN name moved away from.
+23 chars. "Trainingstagebuch" (training log/diary) — survives the 2026-07-11 re-derivation unchanged: it is already the log-family term (the German for "workout log"), not the notebook metaphor the EN name moved away from.
 
 ## Subtitle (30 max)
 
@@ -64,7 +64,7 @@ kraftsport,fitness,muskelaufbau,trainingsplan,hantel,gewichte,wiederholungen,pro
 ```
 • Logge einen Satz in 3 Sekunden — die Gewichte vom letzten Mal sind schon eingetragen
 • Füge dein Programm als Text ein und starte ab Tag eins mit echten Arbeitsgewichten
-• Neuer erster Start: von der Installation zum ersten geloggten Satz in unter einer Minute
+• Neuer erster Start: von der Installation zum fertigen Programm in unter einer Minute
 
 Unit erfordert nach der Einrichtung jetzt einen kostenpflichtigen Kauf — die Tarife werden vor dem Kauf angezeigt. Keine kostenlose Testphase. Vorhandene Trainingsdaten bleiben auf diesem iPhone.
 ```

@@ -7,10 +7,10 @@
 ## App name (30 max)
 
 ```
-Unit — Journal de Muscu
+Unit: Journal de Muscu
 ```
 
-23 chars. "Journal de muscu" = lifting log — the log-family identity the EN name moved to (`Gym Workout Log`), keeping "muscu" as the colloquial category anchor. Replaces "Carnet de Muscu" (notebook), which carried the superseded metaphor.
+22 chars. "Journal de muscu" = lifting log — the log-family identity the EN name moved to (`Gym Workout Log`), keeping "muscu" as the colloquial category anchor. Replaces "Carnet de Muscu" (notebook), which carried the superseded metaphor.
 
 ## Subtitle (30 max)
 
@@ -62,8 +62,8 @@ entraînement,fitness,salle,haltères,squat,répétitions,poids,programme,muscul
 
 ```
 • Enregistrez une série en 3 secondes — les charges de la dernière fois sont déjà remplies
-• Collez n'importe quel programme et démarrez dès le premier jour avec vos charges réelles
-• Premier lancement repensé : de l'installation à la première série enregistrée en moins d'une minute
+• Collez votre programme et démarrez dès le premier jour avec vos charges réelles
+• Premier lancement repensé : de l'installation à votre programme prêt en moins d'une minute
 
 Unit nécessite désormais un achat payant après la configuration — les formules s'affichent avant de payer. Pas d'essai gratuit. Vos données d'entraînement restent sur cet iPhone.
 ```

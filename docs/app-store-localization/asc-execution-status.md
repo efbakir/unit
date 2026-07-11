@@ -17,15 +17,15 @@
 
 Character limits: **all 20 re-derived fields machine-checked within ASC limits** (name/subtitle 30, promo 170, keywords 100, sub name 30, sub desc 45).
 
-## Second regeneration pending (post-freeze fixes, 2026-07-11)
+## Second regeneration — APPLIED (post-freeze fixes, 2026-07-11)
 
-The English copy is now **FROZEN** (founder-approved, `docs/app-store-copy.md`). Three approved fixes landed after the first re-derivation, so the next localization session must apply, per locale:
+The English copy is **FROZEN** (founder-approved, `docs/app-store-copy.md`). The three approved post-freeze fixes are now applied to all five locale files:
 
-1. **Name separator**: `Unit — …` → `Unit: …` (all five — colon resolved in the decision log; matches the live listing's existing rendering).
-2. **What's New bullet 2**: "any program" → "your program" equivalents — tr `herhangi bir programı` → `programını`, es `cualquier rutina` → `tu rutina`, pt `qualquer ficha` → `sua ficha`, fr `n'importe quel programme` → `votre programme`; **de already says `dein Programm`** (no change).
-3. **What's New bullet 3**: "…to your first logged set in under a minute" → "…to your program built in under a minute" (all five — the old claim crossed the paywall; the new one is the free part).
+1. **Name separator** — all five names read `Unit: …` (colon), matching the frozen `Unit: Gym Workout Log`: tr `Unit: Antrenman Günlüğü` (23), de `Unit: Trainingstagebuch` (23), es `Unit: Diario de Gym` (19), pt `Unit: Diário de Treino` (22), fr `Unit: Journal de Muscu` (22).
+2. **What's New bullet 2** — "your program" equivalents: tr `Programını yapıştır…`, es `Pega tu rutina…`, pt `Cole sua ficha…`, fr `Collez votre programme…`. de already read `dein Programm` — untouched.
+3. **What's New bullet 3** — now ends at the free surface (program built), not past the paywall (first logged set): tr `…yüklemeden programın hazır olmasına bir dakikadan kısa sürede`, de `…zum fertigen Programm in unter einer Minute`, es `…a tu rutina lista en menos de un minuto`, pt `…à sua ficha montada em menos de um minuto`, fr `…à votre programme prêt en moins d'une minute`.
 
-Everything else from the first re-derivation stands. Descriptions remain untouched (their English source did not change in the freeze).
+Everything else from the first re-derivation stands. Descriptions untouched (their English source did not change in the freeze). Character limits re-run after the fixes: **every field in all five files within ASC limits** (name/subtitle 30, promo 170, keywords 100, What's New 4000, sub name 30, sub desc 45).
 
 ## Gate before any ASC paste
 
