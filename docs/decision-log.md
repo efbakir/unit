@@ -20,6 +20,16 @@
 
 ---
 
+## 2026-07-11 — App Store listing name: `Unit — Gym Workout Log` (supersedes 2026-05-31 `Unit — Gym Notebook`)
+
+**Decision:** App Store Connect App Name field is `Unit — Gym Workout Log`. Home-screen display name is unchanged (`Unit` via `INFOPLIST_KEY_CFBundleDisplayName`).
+
+**Why:** Founder call, ASO over brand — "workout" and "log" are high-traffic search terms the previous name didn't carry. Raised as an open decision blocking the v2 App Information panel in `docs/marketing/app-store-copy.md`.
+
+**Implication:** Update the App Name field in App Store Connect before submitting v2 (founder action). `docs/app-store-copy.md` and `docs/marketing/app-store-copy.md` updated to reflect the new name. `docs/archive/marketing/asc-submission.md` keeps the old name — it's a superseded historical record, not touched.
+
+---
+
 ## 2026-07-02 — Weekly drops to $2.99: kill the dominated-default optics before v2 submits
 
 **Decision:** Supersedes the 2026-06-29 prices (only the prices — weekly-default, all-tiers-visible, StoreKit-derivation, and optional-Lifetime rules all stand). v2 ships Weekly **$2.99/week**, Monthly $4.99/month, Yearly $29.99/year, optional Lifetime $44.99. Weekly stays the default selected plan.

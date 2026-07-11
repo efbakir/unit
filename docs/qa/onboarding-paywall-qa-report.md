@@ -84,3 +84,42 @@ Nothing code-level. Two runtime verifications remain, both covered by `release-q
 2. **Purchase → unlock, and Restore (#8, #9)** — code-verified, not run. Walk §9 (⌘R with the wired config).
 
 **Why not machine-driven:** the Simulator can be booted + screenshotted safely, but driving the multi-step SwiftUI flow to the paywall needs either synthetic global input (unsafe while the Mac is in active use) or a UI-test target (none exists; adding one is beyond a "fix clear bugs" pass). A UI-test + `SKTestSession` harness that automates the paywall + purchase across device sizes can be built as a follow-up if wanted.
+
+---
+
+## Addendum — 2026-07-11 submission-readiness pass
+
+**Method advance:** the founder's iPhone 17 simulator holds a committed program, so its data
+container (SwiftData store + UserDefaults) was copied into fresh installs on three sizes —
+reaching the paywall by machine, no taps. This closes most of the §I gaps.
+
+**Machine-verified this pass (screenshots in `docs/qa/`):**
+- **Paywall layout on 3 sizes** — `paywall-se-unavailable.png` (SE 3rd gen, 375pt),
+  `paywall-17-unavailable.png`, `paywall-promax-unavailable.png`. Header, benefits, recovery
+  card, disclosure position, legal footer, pinned CTA: no clipping, nothing under the status
+  bar, on all three. (State shown is products-unavailable — `simctl launch` doesn't attach the
+  scheme's StoreKit config, which is itself the correct honest fallback.)
+- **Products-unavailable state + recovery** — "Couldn't load subscriptions" card with Try again;
+  CTA disabled with visible reason "Subscriptions couldn't load. Try again." No fake prices.
+- **New benefit copy live** — "Log a set in 3 seconds" / "Rest timer on your Lock Screen" render
+  in the shipped binary.
+- **Pricing consistency** — pricing.md, decision-log 2026-07-02, `Unit.storekit`, and
+  `StoreManager` all agree: $2.99/wk (default) · $4.99/mo · $29.99/yr · $44.99 lifetime; zero
+  hardcoded prices in view code.
+- **Build / tests / `git diff --check`** — all green on this pass.
+
+**Founder-verified earlier (commit `7f7994a`, iPhone 17, Xcode run):** all four tiers load with
+correct prices, Weekly pre-selected, CTA enabled — the loaded-products state works end-to-end.
+That run predates the $2.99 change and the status-bar fade fix, which is why the PR #1 boxes
+stay unchecked until the founder's re-walk.
+
+**Fixed this pass:** `docs/archive/marketing/asc-submission.md` still said Weekly $4.99 in the
+v2 IAP table and reviewer notes — corrected to $2.99, and a founder ASC checklist added.
+`CURRENT_PROJECT_VERSION` bumped 14 → 15 per that doc's own pre-archive instruction.
+
+**Still founder-only (cannot be machine-verified from the repo):**
+1. Loaded-ladder walk at $2.99 on 3 sizes + purchase unlock + restore + post-unlock entry +
+   Gym Test (⌘R with the StoreKit config — `release-qa.md` §9, ~10 min).
+2. Everything in asc-submission.md §"v2 external gate — founder checklist" (Agreements/Tax/
+   Banking for paid apps, subscription products at the locked prices, reviewer notes, archive
+   build 15 + upload).

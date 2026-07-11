@@ -73,6 +73,6 @@ New in v2: paste your program and start with real working numbers from day one. 
 
 ---
 
-## Open decision
+## App name
 
-App name: keep "Unit — Gym Notebook" (brand) or switch to "Unit — Gym Workout Log" (3 high-traffic search terms). Brand vs. ranking — pick one before submitting.
+**Unit — Gym Workout Log** — locked 2026-07-11 (ASO over brand; see `docs/decision-log.md`). Home-screen icon stays `Unit`.

@@ -1,13 +1,15 @@
 # Unit — App Store Copy
 
 > Draft for App Store Connect. Source of truth: `product-compass.md`, `app-positioning.md`.
-> Last updated: 2026-04-13.
+> Last updated: 2026-07-11.
 
 ---
 
 ## App Name
 
-**Unit**
+**Unit — Gym Workout Log** (App Store Connect listing name; home-screen icon stays `Unit` via `INFOPLIST_KEY_CFBundleDisplayName`)
+
+Locked 2026-07-11, superseding the 2026-05-31 collision fallback `Unit — Gym Notebook`. See `docs/decision-log.md` 2026-07-11 entry.
 
 ## Subtitle (30 chars max)
 

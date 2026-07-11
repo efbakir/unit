@@ -13,7 +13,7 @@
 
 | Product | Reference Name | Product ID | Type | Price | Change vs v1 |
 |---|---|---|---|---|---|
-| Weekly | Unit Weekly | `com.unit.weekly` | Auto-renewable subscription (1 week) | $4.99 | **NEW** — add to `unit-pro` subscription group |
+| Weekly | Unit Weekly | `com.unit.weekly` | Auto-renewable subscription (1 week) | **$2.99** | **NEW** — create in `unit-pro` group at $2.99. If it was already created at $4.99, change the price (decision-log 2026-07-02: dominated-default fix). |
 | Monthly | Unit Monthly | `com.unit.monthly` | Auto-renewable subscription (1 month) | $4.99 | Current founder override |
 | Yearly | Unit Yearly | `com.unit.annual` | Auto-renewable subscription (1 year) | $29.99 | Current founder override |
 | Lifetime | Unit Lifetime | `com.unit.lifetime` | Non-consumable | $44.99 | Optional — show only if already configured and returned by StoreKit |
@@ -27,7 +27,7 @@ Unit v2 is a local-first gym logger for iPhone. It requires a paid purchase to a
 
 To evaluate:
 1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then program setup. No personal information is requested.
-2. After onboarding completes, the paywall appears with these StoreKit products: Weekly `com.unit.weekly` $4.99/week, Monthly `com.unit.monthly` $4.99/month, Yearly `com.unit.annual` $29.99/year, and Lifetime `com.unit.lifetime` $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
+2. After onboarding completes, the paywall appears with these StoreKit products: Weekly `com.unit.weekly` $2.99/week, Monthly `com.unit.monthly` $4.99/month, Yearly `com.unit.annual` $29.99/year, and Lifetime `com.unit.lifetime` $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
 3. Subscribe to any recurring tier, or buy Lifetime if visible, via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
 4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
 
@@ -69,7 +69,21 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 ### v2 build / version
 
 - `MARKETING_VERSION = 1.1` (already set in `Unit.xcodeproj/project.pbxproj`)
-- `CURRENT_PROJECT_VERSION = 14` (already set; bump to 15 if additional commits land before archive)
+- `CURRENT_PROJECT_VERSION = 15` (bumped 2026-07-11 per the line above — QA-branch commits landed after build 14)
+
+### v2 external gate — founder checklist (App Store Connect, cannot be done from the repo)
+
+- [ ] **Agreements, Tax, and Banking**: Paid Applications Agreement active, bank + tax forms complete. v1 shipped with **no IAP**, so this may never have been finished — it blocks every paid submission if missing.
+- [ ] **Subscription group** `unit-pro` exists; Weekly / Monthly / Yearly created inside it with localized display names ("Unit Weekly" etc.) and descriptions.
+- [ ] **Weekly price = $2.99** (`com.unit.weekly`) — create at $2.99, or change from $4.99 if already created.
+- [ ] Monthly $4.99, Yearly $29.99 confirmed. Lifetime $44.99 non-consumable only if you want it shipped — the app hides it automatically when ASC doesn't return it.
+- [ ] **No introductory offer** configured on any tier (the app promises no trial).
+- [ ] IAPs attached to the v2 (1.1) version record and submitted **with** the binary.
+- [ ] Reviewer notes: paste the v2 block above (with $2.99) into App Review notes.
+- [ ] Description: remove the v1 "Not a subscription… free" bullet per §v2 description copy update.
+- [ ] Privacy labels: unchanged ("Data Not Collected") — purchases run through Apple, the app still collects nothing.
+- [ ] Screenshots: keep current set (strategy (b) above). Optional, not blocking: replace slot 5's duplicate calendar shot with the Lock-Screen rest-timer capture per `docs/marketing/app-store-copy.md`.
+- [ ] Archive **Release** (build 15) — the dev `Unit.storekit` config only attaches to Xcode Run, never to archives — and upload.
 
 ---
 
