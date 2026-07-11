@@ -118,7 +118,7 @@ Locked USD ladder (source of truth `docs/pricing.md`, decision 2026-07-02):
 
 ## App Store Connect actions (founder, in order)
 
-Everything below is manual web work; no code ships. ~45 min total.
+Execution runbook with merge order, per-click detail, and post-paste verification: [`asc-paste-checklist.md`](asc-paste-checklist.md). Summary below. Everything is manual web work; no code ships. ~45 min total.
 
 1. **Pre-check:** confirm the 2026-07-02 Weekly price change ($4.99 → $2.99) is done in ASC. It gates v2 regardless of localization.
 2. **App Store tab → v2 version → add languages:** German, Spanish (Mexico), French, Portuguese (Brazil), Turkish. For each, paste from the locale file in this folder: name, subtitle, description, keywords, promotional text, What's New. Screenshots: leave inherited (English).
