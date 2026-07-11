@@ -1,5 +1,7 @@
 # Unit — App Store copy variants
 
+> **HISTORICAL — do not use.** Superseded 2026-07-11 by the frozen canonical `docs/app-store-copy.md`. Kept only as the v1 positioning record.
+
 > Three distinct positioning variants for A/B testing post-launch.
 > Source-of-truth: `docs/app-store-copy.md` (current baseline), `PRODUCT.md`, `docs/launch-plan.md`, `docs/pricing.md`, `docs/marketing/anti-patterns.md`.
 > Resolved 2026-04-30. Do NOT lift verbatim from `docs/app-store-copy.md` — these are distinct rewrites.

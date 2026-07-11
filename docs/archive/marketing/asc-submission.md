@@ -1,5 +1,7 @@
 # Unit — App Store Connect submission (paste-ready)
 
+> **HISTORICAL — do not paste from this file.** The v2 submission runs from `docs/app-store-submission/final-submit-checklist.md` (process) + `docs/app-store-copy.md` (frozen strings). Kept as the v1→v2 decision record.
+
 > Single-source paste sheet for the submission session.
 > Synthesizes [app-store-copy-variants.md](app-store-copy-variants.md) (Variant 1 — Notebook Replacement, locked), [aso-keywords.md](aso-keywords.md) (97-char keywords field, locked), [launch-week-may-11.md](../launch-week-may-11.md) Day 2 + Day 4 specs, and the live legal pages.
 
@@ -85,7 +87,7 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 - [ ] Description: remove the v1 "Not a subscription… free" bullet per §v2 description copy update.
 - [ ] Privacy labels: unchanged ("Data Not Collected") — purchases run through Apple, the app still collects nothing.
 - [ ] Screenshots: keep current set (strategy (b) above). Optional, not blocking: recapture slots 2 + 5 per `docs/app-store-copy.md` §Screenshot captions.
-- [ ] Archive **Release** (build 15) — the dev `Unit.storekit` config only attaches to Xcode Run, never to archives — and upload.
+- [ ] Archive **Release** (build 16) — the dev `Unit.storekit` config only attaches to Xcode Run, never to archives — and upload.
 
 ---
 

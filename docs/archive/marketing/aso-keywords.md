@@ -1,5 +1,7 @@
 # Unit — ASO keyword strategy
 
+> **HISTORICAL — do not use.** The live keyword field is in the frozen canonical `docs/app-store-copy.md` §Keywords. Kept only as the v1 keyword research record.
+
 > 100-keyword candidate list categorized by intent + competition. Final 100-char Keywords field string at the end.
 > Source: 2026-04-29 industry-tools research + competitor App Store metadata teardown (`docs/competitors.md`).
 > Apple Keywords field rule: 100 chars total, comma-separated, NO spaces after commas. Trademarks (Hevy, Strong, Liftosaur, Fitbod, Jefit) are auto-rejected — use generic alternatives only.
