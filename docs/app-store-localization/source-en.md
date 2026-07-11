@@ -6,10 +6,10 @@
 ## App name (30)
 
 ```
-Unit — Gym Notebook
+Unit — Gym Workout Log
 ```
 
-Open decision (carried from `docs/marketing/app-store-copy.md`): keep "Gym Notebook" (brand) vs "Gym Workout Log" (search traffic). Locale files localize the suffix, never "Unit".
+Locked 2026-07-11 (ASO over brand; see `docs/decision-log.md`), superseding `Unit — Gym Notebook`. Locale files localize the suffix, never "Unit" — the existing localized names already target log/diary search terms, so they stand unchanged.
 
 ## Subtitle (30)
 

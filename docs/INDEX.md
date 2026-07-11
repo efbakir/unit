@@ -56,6 +56,7 @@
 | Path | What it is | Use when |
 |---|---|---|
 | `docs/release-qa.md` | The gauntlet — manual on-device checklist for state persistence, keyboard, lifecycle, empty/max data | Before every TestFlight or App Store submission. Pairs with the `/state-audit` skill. |
+| `docs/app-store-submission/final-submit-checklist.md` | v2.0 (build 15) ASC handoff — paste-exact metadata, reviewer notes, IAP attachment, privacy/age/URL checks | Submitting v2 to App Review |
 
 ## Agent harness & Claude
 

@@ -1,5 +1,7 @@
 # Unit — 8-Week Launch Plan (2026-04-19 → 2026-06-14)
 
+> **Historical (completed 2026-06).** Pricing and paywall strategy in §2–§3 are superseded — v2 ships a hard paywall at Weekly $2.99 / Monthly $4.99 / Yearly $29.99 / optional Lifetime $44.99. Current source of truth: `docs/pricing.md` + `docs/decision-log.md`. The "free forever" recommendation below is a record of the pre-2026-06-16 plan, not current policy.
+
 ## Context
 
 You've built Unit for ~3 months and you're 95% ship-ready — feature-complete, in final polish, days from App Store submission. The product side is handled: positioning is sharp ("log a set in <3s, notebook replacement for intermediate-to-advanced lifters"), scope is disciplined, design system is tight. What's missing is everything *around* the product: you've never run a launch, never priced a product, never done PM, never done marketing beyond recording yourself. You asked for guidance grounded in research and case studies, and for one decisive path you can execute alone.
