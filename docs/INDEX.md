@@ -40,6 +40,7 @@
 | `docs/competitors.md` | 5 direct competitors (Hevy, Strong, Fitbod, sheets, bloatware) — strengths/weaknesses | Understanding market or differentiating |
 | `docs/competitors-analysis.md` | Deeper matrix — features, UX under stress, IA takeaways | Benchmarking a feature or interaction pattern |
 | `docs/app-store-copy.md` | App Store Connect copy — name, subtitle, description, keywords | Updating App Store metadata |
+| `docs/app-store-localization/README.md` | International rollout — metadata localization tiers, regional pricing, per-locale copy (de/es-MX/pt-BR/fr/tr) | Localizing App Store metadata or reviewing regional pricing |
 
 ## Research & foundations
 

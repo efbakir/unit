@@ -20,6 +20,16 @@
 
 ---
 
+## 2026-07-11 — App Store international rollout: 5-language metadata tier, English screenshots, auto-converted pricing
+
+**Decision:** Localize App Store **metadata only** in five languages riding the v2 submission — German, Spanish (Mexico), Portuguese (Brazil), French, Turkish — with paste-ready copy in `docs/app-store-localization/`. Screenshots stay English (ASC inherits them per locale). All four products keep Apple's automatic price conversion from the USD base ladder (Weekly $2.99 / Monthly $4.99 / Yearly $29.99 / optional Lifetime $44.99, per the 2026-07-02 entry on the `release/onboarding-paywall-qa` branch); no custom storefront prices. The in-app UI stays English, and every localized description says so in one honest line. Japanese/Korean deferred behind a paid-native-translation gate; Simplified Chinese rejected pending an ICP-filing decision (China mainland listing requires one since 2024). Supersedes the "defer localization until $5k MRR" line in `docs/archive/marketing/asc-submission.md` §Localization.
+
+**Why:** Founder-directed international-launch prep (goal, 2026-07-11). Metadata localization is the low-risk, high-reach slice: per-locale fields go through the same v2 review with no binary change, and Apple's monotonic price grid preserves the "no dominated tier" rule in every storefront by construction. The five languages were picked on Health & Fitness market size, willingness to pay, native search behavior, translation risk, and founder review ability (Turkish is native-reviewable; the app's parser already reads Turkish programs).
+
+**Implication:** Founder ASC actions listed in `docs/app-store-localization/README.md` §App Store Connect actions (~45 min manual paste; no API key exists in the repo). Non-Turkish copy needs one native-speaker read each before paste. UI localization has hard prerequisites (String Catalog migration, parser exercise-name audit, per-language layout QA) recorded as Tier 3 — do not machine-translate `AppCopy.swift`. Product IDs, prices, and paywall StoreKit-derivation untouched.
+
+---
+
 ## 2026-06-29 — Founder pricing override: weekly default, $4.99 monthly, $29.99 yearly, optional lifetime
 
 **Decision:** Supersedes the 2026-06-17 annual-default experiment and the 2026-06-16 "drop Lifetime" line for v2 pricing. v2 now ships Weekly $4.99/week, Monthly $4.99/month, Yearly $29.99/year (`com.unit.annual`), and optional Lifetime $44.99 one-time (`com.unit.lifetime`) only if the non-consumable is already configured in App Store Connect and returned by StoreKit. Weekly is the default selected plan. The paywall must keep Weekly / Monthly / Yearly visible, derive every visible price from StoreKit, and never show fake fallback prices.
