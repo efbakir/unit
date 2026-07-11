@@ -372,4 +372,12 @@ Code surfaces shipped today: `Unit/UnitApp.swift` (InstallProvenance + Security 
 
 ---
 
+## 2026-07-11 - Program preview revised: "Summary" title, "Save my program" CTA, row-tap edit
+
+**Decision:** Founder revision to the paste-preview screen (screenshot-capture pass surfaced them): title "Here's what I read" → **"Summary"**; subtitle drops "A subscription is required before logging."; CTA "Choose a plan" → **"Save my program"** (label "Saving…" while committing); the standalone pencil button is gone — the name + sets×reps block is the tap target for the edit sheet. Also fixed: the "Check sets and reps" hint now reads a `usedDefaultSetsReps` flag recorded at parse-mapping time instead of value-equality against 3×8, so an explicitly written 3x8 line no longer false-positives (unit tests added).
+**Why:** "Here's what I read" was a sentence where a label belongs; "Choose a plan" read as a pricing action on a program-confirmation screen (the actual plan choice happens on the paywall it opens); the pencil sat between the text and the weight field looking like a control for neither. This supersedes the 2026-06-17 Q5 lock on the "Choose a plan" CTA wording — the hand-off behavior (commit → hard paywall) is unchanged.
+**Implication:** ASC screenshot #2 must be recaptured from the revised screen. `docs/release-qa.md` §paywall walk and the submit-checklist capture runbook now name the new CTA. The "Ready to log set #1?" demo card is under review separately — founder flagged it as confusing without step-4 context; not yet removed.
+
+---
+
 <!-- new entries above this line -->

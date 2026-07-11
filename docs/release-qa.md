@@ -132,7 +132,7 @@ Walk this on a fresh install, from Xcode (⌘R), on **iPhone SE (3rd gen)**, a r
 a **Pro Max**, at default Dynamic Type and one AX size:
 
 - [ ] Complete onboarding (paste a routine OR pick a starter program → schedule → preview →
-      **Choose a plan**). The app saves the program and lands on **PaywallView**, not the tabs.
+      **Save my program**). The app saves the program and lands on **PaywallView**, not the tabs.
 - [ ] Paywall shows **Weekly / Monthly / Yearly** with real prices ($2.99/week, $4.99/month,
       $29.99/year — ladder authority: `docs/pricing.md`), Weekly pre-selected. Lifetime ($44.99)
       appears only if returned by StoreKit.

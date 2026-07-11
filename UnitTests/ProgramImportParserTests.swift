@@ -890,3 +890,45 @@ final class PRHistoryTests: XCTestCase {
         XCTAssertTrue(PRHistory.prSetEntryIDs(in: sessions).isEmpty)
     }
 }
+
+// MARK: - Parser-default sets/reps flag
+
+/// The "Check sets and reps" hint must fire only when the parser actually
+/// fell back to the 3×8 default — never on an explicitly written 3x8 line
+/// (the value-equality heuristic it replaces couldn't tell them apart).
+@MainActor
+final class ParserDefaultFlagTests: XCTestCase {
+    private func mappedExercises(_ text: String) -> [OnboardingExercise] {
+        let vm = OnboardingViewModel()
+        vm.applyImportedProgram(ProgramImportParser.parse(text, defaultUnit: "kg"))
+        return vm.dayExercises.flatMap { $0 }
+    }
+
+    func testExplicitThreeByEight_doesNotFlag() {
+        let exercises = mappedExercises("Day 1\nSquat 3x8 100")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises.first?.plannedSets, 3)
+        XCTAssertEqual(exercises.first?.plannedReps, 8)
+        XCTAssertNotEqual(exercises.first?.usedDefaultSetsReps, true,
+                          "Explicit 3x8 must not read as a parser fallback")
+    }
+
+    /// A bare name-only line ("Squat") is dropped by the normalizer as
+    /// noise, so the surviving defaulted case is weight-only: sets and reps
+    /// both come back nil and the mapping fills in 3×8.
+    func testWeightOnlyLine_flagsDefaultedSetsReps() {
+        let exercises = mappedExercises("Day 1\nSquat 100kg")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises.first?.plannedSets, OnboardingExercise.defaultPlannedSets)
+        XCTAssertEqual(exercises.first?.plannedReps, OnboardingExercise.defaultPlannedReps)
+        XCTAssertEqual(exercises.first?.usedDefaultSetsReps, true,
+                       "A weight-only line takes parser default sets/reps and must carry the flag")
+    }
+
+    func testExplicitNonDefault_doesNotFlag() {
+        let exercises = mappedExercises("Day 1\nBench Press 4x8 80")
+        XCTAssertEqual(exercises.first?.plannedSets, 4)
+        XCTAssertEqual(exercises.first?.plannedReps, 8)
+        XCTAssertNotEqual(exercises.first?.usedDefaultSetsReps, true)
+    }
+}

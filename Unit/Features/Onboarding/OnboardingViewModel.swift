@@ -3,8 +3,8 @@
 //  Unit
 //
 //  Transient onboarding state. No SwiftData @Model — all writes happen
-//  atomically in commit() when the user taps "Choose a plan" on the program
-//  preview (which saves the program, then presents the hard paywall).
+//  atomically in commit() when the user taps "Save my program" on the
+//  program preview (which saves the program, then presents the hard paywall).
 //
 
 import Foundation
@@ -54,6 +54,14 @@ struct OnboardingExercise: Identifiable, Equatable, Hashable, Codable {
     /// from the deleted v1 search sheet carry "", so the row stays clean.
     /// Codable default "" same pattern as `note` above; no migration.
     var originalLine: String = ""
+    /// True when the paste parser found no explicit sets/reps on the line
+    /// and fell back to the 3×8 default — drives the "Check sets and reps"
+    /// hint on the preview. Recorded at mapping time so an explicitly
+    /// written "3x8" never trips the hint (value equality can't tell the
+    /// two apart). `Optional<Bool>` decodes to `nil` on drafts persisted
+    /// before this field existed — same no-migration pattern as
+    /// `plannedWeightKg`; `nil` reads as "not defaulted".
+    var usedDefaultSetsReps: Bool? = nil
 }
 
 struct ImportedProgramExercise: Identifiable, Equatable {
@@ -447,7 +455,8 @@ extension OnboardingViewModel {
                     plannedReps: clampPlannedReps(exercise.reps ?? OnboardingExercise.defaultPlannedReps),
                     plannedWeightKg: exercise.weightKg,
                     note: exercise.note ?? "",
-                    originalLine: exercise.originalLine ?? ""
+                    originalLine: exercise.originalLine ?? "",
+                    usedDefaultSetsReps: exercise.sets == nil || exercise.reps == nil
                 )
             }
         })

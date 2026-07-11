@@ -7,14 +7,19 @@
 //  library path, paste-derived for paste path), confirms parser warnings
 //  inline (Q6), and hands off to the paywall via the sticky bottom CTA.
 //
-//  Decisions locked 2026-06-17 (Q5 + Q6):
+//  Decisions locked 2026-06-17 (Q5 + Q6), revised by founder 2026-07-11
+//  (see docs/decision-log.md):
 //   - Vertical day cards stacked (not tabs / not swipe).
 //   - First day expanded, others collapsed (user-picked over my "all expanded").
-//   - Inline weight edit only — exercise names + sets/reps stay fixed.
-//   - Sticky bottom "Choose a plan" CTA — one action; commits the program
-//     and hands off to the hard paywall (subscription required before logging).
+//   - Sticky bottom "Save my program" CTA — one action; commits the program
+//     and hands off to the hard paywall ("Choose a plan" read as pricing).
+//   - Paste title is the single word "Summary"; subtitle carries no
+//     subscription mention (the paywall speaks for itself).
+//   - Row tap (name + sets×reps block) opens the edit sheet — no separate
+//     pencil button next to the weight field.
 //   - Paste warnings inline: banner for noisy lines + dropped conditioning;
-//     ✱ hint on rows where sets/reps look like a parser default (3×10).
+//     hint on rows where the parser defaulted sets/reps (recorded flag,
+//     never value-equality against 3×8).
 //   - Empty-state fallback when parse produced zero exercises.
 //
 
@@ -88,7 +93,7 @@ struct OnboardingProgramPreviewView: View {
     // list when every day is expanded.
     private var ctaLabel: String {
         guard hasAnyExercise else { return "Back to import" }
-        return isCommitting ? "Opening plans…" : "Choose a plan"
+        return isCommitting ? "Saving…" : "Save my program"
     }
 
     private var ctaEnabled: Bool {
@@ -102,12 +107,12 @@ struct OnboardingProgramPreviewView: View {
     private var previewTitle: String {
         switch vm.importMethod {
         case .library: return "Your program"
-        case .paste: return "Here's what I read"
+        case .paste: return "Summary"
         }
     }
 
     private var previewSubtitle: String {
-        "Review every field now. A subscription is required before logging."
+        "Review every field now."
     }
 
     @ViewBuilder
@@ -239,51 +244,50 @@ struct OnboardingProgramPreviewView: View {
         exercise: OnboardingExercise
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(exercise.name)
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.leading)
-
-                HStack(spacing: AppSpacing.xxs) {
-                    Text("\(exercise.plannedSets)×\(exercise.plannedReps)")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .monospacedDigit()
-
-                    if isParserDefault(exercise) {
-                        Text("Check sets and reps")
-                            .font(AppFont.muted.font)
-                            .foregroundStyle(AppColor.warningOnSoft)
-                    }
-                }
-
-                if vm.importMethod == .paste, !exercise.originalLine.isEmpty {
-                    Text("From: \(exercise.originalLine)")
-                        .font(AppFont.muted.font)
-                        .foregroundStyle(AppColor.textTertiary)
-                        .lineLimit(2)
-                }
-
-                if !exercise.note.isEmpty {
-                    Text(exercise.note)
-                        .font(AppFont.muted.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .lineLimit(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
+            // The whole name + sets×reps block is the edit affordance — a
+            // separate pencil button next to the weight field read as two
+            // unrelated controls (founder feedback 2026-07-11).
             Button {
                 editingExercise = PreviewExerciseEditTarget(
                     dayIndex: dayIndex,
                     exerciseID: exercise.id
                 )
             } label: {
-                AppIcon.edit.image(size: 15, weight: .semibold)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(exercise.name)
+                        .font(AppFont.body.font)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.leading)
+
+                    HStack(spacing: AppSpacing.xxs) {
+                        Text("\(exercise.plannedSets)×\(exercise.plannedReps)")
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .monospacedDigit()
+
+                        if isParserDefault(exercise) {
+                            Text("Check sets and reps")
+                                .font(AppFont.muted.font)
+                                .foregroundStyle(AppColor.warningOnSoft)
+                        }
+                    }
+
+                    if vm.importMethod == .paste, !exercise.originalLine.isEmpty {
+                        Text("From: \(exercise.originalLine)")
+                            .font(AppFont.muted.font)
+                            .foregroundStyle(AppColor.textTertiary)
+                            .lineLimit(2)
+                    }
+
+                    if !exercise.note.isEmpty {
+                        Text(exercise.note)
+                            .font(AppFont.muted.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .lineLimit(2)
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Edit \(exercise.name), sets, and reps")
@@ -342,6 +346,8 @@ struct OnboardingProgramPreviewView: View {
                 } else {
                     vm.dayExercises[target.dayIndex][index].plannedReps = max(range.lowerBound, value - 1)
                 }
+                // User has reviewed the values — the defaulted hint is served.
+                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             },
             onIncrement: {
                 if label == "Sets" {
@@ -349,6 +355,7 @@ struct OnboardingProgramPreviewView: View {
                 } else {
                     vm.dayExercises[target.dayIndex][index].plannedReps = min(range.upperBound, value + 1)
                 }
+                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             }
         )
     }
@@ -358,15 +365,13 @@ struct OnboardingProgramPreviewView: View {
         return vm.dayExercises[target.dayIndex].firstIndex { $0.id == target.exerciseID }
     }
 
-    /// Heuristic for Q6's "name-only with default sets/reps" hint. Triggers
-    /// only when the exercise came from the paste path AND the sets/reps
-    /// match the parser fallback. Library-picked exercises get explicit set
-    /// counts from the program template and never trip this.
+    /// Q6's "name-only with default sets/reps" hint. Reads the flag the
+    /// paste mapping recorded when the parser fell back to defaults — an
+    /// explicitly written "3x8" never trips this (value equality can't
+    /// tell the two apart; see `OnboardingExercise.usedDefaultSetsReps`).
     private func isParserDefault(_ exercise: OnboardingExercise) -> Bool {
         guard vm.importMethod == .paste else { return false }
-        return exercise.plannedSets == OnboardingExercise.defaultPlannedSets
-            && exercise.plannedReps == OnboardingExercise.defaultPlannedReps
-            && exercise.originalLine.isEmpty == false
+        return exercise.usedDefaultSetsReps == true
     }
 
     @ViewBuilder
