@@ -68,8 +68,8 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 
 ### v2 build / version
 
-- `MARKETING_VERSION = 1.1` (already set in `Unit.xcodeproj/project.pbxproj`)
-- `CURRENT_PROJECT_VERSION = 15` (bumped 2026-07-11 per the line above — QA-branch commits landed after build 14)
+- `MARKETING_VERSION = 2.0` (bumped 2026-07-11 — the hard-paywall release ships as 2.0 to match the "v2" story)
+- `CURRENT_PROJECT_VERSION = 15` (bumped 2026-07-11 — QA-branch commits landed after build 14)
 
 ### v2 external gate — founder checklist (App Store Connect, cannot be done from the repo)
 
@@ -78,7 +78,7 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 - [ ] **Weekly price = $2.99** (`com.unit.weekly`) — create at $2.99, or change from $4.99 if already created.
 - [ ] Monthly $4.99, Yearly $29.99 confirmed. Lifetime $44.99 non-consumable only if you want it shipped — the app hides it automatically when ASC doesn't return it.
 - [ ] **No introductory offer** configured on any tier (the app promises no trial).
-- [ ] IAPs attached to the v2 (1.1) version record and submitted **with** the binary.
+- [ ] IAPs attached to the v2 (2.0) version record and submitted **with** the binary.
 - [ ] Reviewer notes: paste the v2 block above (with $2.99) into App Review notes.
 - [ ] Description: remove the v1 "Not a subscription… free" bullet per §v2 description copy update.
 - [ ] Privacy labels: unchanged ("Data Not Collected") — purchases run through Apple, the app still collects nothing.
