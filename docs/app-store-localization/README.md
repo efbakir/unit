@@ -23,7 +23,7 @@ Rule from track separation: localized metadata must never claim or imply a trans
 
 ### Tier 0 — English (source of truth)
 
-[`source-en.md`](source-en.md). Canonical strings for every ASC field. All translations derive from it; when English changes, locale files are stale until re-derived.
+Canonical English strings live in [`docs/app-store-copy.md`](../app-store-copy.md) (single source of truth since 2026-07-11); [`source-en.md`](source-en.md) holds the derivation rules. All translations derive from the canonical file; when English changes, locale files are stale until re-derived (last re-derivation: 2026-07-11 — see [`asc-execution-status.md`](asc-execution-status.md)).
 
 ### Tier 1 — ship with v2 (metadata only)
 

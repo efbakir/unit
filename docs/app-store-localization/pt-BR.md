@@ -1,30 +1,32 @@
 # Portuguese — Brazil (pt-BR) — Tier 1 App Store metadata
 
-> Status: **draft — needs one native-speaker read before ASC paste.**
+> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
 > Register: "você" (implicit), Brazilian vocabulary. No "nós"-forms (first-person-singular rule).
 > Storefront reach: Brazil. Portugal uses pt-PT (not planned; Brazil is the market).
 
 ## App name (30 max)
 
 ```
-Unit — Ficha de Treino
+Unit — Diário de Treino
 ```
 
-22 chars. "Ficha de treino" is the paper workout sheet every Brazilian gym hands out — the exact cultural object Unit replaces, and a high-volume search term.
+23 chars. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Ficha de Treino" (the paper workout sheet), which carried the superseded metaphor; *ficha* keeps its search value from the keyword field instead.
 
 ## Subtitle (30 max)
 
 ```
-Registre séries em 3 segundos
+Registro de cargas e séries
 ```
 
-29 chars.
+27 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *registro / cargas / séries*. The old "3 segundos" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Novo na v2: cole sua ficha e comece do primeiro dia com suas cargas reais. Sem conta, sem anúncios — registro rápido que fica no seu iPhone.
+Você já conhece seu treino. Unit registra mais rápido que papel — os números da última sessão já preenchidos, cada série um toque. Sem IA. Só seus números.
 ```
+
+Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
@@ -48,10 +50,10 @@ Política de privacidade: https://unitlift.app/privacy
 ## Keywords (100 max, no spaces, none repeated from name/subtitle)
 
 ```
-academia,musculação,hipertrofia,carga,progressão,diário,supino,agachamento,peso,anotar
+academia,musculação,hipertrofia,progressão,supino,agachamento,peso,anotar,ficha,halteres
 ```
 
-86 chars. Intent notes:
+88 chars. Re-deduped 2026-07-11 against the new name (*diário*) and subtitle (*registro, cargas, séries*): removed `diário`, `carga`; added `ficha` (displaced from the name — still the high-volume cultural term) and `halteres` (dumbbells). Intent notes:
 - "academia" — Brazilian for gym; the category's anchor term.
 - "musculação" — weight training as Brazilians name it; category term Unit must rank for.
 - "anotar" — "anotar treino" (write down the workout) is the notebook behavior in verb form.
@@ -63,6 +65,8 @@ academia,musculação,hipertrofia,carga,progressão,diário,supino,agachamento,p
 • Registre uma série em 3 segundos — as cargas da última vez já vêm preenchidas
 • Cole qualquer ficha e comece do primeiro dia com suas cargas reais
 • Primeiro uso refeito: da instalação à primeira série registrada em menos de um minuto
+
+O Unit agora exige uma compra paga após a configuração — os planos aparecem antes de pagar. Não há teste grátis. Seus dados de treino ficam neste iPhone.
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)

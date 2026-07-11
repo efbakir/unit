@@ -1,6 +1,6 @@
 # Spanish — Mexico (es-MX) — Tier 1 App Store metadata
 
-> Status: **draft — needs one native-speaker read before ASC paste.**
+> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
 > Register: informal "tú", neutral Latin American Spanish. No "nosotros"-forms (first-person-singular rule).
 > Storefront reach: Mexico + most Latin American storefronts use es-MX metadata. Spain uses es-ES (Tier 2). Bonus: the **US storefront also indexes the es-MX keyword field** — see note at the bottom.
 
@@ -10,21 +10,23 @@
 Unit — Diario de Gym
 ```
 
-20 chars. "Diario de gym" mirrors the notebook concept; Mexican gym-goers say "gym" more than "gimnasio".
+20 chars. "Diario de gym" — survives the 2026-07-11 re-derivation unchanged: *diario* is already the log-family term (the EN name moved to "Gym Workout Log"), and Mexican gym-goers say "gym" more than "gimnasio".
 
 ## Subtitle (30 max)
 
 ```
-Registra series en 3 segundos
+Registro de fuerza y series
 ```
 
-29 chars.
+27 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *registro / fuerza / series*. The old "3 segundos" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Nuevo en v2: pega tu rutina y empieza desde el día uno con tus pesos reales. Sin cuenta, sin anuncios — registro rápido que vive en tu iPhone.
+Ya conoces tu programa. Unit lo registra más rápido que el papel — los números de la última sesión ya están puestos, cada serie un toque. Sin IA. Solo tus números.
 ```
+
+Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
@@ -48,10 +50,10 @@ Política de privacidad: https://unitlift.app/privacy
 ## Keywords (100 max, no spaces, none repeated from name/subtitle)
 
 ```
-rutina,gimnasio,pesas,entrenamiento,fuerza,musculación,ejercicio,bitácora,progreso,reps
+rutina,gimnasio,pesas,entrenamiento,musculación,ejercicio,bitácora,progreso,reps,sentadilla
 ```
 
-87 chars. Intent notes:
+91 chars. Re-deduped 2026-07-11 against the new subtitle (*registro, fuerza, series*): removed `fuerza`, added `sentadilla` (squat — exercise-name search with app intent). Intent notes:
 - "rutina" — the word LatAm lifters use for their program ("pega tu rutina"); highest intent.
 - "pesas" — colloquial for lifting ("hacer pesas"), stronger than the formal "levantamiento".
 - "bitácora" — log/journal; the notebook concept in search form.
@@ -63,6 +65,8 @@ rutina,gimnasio,pesas,entrenamiento,fuerza,musculación,ejercicio,bitácora,prog
 • Registra una serie en 3 segundos — los pesos de la última vez ya están precargados
 • Pega cualquier rutina y empieza desde el día uno con tus pesos reales
 • Primer arranque rediseñado: de la instalación a tu primera serie registrada en menos de un minuto
+
+Unit ahora requiere una compra de pago después de la configuración — los planes se muestran antes de pagar. No hay prueba gratuita. Tus datos de entrenamiento se quedan en este iPhone.
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)

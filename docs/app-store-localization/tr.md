@@ -1,30 +1,32 @@
 # Turkish (tr) — Tier 1 App Store metadata
 
-> Status: **draft — founder reviews directly (native speaker); no external review needed.**
+> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — founder must re-review before ASC paste (native speaker; no external review needed).**
 > Register: "sen". No "biz"-forms (first-person-singular rule).
 > Storefront reach: Turkey.
 
 ## App name (30 max)
 
 ```
-Unit — Antrenman Defteri
+Unit — Antrenman Günlüğü
 ```
 
-24 chars. "Antrenman defteri" = training notebook — the exact object, in the highest-weight field.
+24 chars. "Antrenman günlüğü" = training log — the standard Turkish term and the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor.
 
 ## Subtitle (30 max)
 
 ```
-Seti 3 saniyede kaydet
+Kuvvet ve ağırlık takibi
 ```
 
-22 chars.
+24 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *kuvvet / ağırlık / takip*. The old "Seti 3 saniyede kaydet" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-v2 yeni: Programını yapıştır, ilk günden gerçek çalışma ağırlıklarınla başla. Hesap yok, reklam yok — hızlı kayıt, verilerin iPhone'unda kalır.
+Programını zaten biliyorsun. Unit kağıttan hızlı kaydeder — geçen seferki sayıların zaten dolu, her set tek dokunuş. Yapay zekâ yok, sosyal yok. Sadece sayıların.
 ```
+
+Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
@@ -48,10 +50,10 @@ Gizlilik Politikası: https://unitlift.app/privacy
 ## Keywords (100 max, no spaces, none repeated from name/subtitle)
 
 ```
-gym,fitness,ağırlık,vücut,geliştirme,egzersiz,program,takip,günlük,spor,salonu,demir
+gym,fitness,vücut,geliştirme,egzersiz,program,spor,salonu,demir,kayıt,halter,tekrar
 ```
 
-84 chars. Intent notes:
+83 chars. Re-deduped 2026-07-11 against the new name (*günlüğü*) and subtitle (*kuvvet, ağırlık, takip*): removed `günlük`, `ağırlık`, `takip`; added `kayıt` (logging), `halter` (barbell/weights), `tekrar` (reps). Intent notes:
 - "gym" + "spor,salonu" — Turkish gym-goers use both the English word and "spor salonu"; comma-split covers the two-word phrase's parts.
 - "vücut,geliştirme" — bodybuilding ("vücut geliştirme"), split the same way.
 - "demir" — "demir basmak" (pressing iron) is lifter slang; cheap long-tail.
@@ -63,6 +65,8 @@ gym,fitness,ağırlık,vücut,geliştirme,egzersiz,program,takip,günlük,spor,s
 • Bir seti 3 saniyede kaydet — geçen seferki ağırlıkların zaten dolu
 • Herhangi bir programı yapıştır, ilk günden gerçek çalışma ağırlıklarınla başla
 • Yenilenen ilk kurulum: yüklemeden ilk kayıtlı sete bir dakikadan kısa sürede
+
+Unit artık kurulumdan sonra ücretli satın alma gerektiriyor — planlar ödemeden önce gösterilir. Ücretsiz deneme yok. Mevcut antrenman verilerin bu iPhone'da kalır.
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)

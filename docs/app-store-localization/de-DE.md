@@ -1,6 +1,6 @@
 # German (de-DE) — Tier 1 App Store metadata
 
-> Status: **draft — needs one native-speaker read before ASC paste.**
+> Status: **re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`) — needs one native-speaker read before ASC paste.**
 > Register: informal "du" (standard for German fitness apps). No "wir"-forms anywhere (first-person-singular rule).
 > Storefront reach: Germany, Austria, Switzerland (de is the primary metadata language on all three).
 
@@ -10,21 +10,23 @@
 Unit — Trainingstagebuch
 ```
 
-24 chars. "Trainingstagebuch" (training diary) is the exact German term for the object Unit replaces — highest-weight keyword placed in the highest-weight field.
+24 chars. "Trainingstagebuch" (training log/diary) — survives the 2026-07-11 re-derivation unchanged: it is already the log-family term (the German for "workout log"), not the notebook metaphor the EN name moved away from.
 
 ## Subtitle (30 max)
 
 ```
-Sätze in 3 Sekunden loggen
+Krafttraining-Tracker
 ```
 
-26 chars.
+21 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *Krafttraining* + *Tracker* — the two highest-volume German category terms not yet indexed. The old "3 Sekunden" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Neu in v2: Programm einfügen und ab Tag eins mit echten Arbeitsgewichten starten. Kein Konto, keine Werbung — schnelles Logging, das auf deinem iPhone bleibt.
+Du kennst dein Programm. Unit loggt es schneller als Papier — die Zahlen vom letzten Mal sind schon eingetragen, jeder Satz ein Tap. Keine KI. Nur deine Zahlen.
 ```
+
+Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
@@ -48,11 +50,11 @@ Datenschutzrichtlinie: https://unitlift.app/privacy
 ## Keywords (100 max, no spaces, none repeated from name/subtitle)
 
 ```
-krafttraining,fitness,muskelaufbau,trainingsplan,hantel,gewichte,wiederholungen,protokoll,gym
+kraftsport,fitness,muskelaufbau,trainingsplan,hantel,gewichte,wiederholungen,protokoll,gym
 ```
 
-93 chars. Intent notes:
-- "krafttraining" — the category term German lifters search; "trainingstagebuch" already sits in the name.
+90 chars. Re-deduped 2026-07-11 against the new subtitle (*Krafttraining-Tracker*): removed `krafttraining` (now in the subtitle), added `kraftsport`. Intent notes:
+- "kraftsport" — the strength-sport category term; "krafttraining" now sits in the subtitle, "trainingstagebuch" in the name.
 - "trainingsplan" — what users paste into Unit; high intent for the import path.
 - "gym" — German gym-goers use the English word; cheap 3-char catch.
 - English queries ("gym tracker", "workout log") are covered by the en-US keyword field; this field chases German-only queries.
@@ -63,6 +65,8 @@ krafttraining,fitness,muskelaufbau,trainingsplan,hantel,gewichte,wiederholungen,
 • Logge einen Satz in 3 Sekunden — die Gewichte vom letzten Mal sind schon eingetragen
 • Füge dein Programm als Text ein und starte ab Tag eins mit echten Arbeitsgewichten
 • Neuer erster Start: von der Installation zum ersten geloggten Satz in unter einer Minute
+
+Unit erfordert nach der Einrichtung jetzt einen kostenpflichtigen Kauf — die Tarife werden vor dem Kauf angezeigt. Keine kostenlose Testphase. Vorhandene Trainingsdaten bleiben auf diesem iPhone.
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)
