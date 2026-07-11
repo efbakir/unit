@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-11 — English App Store copy FROZEN; build bumped to 16
+
+**Decision:** `docs/app-store-copy.md` is frozen, founder-approved, with two final honesty fixes: "Paste **your** program" (was "any" — the parser caps at 6 days and drops cardio, so "any" over-promised) and What's New bullet 3 now ends at "your program built in under a minute" (the old "first logged set" claim crossed the paywall). Subtitle challenge resolved: `Strength tracker for lifters` stands (the name owns *workout*; the subtitle must add new indexed terms). `CURRENT_PROJECT_VERSION` bumped 15 → 16 — ASC verification showed the live 1.0 already consumed build 15 via Xcode Cloud's independent numbering.
+
+**Why:** Copy-freeze goal (2026-07-11): live ASC 1.0 metadata was compared field-by-field against canonical; every field changes for 2.0, and the stale v1 reviewer notes (no-IAP era) actively contradict v2. Freezing unblocks the localization chat's regeneration protocol.
+
+**Implication:** Archive ships as **2.0 (16)**. Locale regeneration list: `docs/app-store-localization/asc-execution-status.md` §Second regeneration (separator + two What's New bullets ×5; descriptions untouched). Post-freeze copy changes require a new decision-log entry.
+
 ## 2026-07-11 — App name separator resolved: `Unit: Gym Workout Log` (colon)
 
 **Decision:** The ASC App Name field uses the colon form `Unit: Gym Workout Log` (21 chars). Supersedes the em-dash rendering in the earlier 2026-07-11 name entry — the words and the ASO rationale stand; only the separator is resolved. Locale names take the same separator at their next regeneration pass.

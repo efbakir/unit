@@ -1,6 +1,6 @@
 # Unit — App Store copy (canonical)
 
-> **The single source of truth for every App Store Connect text field.** If a string isn't here, it isn't canon.
+> **FROZEN 2026-07-11 — founder-approved.** The single source of truth for every App Store Connect text field; if a string isn't here, it isn't canon. Any change after the freeze requires a decision-log entry and re-stales the five locale files (regeneration list: `docs/app-store-localization/asc-execution-status.md`).
 > Process (what to click, in what order): `docs/app-store-submission/final-submit-checklist.md`.
 > Localized metadata derives from this file — see `docs/app-store-localization/README.md`.
 > Consolidated 2026-07-11 from `docs/marketing/app-store-copy.md` (deleted), the old draft here, and `source-en.md`. Conflicting variants live in git history only.
@@ -38,7 +38,7 @@ Evergreen (reads right for cold visitors after launch week too). Update-announce
 ```
 Log a set in 3 seconds and get back under the bar.
 
-Your weights from last time are already filled in — confirm, adjust, done. Paste any program and your working numbers are ready from day one.
+Your weights from last time are already filled in — confirm, adjust, done. Paste your program and your working numbers are ready from day one.
 
 No account. No ads. No social feed. Your training stays on your iPhone.
 
@@ -64,8 +64,8 @@ lifting,powerlifting,exercise,routine,reps,barbell,fitness,training,planner,5x5,
 
 ```
 • Log a set in 3 seconds — last time's weights are already filled in
-• Paste any program and start with real working numbers from day one
-• Rebuilt first run: from install to your first logged set in under a minute
+• Paste your program and start with real working numbers from day one
+• Rebuilt first run: from install to your program built in under a minute
 
 Unit now requires a paid purchase after setup — plans are shown before you pay. No free trial. Existing training data stays on this iPhone.
 ```

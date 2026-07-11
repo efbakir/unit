@@ -17,6 +17,16 @@
 
 Character limits: **all 20 re-derived fields machine-checked within ASC limits** (name/subtitle 30, promo 170, keywords 100, sub name 30, sub desc 45).
 
+## Second regeneration pending (post-freeze fixes, 2026-07-11)
+
+The English copy is now **FROZEN** (founder-approved, `docs/app-store-copy.md`). Three approved fixes landed after the first re-derivation, so the next localization session must apply, per locale:
+
+1. **Name separator**: `Unit — …` → `Unit: …` (all five — colon resolved in the decision log; matches the live listing's existing rendering).
+2. **What's New bullet 2**: "any program" → "your program" equivalents — tr `herhangi bir programı` → `programını`, es `cualquier rutina` → `tu rutina`, pt `qualquer ficha` → `sua ficha`, fr `n'importe quel programme` → `votre programme`; **de already says `dein Programm`** (no change).
+3. **What's New bullet 3**: "…to your first logged set in under a minute" → "…to your program built in under a minute" (all five — the old claim crossed the paywall; the new one is the free part).
+
+Everything else from the first re-derivation stands. Descriptions remain untouched (their English source did not change in the freeze).
+
 ## Gate before any ASC paste
 
 - [ ] Founder reads + approves **tr** (native).

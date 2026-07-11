@@ -17,8 +17,8 @@
 | Field | Value | Verified |
 |---|---|---|
 | Marketing version | **2.0** | `MARKETING_VERSION = 2.0` in all 6 pbxproj configs |
-| Build | **15** | `CURRENT_PROJECT_VERSION = 15` in all 6 pbxproj configs |
-| Archive source | `main` @ `cfb0060` (PR #1 + PR #2 merged) | build + test suite pass, clean tree |
+| Build | **16** | `CURRENT_PROJECT_VERSION = 16` in all 6 pbxproj configs — 15 was already consumed by the live 1.0 (Xcode Cloud numbered independently; verified in ASC 2026-07-11) |
+| Archive source | latest `main` | build + test suite pass, clean tree |
 
 ## 2. App name
 
@@ -81,5 +81,5 @@ PR #2's five-language metadata (de-DE, es-MX, pt-BR, fr-FR, tr) is ready in `doc
 
 - [ ] StoreKit sandbox QA — all 5 steps in `docs/pricing.md` §StoreKit sandbox verification checklist, on this exact build, with sandbox Apple ID.
 - [ ] `docs/release-qa.md` gauntlet run on device.
-- [ ] Archive from `main` @ `cfb0060` (or later docs-only commits — no code drift).
+- [ ] Archive from latest `main` (2.0, build **16**).
 - [ ] Known site inconsistency (not an archive blocker, fix before marketing push): `app/(marketing)/compare/data.ts` still says "Core logging is free forever. Pro is $4.99/mo or $29.99/yr." in 3 rows, and `app/(marketing)/page.tsx` has one "Free. No account. No ads." eyebrow. Both contradict the hard paywall on the live site.

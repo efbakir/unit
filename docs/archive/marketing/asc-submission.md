@@ -71,7 +71,7 @@ Existing screenshot #5 (Settings → Data section per 2026-05-10 decision) stays
 ### v2 build / version
 
 - `MARKETING_VERSION = 2.0` (bumped 2026-07-11 — the hard-paywall release ships as 2.0 to match the "v2" story)
-- `CURRENT_PROJECT_VERSION = 15` (bumped 2026-07-11 — QA-branch commits landed after build 14)
+- `CURRENT_PROJECT_VERSION = 16` (bumped 2026-07-11, twice: 14→15 after QA-branch commits, then 15→16 when ASC showed the live 1.0 had already consumed build 15 via Xcode Cloud's independent numbering)
 
 ### v2 external gate — founder checklist (App Store Connect, cannot be done from the repo)
 
