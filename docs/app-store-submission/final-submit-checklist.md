@@ -52,7 +52,42 @@ The description's paid-purchase paragraph and the two legal URLs are Guideline 3
 
 ## 6. Screenshot set
 
-Captions + per-slot image specs: **`docs/app-store-copy.md` §Screenshot captions**. Two recaptures are planned (slot 2: preview-after-paste; slot 5: Lock Screen rest timer — currently a duplicate of slot 4). Screenshots never block the binary upload: if the recaptures aren't ready at submission, **reuse the 5 approved English screenshots currently live** (strategy (b) — reviewer notes carry the paywall story) and swap shots in a later metadata update. Do not localize screenshots for this submission.
+Captions (the only text on each frame): **`docs/app-store-copy.md` §Screenshot captions**. Raw captures go through the existing Figma marketing file and export at **1290×2796** to match the three keepers. Screenshots never block the binary upload: if the recaptures aren't ready at submission, reuse the 5 approved live screenshots (strategy (b) — reviewer notes carry the paywall story) and swap in a later metadata update. Do not localize screenshots for this submission.
+
+### Capture runbook — where each shot lives
+
+**Prep (once).** Capture on the **iPhone 17 Pro Max simulator** (raw size differs from 1290×2796; the Figma export normalizes it). Clean the status bar first:
+`xcrun simctl status_bar booted override --time 9:41 --batteryLevel 100 --cellularBars 4 --wifiBars 3`
+Simulator screenshot = **⌘S** (saves to Desktop).
+
+| Slot | Status | Screen ("where it is") | How to reach the state |
+|---|---|---|---|
+| 1 | ✅ keep | Active workout — command card | Already live. Only recapture if you want fresher numbers: purchased sim → Today → Start workout → first exercise shows "Last …" pre-fill with one set already ticked. |
+| 2 | 🔴 recapture | **Onboarding program preview** ("Here's what I read") — days + exercises + weights parsed from a paste | Needs a **fresh install** (onboarding only shows when no program exists): spare simulator → delete Unit → ⌘R → carousel → kg → "Paste my routine" → paste the demo program below → Read program → schedule → **capture the preview screen**. Free surface — no purchase needed. Don't tap "Choose a plan". |
+| 3 | ✅ keep | Hand-held composition (no-account badges) | Already live. No capture. |
+| 4 | ✅ keep | History calendar | Already live. No capture. |
+| 5 | 🔴 recapture | **Lock Screen — rest-timer Live Activity** counting down | Purchased sim (or real device) → Today → Start workout → complete one set (timer auto-starts) → **⌘L** to lock → wait for the Live Activity card on the Lock Screen → ⌘S while the countdown shows a mid-range value (1:53-ish reads better than 0:0x). If the sim won't render the Live Activity, use the real iPhone: same flow, Side + Vol-Up on the Lock Screen. Optional bonus: unlock and grab the Dynamic Island variant. |
+
+**Demo program for slot 2's paste** (marketing-quality numbers, kg):
+
+```
+Push
+Bench Press 4x8 80
+Overhead Press 3x8 50
+Incline DB Press 3x10 24
+
+Pull
+Deadlift 3x5 140
+Barbell Row 4x8 70
+Lat Pulldown 3x10 55
+
+Legs
+Back Squat 3x5 120
+Romanian Deadlift 3x8 90
+Leg Press 3x10 160
+```
+
+**After capture:** drop both raws into the Figma marketing file, apply the canonical captions (`Paste your program, start lifting` / `Your rest timer, on the lock screen`), export 1290×2796, upload to the 6.9" slot in ASC Media Manager replacing slots 2 and 5.
 
 ## 7. IAP / subscription attachment checklist
 
