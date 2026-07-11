@@ -130,7 +130,7 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private var recommendedExerciseIndex: Int {
+    private var nextIncompleteExerciseIndex: Int {
         guard !sectionModels.isEmpty else { return 0 }
         return sectionModels.firstIndex(where: { !$0.hasReachedPlannedSetGoal }) ?? max(sectionModels.count - 1, 0)
     }
@@ -585,7 +585,7 @@ struct ActiveWorkoutView: View {
             ))
         }
         .onAppear {
-            selectedExerciseIndex = recommendedExerciseIndex
+            selectedExerciseIndex = nextIncompleteExerciseIndex
         }
         .onChange(of: sectionModels.count) { _, newValue in
             guard newValue > 0 else {

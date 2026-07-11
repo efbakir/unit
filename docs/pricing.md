@@ -6,25 +6,26 @@
 
 | Tier     | Price       | Billing       | Product ID         | Notes                                                   |
 | -------- | ----------- | ------------- | ------------------ | ------------------------------------------------------- |
-| Weekly   | **$4.99**   | auto-renewing | `com.unit.weekly`  | Default selection.                                      |
-| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | Same visible price as weekly; StoreKit period discloses the difference. |
-| Yearly   | **$29.99**  | auto-renewing | `com.unit.annual`  | Lower yearly total than monthly.                        |
+| Weekly   | **$2.99**   | auto-renewing | `com.unit.weekly`  | Default selection — the smallest number on screen (lowest commitment first). |
+| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | The normal plan.                                        |
+| Yearly   | **$29.99**  | auto-renewing | `com.unit.annual`  | Best value — about half the monthly-equivalent total.   |
 | Lifetime | **$44.99**  | one-time      | `com.unit.lifetime` | Optional non-consumable. Show only if configured in ASC and returned by StoreKit. |
 
 **No free trial** on any tier unless a real App Store Connect introductory offer is configured and detected. Lifetime is not a fallback price: it appears only when `Product.products(for:)` returns `com.unit.lifetime`.
 
 ## Math
 
-- Weekly × 52 = $259.48/yr
+- Weekly × 52 = $155.48/yr — the flexibility premium over Monthly, priced as commitment, not trickery
 - Monthly × 12 = $59.88/yr
 - Yearly vs monthly-equivalent = $29.99 / $59.88 → roughly 50% lower yearly total
 - Lifetime equals about 1.5× the Yearly price and appears only if ASC has the non-consumable configured
+- Ladder coherence rule (2026-07-02): every tier must have a role — Weekly = cheapest quick try, Monthly = normal, Yearly = best value, Lifetime = one-time. **No tier may strictly dominate another at the same visible price**; the 2026-06-29 $4.99/$4.99 weekly-monthly tie violated this and was corrected before v2 submission (see decision log).
 
 ## Rationale
 
 - **Hard paywall** (resolved 2026-06-16, see `docs/decision-log.md`). All app functionality is gated behind a paid purchase. Onboarding completes free so the user sees their program built; the paywall appears immediately after setup is saved, no dismissal.
 - **No free trial.** Day-1 conversion friction is the explicit goal; Apple Guideline 3.1.2(b) disclosure requirements still apply (auto-renewal language, cancellation method). Acknowledged risks: 1-star reviews citing "pay to even try," App Store reviewer scrutiny around the "no preview of value" pattern (mitigated by placing the wall after onboarding, not before).
-- **Weekly is default.** This founder override supersedes the 2026-06-17 annual-default experiment plan. The paywall opens on Weekly and the CTA reads `Continue with Weekly`.
+- **Weekly is default.** This founder override supersedes the 2026-06-17 annual-default experiment plan. The paywall opens on Weekly and the CTA reads `Continue with Weekly`. Honest-optics condition (2026-07-02): the default tier must be the smallest visible price on the screen — a pre-selected tier that a cheaper-per-period plan strictly dominates reads as a dark pattern and is banned.
 - **All subscription plans stay visible.** Weekly, Monthly, and Yearly cards render even while StoreKit is loading. Missing products show loading/unavailable copy, never fake prices.
 - **Lifetime is optional.** If the existing non-consumable is configured and StoreKit returns it, Unit shows it as a one-time purchase. If ASC does not return it, the card is hidden.
 
