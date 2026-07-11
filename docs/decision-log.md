@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-11 — Post-freeze keyword correction: style terms out, behavior terms in
+
+**Decision:** The en-US keyword field is replaced with `lifting,rest,timer,set,rep,counter,weights,reps,training,routine,progressive,overload,history,notes` (99 chars). Founder-approved post-freeze correction; supersedes the 97-char list in the copy-freeze entry below.
+
+**Why:** The frozen list carried founder-rejected narrow style terms (*powerlifting, barbell, 5x5, hypertrophy, squat*) that target a program style, not the behavior Unit sells. The replacement indexes what users search for: rest timer, set/rep counter, weights history, progressive overload, training notes.
+
+**Implication:** `docs/app-store-copy.md` §Keywords updated; ASC en-US field updated the same day. Localized keyword fields are untouched — the change re-stales them and rides the next locale regeneration pass per the freeze protocol.
+
 ## 2026-07-11 — Release build renumbered 16 → 35 (ASC already holds pre-fix builds 24–34)
 
 **Decision:** `CURRENT_PROJECT_VERSION` bumped 16 → 35 across all 6 pbxproj configs. The v2.0 release candidate is **2.0 (35)**, superseding the "2.0 (16)" plan in the copy-freeze entry below.

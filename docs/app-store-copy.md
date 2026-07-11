@@ -55,10 +55,10 @@ Short on purpose: iOS descriptions are conversion-only (not search-indexed) and 
 ## Keywords (100, comma-separated, no spaces)
 
 ```
-lifting,powerlifting,exercise,routine,reps,barbell,fitness,training,planner,5x5,hypertrophy,squat
+lifting,rest,timer,set,rep,counter,weights,reps,training,routine,progressive,overload,history,notes
 ```
 
-97 chars. Deduped against name (*gym, workout, log*) and subtitle (*strength, tracker, lifters*) — duplicates index once, so every slot here adds a new term.
+99 chars. Founder-corrected 2026-07-11 post-freeze (see decision log): dropped the narrow style terms (*powerlifting, barbell, 5x5, hypertrophy, squat*) for behavior and feature terms lifters actually search. Still deduped against name (*gym, workout, log*) and subtitle (*strength, tracker, lifters*) — duplicates index once, so every slot here adds a new term.
 
 ## What's New — v2.0
 
