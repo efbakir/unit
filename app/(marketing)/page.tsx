@@ -238,6 +238,42 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── 2b. App Store reviews — real, published, quoted verbatim in
+          translation (Türkiye storefront, v1.0). Attribution carries the
+          "translated" note so the quotes stay fully honest. ── */}
+      <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
+        <div className="max-w-4xl mx-auto px-unit-md md:px-unit-lg">
+          <p className="eyebrow mb-unit-xl text-center">From the App Store</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-unit-xl md:gap-unit-xxl">
+            {[
+              {
+                quote: "\u201CThe gym tracker app I\u2019ve been looking for for years.\u201D",
+                original: "Yıllardır aradığım gym tracker app",
+              },
+              {
+                quote: "\u201CPractical and fast.\u201D",
+                original: "Pratik ve hızlı",
+              },
+            ].map((review) => (
+              <figure key={review.original} className="text-center md:text-left">
+                <p className="text-sm tracking-[0.2em] mb-unit-sm" aria-label="5 out of 5 stars">
+                  ★★★★★
+                </p>
+                <blockquote
+                  className="text-xl font-bold tracking-tight leading-snug"
+                  title={review.original}
+                >
+                  {review.quote}
+                </blockquote>
+                <figcaption className="mt-unit-sm text-sm text-unit-text-secondary">
+                  App Store review · translated from Turkish
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── 3. Product showcase ── */}
       <section
         id="how-it-works"
