@@ -29,7 +29,7 @@ Everything else from the first re-derivation stands. Descriptions untouched (the
 
 ## Native-review inputs received (record for the per-locale gates)
 
-- **es-MX (native reviewer, WhatsApp 2026-07-11):** proposes name `Unit: Registro de gym` over `Unit: Diario de Gym`. Decision belongs to the es-MX review pass. Note the dedupe conflict: the current es subtitle (`Registro de fuerza y series`) already owns *registro* — if the name takes it, the subtitle must switch (e.g. *Seguimiento de fuerza y series*, 30 chars exactly — recount before paste).
+- **es-MX (native reviewer, WhatsApp 2026-07-11):** proposed name `Unit: Registro de gym` — **ADOPTED, founder-final 2026-07-13** (see `es-MX.md`; the subtitle swapped to `Diario de fuerza y series` to clear the *registro* dupe). Recorded here for provenance only.
 - **EN freeze amendment #1** swapped keyword `planner` → `simple`. At each locale review, consider the local equivalent in the keyword field (es *sencillo*, de *einfach*, pt *simples*, fr *simple*, tr *basit*) — swap against the weakest existing keyword, keep ≤100 chars, and keep the no-dupes-vs-name/subtitle rule.
 
 ## Gate before any ASC paste

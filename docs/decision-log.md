@@ -44,7 +44,17 @@
 
 **Implication:** Archive ships as **2.0 (35)** from a `main` that includes `4fe1edd`. Never select builds 24–34 on the 2.0 version record. `final-submit-checklist.md`, `INDEX.md`, and `asc-execution-status.md` updated; historical docs left as-is.
 
+## 2026-07-11 — Freeze amendment #2: `simple` added to the corrected keyword field
+
+**Decision:** The post-freeze keyword correction (behavior-terms field, `ca52807`) now carries `simple`: dropped `rep` (redundant under Apple's singular/plural stemming — `reps` covers it) and `notes` (generic, polluted by Apple Notes searches); added `simple`. 96/100 chars. All behavior combinations preserved (rest+timer, set/reps+counter, weights+history, progressive+overload).
+
+**Why:** Executes amendment #1's intent against the field that actually shipped — #1 was written in parallel with the keyword correction and described the retired 97-char list, so its exact swap (`planner`→`simple`) no longer applied. The user-feedback rationale stands: "simple workout tracker" is the highest-intent query for Unit's actual differentiator.
+
+**Implication:** Locale keyword fields consider local *simple* equivalents at review (already recorded in `asc-execution-status.md`). Amendment #1 below is superseded by this entry.
+
 ## 2026-07-11 — Freeze amendment #1: keyword `planner` → `simple` (user feedback)
+
+**SUPERSEDED by Freeze amendment #2 (same day):** the parallel post-freeze keyword correction retired the field this entry's swap targeted. The intent (index `simple`) carried forward; the mechanics changed.
 
 **Decision:** One keyword swap in the frozen canonical: `planner` out, `simple` in (96/100 chars). Name, subtitle, description, promo unchanged — "simple" earns keyword indexing, not a field of its own.
 

@@ -55,8 +55,10 @@ Short on purpose: iOS descriptions are conversion-only (not search-indexed) and 
 ## Keywords (100, comma-separated, no spaces)
 
 ```
-lifting,rest,timer,set,rep,counter,weights,reps,training,routine,progressive,overload,history,notes
+lifting,rest,timer,set,counter,weights,reps,training,routine,progressive,overload,history,simple
 ```
+
+96 chars. Freeze amendment #2 (2026-07-11, user feedback: "your strength is that it is minimalistic — put it in the keywords"): added `simple` — the exact qualifier lifters fleeing bloated apps search ("simple workout tracker"). Dropped `rep` (redundant — Apple stems singular/plural, `reps` covers it) and `notes` (generic, polluted by Apple Notes searches). All behavior combinations from the post-freeze correction stay intact: rest+timer, set/reps+counter, weights+history, progressive+overload.
 
 99 chars. Founder-corrected 2026-07-11 post-freeze (see decision log): dropped the narrow style terms (*powerlifting, barbell, 5x5, hypertrophy, squat*) for behavior and feature terms lifters actually search. Still deduped against name (*gym, workout, log*) and subtitle (*strength, tracker, lifters*) — duplicates index once, so every slot here adds a new term.
 
