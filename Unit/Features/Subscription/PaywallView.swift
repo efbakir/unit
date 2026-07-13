@@ -9,10 +9,16 @@
 //
 
 import StoreKit
+import SwiftData
 import SwiftUI
 
 struct PaywallView: View {
     @Environment(StoreManager.self) private var store
+    // Personalization (founder-approved conversion pass, 2026-07-13): the
+    // paywall names the program the user just built, so the screen reads as
+    // the payoff of their onboarding effort, not a generic wall.
+    @Query(sort: \Split.name) private var splits: [Split]
+    @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @State private var showingManageSubscriptions = false
     var onDismiss: () -> Void
 
@@ -184,7 +190,25 @@ struct PaywallView: View {
             }
             return "Your subscription is active. Manage or cancel anytime in App Store settings."
         }
+        if let days = programDayLine {
+            return "\(days) is loaded. \(AppCopy.Paywall.subtitle)"
+        }
         return AppCopy.Paywall.subtitle
+    }
+
+    /// "Push · Pull · Legs" — the day names of the program the user just
+    /// committed, in program order. `nil` when no program exists (paywall
+    /// reached without onboarding data) so the subtitle falls back cleanly.
+    private var programDayLine: String? {
+        guard let split = ActiveSplitStore.resolve(from: splits) else { return nil }
+        let splitTemplates = templates.filter { $0.splitId == split.id }
+        guard !splitTemplates.isEmpty else { return nil }
+        let byID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
+        var ordered = split.orderedTemplateIds.compactMap { byID[$0] }
+        if ordered.isEmpty { ordered = splitTemplates.sorted { $0.name < $1.name } }
+        let names = ordered.prefix(4).map(\.displayName).filter { !$0.isEmpty }
+        guard !names.isEmpty else { return nil }
+        return names.joined(separator: " · ")
     }
 
     // MARK: - CTA
@@ -312,25 +336,55 @@ struct PaywallView: View {
         switch tier {
         case .weekly: return "Auto-renews weekly"
         case .monthly: return "Auto-renews monthly"
+        case .monthly:
+            if let perWeek = perWeekEquivalentText(for: .monthly) {
+                return "Auto-renews monthly · \(perWeek)/week"
+            }
+            return "Auto-renews monthly"
         case .annual:
-            // Honest anchor (docs/pricing.md: yearly's role is "best value,
-            // about half the monthly-equivalent total"): the per-month figure
-            // is derived from the live StoreKit price in the product's own
-            // currency — never a hardcoded compare-at number.
-            if let product = store.product(for: .annual) {
-                let monthly = (product.price / 12).formatted(product.priceFormatStyle)
-                return "Auto-renews yearly · \(monthly)/month"
+            if let perWeek = perWeekEquivalentText(for: .annual) {
+                return "Auto-renews yearly · \(perWeek)/week"
             }
             return "Auto-renews yearly"
         case .lifetime: return "One-time purchase"
         }
     }
 
+    /// Every recurring card priced in the unit the pre-selected Weekly tier
+    /// anchors on, derived from live StoreKit prices in the product's own
+    /// currency ($2.99/week vs $1.15/week vs $0.58/week). Real division only
+    /// — never a hardcoded compare-at figure.
+    private func perWeekEquivalentText(for tier: StoreManager.Tier) -> String? {
+        guard let product = store.product(for: tier) else { return nil }
+        let perWeek: Decimal
+        switch tier {
+        case .monthly: perWeek = product.price * 12 / 52
+        case .annual: perWeek = product.price / 52
+        case .weekly, .lifetime: return nil
+        }
+        return perWeek.formatted(product.priceFormatStyle)
+    }
+
     private func badgeText(for tier: StoreManager.Tier) -> String? {
-        // docs/pricing.md ladder roles: yearly is the best-value tier. The
-        // card's badge slot has carried this affordance since the Figma spec;
-        // the other tiers stay unbadged so the single tag reads as signal.
-        tier == .annual ? "Best value" : nil
+        // docs/pricing.md ladder roles: yearly is the best-value tier and the
+        // only badged card — one chip on the upsell target, never on the
+        // pre-selected default (a badge on the selected card sells nothing).
+        guard tier == .annual else { return nil }
+        return annualSavingsBadgeText ?? "Best value"
+    }
+
+    /// "Save 80%" — yearly vs 52 weeks at the live Weekly price. Computed
+    /// from StoreKit only; rounds down; hidden if products are missing or
+    /// the math ever stops being a real saving.
+    private var annualSavingsBadgeText: String? {
+        guard let annual = store.product(for: .annual),
+              let weekly = store.product(for: .weekly) else { return nil }
+        let annualizedWeekly = weekly.price * 52
+        guard annualizedWeekly > annual.price, annualizedWeekly > 0 else { return nil }
+        let fraction = (annualizedWeekly - annual.price) / annualizedWeekly
+        let percent = Int((NSDecimalNumber(decimal: fraction).doubleValue * 100).rounded(.down))
+        guard percent >= 10 else { return nil }
+        return "Save \(percent)%"
     }
 
     private func ctaPlanName(for tier: StoreManager.Tier) -> String {

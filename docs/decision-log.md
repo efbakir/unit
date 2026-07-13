@@ -414,4 +414,12 @@ Code surfaces shipped today: `Unit/UnitApp.swift` (InstallProvenance + Security 
 
 ---
 
+## 2026-07-13 - Paywall conversion pass: founder green-lights growth tactics within an honest-math floor
+
+**Decision:** Founder explicitly accepted "sliding toward" conversion-optimized paywall patterns (chips, savings framing, personalization) after reviewing high-revenue paywall examples (LADDER, YAZIO, per-week ladders). Shipped: (1) yearly card badge computes **"Save N%"** live from StoreKit (yearly vs 52× the weekly price, rounds down, falls back to "Best value", hides if the saving isn't real); (2) monthly and yearly sublabels show **per-week equivalents** derived from live prices, so all recurring tiers are priced in the unit the pre-selected Weekly anchors on; (3) the header subtitle **names the user's own program** ("Push · Pull · Legs is loaded.") — the paywall reads as the payoff of onboarding effort. Badge placement rule: chip the upsell tier only, never the pre-selected default.
+**Why:** The decision screen converts better when the moment feels like a reveal of the user's own work and the value ladder is legible in one unit. Founder judged the earlier quiet-paywall posture too conservative for v2's hard paywall.
+**Implication:** The honest-optics floor from docs/pricing.md §default still holds: Weekly stays the default AND the smallest visible price; every number on the screen is StoreKit-derived division, no fabricated compare-at prices, no countdowns, no fake scarcity, no trial language (there is no trial). Personalization uses only on-device program data. If tiers or prices change, the badge and equivalents recompute — nothing is hardcoded.
+
+---
+
 <!-- new entries above this line -->
