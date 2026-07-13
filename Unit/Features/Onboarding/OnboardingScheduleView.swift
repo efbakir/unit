@@ -59,8 +59,8 @@ struct OnboardingScheduleView: View {
         @Bindable var vm = vm
 
         OnboardingShell(
-            title: "When do I lift?",
-            subtitle: "I'll pick the day I do each workout. I can change this later.",
+            title: AppCopy.Onboarding.scheduleTitle,
+            subtitle: AppCopy.Onboarding.scheduleSubtitle,
             ctaLabel: "Continue",
             ctaEnabled: vm.scheduleIsValid,
             ctaDisabledReason: vm.scheduleIsValid ? nil : AppCopy.FormHint.onboardingScheduleRequired,
@@ -74,10 +74,10 @@ struct OnboardingScheduleView: View {
                 AppCard {
                     Toggle(isOn: $vm.useFlexibleSchedule) {
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("Lift on a flexible schedule")
+                            Text(AppCopy.Onboarding.flexibleToggle)
                                 .font(AppFont.sectionHeader.font)
                                 .foregroundStyle(AppColor.textPrimary)
-                            Text("I'll log when I train, no fixed weekdays.")
+                            Text(AppCopy.Onboarding.flexibleSubtext)
                                 .font(AppFont.caption.font)
                                 .foregroundStyle(AppColor.textSecondary)
                         }

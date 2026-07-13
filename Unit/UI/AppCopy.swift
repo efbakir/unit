@@ -29,21 +29,8 @@ enum AppCopy {
         static let addExercise = "Add exercise"
         /// Bodyweight abbreviation — shown in catalog rows, set tiles, ghost subtitles.
         static let bodyweightAbbrev = "BW"
-        /// First-set reminder shown above the command card before any working set lands.
-        /// Disappears once the lifter logs a set for the current exercise.
-        static let warmupReminder = "Don't forget to warm up."
-        /// Tap-affordance second line paired with `warmupReminder`. Opens the guidance sheet.
-        /// Rendered in the same secondary tone as the reminder (no underline, no accent) so
-        /// the whole block reads as one quiet two-line caption, not a hyperlink.
-        static let warmupReminderLink = "Tap to learn how."
-        /// Title of the warm-up guidance bottom sheet.
-        static let warmupGuideTitle = "Warm-up sets"
-        /// Body paragraphs of the warm-up guidance sheet — deliberately short so the
-        /// lifter can scan it once and dismiss. Order matters: rep-range rule first,
-        /// then load advice, then tempo cue.
-        static let warmupGuideRepRule = "If your working set is 8–10 reps, do 3–4 reps per warm-up. For lower reps, do half of your working reps."
-        static let warmupGuideLoadRule = "Stay light. Don't chase a pump. The warm-up is a primer, not part of the work."
-        static let warmupGuideTempoRule = "Push explosive on the way up. Slow on the way down."
+        // Warm-up reminder + guidance sheet removed 2026-07-13 (Not v1):
+        // Unit is history, not instructions — no coaching in the hot loop.
         /// Empty-state title shown when a freestyle session has no exercises yet.
         static let addFirstExerciseTitle = "Add your first exercise"
         /// Subtitle paired with `addFirstExerciseTitle`.
@@ -142,7 +129,7 @@ enum AppCopy {
         /// edit it) isn't visually labeled — the toast confirms the action
         /// they just discovered and signals it's reusable on every set.
         /// Persistence: `@AppStorage("hasSeenSetEditHint")`.
-        static let setEditHint = "Tap any set to edit it."
+        static let setEditHint = "Tap a set to edit."
     }
 
     enum Nav {
@@ -239,17 +226,66 @@ enum AppCopy {
     /// diagnostic instead of a dead button. Direct voice, no pronouns.
     enum FormHint {
         /// `vm.exercisesAreValid` — every day must have at least one named exercise.
-        static let onboardingExercisesRequired = "Add at least one named exercise to every day."
+        static let onboardingExercisesRequired = "Add an exercise to each day."
         /// `vm.splitIsValid` — every day slot needs a non-empty name.
-        static let onboardingSplitNamesRequired = "Name every day to continue."
+        static let onboardingSplitNamesRequired = "Name each day."
         /// `vm.scheduleIsValid` (fixed mode) — pick a weekday for each day-template.
-        static let onboardingScheduleRequired = "Pick a weekday for every workout."
+        static let onboardingScheduleRequired = "Pick a day for each workout."
         /// `canParse` on the program-import step — paste field is empty.
-        static let onboardingImportPasteRequired = "Paste your program above to continue."
+        static let onboardingImportPasteRequired = "Paste a program first."
         /// Add-day sheet — day name field is empty.
-        static let dayNameRequired = "Name the day to create it."
+        static let dayNameRequired = "Add a day name."
         /// Add-exercise sheet — exercise name field is empty.
-        static let exerciseNameRequired = "Name the exercise to save it."
+        static let exerciseNameRequired = "Add an exercise name."
+    }
+
+    /// Onboarding step copy — titles, subtitles, CTAs. Minimal-language rule
+    /// (2026-07-13, docs/decision-log.md): titles ≤ 4 words, neutral labels,
+    /// no pronoun; a subtitle exists only when it adds information the
+    /// controls don't already show. The first-person rule bans corporate
+    /// "we" — it does not require "my"/"I'll" in UI labels.
+    enum Onboarding {
+        static let splashTagline = "Your gym log."
+        static let splashCTA = "Add program"
+        static let unitTitle = "Weight unit"
+        static let methodTitle = "Add program"
+        static let methodPasteOption = "Paste routine"
+        static let methodLibraryOption = "Choose program"
+        static let libraryTitle = "Choose program"
+        static let pasteTitle = "Paste program"
+        static let pasteSubtitle = "Or type it here."
+        static let scheduleTitle = "Training days"
+        static let scheduleSubtitle = "Change anytime."
+        static let flexibleToggle = "Flexible schedule"
+        static let flexibleSubtext = "No fixed weekdays."
+        static let previewTitle = "Review program"
+        static let previewCTA = "Save program"
+        static let previewCTASaving = "Saving…"
+        static let demoHeadline = "Try a set"
+    }
+
+    /// Paywall copy — marketing surface only. Legal disclosure, renewal
+    /// wording, Restore/Terms/Privacy, and failure states are compliance
+    /// copy and live in the view untouched by minimal-language passes.
+    enum Paywall {
+        static let title = "Your program is ready"
+        static let subtitle = "Choose a plan to start."
+        static let benefitLogging = "3-second set logging"
+        static let benefitPrefill = "Last session prefilled"
+        static let benefitRestTimer = "Lock Screen rest timer"
+        static let subscribeWeekly = "Subscribe weekly"
+        static let subscribeMonthly = "Subscribe monthly"
+        static let subscribeYearly = "Subscribe yearly"
+        static let buyLifetime = "Buy Lifetime"
+    }
+
+    /// Today dashboard state copy. One status line per state — the title
+    /// carries it; no eyebrow/title/message stacking that repeats itself.
+    enum Today {
+        static let noProgramTitle = "No program"
+        static let noProgramCTA = "Add program"
+        static let restDayTitle = "Rest day"
+        static let restDayCTA = "Choose routine"
     }
 
     /// Shared transient-toast copy. The pill is narrow and time-bound, so the

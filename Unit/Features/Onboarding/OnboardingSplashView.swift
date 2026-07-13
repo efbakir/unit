@@ -3,7 +3,7 @@
 //  Unit
 //
 //  Screen 1 — standalone opener, then carousel; no data collected:
-//    1. Opener — logo + "Welcome to Unit" + "Your upgraded gym notebook".
+//    1. Opener — logo + "Welcome to Unit" + "Your gym log."
 //       No CTA, no dots, auto-advances after the brand beat.
 //    2. Carousel — 3 auto-advancing value slides that teach what Unit does
 //       *before* the post-onboarding paywall (decision-log 2026-06-16: "the
@@ -145,7 +145,7 @@ struct OnboardingSplashView: View {
             VStack(spacing: AppSpacing.lg) {
                 PageDots(count: slides.count, selection: selection)
 
-                AppPrimaryButton("Set up your program", action: onGetStarted)
+                AppPrimaryButton(AppCopy.Onboarding.splashCTA, action: onGetStarted)
                     // Horizontal + bottom insets mirror `AppScreen`'s canonical
                     // sticky-CTA chrome (md sides, xs above the home-indicator
                     // safe area) so the button doesn't jump — inward OR downward —
@@ -205,7 +205,7 @@ private struct SplashOpener: View {
                 .padding(.top, AppSpacing.xl)
                 .modifier(ParallaxEntry(index: 1, appeared: appeared, leaving: leaving, reduceMotion: reduceMotion))
 
-                Text("Your upgraded gym notebook")
+                Text(AppCopy.Onboarding.splashTagline)
                     .font(AppFont.splashWelcome.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)

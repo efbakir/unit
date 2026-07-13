@@ -43,8 +43,7 @@ struct OnboardingLibraryPickerView: View {
 
     var body: some View {
         OnboardingShell(
-            title: "Pick a program",
-            subtitle: "I'll start you with the standard prescription.",
+            title: AppCopy.Onboarding.libraryTitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack

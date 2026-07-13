@@ -15,8 +15,7 @@ struct OnboardingImportMethodView: View {
 
     var body: some View {
         OnboardingShell(
-            title: "Add my program",
-            subtitle: "I'll bring it in this way.",
+            title: AppCopy.Onboarding.methodTitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack
@@ -30,12 +29,12 @@ struct OnboardingImportMethodView: View {
                 // existing sessions which a brand-new v2 install never has.
                 AppOptionTileCard(
                     icon: .clipboard,
-                    title: "Paste my routine"
+                    title: AppCopy.Onboarding.methodPasteOption
                 ) {
                     onSelect(.paste)
                 }
 
-                AppOptionTileCard(icon: .list, title: "Pick a program") {
+                AppOptionTileCard(icon: .list, title: AppCopy.Onboarding.methodLibraryOption) {
                     onSelect(.library)
                 }
             }

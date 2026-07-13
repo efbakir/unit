@@ -16,8 +16,7 @@ struct OnboardingUnitPickerView: View {
 
     var body: some View {
         OnboardingShell(
-            title: "Pick my unit",
-            subtitle: "I'll see weights this way everywhere.",
+            title: AppCopy.Onboarding.unitTitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack

@@ -238,10 +238,8 @@ struct TodayView: View {
         switch state {
         case .noProgram:
             EmptyStateCard(
-                eyebrow: "No program",
-                title: "No program yet.",
-                message: "Add a routine to start logging.",
-                buttonLabel: "Add program"
+                title: AppCopy.Today.noProgramTitle,
+                buttonLabel: AppCopy.Today.noProgramCTA
             ) {
                 appTabSelection(.program)
             }
@@ -284,10 +282,9 @@ struct TodayView: View {
 
         case .restDay(let context):
             EmptyStateCard(
-                eyebrow: "Rest day",
-                title: "Nothing today.",
+                title: AppCopy.Today.restDayTitle,
                 message: context.programName,
-                buttonLabel: "Choose routine"
+                buttonLabel: AppCopy.Today.restDayCTA
             ) {
                 showsRoutinePickSheet = true
             }
