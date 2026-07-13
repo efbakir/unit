@@ -277,6 +277,21 @@ enum AppCopy {
         static let subscribeMonthly = "Subscribe monthly"
         static let subscribeYearly = "Subscribe yearly"
         static let buyLifetime = "Buy Lifetime"
+
+        // Renewal-transparency sheet ("what happens next" timeline). One
+        // quiet trigger line on the paywall; the sheet answers the
+        // will-I-forget-and-get-charged anxiety honestly. No reminder is
+        // promised — Apple only mails receipts, and Unit sends nothing.
+        static let timelineTrigger = "What happens next?"
+        static let timelineTitle = "After you subscribe"
+        static let timelineSavedTitle = "Program saved"
+        static let timelineSavedFallback = "Your program is ready."
+        static let timelineTodayTitle = "Today"
+        static let timelineTodayMessage = "Everything unlocks. Log your first workout."
+        static let timelineCancelTitle = "Anytime"
+        static let timelineCancelMessage = "Cancel in App Store settings. Access lasts through the paid period."
+        static let timelineRenewalTitle = "Renewal"
+        static let timelineRenewalMessage = "Auto-renews at the price shown until you cancel."
     }
 
     /// Today dashboard state copy. One status line per state — the title

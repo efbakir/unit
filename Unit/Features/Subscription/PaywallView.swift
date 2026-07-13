@@ -20,6 +20,7 @@ struct PaywallView: View {
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @State private var showingManageSubscriptions = false
+    @State private var showsRenewalTimeline = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -40,6 +41,11 @@ struct PaywallView: View {
             }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
+        .sheet(isPresented: $showsRenewalTimeline) {
+            renewalTimelineSheet
+                .presentationDetents([.medium])
+                .appBottomSheetChrome()
+        }
         .task {
             await store.loadProducts()
         }
@@ -128,8 +134,12 @@ struct PaywallView: View {
                     .appScreenEnter(index: 5)
             }
 
-            footer
+            timelineTrigger
                 .padding(.top, AppSpacing.lg)
+                .appScreenEnter(index: 5)
+
+            footer
+                .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.lg)
                 .appScreenEnter(index: 5)
         }
@@ -501,6 +511,71 @@ struct PaywallView: View {
     }
 
     // MARK: - Footer
+
+    /// One caption-weight line — the only on-page cost of the renewal
+    /// timeline. The sheet carries the reassurance so the page stays clean.
+    private var timelineTrigger: some View {
+        Button(AppCopy.Paywall.timelineTrigger) {
+            showsRenewalTimeline = true
+        }
+        .font(AppFont.caption.font)
+        .foregroundStyle(AppColor.textSecondary)
+        .frame(maxWidth: .infinity, minHeight: 44)
+    }
+
+    private var renewalTimelineSheet: some View {
+        AppSheetScreen(
+            title: AppCopy.Paywall.timelineTitle,
+            dismissLabel: AppCopy.Nav.done,
+            dismissActionPlacement: .confirmation,
+            onDismissAction: { showsRenewalTimeline = false },
+            usesOuterScroll: false
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                timelineRow(
+                    icon: .checkmarkFilled,
+                    title: AppCopy.Paywall.timelineSavedTitle,
+                    message: programDayLine.map { "\($0) is ready." }
+                        ?? AppCopy.Paywall.timelineSavedFallback
+                )
+                timelineRow(
+                    icon: .bolt,
+                    title: AppCopy.Paywall.timelineTodayTitle,
+                    message: AppCopy.Paywall.timelineTodayMessage
+                )
+                timelineRow(
+                    icon: .settingsOutline,
+                    title: AppCopy.Paywall.timelineCancelTitle,
+                    message: AppCopy.Paywall.timelineCancelMessage
+                )
+                timelineRow(
+                    icon: .calendarClock,
+                    title: AppCopy.Paywall.timelineRenewalTitle,
+                    message: AppCopy.Paywall.timelineRenewalMessage
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func timelineRow(icon: AppIcon, title: String, message: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
+            icon.image(size: 16, weight: .semibold)
+                .foregroundStyle(AppColor.textPrimary)
+                .frame(width: 20, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(title)
+                    .font(AppFont.sectionHeader.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(message)
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
 
     private var footer: some View {
         VStack(spacing: AppSpacing.sm) {
