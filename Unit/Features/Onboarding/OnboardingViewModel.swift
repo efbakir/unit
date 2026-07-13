@@ -3,7 +3,7 @@
 //  Unit
 //
 //  Transient onboarding state. No SwiftData @Model — all writes happen
-//  atomically in commit() when the user taps "Save my program" on the
+//  atomically in commit() when the user taps "Save program" on the
 //  program preview (which saves the program, then presents the hard paywall).
 //
 

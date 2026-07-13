@@ -254,7 +254,7 @@ struct EditProgramView: View {
     }
 
     /// True when any routine in this Split is pinned to a calendar weekday
-    /// (set in onboarding's "When do I lift?" step). In weekday mode the
+    /// (set in onboarding's "Training days" step). In weekday mode the
     /// per-routine weekday dictates order, so the list sorts by weekday and
     /// the drag-to-reorder affordance is hidden — drag would only juggle
     /// display order without changing which day a routine falls on.

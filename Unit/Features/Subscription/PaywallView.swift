@@ -84,9 +84,9 @@ struct PaywallView: View {
             header
 
             VStack(spacing: 0) {
-                benefitRow("Log a set in 3 seconds")
-                benefitRow("Last-session numbers ready")
-                benefitRow("Rest timer on your Lock Screen")
+                benefitRow(AppCopy.Paywall.benefitLogging)
+                benefitRow(AppCopy.Paywall.benefitPrefill)
+                benefitRow(AppCopy.Paywall.benefitRestTimer)
             }
             .padding(.top, AppSpacing.xl)
 
@@ -148,7 +148,7 @@ struct PaywallView: View {
                 .appCapsLabel(.smallLabel)
                 .foregroundStyle(AppColor.textSecondary)
 
-            Text(store.isPurchased ? "Unit Pro active" : "Your program is ready")
+            Text(store.isPurchased ? "Unit Pro active" : AppCopy.Paywall.title)
                 .appFont(.largeTitle)
                 .foregroundStyle(AppColor.textPrimary)
 
@@ -167,7 +167,7 @@ struct PaywallView: View {
             }
             return "Your subscription is active. Manage or cancel anytime in App Store settings."
         }
-        return "Subscribe to log your first workout."
+        return AppCopy.Paywall.subtitle
     }
 
     // MARK: - CTA
@@ -179,7 +179,6 @@ struct PaywallView: View {
             isEnabled: store.selectedProduct != nil,
             isLoading: store.isLoading,
             disabledReason: ctaDisabledReason,
-            contextLabel: selectedPlanSummary,
             action: { Task { await store.purchase() } }
         )
     }
@@ -190,10 +189,10 @@ struct PaywallView: View {
         }
 
         switch store.selectedTier {
-        case .weekly, .monthly, .annual:
-            return "Continue with \(ctaPlanName(for: store.selectedTier))"
-        case .lifetime:
-            return "Buy Lifetime"
+        case .weekly: return AppCopy.Paywall.subscribeWeekly
+        case .monthly: return AppCopy.Paywall.subscribeMonthly
+        case .annual: return AppCopy.Paywall.subscribeYearly
+        case .lifetime: return AppCopy.Paywall.buyLifetime
         }
     }
 
@@ -205,11 +204,6 @@ struct PaywallView: View {
             return "Choose an available plan."
         }
         return "Loading subscriptions."
-    }
-
-    private var selectedPlanSummary: String? {
-        guard let billedPrice = selectedSummaryPriceText(for: store.selectedTier) else { return nil }
-        return "Selected: \(ctaPlanName(for: store.selectedTier)) · \(billedPrice)"
     }
 
     // MARK: - Benefit Row
@@ -330,14 +324,6 @@ struct PaywallView: View {
             return product.displayPrice
         }
         return "\(product.displayPrice)/\(billingUnitText(for: product, fallbackTier: tier))"
-    }
-
-    private func selectedSummaryPriceText(for tier: StoreManager.Tier) -> String? {
-        guard let product = store.product(for: tier) else { return nil }
-        guard tier.isSubscription, product.subscription != nil else {
-            return "\(product.displayPrice) one-time"
-        }
-        return billedPriceText(for: tier)
     }
 
     private func billingUnitText(for product: Product, fallbackTier: StoreManager.Tier) -> String {

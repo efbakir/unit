@@ -380,4 +380,12 @@ Code surfaces shipped today: `Unit/UnitApp.swift` (InstallProvenance + Security 
 
 ---
 
+## 2026-07-13 - Minimal-language copy pass; first-person rule clarified; warm-up coaching removed (Not v1)
+
+**Decision:** In-app copy tightened app-wide on `copy/minimal-language-pass` per founder direction. (1) The warm-up reminder, "Tap to learn how.", and the guidance sheet are **removed from the active workout** — Unit is history, not instructions; a warm-up education surface is a different product ("Not v1"). (2) Onboarding titles become neutral labels ≤ 4 words ("Weight unit", "Add program", "Training days", "Review program"); subtitles exist only when they add information the controls don't show. (3) Paywall: subtitle "Choose a plan to start.", benefits "3-second set logging / Last session prefilled / Lock Screen rest timer", CTA "Subscribe weekly/monthly/yearly", the "Selected: …" summary line removed (the selected card already says it). Legal disclosure, renewal labels, Restore/Terms/Privacy untouched. (4) Today: "No program" and "Rest day" are single-status cards — no eyebrow+title+message stacking. (5) Stable screen copy centralized in `AppCopy` (Onboarding/Paywall/Today groups). This supersedes the 2026-07-11 "Summary"/"Save my program" wording.
+**Why:** The copy had drifted conversational — screens explaining themselves conflicts with the compass (fewest words under fatigue). The first-person rule was being over-applied: its point is **never fake a corporate "we"**, not "put 'my/I'll' on every label" — PRODUCT.md §Brand Personality now says so explicitly.
+**Implication:** ASC screenshot #2 (and any shot showing onboarding/paywall/Today) must be captured only after this branch merges — pre-pass captures are stale. The frozen EN reviewer notes claim "the selected billed amount remains visible directly above the CTA"; with the summary line removed that sentence must be revised (or re-verified against the tier cards) before pasting into ASC.
+
+---
+
 <!-- new entries above this line -->

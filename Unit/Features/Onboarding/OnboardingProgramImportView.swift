@@ -10,13 +10,10 @@ import SwiftUI
 
 /// Single source of truth for paste-mode placeholder copy.
 private enum ProgramPasteFormatGuide {
-    /// Combined intro (replaces separate subtitle + footer under the editor). Full rules stay in the format sheet.
-    /// Wording covers both entry methods — pasting from Notes/chat/a doc *and*
-    /// typing the program by hand on this screen's editor. The original
-    /// "Paste from Notes, chat, or a document." read as paste-only, which
-    /// undersold the manual-typing path that the same editor supports.
-    static let subtitle =
-        "Paste from Notes or type it in. One day per line, exercises below."
+    /// One line: the title says paste, the subtitle only adds the one fact
+    /// the controls don't show — typing works too. Format rules live in the
+    /// format-examples sheet, not the header.
+    static let subtitle = AppCopy.Onboarding.pasteSubtitle
 
     /// Placeholder is examples only — short, by design (long rules live in the format examples sheet).
     /// Bare numbers (no `kg` / `lb`) are easier for the user to type; the parser
@@ -63,11 +60,11 @@ struct OnboardingProgramImportView: View {
         @Bindable var vm = vm
 
         OnboardingShell(
-            title: "Type or paste my program",
+            title: AppCopy.Onboarding.pasteTitle,
             subtitle: ProgramPasteFormatGuide.subtitle,
             ctaLabel: parseLabel,
             ctaEnabled: canParse && !isParsing,
-            ctaDisabledReason: canParse ? nil : "Paste or type your program first.",
+            ctaDisabledReason: canParse ? nil : AppCopy.FormHint.onboardingImportPasteRequired,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onContinue: { Task { await parseProgram() } },

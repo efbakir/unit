@@ -43,10 +43,6 @@ struct ActiveWorkoutView: View {
     @State private var showsAddExercise = false
     @State private var pendingExerciseForSetup: Exercise?
     @State private var customSetCounts: [UUID: Int] = [:]
-    /// Drives the warm-up guidance bottom sheet — opened from the inline reminder text
-    /// above the command card. The reminder itself only renders for an exercise's first
-    /// set; the sheet is informational and dismissible at any time.
-    @State private var showsWarmupGuide: Bool = false
     /// Bumped on every successful `completeSet`. Drives `AppHaptic.setLogged`
     /// on `WorkoutCommandCard`, so the haptic lives at the atom layer instead
     /// of being fired imperatively from the view-model. Wraps via `&+=` to
@@ -161,15 +157,6 @@ struct ActiveWorkoutView: View {
         return .nextExercise(subtitle: nextSection.exercise.displayName)
     }
 
-    /// Show the warmup reminder when the lifter hasn't logged a working set for
-    /// the *current* exercise yet. Lives in the bottom safe-area inset (above
-    /// the next-exercise CTA) so the page reads top-down: nav, card, warmup,
-    /// next-exercise.
-    private var showsWarmupReminder: Bool {
-        guard let section = currentSection else { return false }
-        return !hasLoggedWorkingSet(for: section.exercise.id)
-    }
-
     private func emptyMetricPlaceholder() -> String {
         let hasAnyCompleted = sessions.contains(where: \.isCompleted)
         if !hasAnyCompleted {
@@ -216,25 +203,6 @@ struct ActiveWorkoutView: View {
         }
 
         return .idle
-    }
-
-    /// Inline reminder rendered above the command card before the lifter logs the
-    /// first working set for an exercise. Two-line muted caption — reminder on top,
-    /// tap affordance below — both in `textSecondary` so the block reads as one quiet
-    /// note rather than a hyperlink. Disappears once a working set is logged.
-    private var warmupReminderText: some View {
-        Button {
-            showsWarmupGuide = true
-        } label: {
-            Text("\(AppCopy.Workout.warmupReminder)\n\(AppCopy.Workout.warmupReminderLink)")
-                .appFont(.muted)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint("Opens warm-up guidance")
     }
 
     @ViewBuilder
@@ -354,13 +322,6 @@ struct ActiveWorkoutView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
-                if showsWarmupReminder {
-                    warmupReminderText
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
-                        .frame(maxWidth: .infinity)
-                        .background(AppColor.background)
-                }
                 if let nextExerciseBarState {
                     SessionStateBar(
                         state: nextExerciseBarState,
@@ -430,11 +391,6 @@ struct ActiveWorkoutView: View {
         // than imperatively in `finishWorkout` so it survives Reduce Motion
         // gating identically to the in-flow haptics.
         .appHaptic(.workoutFinished, trigger: workoutFinishedPhase)
-        .sheet(isPresented: $showsWarmupGuide) {
-            WarmupGuideSheet()
-                .presentationDetents([.medium])
-                .appBottomSheetChrome()
-        }
         .sheet(isPresented: $showLineup) {
             exerciseListSheet
                 .presentationDetents([.medium, .large])
@@ -1007,14 +963,6 @@ struct ActiveWorkoutView: View {
             }
         } else {
             prSetEntryIDs.remove(entry.id)
-        }
-    }
-
-    private func hasLoggedWorkingSet(for exerciseID: UUID) -> Bool {
-        session.setEntries.contains { entry in
-            entry.exerciseId == exerciseID
-                && entry.isCompleted
-                && !entry.isWarmup
         }
     }
 
@@ -1745,31 +1693,6 @@ final class RestTimerManager {
         activity = nil
         Task {
             await currentActivity?.end(nil, dismissalPolicy: .immediate)
-        }
-    }
-}
-
-// MARK: - Warmup guide sheet
-
-private struct WarmupGuideSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        AppSheetScreen(
-            title: AppCopy.Workout.warmupGuideTitle,
-            dismissLabel: AppCopy.Nav.done,
-            dismissActionPlacement: .confirmation,
-            onDismissAction: { dismiss() },
-            usesOuterScroll: false
-        ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text(AppCopy.Workout.warmupGuideRepRule)
-                Text(AppCopy.Workout.warmupGuideLoadRule)
-                Text(AppCopy.Workout.warmupGuideTempoRule)
-            }
-            .font(AppFont.body.font)
-            .foregroundStyle(AppColor.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

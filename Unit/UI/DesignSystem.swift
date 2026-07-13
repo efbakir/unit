@@ -2698,7 +2698,9 @@ extension View {
 struct EmptyStateCard<Content: View>: View {
     let eyebrow: String?
     let title: String
-    let message: String
+    /// Optional: one status line per state — omit when the title already
+    /// says everything (minimal-language rule, 2026-07-13).
+    let message: String?
     let note: String?
     let buttonLabel: String?
     let action: (() -> Void)?
@@ -2721,10 +2723,12 @@ struct EmptyStateCard<Content: View>: View {
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text(message)
-                        .font(AppFont.body.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
+                    if let message {
+                        Text(message)
+                            .font(AppFont.body.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
 
                     if let note {
                         Text(note)
@@ -2771,8 +2775,9 @@ extension EmptyStateCard where Content == EmptyView {
         self.content = { EmptyView() }
     }
 
-    /// CTA-bearing empty state without an eyebrow.
-    init(title: String, message: String, buttonLabel: String, action: @escaping () -> Void) {
+    /// CTA-bearing empty state without an eyebrow. `message` omitted = the
+    /// title is the whole status line.
+    init(title: String, message: String? = nil, buttonLabel: String, action: @escaping () -> Void) {
         self.eyebrow = nil
         self.title = title
         self.message = message

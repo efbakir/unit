@@ -7,14 +7,13 @@
 //  library path, paste-derived for paste path), confirms parser warnings
 //  inline (Q6), and hands off to the paywall via the sticky bottom CTA.
 //
-//  Decisions locked 2026-06-17 (Q5 + Q6), revised by founder 2026-07-11
-//  (see docs/decision-log.md):
+//  Decisions locked 2026-06-17 (Q5 + Q6), revised 2026-07-11 and by the
+//  2026-07-13 minimal-language pass (see docs/decision-log.md):
 //   - Vertical day cards stacked (not tabs / not swipe).
 //   - First day expanded, others collapsed (user-picked over my "all expanded").
-//   - Sticky bottom "Save my program" CTA — one action; commits the program
-//     and hands off to the hard paywall ("Choose a plan" read as pricing).
-//   - Paste title is the single word "Summary"; subtitle carries no
-//     subscription mention (the paywall speaks for itself).
+//   - Title "Review program" (both paths), no subtitle; sticky bottom
+//     "Save program" CTA — one action; commits the program and hands off
+//     to the hard paywall.
 //   - Row tap (name + sets×reps block) opens the edit sheet — no separate
 //     pencil button next to the weight field.
 //   - Paste warnings inline: banner for noisy lines + dropped conditioning;
@@ -55,7 +54,6 @@ struct OnboardingProgramPreviewView: View {
     var body: some View {
         OnboardingShell(
             title: previewTitle,
-            subtitle: previewSubtitle,
             ctaLabel: ctaLabel,
             ctaEnabled: ctaEnabled,
             progressStep: progressStep,
@@ -93,7 +91,7 @@ struct OnboardingProgramPreviewView: View {
     // list when every day is expanded.
     private var ctaLabel: String {
         guard hasAnyExercise else { return "Back to import" }
-        return isCommitting ? "Saving…" : "Save my program"
+        return isCommitting ? AppCopy.Onboarding.previewCTASaving : AppCopy.Onboarding.previewCTA
     }
 
     private var ctaEnabled: Bool {
@@ -105,14 +103,7 @@ struct OnboardingProgramPreviewView: View {
     }
 
     private var previewTitle: String {
-        switch vm.importMethod {
-        case .library: return "Your program"
-        case .paste: return "Summary"
-        }
-    }
-
-    private var previewSubtitle: String {
-        "Review every field now."
+        AppCopy.Onboarding.previewTitle
     }
 
     @ViewBuilder
@@ -146,7 +137,7 @@ struct OnboardingProgramPreviewView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                            Text("Ready to log set #1?")
+                            Text(AppCopy.Onboarding.demoHeadline)
                                 .font(AppFont.sectionHeader.font)
                                 .foregroundStyle(AppColor.textPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
