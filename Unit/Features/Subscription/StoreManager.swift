@@ -217,12 +217,25 @@ final class StoreManager {
     @MainActor
     func checkEntitlement() async {
         var entitlementTier: Tier?
+        var sawAny = false
         for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result,
-               let tier = Tier(rawValue: transaction.productID) {
-                entitlementTier = tier
-                break
+            sawAny = true
+            switch result {
+            case .verified(let transaction):
+                if let tier = Tier(rawValue: transaction.productID) {
+                    entitlementTier = tier
+                }
+            case .unverified(let transaction, let error):
+                // Diagnostic only — an unverified entitlement is still skipped.
+                // On-device Xcode StoreKit testing is the known case: test-cert
+                // transactions can fail verification and the wall stays up
+                // with no visible reason. Never seen in production StoreKit.
+                logger.error("Entitlement skipped, failed verification: \(transaction.productID, privacy: .public) — \(error.localizedDescription, privacy: .public)")
             }
+            if entitlementTier != nil { break }
+        }
+        if entitlementTier == nil {
+            logger.info("Entitlement check: none active (any results: \(sawAny, privacy: .public))")
         }
         activeTier = entitlementTier
         isPurchased = entitlementTier != nil
