@@ -143,17 +143,17 @@ struct PaywallView: View {
                         .padding(.top, AppSpacing.md)
                 }
 
+                timelineTrigger
+                    .padding(.top, AppSpacing.sm)
+                    .appScreenEnter(index: 4)
+
                 subscriptionDisclosure
-                    .padding(.top, AppSpacing.md)
+                    .padding(.top, AppSpacing.sm)
                     .appScreenEnter(index: 4)
             }
 
-            timelineTrigger
-                .padding(.top, AppSpacing.lg)
-                .appScreenEnter(index: 4)
-
             footer
-                .padding(.top, AppSpacing.sm)
+                .padding(.top, AppSpacing.lg)
                 .padding(.bottom, AppSpacing.lg)
                 .appScreenEnter(index: 4)
         }
@@ -568,48 +568,35 @@ struct PaywallView: View {
             onDismissAction: { showsRenewalTimeline = false },
             usesOuterScroll: false
         ) {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                timelineRow(
-                    icon: .checkmarkFilled,
+            // Canonical AppListRow (.display) — fixed 24pt icon frame keeps
+            // the glyphs optically centered; insets come from the row, not
+            // hand-rolled spacing.
+            VStack(spacing: 0) {
+                AppListRow(
                     title: AppCopy.Paywall.timelineSavedTitle,
-                    message: programDayLine.map { "\($0) is ready." }
-                        ?? AppCopy.Paywall.timelineSavedFallback
+                    subtitle: programDayLine.map { "\($0) is ready." }
+                        ?? AppCopy.Paywall.timelineSavedFallback,
+                    leadingIcon: .checkmarkFilled,
+                    style: .display
                 )
-                timelineRow(
-                    icon: .bolt,
+                AppListRow(
                     title: AppCopy.Paywall.timelineTodayTitle,
-                    message: AppCopy.Paywall.timelineTodayMessage
+                    subtitle: AppCopy.Paywall.timelineTodayMessage,
+                    leadingIcon: .bolt,
+                    style: .display
                 )
-                timelineRow(
-                    icon: .settingsOutline,
+                AppListRow(
                     title: AppCopy.Paywall.timelineCancelTitle,
-                    message: AppCopy.Paywall.timelineCancelMessage
+                    subtitle: AppCopy.Paywall.timelineCancelMessage,
+                    leadingIcon: .settingsOutline,
+                    style: .display
                 )
-                timelineRow(
-                    icon: .calendarClock,
+                AppListRow(
                     title: AppCopy.Paywall.timelineRenewalTitle,
-                    message: AppCopy.Paywall.timelineRenewalMessage
+                    subtitle: AppCopy.Paywall.timelineRenewalMessage,
+                    leadingIcon: .calendarClock,
+                    style: .display
                 )
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    @ViewBuilder
-    private func timelineRow(icon: AppIcon, title: String, message: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-            icon.image(size: 16, weight: .semibold)
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(width: 20, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(title)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(message)
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
