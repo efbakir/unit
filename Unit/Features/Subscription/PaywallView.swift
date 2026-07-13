@@ -386,7 +386,6 @@ struct PaywallView: View {
     private func sublabel(for tier: StoreManager.Tier) -> String {
         switch tier {
         case .weekly: return "Auto-renews weekly"
-        case .monthly: return "Auto-renews monthly"
         case .monthly:
             if let perWeek = perWeekEquivalentText(for: .monthly) {
                 return "Auto-renews monthly · \(perWeek)/week"
