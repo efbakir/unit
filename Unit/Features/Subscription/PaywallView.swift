@@ -143,6 +143,10 @@ struct PaywallView: View {
                         .padding(.top, AppSpacing.md)
                 }
 
+                reviewQuoteBlock
+                    .padding(.top, AppSpacing.lg)
+                    .appScreenEnter(index: 4)
+
                 timelineTrigger
                     .padding(.top, AppSpacing.sm)
                     .appScreenEnter(index: 4)
@@ -548,6 +552,28 @@ struct PaywallView: View {
     }
 
     // MARK: - Footer
+
+    /// Real published review, quoted verbatim in translation — sits at the
+    /// decision point under the price ladder. A quote survives scrutiny that
+    /// a "5.0 stars" claim (3 ratings, one storefront) would not.
+    private var reviewQuoteBlock: some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(AppCopy.Paywall.reviewStars)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textPrimary)
+
+            Text(AppCopy.Paywall.reviewQuote)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(AppCopy.Paywall.reviewAttribution)
+                .font(AppFont.muted.font)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
 
     /// One caption-weight line — the only on-page cost of the renewal
     /// timeline. The sheet carries the reassurance so the page stays clean.

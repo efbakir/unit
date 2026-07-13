@@ -296,6 +296,15 @@ enum AppCopy {
         static let timelineCancelMessage = "Cancel in App Store settings. Access lasts through the paid period."
         static let timelineRenewalTitle = "Renewal"
         static let timelineRenewalMessage = "Auto-renews at the price shown until you cancel."
+
+        // Social proof — a real, published App Store review (Türkiye
+        // storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym tracker
+        // app"). Quoted verbatim in translation and attributed as such.
+        // Numeric rating claims stay off the paywall until the count is
+        // meaningful (see the gated follow-up task).
+        static let reviewStars = "★★★★★"
+        static let reviewQuote = "\u{201C}The gym tracker app I\u{2019}ve been looking for for years.\u{201D}"
+        static let reviewAttribution = "App Store review · translated"
     }
 
     /// Today dashboard state copy. One status line per state — the title
