@@ -357,6 +357,10 @@ enum AppMotion {
         static let enter: Double = 0.32
         /// 180 ms — exit (~75 % of enter; dismissal is decisive).
         static let exit: Double = 0.18
+        /// 70 ms — per-index delay between sibling blocks in a staggered
+        /// entrance (`appScreenEnter(index:)`). Short enough that a
+        /// six-block cascade completes inside ~750 ms total.
+        static let staggerStep: Double = 0.07
     }
 
     /// Easing curves translated from the design-for-AI motion doctrine
@@ -430,6 +434,12 @@ extension View {
 /// canonical implementation — never hand-roll a parallel `.opacity` /
 /// `.offset` entrance, never extend with stagger or per-row variants.
 private struct AppScreenEnter: ViewModifier {
+    /// Stagger position. 0 = no delay (the classic whole-screen entrance);
+    /// 1, 2, 3… delay by `index × AppMotion.Duration.staggerStep` so sibling
+    /// blocks cascade top-to-bottom in one rehearsed arrival instead of
+    /// popping in as a wall. Reduce Motion: everything lands instantly.
+    var index: Int = 0
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hasAppeared = false
 
@@ -439,7 +449,8 @@ private struct AppScreenEnter: ViewModifier {
             .offset(y: (hasAppeared || reduceMotion) ? 0 : 6)
             .onAppear {
                 guard !hasAppeared else { return }
-                withAnimation(reduceMotion ? nil : .appEnter) {
+                let delay = Double(index) * AppMotion.Duration.staggerStep
+                withAnimation(reduceMotion ? nil : .appEnter.delay(delay)) {
                     hasAppeared = true
                 }
             }
@@ -449,9 +460,10 @@ private struct AppScreenEnter: ViewModifier {
 extension View {
     /// Apply the canonical screen-entrance animation. See `AppScreenEnter` for
     /// doctrine. Apply at the screen-content layer (root `ScrollView` / content
-    /// `VStack`), not per-element.
-    func appScreenEnter() -> some View {
-        modifier(AppScreenEnter())
+    /// `VStack`), not per-element — unless staggering sibling blocks, in which
+    /// case pass ascending `index:` values and apply per-block.
+    func appScreenEnter(index: Int = 0) -> some View {
+        modifier(AppScreenEnter(index: index))
     }
 }
 
@@ -627,6 +639,9 @@ enum AppHaptic {
 
     // Purchase
     case purchaseSuccess
+    /// Paywall tier tap — same `.selection` class as `tabChange`: a light
+    /// tick that confirms the choice registered without celebrating it.
+    case tierSelected
 
     var feedback: SensoryFeedback {
         switch self {
@@ -644,7 +659,7 @@ enum AppHaptic {
             return .increase
         case .stepperDecrement:
             return .decrease
-        case .tabChange, .reorderSwap:
+        case .tabChange, .reorderSwap, .tierSelected:
             return .selection
         case .reorderLift:
             return .impact(weight: .medium, intensity: 1.0)
@@ -667,7 +682,7 @@ enum AppHaptic {
             UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
         case .reorderLift:
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        case .stepperIncrement, .stepperDecrement, .tabChange, .reorderSwap:
+        case .stepperIncrement, .stepperDecrement, .tabChange, .reorderSwap, .tierSelected:
             UISelectionFeedbackGenerator().selectionChanged()
         }
     }

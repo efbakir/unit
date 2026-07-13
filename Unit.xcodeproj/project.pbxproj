@@ -10,6 +10,9 @@
 		1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */; };
 		4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842C /* ProgramImportParserTests.swift */; };
 		4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842D /* ProgramImporterTests.swift */; };
+		UT100000000000000000001 /* OnboardingPaywallFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */; };
+		UT100000000000000000003 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
+		UT100000000000000000002 /* Unit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Unit.storekit */; };
 		A10000000000000000000001 /* UnitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UnitApp.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Exercise.swift */; };
@@ -79,6 +82,13 @@
 			remoteGlobalIDString = A50000000000000000000001;
 			remoteInfo = Unit;
 		};
+		UT800000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = Unit;
+		};
 		WE800000000000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A70000000000000000000001 /* Project object */;
@@ -137,6 +147,8 @@
 		ECAT200000000000000000001 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
 		EWK200000000000000000001 /* EarlierWeekCatchup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlierWeekCatchup.swift; sourceTree = "<group>"; };
 		FD3F6404A55923CE345F9422 /* UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallFlowUITests.swift; sourceTree = "<group>"; };
+		UT200000000000000000002 /* UnitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FT000000000000000000001 /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Medium.ttf"; sourceTree = "<group>"; };
 		FT000000000000000000002 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-SemiBold.ttf"; sourceTree = "<group>"; };
 		FT000000000000000000003 /* Geist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Bold.ttf"; sourceTree = "<group>"; };
@@ -181,6 +193,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		UT400000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A30000000000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -207,6 +226,14 @@
 			path = UnitTests;
 			sourceTree = "<group>";
 		};
+		UT300000000000000000001 /* UnitUITests */ = {
+			isa = PBXGroup;
+			children = (
+				UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */,
+			);
+			path = UnitUITests;
+			sourceTree = "<group>";
+		};
 		541C84E52F5B815D00D0DB57 /* Engine */ = {
 			isa = PBXGroup;
 			children = (
@@ -231,6 +258,7 @@
 				A40000000000000000000003 /* Products */,
 				DBE06D3FF68AA954B7F15B59 /* Frameworks */,
 				053CD7431C0798E4C1207409 /* UnitTests */,
+				UT300000000000000000001 /* UnitUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -260,6 +288,7 @@
 				A20000000000000000000000 /* Unit.app */,
 				WE000000000000000000001 /* UnitWidgetExtension.appex */,
 				FD3F6404A55923CE345F9422 /* UnitTests.xctest */,
+				UT200000000000000000002 /* UnitUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -444,6 +473,24 @@
 			productReference = FD3F6404A55923CE345F9422 /* UnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		UT500000000000000000001 /* UnitUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = UT600000000000000000001 /* Build configuration list for PBXNativeTarget "UnitUITests" */;
+			buildPhases = (
+				UT400000000000000000001 /* Sources */,
+				UT400000000000000000002 /* Frameworks */,
+				UT400000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				UT800000000000000000002 /* PBXTargetDependency */,
+			);
+			name = UnitUITests;
+			productName = UnitUITests;
+			productReference = UT200000000000000000002 /* UnitUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		A50000000000000000000001 /* Unit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXNativeTarget "Unit" */;
@@ -489,6 +536,11 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					UT500000000000000000001 = {
+						TestTargetID = A50000000000000000000001;
+					};
+				};
 			};
 			buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXProject "Unit" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -506,6 +558,7 @@
 				A50000000000000000000001 /* Unit */,
 				WE500000000000000000001 /* UnitWidgetExtension */,
 				81AEF1BDAF7F1FA295D6146A /* UnitTests */,
+				UT500000000000000000001 /* UnitUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -515,6 +568,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		UT400000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				UT100000000000000000002 /* Unit.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,6 +667,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		UT400000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				UT100000000000000000001 /* OnboardingPaywallFlowUITests.swift in Sources */,
+				UT100000000000000000003 /* AppCopy.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		WE200000000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -625,6 +695,12 @@
 			target = A50000000000000000000001 /* Unit */;
 			targetProxy = B85A786BAF0B9211EB9C9CB7 /* PBXContainerItemProxy */;
 		};
+		UT800000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Unit;
+			target = A50000000000000000000001 /* Unit */;
+			targetProxy = UT800000000000000000001 /* PBXContainerItemProxy */;
+		};
 		WE800000000000000000002 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = WE500000000000000000001 /* UnitWidgetExtension */;
@@ -633,6 +709,51 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		UT700000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 35;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Unit;
+			};
+			name = Debug;
+		};
+		UT700000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 35;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Unit;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		1060950633848A33EB4222A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -961,6 +1082,15 @@
 			buildConfigurations = (
 				7744992ACA739225B5E63CC6 /* Release */,
 				1060950633848A33EB4222A5 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		UT600000000000000000001 /* Build configuration list for PBXNativeTarget "UnitUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				UT700000000000000000001 /* Debug */,
+				UT700000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -43,6 +43,7 @@ struct PaywallView: View {
         .appHaptic(.purchaseSuccess, trigger: store.isPurchased) { old, new in
             !old && new
         }
+        .appHaptic(.tierSelected, trigger: store.selectedTier)
         .alert(
             "Something went wrong",
             isPresented: errorAlertBinding,
@@ -80,22 +81,36 @@ struct PaywallView: View {
     // MARK: - Content
 
     private var purchaseContent: some View {
+        // Arrival choreography: the screen lands as a short cascade — headline,
+        // then each benefit, then the plans — so the moment reads as "your
+        // program is ready" (the payoff of onboarding) instead of a wall of
+        // pricing. Per-block `appScreenEnter(index:)`, ~750 ms total, Reduce
+        // Motion collapses it to an instant landing. The screen ROOT still
+        // carries no entrance (see the root-gate comment above) — these are
+        // inner blocks of an already-visible screen, so a missed onAppear
+        // degrades to one static block, never an invisible screen.
         VStack(alignment: .leading, spacing: 0) {
             header
+                .appScreenEnter(index: 0)
 
             VStack(spacing: 0) {
                 benefitRow(AppCopy.Paywall.benefitLogging)
+                    .appScreenEnter(index: 1)
                 benefitRow(AppCopy.Paywall.benefitPrefill)
+                    .appScreenEnter(index: 2)
                 benefitRow(AppCopy.Paywall.benefitRestTimer)
+                    .appScreenEnter(index: 3)
             }
             .padding(.top, AppSpacing.xl)
 
             if hasNoLoadedProducts {
                 loadFailureBanner
                     .padding(.top, AppSpacing.xl)
+                    .appScreenEnter(index: 4)
             } else {
                 tierSelector
                     .padding(.top, AppSpacing.xl)
+                    .appScreenEnter(index: 4)
 
                 if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
                     partialLoadBanner
@@ -104,11 +119,13 @@ struct PaywallView: View {
 
                 subscriptionDisclosure
                     .padding(.top, AppSpacing.md)
+                    .appScreenEnter(index: 5)
             }
 
             footer
                 .padding(.top, AppSpacing.lg)
                 .padding(.bottom, AppSpacing.lg)
+                .appScreenEnter(index: 5)
         }
     }
 
@@ -295,13 +312,25 @@ struct PaywallView: View {
         switch tier {
         case .weekly: return "Auto-renews weekly"
         case .monthly: return "Auto-renews monthly"
-        case .annual: return "Auto-renews yearly"
+        case .annual:
+            // Honest anchor (docs/pricing.md: yearly's role is "best value,
+            // about half the monthly-equivalent total"): the per-month figure
+            // is derived from the live StoreKit price in the product's own
+            // currency — never a hardcoded compare-at number.
+            if let product = store.product(for: .annual) {
+                let monthly = (product.price / 12).formatted(product.priceFormatStyle)
+                return "Auto-renews yearly · \(monthly)/month"
+            }
+            return "Auto-renews yearly"
         case .lifetime: return "One-time purchase"
         }
     }
 
-    private func badgeText(for _: StoreManager.Tier) -> String? {
-        nil
+    private func badgeText(for tier: StoreManager.Tier) -> String? {
+        // docs/pricing.md ladder roles: yearly is the best-value tier. The
+        // card's badge slot has carried this affordance since the Figma spec;
+        // the other tiers stay unbadged so the single tag reads as signal.
+        tier == .annual ? "Best value" : nil
     }
 
     private func ctaPlanName(for tier: StoreManager.Tier) -> String {
