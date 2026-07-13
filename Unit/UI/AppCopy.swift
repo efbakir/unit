@@ -273,6 +273,10 @@ enum AppCopy {
         static let benefitLogging = "3-second set logging"
         static let benefitPrefill = "Last session prefilled"
         static let benefitRestTimer = "Lock Screen rest timer"
+        /// Personalized hero row — the user's own first lift, weights already
+        /// in ("Bench Press 80kg, ready to log"). The deepest personalization
+        /// the on-device data supports.
+        static func firstLiftReady(_ lift: String) -> String { "\(lift), ready to log" }
         static let subscribeWeekly = "Subscribe weekly"
         static let subscribeMonthly = "Subscribe monthly"
         static let subscribeYearly = "Subscribe yearly"

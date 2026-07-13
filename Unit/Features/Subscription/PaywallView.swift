@@ -19,6 +19,8 @@ struct PaywallView: View {
     // the payoff of their onboarding effort, not a generic wall.
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
+    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
+    @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @State private var showingManageSubscriptions = false
     @State private var showsRenewalTimeline = false
     var onDismiss: () -> Void
@@ -105,24 +107,36 @@ struct PaywallView: View {
             header
                 .appScreenEnter(index: 0)
 
-            VStack(spacing: 0) {
-                benefitRow(AppCopy.Paywall.benefitLogging)
-                    .appScreenEnter(index: 1)
-                benefitRow(AppCopy.Paywall.benefitPrefill)
+            // Personalization outranks the feature list (founder call,
+            // 2026-07-13): one hero row carrying the user's own first lift,
+            // then the generic benefits compressed to a single quiet line.
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                benefitRow(
+                    firstLiftText.map { AppCopy.Paywall.firstLiftReady($0) }
+                        ?? AppCopy.Paywall.benefitLogging
+                )
+                .appScreenEnter(index: 1)
+
+                Text([
+                    AppCopy.Paywall.benefitLogging,
+                    AppCopy.Paywall.benefitPrefill,
+                    AppCopy.Paywall.benefitRestTimer
+                ].joined(separator: " · "))
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
                     .appScreenEnter(index: 2)
-                benefitRow(AppCopy.Paywall.benefitRestTimer)
-                    .appScreenEnter(index: 3)
             }
             .padding(.top, AppSpacing.xl)
 
             if hasNoLoadedProducts {
                 loadFailureBanner
                     .padding(.top, AppSpacing.xl)
-                    .appScreenEnter(index: 4)
+                    .appScreenEnter(index: 3)
             } else {
                 tierSelector
                     .padding(.top, AppSpacing.xl)
-                    .appScreenEnter(index: 4)
+                    .appScreenEnter(index: 3)
 
                 if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
                     partialLoadBanner
@@ -131,17 +145,17 @@ struct PaywallView: View {
 
                 subscriptionDisclosure
                     .padding(.top, AppSpacing.md)
-                    .appScreenEnter(index: 5)
+                    .appScreenEnter(index: 4)
             }
 
             timelineTrigger
                 .padding(.top, AppSpacing.lg)
-                .appScreenEnter(index: 5)
+                .appScreenEnter(index: 4)
 
             footer
                 .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.lg)
-                .appScreenEnter(index: 5)
+                .appScreenEnter(index: 4)
         }
     }
 
@@ -177,10 +191,6 @@ struct PaywallView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AppSpacing.smd) {
-            Text(store.isPurchased ? "Unit Pro" : "Unit")
-                .appCapsLabel(.smallLabel)
-                .foregroundStyle(AppColor.textSecondary)
-
             Text(store.isPurchased ? "Unit Pro active" : AppCopy.Paywall.title)
                 .appFont(.largeTitle)
                 .foregroundStyle(AppColor.textPrimary)
@@ -201,9 +211,36 @@ struct PaywallView: View {
             return "Your subscription is active. Manage or cancel anytime in App Store settings."
         }
         if let days = programDayLine {
-            return "\(days) is loaded. \(AppCopy.Paywall.subtitle)"
+            return "\(days) is loaded."
         }
         return AppCopy.Paywall.subtitle
+    }
+
+    /// "Bench Press 80kg" — the first exercise of the first day with the
+    /// weight the user typed during onboarding. The single most persuasive
+    /// line the on-device data supports: their own bar, already loaded.
+    /// `nil` (falls back to the generic benefit) when there is no program,
+    /// no exercises, or the exercise can't be resolved.
+    private var firstLiftText: String? {
+        guard let split = ActiveSplitStore.resolve(from: splits) else { return nil }
+        let splitTemplates = templates.filter { $0.splitId == split.id }
+        let byID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
+        var ordered = split.orderedTemplateIds.compactMap { byID[$0] }
+        if ordered.isEmpty { ordered = splitTemplates.sorted { $0.name < $1.name } }
+        guard let firstDay = ordered.first,
+              let firstExerciseID = firstDay.orderedExerciseIds.first,
+              let exercise = exercises.first(where: { $0.id == firstExerciseID }) else { return nil }
+
+        if exercise.isBodyweight {
+            return "\(exercise.displayName) \(AppCopy.Workout.bodyweightAbbrev)"
+        }
+        if let weight = firstDay.plannedWeightByExerciseId[firstExerciseID], weight > 0 {
+            let value = weight.truncatingRemainder(dividingBy: 1) == 0
+                ? String(Int(weight))
+                : String(format: "%.1f", weight)
+            return "\(exercise.displayName) \(value)\(unitSystem)"
+        }
+        return exercise.displayName
     }
 
     /// "Push · Pull · Legs" — the day names of the program the user just

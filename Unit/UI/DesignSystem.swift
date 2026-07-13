@@ -2392,19 +2392,9 @@ struct AppSelectableTierCard: View {
                 // the block itself stays tight at `xs` (4). Mirrors the
                 // Figma AppSelectableTierCard structure (node 341-18).
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.xs) {
-                        Text(label)
-                            .appCapsLabel(.smallLabel)
-                            .foregroundStyle(AppColor.textSecondary)
-
-                        Spacer(minLength: 0)
-
-                        if isSelected {
-                            AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
-                                .foregroundStyle(AppColor.accent)
-                                .accessibilityHidden(true)
-                        }
-                    }
+                    Text(label)
+                        .appCapsLabel(.smallLabel)
+                        .foregroundStyle(AppColor.textSecondary)
 
                     Text(price)
                         .font(AppFont.productHeading.font)
@@ -2426,6 +2416,17 @@ struct AppSelectableTierCard: View {
             .padding(.vertical, AppSpacing.smd)
             .padding(.horizontal, AppSpacing.smd)
             .background(isSelected ? AppColor.accentSoft : AppColor.cardBackground)
+            // Selection check pins to the card corner so it sits in the same
+            // spot on every card — with a badge above the eyebrow it used to
+            // ride the eyebrow row and read as misaligned.
+            .overlay(alignment: .topTrailing) {
+                if isSelected {
+                    AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
+                        .foregroundStyle(AppColor.accent)
+                        .padding(AppSpacing.smd)
+                        .accessibilityHidden(true)
+                }
+            }
             // 1.5pt accent border on selected — a second WCAG-friendly cue
             // beyond the tinted fill, so users with reduced color
             // discrimination (or who have just glanced at the card from
