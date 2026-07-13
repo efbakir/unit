@@ -1,24 +1,24 @@
 # Spanish — Mexico (es-MX) — Tier 1 App Store metadata
 
-> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
+> Status: **name founder-approved and FINAL 2026-07-13 (`Unit: Registro de gym`). Remaining copy awaits one native-speaker read before ASC paste.**
 > Register: informal "tú", neutral Latin American Spanish. No "nosotros"-forms (first-person-singular rule).
 > Storefront reach: Mexico + most Latin American storefronts use es-MX metadata. Spain uses es-ES (Tier 2). Bonus: the **US storefront also indexes the es-MX keyword field** — see note at the bottom.
 
 ## App name (30 max)
 
 ```
-Unit: Diario de Gym
+Unit: Registro de gym
 ```
 
-19 chars. Candidate pending native review. "Diario de gym" — *diario* carries the log-family identity (the EN name moved to "Gym Workout Log"). "Gym" over "gimnasio" is a translation hypothesis requiring native validation (the market leader's MX listing name uses *gym*; its subtitle uses *gimnasio* — both are live). The native reader should also weigh *diario* vs *bitácora* (2026-07-11 audit).
+21 chars. **Founder-approved and final (2026-07-13)** — supersedes the `Diario de Gym` candidate from the 2026-07-11 audit. *Registro* is the cleanest record/log term (workout-log identity); "gym" is externally attested in MX naming (the market leader's MX listing name uses *gym*; its subtitle uses *gimnasio*). Lowercase "gym" per the founder-final form.
 
 ## Subtitle (30 max)
 
 ```
-Registro de fuerza y series
+Diario de fuerza y series
 ```
 
-27 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *registro / fuerza / series*. The old "3 segundos" claim lives on in the description's first line.
+25 chars. Rewritten 2026-07-13: the founder-final name took *registro*, so the old subtitle's lead word would duplicate it (Apple ignores repeated words across name/subtitle). *Diario* moves in from the retired name — the subtitle now adds *diario / fuerza / series*. The old "3 segundos" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
@@ -53,7 +53,7 @@ Política de privacidad: https://unitlift.app/privacy
 rutina,gimnasio,pesas,entrenamiento,musculación,ejercicio,bitácora,progreso,reps,sentadilla
 ```
 
-91 chars. Re-deduped 2026-07-11 against the new subtitle (*registro, fuerza, series*): removed `fuerza`, added `sentadilla` (squat — exercise-name search with app intent). Intent notes:
+91 chars. Re-deduped 2026-07-13 against the final name (*registro, gym*) and subtitle (*diario, fuerza, series*): no collisions (*gimnasio* and *gym* index as different words; *bitácora* ≠ *diario*). Intent notes:
 - "rutina" — the word LatAm lifters use for their program ("pega tu rutina"); highest intent.
 - "pesas" — colloquial for lifting ("hacer pesas"), stronger than the formal "levantamiento".
 - "bitácora" — log/journal; the notebook concept in search form.

@@ -1,6 +1,6 @@
 # German (de-DE) — Tier 1 App Store metadata
 
-> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
+> Status: **name founder-approved and FINAL 2026-07-13 (`Unit: Trainingstagebuch`). Remaining copy awaits one native-speaker read before ASC paste.**
 > Register: informal "du" (standard for German fitness apps). No "wir"-forms anywhere (first-person-singular rule).
 > Storefront reach: Germany, Austria, Switzerland (de is the primary metadata language on all three).
 
@@ -10,7 +10,7 @@
 Unit: Trainingstagebuch
 ```
 
-23 chars. Candidate pending native review. "Trainingstagebuch" (training log/diary) — the log-family term, externally attested: the market leader's German listing title is "Hevy - Gym & Trainingstagebuch". Not the notebook metaphor the EN name moved away from.
+23 chars. **Founder-approved and final (2026-07-13)** — confirmed unchanged from the 2026-07-11 audit. "Trainingstagebuch" (training log/diary) — the log-family term, externally attested: the market leader's German listing title is "Hevy - Gym & Trainingstagebuch".
 
 ## Subtitle (30 max)
 

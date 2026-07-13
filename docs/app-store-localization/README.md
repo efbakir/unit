@@ -29,10 +29,10 @@ Canonical English strings live in [`docs/app-store-copy.md`](../app-store-copy.m
 
 | Locale | ASC language | Why in | Founder review |
 |---|---|---|---|
-| `de-DE` | German | Largest EU paid-fitness market, high willingness to pay; "Trainingstagebuch" is an externally attested category term (market leader's German listing title uses it) | Awaiting native review |
-| `es-MX` | Spanish (Mexico) | Covers Mexico + most Latin America storefronts; es-MX metadata is also keyword-indexed on the **US** storefront (bonus reach) | Awaiting native review |
+| `de-DE` | German | Largest EU paid-fitness market, high willingness to pay; "Trainingstagebuch" is an externally attested category term (market leader's German listing title uses it) | **Name final 2026-07-13**; copy awaits native read |
+| `es-MX` | Spanish (Mexico) | Covers Mexico + most Latin America storefronts; es-MX metadata is also keyword-indexed on the **US** storefront (bonus reach) | **Name final 2026-07-13**; copy awaits native read |
 | `pt-BR` | Portuguese (Brazil) | Brazil is a top-2 country by gym count; "ficha de treino" is the culturally specific concept (keyword-field term — the candidate name uses log-family "Diário de Treino") | Awaiting native review |
-| `fr-FR` | French | Large market, low English search tolerance, strong muscu niche vocabulary | Awaiting native review |
+| `fr-FR` | French | Large market, low English search tolerance, strong muscu niche vocabulary | **Name final 2026-07-13**; copy awaits native read |
 | `tr` | Turkish | Founder is a native speaker — zero review risk; parser already handles Turkish programs; near-zero cost | **Founder-approved 2026-07-11 — name final** |
 
 Five languages is the ceiling for one review pass. Each file in this folder = one ASC language, paste-ready.
@@ -79,7 +79,7 @@ German, Portuguese-BR, Spanish, Turkish — decided by Tier 1 install data. Hard
 
 Not translated — researched per market. Each locale file documents intent behind its keyword field. Principles:
 
-- The name field carries the local **log-family** term. Founder-approved: tr "Antrenman Günlüğü". Candidates awaiting native review: de "Trainingstagebuch", es-MX "Diario de Gym", pt-BR "Diário de Treino", fr "Journal de Muscu". Culturally specific object terms that predate the log identity (e.g. pt-BR "ficha") keep their search value in the **keyword field**, not the name. Competitor differentiation is not a naming criterion (founder rule, 2026-07-11) — natural local wording, log-vs-plan accuracy, and native comprehension decide.
+- The name field carries the local **log/record-family** term. Founder-approved and final (2026-07-13): tr "Antrenman Günlüğü", de "Trainingstagebuch", es-MX "Registro de gym", fr "Carnet de Muscu". Still a candidate awaiting native review: pt-BR "Diário de Treino". Terms displaced from a name keep their search value elsewhere (pt-BR *ficha* and fr *journal* in the keyword field; es *diario* in the subtitle). Competitor differentiation is not a naming criterion (founder rule) — natural local wording, log-vs-plan accuracy, and native comprehension decide; conventional category terms are acceptable and often desirable.
 - Keyword field = 100 chars, comma-separated, no spaces, no words already in that locale's name/subtitle, no competitor trademarks.
 - Many EU users also search English ("gym tracker" works in Germany). The English keyword field already covers those searches on storefronts where en is indexed; locale fields chase native-language queries only.
 

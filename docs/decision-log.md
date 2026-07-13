@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-13 — Localized app names finalized: de/es-MX/fr join tr; pt-BR still open
+
+**Decision:** Founder-final localized App Store names: de `Unit: Trainingstagebuch` (unchanged from the audit candidate), es-MX `Unit: Registro de gym` (supersedes the `Diario de Gym` candidate), fr `Unit: Carnet de Muscu` (resolves the journal-vs-carnet fork toward the conventional category term, superseding the re-derivation's `Journal de Muscu`), tr `Unit: Antrenman Günlüğü` (already final 2026-07-11). pt-BR `Unit: Diário de Treino` remains the one candidate name, pending its native read. Cascades applied: the es-MX subtitle led with *registro*, which the final name now owns, so it becomes `Diario de fuerza y series`; fr keywords gain `journal` (displaced from the retired name), landing the field at exactly 100 chars.
+
+**Why:** Founder call after the 2026-07-11 naming audit, applying the stated rule: natural local wording, log-vs-plan accuracy, and native comprehension decide; competitor differentiation is not a criterion, and a conventional category term is often desirable (fr *carnet* and de *Trainingstagebuch* are both attested in the market leader's own localized titles).
+
+**Implication:** Names are closed for tr/de/es-MX/fr — the pending native reads for de/es-MX/fr now cover register and copy only. pt-BR's read also rules on its name. All fields re-checked within ASC limits; keyword fields re-deduped against the final names/subtitles. Nothing pastes to ASC without the per-locale founder go-ahead (`docs/app-store-localization/asc-execution-status.md`).
+
 ## 2026-07-11 — Post-freeze keyword correction: style terms out, behavior terms in
 
 **Decision:** The en-US keyword field is replaced with `lifting,rest,timer,set,rep,counter,weights,reps,training,routine,progressive,overload,history,notes` (99 chars). Founder-approved post-freeze correction; supersedes the 97-char list in the copy-freeze entry below.
@@ -35,6 +43,14 @@
 **Why:** ASC reconnaissance (2026-07-11) found TestFlight already holds builds 24–34 for version 2.0 — Xcode Cloud numbers independently of the pbxproj value, so "16" was already stale, and every one of those builds was uploaded before the launch-hang fix (`4fe1edd`, the UserDefaults-write-during-body loop that froze launch on iOS 27). Reusing a number ≤34 would make it ambiguous whether the submitted binary contains the fix; 35 is the first unambiguous post-fix candidate.
 
 **Implication:** Archive ships as **2.0 (35)** from a `main` that includes `4fe1edd`. Never select builds 24–34 on the 2.0 version record. `final-submit-checklist.md`, `INDEX.md`, and `asc-execution-status.md` updated; historical docs left as-is.
+
+## 2026-07-11 — Freeze amendment #1: keyword `planner` → `simple` (user feedback)
+
+**Decision:** One keyword swap in the frozen canonical: `planner` out, `simple` in (96/100 chars). Name, subtitle, description, promo unchanged — "simple" earns keyword indexing, not a field of its own.
+
+**Why:** First organic user feedback (native es reviewer, WhatsApp): "your strength is that it is minimalistic — put that in the title, subtitle, and/or keywords." The Reddit research agrees ("simple", "no bloat" is the language of lifters leaving Strong/Hevy). Keywords-only because cross-field combination already matches "simple workout tracker" once `simple` is indexed anywhere; the subtitle keeps the *lifters* persona filter, and the name stays stable (frozen twice today). Bonus honesty: `planner` was off-model — Unit doesn't plan.
+
+**Implication:** Locale keyword fields consider local equivalents (sencillo / einfach / simples / simple / basit) at their per-locale review — recorded in `asc-execution-status.md`. Same reviewer proposed es-MX name `Unit: Registro de gym`; routed to the es-MX locale gate (conflicts with the es subtitle's *registro* — one field must yield).
 
 ## 2026-07-11 — English App Store copy FROZEN; build bumped to 16
 

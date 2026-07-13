@@ -1,6 +1,6 @@
-# ASC execution status — TR NAME APPROVED; FOUR LOCALES AWAIT NATIVE REVIEW
+# ASC execution status — 4 OF 5 NAMES FOUNDER-FINAL; COPY AWAITS NATIVE REVIEW
 
-> Updated 2026-07-11 (second update). **English copy is frozen** (`docs/app-store-copy.md`, canonical since commit `49e4f36`) and the founder confirmed the direction ("the app is *workout log* now — see the bigger picture"). The resume protocol ran: all five locale files are re-derived from the frozen canonical. **Nothing is pasted into ASC yet.** Turkish is founder-reviewed and approved (2026-07-11 naming audit — name final: `Unit: Antrenman Günlüğü`) but still needs the explicit "paste tr" go-ahead. de/es-MX/pt-BR/fr each need one native-speaker read; their names are candidates. Founder naming rule (2026-07-11): competitor differentiation is not a naming criterion — natural local wording, log-vs-plan accuracy, and native comprehension decide.
+> Updated 2026-07-11 (second update). **English copy is frozen** (`docs/app-store-copy.md`, canonical since commit `49e4f36`) and the founder confirmed the direction ("the app is *workout log* now — see the bigger picture"). The resume protocol ran: all five locale files are re-derived from the frozen canonical. **Nothing is pasted into ASC yet.** Founder-final names (2026-07-13): tr `Unit: Antrenman Günlüğü`, de `Unit: Trainingstagebuch`, es-MX `Unit: Registro de gym` (subtitle cascaded to `Diario de fuerza y series` — the old subtitle led with *registro*), fr `Unit: Carnet de Muscu` (fr keywords gained `journal`, displaced from the retired name). pt-BR's name (`Unit: Diário de Treino`) is still a candidate. Copy gates unchanged: tr is founder-reviewed; de/es-MX/pt-BR/fr each need one native-speaker read; explicit per-locale "paste X" required. Founder naming rule: competitor differentiation is not a naming criterion; conventional category terms are acceptable and often desirable.
 
 ## Changed fields per locale (re-derivation, 2026-07-11)
 
@@ -27,10 +27,15 @@ The English copy is **FROZEN** (founder-approved, `docs/app-store-copy.md`). The
 
 Everything else from the first re-derivation stands. Descriptions untouched (their English source did not change in the freeze). Character limits re-run after the fixes: **every field in all five files within ASC limits** (name/subtitle 30, promo 170, keywords 100, What's New 4000, sub name 30, sub desc 45).
 
+## Native-review inputs received (record for the per-locale gates)
+
+- **es-MX (native reviewer, WhatsApp 2026-07-11):** proposes name `Unit: Registro de gym` over `Unit: Diario de Gym`. Decision belongs to the es-MX review pass. Note the dedupe conflict: the current es subtitle (`Registro de fuerza y series`) already owns *registro* — if the name takes it, the subtitle must switch (e.g. *Seguimiento de fuerza y series*, 30 chars exactly — recount before paste).
+- **EN freeze amendment #1** swapped keyword `planner` → `simple`. At each locale review, consider the local equivalent in the keyword field (es *sencillo*, de *einfach*, pt *simples*, fr *simple*, tr *basit*) — swap against the weakest existing keyword, keep ≤100 chars, and keep the no-dupes-vs-name/subtitle rule.
+
 ## Gate before any ASC paste
 
 - [x] Founder reads + approves **tr** (native) — **approved 2026-07-11, name final `Unit: Antrenman Günlüğü`.** Explicit "paste tr" still required before any ASC action.
-- [ ] One native read each: **de-DE**, **es-MX**, **pt-BR**, **fr-FR** (register notes are in each file's header; fr has the open tu/vous question).
+- [ ] One native read each: **de-DE**, **es-MX**, **pt-BR**, **fr-FR** — copy/register only for de/es/fr (names are founder-final); pt-BR's read also confirms its candidate name. fr keeps the open tu/vous question.
 - [ ] Founder says "paste locale X" per locale — no blanket approval.
 
 ## Still true from the aborted preflight
