@@ -78,6 +78,10 @@ For each step (splash → unit → import method → paste/build → schedule �
 - [ ] Delete a session. Force-quit. Re-open. Session stays deleted.
 - [ ] Delete a template that has historical sessions. Confirm sessions still readable (no FK violation, no crash).
 
+**v1 → v2 store migration (BLOCKER class — every existing user hits this on update):**
+- [ ] On a device/simulator holding a **real v1.0 App Store `Unit.store`** (not a churned dev store), install the v2 build over it. Confirm: app opens the *persistent* store — **no "Training data unavailable" alert**, `PersistenceRecoveryState.noticeKey` stays false — and all v1 history/templates load. A silent fall-back to the in-memory store here = shipped data-loss for real users.
+- [ ] If no clean v1 store exists: build the last released v1 tag, run it to seed a store, then install v2 over it. This is the only faithful reproduction; a dev device that has run mid-development schemas can fail migration for reasons production never sees (`UnitApp.makeSharedModelContainer` fallback exists exactly for this, and it does NOT auto-delete — a failure is recoverable, not a crash).
+
 ---
 
 ## §5 Keyboard — every screen with input
