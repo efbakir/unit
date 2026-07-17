@@ -310,22 +310,22 @@ private struct MarketingSlideView: View {
                 imageName: slide.imageName,
                 fallbackIcon: slide.fallbackIcon
             )
-                .padding(.horizontal, AppSpacing.xl)
+                .padding(.horizontal, AppSpacing.md)
 
             VStack(spacing: AppSpacing.smd) {
                 Text(slide.headline)
-                    .font(AppFont.productHeading.font)
-                    .tracking(AppFont.productHeading.tracking)
+                    .font(AppFont.title.font)
+                    .tracking(AppFont.title.tracking)
                     .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.center)
 
                 Text(slide.subline)
-                    .font(AppFont.splashWelcome.font)
+                    .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
             .padding(.horizontal, AppSpacing.xl)
 
             Spacer(minLength: AppSpacing.lg)
@@ -342,6 +342,9 @@ private struct MarketingSlideImage: View {
     let fallbackIcon: AppIcon
 
     private static let maxHeight: CGFloat = 420
+    private static var expandedMaxHeight: CGFloat {
+        maxHeight + AppSpacing.xxl + AppSpacing.lg + AppSpacing.smd
+    }
 
     private var resolvedImage: UIImage? {
         guard let imageName else { return nil }
@@ -355,7 +358,7 @@ private struct MarketingSlideImage: View {
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
-                    .frame(maxHeight: Self.maxHeight)
+                    .frame(maxHeight: Self.expandedMaxHeight)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             } else {
                 AppIconCircle(
