@@ -14,9 +14,8 @@
 //       feature-grid trap PRODUCT.md §Anti-references bans. Value, never price
 //       (the price-disclosure splash was removed 2026-06-18).
 //
-//  Each slide renders its named screenshot when available and falls back to a
-//  finished, tokenized icon tile. Empty asset catalogs never surface as
-//  development placeholders in a release build.
+//  Each slide renders one required, approved screenshot asset. There is no
+//  icon-only fallback in the shipping path (DEV-44).
 //
 
 import SwiftUI
@@ -157,6 +156,10 @@ struct OnboardingSplashView: View {
             }
             .padding(.bottom, AppSpacing.xs)
         }
+        // This fixed hero composition scales through the largest standard text
+        // size; larger accessibility settings keep that legible size while the
+        // slide remains vertically scrollable and VoiceOver-readable.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
@@ -268,31 +271,26 @@ private struct ParallaxEntry: ViewModifier {
 /// precedent. Copy lives here so the founder can redline one list.
 private struct MarketingSlide: Identifiable {
     let id = UUID()
-    /// Asset name in `Assets.xcassets`; the slide uses its semantic icon when
-    /// the screenshot is not bundled.
-    var imageName: String? = nil
-    var fallbackIcon: AppIcon
+    /// Required asset name in `Assets.xcassets`.
+    var imageName: String
     var headline: String
     var subline: String
 
     static let all: [MarketingSlide] = [
         MarketingSlide(
             imageName: "MarketingShotLogging",
-            fallbackIcon: .dumbbell,
-            headline: "Last time is already there",
-            subline: "Your weight and reps from last session, ready to confirm with one tap."
+            headline: "3 seconds, back under the bar",
+            subline: "Last session’s weight and reps are ready to confirm."
         ),
         MarketingSlide(
             imageName: "MarketingShotProgram",
-            fallbackIcon: .clipboard,
-            headline: "Your numbers, from day one",
-            subline: "Paste your program and Unit fills in your working weights. No blank first week."
+            headline: "Paste your program, start lifting",
+            subline: "Your working numbers are ready from day one."
         ),
         MarketingSlide(
             imageName: "MarketingShotPrivacy",
-            fallbackIcon: .checkmarkFilled,
             headline: "No account. Works offline.",
-            subline: "Your training lives on your iPhone. Always."
+            subline: "Your training stays on your iPhone."
         ),
     ]
 }
@@ -301,76 +299,74 @@ private struct MarketingSlide: Identifiable {
 /// File-private, splash-only — not a reusable molecule.
 private struct MarketingSlideView: View {
     let slide: MarketingSlide
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: AppSpacing.lg)
-
-            MarketingSlideImage(
-                imageName: slide.imageName,
-                fallbackIcon: slide.fallbackIcon
+        GeometryReader { proxy in
+            let enlargedTextReserve = dynamicTypeSize >= .xxLarge
+                ? AppSpacing.xxl * 2
+                : 0
+            let imageMaxHeight = max(
+                AppSpacing.xxl * 6,
+                proxy.size.height
+                    - AppSpacing.xxl * 3
+                    - AppSpacing.lg
+                    - enlargedTextReserve
             )
-                .padding(.horizontal, AppSpacing.md)
 
-            VStack(spacing: AppSpacing.smd) {
-                Text(slide.headline)
-                    .font(AppFont.title.font)
-                    .tracking(AppFont.title.tracking)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.center)
+            ScrollView(.vertical) {
+                VStack(spacing: 0) {
+                    Spacer(minLength: AppSpacing.lg)
 
-                Text(slide.subline)
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    MarketingSlideImage(
+                        imageName: slide.imageName,
+                        maxHeight: imageMaxHeight
+                    )
+                        .padding(.horizontal, AppSpacing.md)
+
+                    VStack(spacing: AppSpacing.smd) {
+                        Text(slide.headline)
+                            .font(AppFont.title.font)
+                            .tracking(AppFont.title.tracking)
+                            .foregroundStyle(AppColor.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(slide.subline)
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.top, AppSpacing.lg)
+                    .padding(.horizontal, AppSpacing.xl)
+
+                    Spacer(minLength: AppSpacing.lg)
+                }
+                .frame(minHeight: proxy.size.height)
             }
-            .padding(.top, AppSpacing.lg)
-            .padding(.horizontal, AppSpacing.xl)
-
-            Spacer(minLength: AppSpacing.lg)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 }
 
-/// Screenshot frame for a feature slide. Renders the named asset clipped to the
-/// card squircle if it exists, else a finished semantic icon tile.
+/// Screenshot frame for a feature slide. Renders the required named asset
+/// clipped to the card squircle.
 /// File-private — there is no existing image-frame primitive to extend, and this
 /// is one-screen marketing chrome, not a general molecule.
 private struct MarketingSlideImage: View {
-    let imageName: String?
-    let fallbackIcon: AppIcon
-
-    private static let maxHeight: CGFloat = 420
-    private static var expandedMaxHeight: CGFloat {
-        maxHeight + AppSpacing.xxl + AppSpacing.lg + AppSpacing.smd
-    }
-
-    private var resolvedImage: UIImage? {
-        guard let imageName else { return nil }
-        return UIImage(named: imageName)
-    }
+    let imageName: String
+    let maxHeight: CGFloat
 
     var body: some View {
-        Group {
-            if let resolvedImage {
-                Image(uiImage: resolvedImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(maxHeight: Self.expandedMaxHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            } else {
-                AppIconCircle(
-                    diameter: AppSpacing.xxl * 2,
-                    shape: .roundedRect(radius: AppRadius.lg),
-                    surface: .cardBackground
-                ) {
-                    fallbackIcon.image(size: AppSpacing.xl, weight: .semibold)
-                        .foregroundStyle(AppColor.textPrimary)
-                }
-            }
-        }
+        Image(imageName)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(maxHeight: maxHeight)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .accessibilityHidden(true)
     }
 }
 
