@@ -23,6 +23,8 @@ struct UnitApp: App {
             WorkoutSession.self,
             SetEntry.self
         ])
+    private static let uiTestingArgument = "-ui-testing"
+    private static let uiTestingResetArgument = "-ui-testing-reset"
     var sharedModelContainer: ModelContainer
 
     @MainActor
@@ -39,7 +41,11 @@ struct UnitApp: App {
         }
 
         do {
-            let storeURL = try persistentStoreURL()
+            let isRunningUITests = CommandLine.arguments.contains(uiTestingArgument)
+            let storeURL = try persistentStoreURL(isRunningUITests: isRunningUITests)
+            if isRunningUITests, CommandLine.arguments.contains(uiTestingResetArgument) {
+                try resetUITestState(at: storeURL)
+            }
             let configuration = ModelConfiguration(schema: schema, url: storeURL)
             let container = try makePersistentContainer(configuration: configuration)
             UserDefaults.standard.set(false, forKey: PersistenceRecoveryState.noticeKey)
@@ -68,7 +74,7 @@ struct UnitApp: App {
         }
     }
 
-    private static func persistentStoreURL() throws -> URL {
+    private static func persistentStoreURL(isRunningUITests: Bool = false) throws -> URL {
         let fileManager = FileManager.default
         let appSupportURL = try fileManager.url(
             for: .applicationSupportDirectory,
@@ -80,7 +86,25 @@ struct UnitApp: App {
         if !fileManager.fileExists(atPath: directoryURL.path) {
             try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         }
-        return directoryURL.appendingPathComponent("Unit.store")
+        let filename = isRunningUITests ? "UnitUITests.store" : "Unit.store"
+        return directoryURL.appendingPathComponent(filename)
+    }
+
+    /// UI tests use their own persistent store so relaunch coverage remains
+    /// realistic without touching the simulator's normal Unit data. The reset
+    /// flag is passed on the first launch of a test journey only.
+    private static func resetUITestState(at storeURL: URL) throws {
+        if let bundleIdentifier = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleIdentifier)
+        }
+
+        let fileManager = FileManager.default
+        for suffix in ["", "-shm", "-wal"] {
+            let url = URL(fileURLWithPath: storeURL.path + suffix)
+            if fileManager.fileExists(atPath: url.path) {
+                try fileManager.removeItem(at: url)
+            }
+        }
     }
 
     var body: some Scene {

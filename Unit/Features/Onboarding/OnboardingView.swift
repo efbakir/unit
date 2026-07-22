@@ -4,10 +4,9 @@
 //
 //  Root coordinator for the onboarding flow.
 //
-//  Routing is state-driven: Release builds show this view when there is no
-//  program data, while Debug builds can start here for screenshot capture.
-//  The commit writes real data (Split, DayTemplate, etc.) and notifies
-//  ContentView to advance to the access gate.
+//  Routing is state-driven in every build: this view appears when there is no
+//  program data. The commit writes real data (Split, DayTemplate, etc.), and
+//  ContentView advances to the access gate from that persisted state.
 //
 //  Step **swapping** uses `OnboardingFlow` (defined below) — never a
 //  `NavigationStack` push, which would slide the whole view as one opaque

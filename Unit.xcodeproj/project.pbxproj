@@ -10,9 +10,6 @@
 		1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */; };
 		4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842C /* ProgramImportParserTests.swift */; };
 		4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842D /* ProgramImporterTests.swift */; };
-		UT100000000000000000001 /* OnboardingPaywallFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */; };
-		UT100000000000000000003 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
-		UT100000000000000000002 /* Unit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Unit.storekit */; };
 		A10000000000000000000001 /* UnitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UnitApp.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Exercise.swift */; };
@@ -66,6 +63,9 @@
 		TRO100000000000000000001 /* TodayRoutineOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRO200000000000000000001 /* TodayRoutineOverride.swift */; };
 		UI100000000000000000005 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000005 /* DesignSystem.swift */; };
 		UI100000000000000000006 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
+		UT100000000000000000001 /* OnboardingPaywallFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */; };
+		UT100000000000000000002 /* Unit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Unit.storekit */; };
+		UT100000000000000000003 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
 		WE100000000000000000001 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* RestTimerLiveActivity.swift */; };
 		WE100000000000000000002 /* UnitWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* UnitWidgetBundle.swift */; };
 		WE100000000000000000003 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* RestTimerAttributes.swift */; };
@@ -114,8 +114,8 @@
 /* Begin PBXFileReference section */
 		165569863085B0817806842C /* ProgramImportParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParserTests.swift; sourceTree = "<group>"; };
 		165569863085B0817806842D /* ProgramImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImporterTests.swift; sourceTree = "<group>"; };
+		543AA9CD3011424800AC9494 /* Unit.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unit.xctestplan; sourceTree = "<group>"; };
 		544D8D052F5F58C100E4C17E /* Unit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Unit.entitlements; sourceTree = "<group>"; };
-		A20000000000000000000013 /* Unit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unit.storekit; sourceTree = "<group>"; };
 		A20000000000000000000000 /* Unit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* UnitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -135,6 +135,7 @@
 		A20000000000000000000010 /* RestTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerAttributes.swift; sourceTree = "<group>"; };
 		A20000000000000000000011 /* WorkoutTargetFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTargetFormatter.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* TrainingWeekProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingWeekProgress.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* Unit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unit.storekit; sourceTree = "<group>"; };
 		A2PROGDETAIL000000000001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
 		A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParser.swift; sourceTree = "<group>"; };
 		B20000000000000000000001 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
@@ -146,8 +147,6 @@
 		ECAT200000000000000000001 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
 		EWK200000000000000000001 /* EarlierWeekCatchup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlierWeekCatchup.swift; sourceTree = "<group>"; };
 		FD3F6404A55923CE345F9422 /* UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallFlowUITests.swift; sourceTree = "<group>"; };
-		UT200000000000000000002 /* UnitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FT000000000000000000001 /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Medium.ttf"; sourceTree = "<group>"; };
 		FT000000000000000000002 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-SemiBold.ttf"; sourceTree = "<group>"; };
 		FT000000000000000000003 /* Geist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Bold.ttf"; sourceTree = "<group>"; };
@@ -178,6 +177,8 @@
 		TRO200000000000000000001 /* TodayRoutineOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRoutineOverride.swift; sourceTree = "<group>"; };
 		UI000000000000000000005 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		UI000000000000000000006 /* AppCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCopy.swift; sourceTree = "<group>"; };
+		UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPaywallFlowUITests.swift; sourceTree = "<group>"; };
+		UT200000000000000000002 /* UnitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		WE000000000000000000001 /* UnitWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UnitWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		WRMP200000000000000000001 /* WarmupGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -191,14 +192,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		UT400000000000000000002 /* Frameworks */ = {
+		A30000000000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A30000000000000000000001 /* Frameworks */ = {
+		UT400000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -224,14 +225,6 @@
 			path = UnitTests;
 			sourceTree = "<group>";
 		};
-		UT300000000000000000001 /* UnitUITests */ = {
-			isa = PBXGroup;
-			children = (
-				UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */,
-			);
-			path = UnitUITests;
-			sourceTree = "<group>";
-		};
 		541C84E52F5B815D00D0DB57 /* Engine */ = {
 			isa = PBXGroup;
 			children = (
@@ -251,6 +244,7 @@
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				543AA9CD3011424800AC9494 /* Unit.xctestplan */,
 				A40000000000000000000002 /* Unit */,
 				B40000000000000000000001 /* UnitWidget */,
 				A40000000000000000000003 /* Products */,
@@ -449,6 +443,14 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		UT300000000000000000001 /* UnitUITests */ = {
+			isa = PBXGroup;
+			children = (
+				UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */,
+			);
+			path = UnitUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -470,24 +472,6 @@
 			productReference = FD3F6404A55923CE345F9422 /* UnitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		UT500000000000000000001 /* UnitUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = UT600000000000000000001 /* Build configuration list for PBXNativeTarget "UnitUITests" */;
-			buildPhases = (
-				UT400000000000000000001 /* Sources */,
-				UT400000000000000000002 /* Frameworks */,
-				UT400000000000000000003 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				UT800000000000000000002 /* PBXTargetDependency */,
-			);
-			name = UnitUITests;
-			productName = UnitUITests;
-			productReference = UT200000000000000000002 /* UnitUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		A50000000000000000000001 /* Unit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXNativeTarget "Unit" */;
@@ -506,6 +490,24 @@
 			productName = Unit;
 			productReference = A20000000000000000000000 /* Unit.app */;
 			productType = "com.apple.product-type.application";
+		};
+		UT500000000000000000001 /* UnitUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = UT600000000000000000001 /* Build configuration list for PBXNativeTarget "UnitUITests" */;
+			buildPhases = (
+				UT400000000000000000001 /* Sources */,
+				UT400000000000000000002 /* Frameworks */,
+				UT400000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				UT800000000000000000002 /* PBXTargetDependency */,
+			);
+			name = UnitUITests;
+			productName = UnitUITests;
+			productReference = UT200000000000000000002 /* UnitUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		WE500000000000000000001 /* UnitWidgetExtension */ = {
 			isa = PBXNativeTarget;
@@ -568,14 +570,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		UT400000000000000000003 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				UT100000000000000000002 /* Unit.storekit in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A50000000000000000000003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -588,6 +582,14 @@
 				FT100000000000000000004 /* GeistMono-Medium.ttf in Resources */,
 				FT100000000000000000010 /* GeistMono-SemiBold.ttf in Resources */,
 				FT100000000000000000011 /* GeistMono-Bold.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		UT400000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				UT100000000000000000002 /* Unit.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -705,58 +707,13 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		UT700000000000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MARKETING_VERSION = 2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Unit;
-			};
-			name = Debug;
-		};
-		UT700000000000000000002 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MARKETING_VERSION = 2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Unit;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		1060950633848A33EB4222A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -764,7 +721,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -780,7 +737,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -788,7 +745,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -914,7 +871,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = Unit/Unit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -932,7 +889,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -954,7 +911,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = Unit/Unit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -972,7 +929,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -986,12 +943,57 @@
 			};
 			name = Release;
 		};
+		UT700000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Unit;
+			};
+			name = Debug;
+		};
+		UT700000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Unit;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		WE700000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = R2BR5SX98Y;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1004,7 +1006,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1024,7 +1026,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = R2BR5SX98Y;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1037,7 +1039,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.unitlift.UnitWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

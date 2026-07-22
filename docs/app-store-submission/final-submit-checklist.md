@@ -1,7 +1,7 @@
-# Final submit checklist — Unit v2.0 (build 35)
+# Final submit checklist — Unit v2.1 (build 36)
 
 > The ASC handoff package. Everything below is paste-exact for App Store Connect; nothing requires a code change.
-> Written 2026-07-11 from `main` after build + tests passed. Companions: `docs/pricing.md` (pricing truth), `docs/app-store-localization/asc-paste-checklist.md` (optional localized metadata), `docs/release-qa.md` (device gauntlet).
+> Updated 2026-07-22 for the recovered v2.1 release. Companions: `docs/pricing.md` (pricing truth), `docs/app-store-localization/asc-paste-checklist.md` (optional localized metadata), `docs/release-qa.md` (device gauntlet).
 
 ---
 
@@ -16,9 +16,9 @@
 
 | Field | Value | Verified |
 |---|---|---|
-| Marketing version | **2.0** | `MARKETING_VERSION = 2.0` in all 6 pbxproj configs |
-| Build | **35** | `CURRENT_PROJECT_VERSION = 35` in all 6 pbxproj configs — ASC already holds TestFlight builds 24–34 (Xcode Cloud numbered independently), all predating the launch-hang fix `4fe1edd`; 35 is the first unambiguous post-fix candidate (decision log 2026-07-11) |
-| Archive source | latest `main` | build + test suite pass, clean tree |
+| Marketing version | **2.1** | `MARKETING_VERSION = 2.1` in all 8 pbxproj configs |
+| Build | **36** | `CURRENT_PROJECT_VERSION = 36` in all 8 pbxproj configs |
+| Archive source | tagged `main` | clean tree, local `main` equals `origin/main`, tag `v2.1-build36` points at the archived commit |
 
 ## 2. App name
 
@@ -96,8 +96,8 @@ Leg Press 3x10 160
 - [ ] Business → Agreements: **Paid Applications agreement active** (not "Pending"). Blocks everything if not.
 - [ ] Features → Subscriptions → `unit-pro` group exists with the 3 auto-renewables (§3 IDs and prices exact).
 - [ ] Each product has an English display name + description and a **review screenshot** (one capture of `PaywallView` covers all).
-- [ ] App Store tab → version 2.0 → In-App Purchases and Subscriptions → **attach Weekly, Monthly, Yearly** (+ Lifetime if configured). First-time IAPs are reviewed with the binary; skipping this is a metadata-mismatch rejection.
-- [ ] Build 35 attached to the version.
+- [ ] App Store tab → version 2.1 → In-App Purchases and Subscriptions → **attach Weekly, Monthly, Yearly** (+ Lifetime if configured).
+- [ ] Build 36 attached to the version.
 
 ## 8. Localization (optional for this submission)
 
@@ -118,5 +118,8 @@ PR #2's five-language metadata (de-DE, es-MX, pt-BR, fr-FR, tr) is ready in `doc
 
 - [ ] StoreKit sandbox QA — all 5 steps in `docs/pricing.md` §StoreKit sandbox verification checklist, on this exact build, with sandbox Apple ID.
 - [ ] `docs/release-qa.md` gauntlet run on device.
-- [ ] Archive from latest `main` (2.0, build **35**) — HEAD must include the launch-hang fix `4fe1edd`.
+- [ ] Xcode Settings shows **Version 2.1 (36)**.
+- [ ] `git status --short` is empty and local `main` equals `origin/main`.
+- [ ] Tag `v2.1-build36` points at the exact commit being archived.
+- [ ] Archive from clean tagged `main` only.
 - [ ] Known site inconsistency (not an archive blocker, fix before marketing push): `app/(marketing)/compare/data.ts` still says "Core logging is free forever. Pro is $4.99/mo or $29.99/yr." in 3 rows, and `app/(marketing)/page.tsx` has one "Free. No account. No ads." eyebrow. Both contradict the hard paywall on the live site.

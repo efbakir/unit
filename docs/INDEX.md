@@ -57,7 +57,7 @@
 |---|---|---|
 | `docs/release-qa.md` | The gauntlet — manual on-device checklist for state persistence, keyboard, lifecycle, empty/max data | Before every TestFlight or App Store submission. Pairs with the `/state-audit` skill. |
 | `docs/next-app-playbook.md` | Portable retrospective — what Unit taught, distilled for app #2's day one | Starting the next app. Self-deleting: absorb, then remove. |
-| `docs/app-store-submission/final-submit-checklist.md` | v2.0 (build 35) ASC handoff — process steps + screenshot capture runbook; every string lives in `app-store-copy.md` (frozen canonical) | Submitting v2 to App Review |
+| `docs/app-store-submission/final-submit-checklist.md` | v2.1 (build 36) ASC handoff — clean-main provenance gate + screenshot capture runbook | Submitting v2.1 to App Review |
 
 ## Agent harness & Claude
 

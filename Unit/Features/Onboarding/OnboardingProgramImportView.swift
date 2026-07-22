@@ -48,8 +48,8 @@ struct OnboardingProgramImportView: View {
     @State private var showingFormatSheet = false
     /// Bumped on parse failure so `AppHaptic.validationError` fires —
     /// silent rejection of a "Read program" tap is the worst-of-both-worlds.
-    /// Pair with the auto-presented format sheet so the buzz lands alongside
-    /// a visible path forward.
+    /// The alert owns the path to the examples sheet so SwiftUI never has to
+    /// resolve competing alert and sheet presentations in the same frame.
     @State private var parseErrorTrigger: Int = 0
     @FocusState private var isEditorFocused: Bool
 
@@ -122,7 +122,11 @@ struct OnboardingProgramImportView: View {
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("Got it", role: .cancel) { errorMessage = nil }
+            Button("Show examples") {
+                errorMessage = nil
+                showingFormatSheet = true
+            }
+            Button("Keep editing", role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }
@@ -145,11 +149,6 @@ struct OnboardingProgramImportView: View {
         )
         guard !result.days.isEmpty else {
             errorMessage = "Couldn't find exercises. Put each day on its own line, then list each exercise below it."
-            // Auto-present the format sheet so the user sees a valid template
-            // the moment the alert is dismissed — beats an alert with no path
-            // forward. Idempotent: tapping "Read program" again on still-bad
-            // input just keeps the sheet flagged for next show.
-            showingFormatSheet = true
             parseErrorTrigger &+= 1
             return
         }

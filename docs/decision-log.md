@@ -20,6 +20,14 @@
 
 ---
 
+## 2026-07-22 — Recover the agreed v2.1 working state and bind releases to clean main
+
+**Decision:** Preserve the complete July 13–17 working tree, remove the Debug-only forced-onboarding path, and ship the recovered product work as **2.1 (36)**. Xcode Run and Release now derive onboarding, paywall, and app entry from the same persisted program and entitlement state. Every App Store archive must come from a clean, tagged `main`; the tag and build number are recorded together before upload.
+
+**Why:** Version 2.0 (35) was submitted before the final onboarding, paywall, logging, and design-system work was committed. Xcode showed the uncommitted working tree while App Store Connect received the older committed source. Debug also forced onboarding on every launch, creating another visible difference from Release.
+
+**Implication:** The recovered branch is the sole source for 2.1. Do not archive from a feature branch or dirty tree. Before upload, verify Xcode Settings reports 2.1 (36), local `main` equals `origin/main`, tests pass, and the archive commit is tagged `v2.1-build36`.
+
 ## 2026-07-17 — Remove the simulated set from program review
 
 **Decision:** Remove the interactive “Try a set” card from the final onboarding review screen without relocating it elsewhere.

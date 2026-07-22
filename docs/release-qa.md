@@ -160,7 +160,7 @@ No iPhone SE simulator installed? `xcrun simctl create "iPhone SE (3rd gen)" "iP
 Dev shortcuts that must never reach a Release build. All are `#if DEBUG`; this list is the check
 that no new one shipped unguarded:
 
-- [ ] `ContentView.presentsOnboardingAtLaunch` — Debug shows onboarding every launch. Release must gate on `splits.isEmpty` only.
+- [ ] `ContentView` has no Debug-only root routing. Xcode Run and Release both gate onboarding on `splits.isEmpty`.
 - [ ] `StoreManager.checkVerified` — Debug accepts `.xcode`-environment test transactions. Release must reject all unverified results.
 - [ ] `Unit.storekit` — wired to the scheme's Run action only. Never add it to Archive.
 - [ ] `grep -rn "#if DEBUG" Unit/ --include="*.swift"` returns only the entries above (plus previews). Anything new needs the same review.

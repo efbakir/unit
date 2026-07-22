@@ -50,7 +50,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         session.clearTransactions()
 
         // ── Launch 1: splash → unit → import → parser failure + recovery ──
-        var app = XCUIApplication()
+        var app = makeApp(reset: true)
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
@@ -60,32 +60,24 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 8), "paste editor missing")
         editor.tap()
-        editor.typeText("total garbage that is not a program")
+        // Letters-only lines are intentionally recoverable as exercise names
+        // with default sets/reps. Digits-only input is truly unparseable and
+        // exercises the error-recovery path without contradicting that rule.
+        editor.typeText("123456")
         tap(app.buttons["Read program"], "Read program (garbage)")
-        // Parse failure surfaces the explanatory alert; the format sheet may
-        // or may not auto-present depending on the alert/sheet presentation
-        // race (SwiftUI drops a sheet whose flag is set under an active
-        // alert). Assert the error surfaces, then verify recovery is
-        // reachable either way — via the auto-sheet or the always-present
-        // "Show format examples" button.
+        // Parse failure surfaces one stable alert. Its recovery action opens
+        // the format guide only after the alert dismisses, avoiding SwiftUI's
+        // alert/sheet presentation race.
         let failureAlert = app.alerts.firstMatch
         let sheetTitle = app.staticTexts["Format examples"]
-        XCTAssertTrue(
-            failureAlert.waitForExistence(timeout: 8) || sheetTitle.exists,
-            "parse failure surfaced neither alert nor recovery sheet"
-        )
-        if failureAlert.exists, app.alerts.buttons["Got it"].exists {
-            app.alerts.buttons["Got it"].tap()
-        }
-        if !sheetTitle.waitForExistence(timeout: 3) {
-            tap(app.buttons["Show format examples"], "manual format-examples recovery")
-            XCTAssertTrue(sheetTitle.waitForExistence(timeout: 8), "format sheet did not open")
-        }
+        XCTAssertTrue(failureAlert.waitForExistence(timeout: 8), "parse failure alert missing")
+        tap(failureAlert.buttons["Show examples"], "parse recovery — Show examples")
+        XCTAssertTrue(sheetTitle.waitForExistence(timeout: 8), "format sheet did not open")
         tap(app.buttons["Done"], "dismiss format sheet")
 
         // ── Launch 2: snapshot restore lands on the paste step, clean editor ──
         app.terminate()
-        app = XCUIApplication()
+        app = makeApp()
         app.launch()
 
         let editor2 = app.textViews.firstMatch
@@ -144,7 +136,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(app.tabBars.buttons["Today"], "back to Today")
 
         // ── Gym Test: start → 3 one-tap sets → finish → History ──
-        tap(button(in: app, containing: AppCopy.Workout.startWorkout), "start workout", timeout: 10)
+        let startWorkout = button(in: app, containing: AppCopy.Workout.startWorkout)
+        if !startWorkout.waitForExistence(timeout: 3) {
+            // The test can run on any weekday. On an unscheduled day, choose
+            // the saved Push routine through the real rest-day flow first.
+            tap(button(in: app, containing: AppCopy.Today.restDayCTA), "rest day — choose routine")
+            tap(button(in: app, containing: "Push"), "choose Push routine")
+        }
+        tap(startWorkout, "start workout", timeout: 10)
         let complete = app.buttons[AppCopy.Workout.completeSet]
         XCTAssertTrue(complete.waitForExistence(timeout: 10), "Complete set CTA missing")
 
@@ -163,6 +162,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: 8), "finish confirmation missing")
         confirm.tap()
 
+        // Finishing intentionally opens the completed-session summary first.
+        // Verify it, return to Today, then verify the same session in History.
+        XCTAssertTrue(
+            staticText(in: app, containing: "Push").waitForExistence(timeout: 15),
+            "completed-session summary missing"
+        )
+        tap(app.navigationBars.buttons.firstMatch, "return from completed-session summary")
         XCTAssertTrue(
             button(in: app, containing: AppCopy.Nav.history).waitForExistence(timeout: 15),
             "Today did not return after finish"
@@ -175,6 +181,15 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeApp(reset: Bool = false) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        if reset {
+            app.launchArguments.append("-ui-testing-reset")
+        }
+        return app
+    }
 
     private func button(in app: XCUIApplication, containing text: String) -> XCUIElement {
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
