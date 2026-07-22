@@ -19,16 +19,13 @@ struct PaywallView: View {
     // the payoff of their onboarding effort, not a generic wall.
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
-    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
-    @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @State private var showingManageSubscriptions = false
     @State private var showsRenewalTimeline = false
     var onDismiss: () -> Void
 
     var body: some View {
-        // Hard paywall — no `secondaryButton`, no "Not now". The only way out
-        // is to subscribe (or kill the app). `onDismiss` is invoked only via
-        // the `.onChange(of: store.isPurchased)` post-subscribe handler below.
+        // Hard paywall with no secondary escape. `onDismiss` is invoked only
+        // by a verified purchase below.
         AppScreen(
             primaryButton: primaryButtonConfig,
             hidesNavigationBar: true
@@ -95,81 +92,57 @@ struct PaywallView: View {
     // MARK: - Content
 
     private var purchaseContent: some View {
-        // Arrival choreography: the screen lands as a short cascade — headline,
-        // then each benefit, then the plans — so the moment reads as "your
-        // program is ready" (the payoff of onboarding) instead of a wall of
-        // pricing. Per-block `appScreenEnter(index:)`, ~750 ms total, Reduce
-        // Motion collapses it to an instant landing. The screen ROOT still
-        // carries no entrance (see the root-gate comment above) — these are
-        // inner blocks of an already-visible screen, so a missed onAppear
-        // degrades to one static block, never an invisible screen.
         VStack(alignment: .leading, spacing: 0) {
-            header
+            purchaseHeader
                 .appScreenEnter(index: 0)
 
-            // Personalization outranks the feature list (founder call,
-            // 2026-07-13): one hero row carrying the user's own first lift,
-            // then the generic benefits compressed to a single quiet line.
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                benefitRow(
-                    firstLiftText.map { AppCopy.Paywall.firstLiftReady($0) }
-                        ?? AppCopy.Paywall.benefitLogging
-                )
+            programSummaryCard
+                .padding(.top, AppSpacing.lg)
                 .appScreenEnter(index: 1)
-
-                Text([
-                    AppCopy.Paywall.benefitLogging,
-                    AppCopy.Paywall.benefitPrefill,
-                    AppCopy.Paywall.benefitRestTimer
-                ].joined(separator: " · "))
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .appScreenEnter(index: 2)
-            }
-            .padding(.top, AppSpacing.xl)
 
             if hasNoLoadedProducts {
                 loadFailureBanner
-                    .padding(.top, AppSpacing.xl)
-                    .appScreenEnter(index: 3)
+                    .padding(.top, AppSpacing.lg)
+                    .appScreenEnter(index: 2)
             } else {
-                tierSelector
-                    .padding(.top, AppSpacing.xl)
-                    .appScreenEnter(index: 3)
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text(AppCopy.Paywall.choosePlan)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+
+                    tierSelector
+                }
+                .padding(.top, AppSpacing.lg)
+                .appScreenEnter(index: 2)
 
                 if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
                     partialLoadBanner
                         .padding(.top, AppSpacing.md)
                 }
 
-                reviewQuoteBlock
-                    .padding(.top, AppSpacing.lg)
-                    .appScreenEnter(index: 4)
-
                 timelineTrigger
                     .padding(.top, AppSpacing.sm)
-                    .appScreenEnter(index: 4)
+                    .appScreenEnter(index: 3)
 
                 subscriptionDisclosure
                     .padding(.top, AppSpacing.sm)
-                    .appScreenEnter(index: 4)
+                    .appScreenEnter(index: 3)
             }
 
             footer
                 .padding(.top, AppSpacing.lg)
                 .padding(.bottom, AppSpacing.lg)
-                .appScreenEnter(index: 4)
+                .appScreenEnter(index: 3)
         }
     }
 
     private var activeSubscriptionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            activeSubscriptionHeader
 
             AppCard {
                 VStack(alignment: .leading, spacing: AppSpacing.smd) {
-                    Text("Unit Pro active")
+                    Text("Current plan")
                         .font(AppFont.sectionHeader.font)
                         .foregroundStyle(AppColor.textPrimary)
 
@@ -193,13 +166,93 @@ struct PaywallView: View {
         }
     }
 
-    private var header: some View {
+    private var purchaseHeader: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: AppSpacing.xs) {
+                Image("PaywallLogo")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: AppSpacing.xxl, height: AppSpacing.xxl)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: AppRadius.appIconHomeScreenCornerRadius(sideLength: AppSpacing.xxl),
+                            style: .continuous
+                        )
+                    )
+
+                Text("Unit")
+                    .font(AppFont.productHeading.font)
+                    .tracking(AppFont.productHeading.tracking)
+                    .foregroundStyle(AppColor.textPrimary)
+            }
+
+            VStack(spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(0..<5, id: \.self) { _ in
+                        AppIcon.starFilled.image(size: AppSpacing.md, weight: .semibold)
+                            .foregroundStyle(AppColor.accent)
+                    }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(AppCopy.Paywall.reviewStars)
+
+                Text(AppCopy.Paywall.reviewQuote)
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(AppCopy.Paywall.reviewAttribution)
+                    .font(AppFont.muted.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .padding(.top, AppSpacing.lg)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, AppSpacing.sm)
+    }
+
+    private var programSummaryCard: some View {
+        AppCard(verticalInset: AppSpacing.md) {
+            VStack(alignment: .center, spacing: AppSpacing.sm) {
+                VStack(spacing: AppSpacing.xs) {
+                    AppIcon.checkmarkFilled.image(size: 24)
+                        .foregroundStyle(AppColor.accent)
+
+                    Text(AppCopy.Paywall.programReady)
+                        .appCapsLabel(.overline)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+
+                Text(programTitle)
+                    .font(AppFont.title.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let programDayLine {
+                    Text(programDayLine)
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .allowsTightening(true)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var activeSubscriptionHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.smd) {
-            Text(store.isPurchased ? "Unit Pro active" : AppCopy.Paywall.title)
+            Text("Unit Pro active")
                 .appFont(.largeTitle)
                 .foregroundStyle(AppColor.textPrimary)
 
-            Text(headerSubtitle)
+            Text(activeSubscriptionSubtitle)
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -207,58 +260,44 @@ struct PaywallView: View {
         .padding(.top, AppSpacing.xl)
     }
 
-    private var headerSubtitle: String {
-        if store.isPurchased {
-            if store.activeTier == .lifetime {
-                return "Lifetime access is active. Restore purchases anytime with the same Apple Account."
-            }
-            return "Your subscription is active. Manage or cancel anytime in App Store settings."
+    private var activeSubscriptionSubtitle: String {
+        if store.activeTier == .lifetime {
+            return "Lifetime access is active. Restore purchases anytime with the same Apple Account."
         }
-        if let days = programDayLine {
-            return "\(days) is loaded."
-        }
-        return AppCopy.Paywall.subtitle
+        return "Your subscription is active. Manage or cancel anytime in App Store settings."
     }
 
-    /// "Bench Press 80kg" — the first exercise of the first day with the
-    /// weight the user typed during onboarding. The single most persuasive
-    /// line the on-device data supports: their own bar, already loaded.
-    /// `nil` (falls back to the generic benefit) when there is no program,
-    /// no exercises, or the exercise can't be resolved.
-    private var firstLiftText: String? {
-        guard let split = ActiveSplitStore.resolve(from: splits) else { return nil }
+    private var orderedProgramTemplates: [DayTemplate] {
+        guard let split = ActiveSplitStore.resolve(from: splits) else { return [] }
         let splitTemplates = templates.filter { $0.splitId == split.id }
         let byID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
-        var ordered = split.orderedTemplateIds.compactMap { byID[$0] }
-        if ordered.isEmpty { ordered = splitTemplates.sorted { $0.name < $1.name } }
-        guard let firstDay = ordered.first,
-              let firstExerciseID = firstDay.orderedExerciseIds.first,
-              let exercise = exercises.first(where: { $0.id == firstExerciseID }) else { return nil }
-
-        if exercise.isBodyweight {
-            return "\(exercise.displayName) \(AppCopy.Workout.bodyweightAbbrev)"
-        }
-        if let weight = firstDay.plannedWeightByExerciseId[firstExerciseID], weight > 0 {
-            let value = weight.truncatingRemainder(dividingBy: 1) == 0
-                ? String(Int(weight))
-                : String(format: "%.1f", weight)
-            return "\(exercise.displayName) \(value)\(unitSystem)"
-        }
-        return exercise.displayName
+        let ordered = split.orderedTemplateIds.compactMap { byID[$0] }
+        return ordered.isEmpty ? splitTemplates.sorted { $0.name < $1.name } : ordered
     }
 
-    /// "Push · Pull · Legs" — the day names of the program the user just
-    /// committed, in program order. `nil` when no program exists (paywall
-    /// reached without onboarding data) so the subtitle falls back cleanly.
+    private var programTitle: String {
+        guard let split = ActiveSplitStore.resolve(from: splits) else {
+            return AppCopy.Paywall.programFallbackTitle
+        }
+        let names = orderedProgramTemplates.map(\.displayName).filter { !$0.isEmpty }
+        guard !names.isEmpty else { return AppCopy.Paywall.programFallbackTitle }
+        let generatedName = names.joined(separator: " / ")
+        let savedName = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if savedName.isEmpty || savedName == generatedName {
+            return AppCopy.Paywall.programDayCount(names.count)
+        }
+        return savedName
+    }
+
     private var programDayLine: String? {
-        guard let split = ActiveSplitStore.resolve(from: splits) else { return nil }
-        let splitTemplates = templates.filter { $0.splitId == split.id }
-        guard !splitTemplates.isEmpty else { return nil }
-        let byID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
-        var ordered = split.orderedTemplateIds.compactMap { byID[$0] }
-        if ordered.isEmpty { ordered = splitTemplates.sorted { $0.name < $1.name } }
-        let names = ordered.prefix(4).map(\.displayName).filter { !$0.isEmpty }
+        let names = orderedProgramTemplates.map(\.displayName).filter { !$0.isEmpty }
         guard !names.isEmpty else { return nil }
+
+        if names.count > 4 {
+            let visibleNames = names.prefix(3).joined(separator: " · ")
+            return "\(visibleNames) · \(names.count - 3) more"
+        }
+
         return names.joined(separator: " · ")
     }
 
@@ -271,6 +310,7 @@ struct PaywallView: View {
             isEnabled: store.selectedProduct != nil,
             isLoading: store.isLoading,
             disabledReason: ctaDisabledReason,
+            contextLabel: selectedPurchaseContext,
             action: { Task { await store.purchase() } }
         )
     }
@@ -298,22 +338,13 @@ struct PaywallView: View {
         return "Loading subscriptions."
     }
 
-    // MARK: - Benefit Row
-
-    private func benefitRow(_ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-            AppIcon.checkmark.image(size: 14, weight: .semibold)
-                .foregroundStyle(AppColor.accent)
-                .frame(width: 16, alignment: .leading)
-
-            Text(text)
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
+    private var selectedPurchaseContext: String? {
+        guard store.selectedProduct != nil else { return nil }
+        let price = priceText(for: store.selectedTier)
+        if store.selectedTier == .lifetime {
+            return AppCopy.Paywall.lifetimePurchaseContext(price)
         }
-        .padding(.vertical, AppSpacing.sm)
+        return AppCopy.Paywall.subscriptionPurchaseContext(price)
     }
 
     // MARK: - Tier Selector
@@ -423,9 +454,9 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 80%" — yearly vs 52 weeks at the live Weekly price. Computed
-    /// from StoreKit only; rounds down; hidden if products are missing or
-    /// the math ever stops being a real saving.
+    /// "Save 80%" — calculated against 52 weeks at the live Weekly price.
+    /// The compact badge omits the comparison label; the yearly card already
+    /// shows its per-week equivalent directly beneath the price.
     private var annualSavingsBadgeText: String? {
         guard let annual = store.product(for: .annual),
               let weekly = store.product(for: .weekly) else { return nil }
@@ -552,30 +583,9 @@ struct PaywallView: View {
 
     // MARK: - Footer
 
-    /// Real published review, quoted verbatim in translation — sits at the
-    /// decision point under the price ladder. A quote survives scrutiny that
-    /// a "5.0 stars" claim (3 ratings, one storefront) would not.
-    private var reviewQuoteBlock: some View {
-        VStack(spacing: AppSpacing.xs) {
-            Text(AppCopy.Paywall.reviewStars)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textPrimary)
-
-            Text(AppCopy.Paywall.reviewQuote)
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(AppCopy.Paywall.reviewAttribution)
-                .font(AppFont.muted.font)
-                .foregroundStyle(AppColor.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    /// One caption-weight line — the only on-page cost of the renewal
-    /// timeline. The sheet carries the reassurance so the page stays clean.
+    /// One caption-weight line — the only on-page cost of the subscription
+    /// timeline. The optional sheet carries the reassurance so the paywall
+    /// stays focused on choosing a plan.
     private var timelineTrigger: some View {
         Button(AppCopy.Paywall.timelineTrigger) {
             showsRenewalTimeline = true
@@ -593,36 +603,52 @@ struct PaywallView: View {
             onDismissAction: { showsRenewalTimeline = false },
             usesOuterScroll: false
         ) {
-            // Canonical AppListRow (.display) — fixed 24pt icon frame keeps
-            // the glyphs optically centered; insets come from the row, not
-            // hand-rolled spacing.
-            VStack(spacing: 0) {
-                AppListRow(
-                    title: AppCopy.Paywall.timelineSavedTitle,
-                    subtitle: programDayLine.map { "\($0) is ready." }
-                        ?? AppCopy.Paywall.timelineSavedFallback,
-                    leadingIcon: .checkmarkFilled,
-                    style: .display
-                )
-                AppListRow(
-                    title: AppCopy.Paywall.timelineTodayTitle,
-                    subtitle: AppCopy.Paywall.timelineTodayMessage,
-                    leadingIcon: .bolt,
-                    style: .display
-                )
-                AppListRow(
-                    title: AppCopy.Paywall.timelineCancelTitle,
-                    subtitle: AppCopy.Paywall.timelineCancelMessage,
-                    leadingIcon: .settingsOutline,
-                    style: .display
-                )
-                AppListRow(
-                    title: AppCopy.Paywall.timelineRenewalTitle,
-                    subtitle: AppCopy.Paywall.timelineRenewalMessage,
-                    leadingIcon: .calendarClock,
-                    style: .display
-                )
+            AppCardList(
+                data: Array(0..<4),
+                id: \.self,
+                rowVerticalInset: AppSpacing.sm
+            ) { index in
+                timelineRow(at: index)
+                    .padding(
+                        .vertical,
+                        index == 0 || index == 3 ? AppSpacing.sm : .zero
+                    )
             }
+        }
+    }
+
+    @ViewBuilder
+    private func timelineRow(at index: Int) -> some View {
+        switch index {
+        case 0:
+            AppListRow(
+                title: AppCopy.Paywall.timelineSavedTitle,
+                subtitle: programDayLine.map { "\($0) is ready." }
+                    ?? AppCopy.Paywall.timelineSavedFallback,
+                leadingIcon: .checkmarkFilled,
+                style: .cardListContent
+            )
+        case 1:
+            AppListRow(
+                title: AppCopy.Paywall.timelineTodayTitle,
+                subtitle: AppCopy.Paywall.timelineTodayMessage,
+                leadingIcon: .bolt,
+                style: .cardListContent
+            )
+        case 2:
+            AppListRow(
+                title: AppCopy.Paywall.timelineRenewalTitle,
+                subtitle: AppCopy.Paywall.timelineRenewalMessage,
+                leadingIcon: .calendarClock,
+                style: .cardListContent
+            )
+        default:
+            AppListRow(
+                title: AppCopy.Paywall.timelineCancelTitle,
+                subtitle: AppCopy.Paywall.timelineCancelMessage,
+                leadingIcon: .settingsOutline,
+                style: .cardListContent
+            )
         }
     }
 

@@ -80,7 +80,8 @@ For each step (splash → unit → import method → paste/build → schedule �
 
 **v1 → v2 store migration (BLOCKER class — every existing user hits this on update):**
 - [ ] On a device/simulator holding a **real v1.0 App Store `Unit.store`** (not a churned dev store), install the v2 build over it. Confirm: app opens the *persistent* store — **no "Training data unavailable" alert**, `PersistenceRecoveryState.noticeKey` stays false — and all v1 history/templates load. A silent fall-back to the in-memory store here = shipped data-loss for real users.
-- [ ] If no clean v1 store exists: build the last released v1 tag, run it to seed a store, then install v2 over it. This is the only faithful reproduction; a dev device that has run mid-development schemas can fail migration for reasons production never sees (`UnitApp.makeSharedModelContainer` fallback exists exactly for this, and it does NOT auto-delete — a failure is recoverable, not a crash).
+- [x] If no clean v1 store exists: build the last released v1 tag, run it to seed a store, then install v2 over it. This is the only faithful reproduction; a dev device that has run mid-development schemas can fail migration for reasons production never sees (`UnitApp.makeSharedModelContainer` fallback exists exactly for this, and it does NOT auto-delete — a failure is recoverable, not a crash).
+  - Verified 2026-07-17 on an isolated iPhone 17 Pro / iOS 26.3 simulator using v1 release commit `9659c45` and the current v2 Release model/container. Result: PASS — 1 program, 2 templates, 2 exercises, 1 completed session, and its 82.5 kg × 5 set survived; the fallback alert did not appear and the recovery notice key remained unset/false.
 
 ---
 
@@ -153,6 +154,17 @@ a **Pro Max**, at default Dynamic Type and one AX size:
 
 No iPhone SE simulator installed? `xcrun simctl create "iPhone SE (3rd gen)" "iPhone SE (3rd generation)"`
 — 375pt wide, the real narrow-screen clipping test (installed sims start at 390pt).
+
+### Debug-only scaffolding — verify before every archive
+
+Dev shortcuts that must never reach a Release build. All are `#if DEBUG`; this list is the check
+that no new one shipped unguarded:
+
+- [ ] `ContentView.presentsOnboardingAtLaunch` — Debug shows onboarding every launch. Release must gate on `splits.isEmpty` only.
+- [ ] `StoreManager.checkVerified` — Debug accepts `.xcode`-environment test transactions. Release must reject all unverified results.
+- [ ] `Unit.storekit` — wired to the scheme's Run action only. Never add it to Archive.
+- [ ] `grep -rn "#if DEBUG" Unit/ --include="*.swift"` returns only the entries above (plus previews). Anything new needs the same review.
+- [ ] TestFlight purchase walk: **delete the app first.** A Debug run caches its entitlement in UserDefaults (`storeManager.lastKnownEntitlement`); installing over it opens unlocked for a few seconds until StoreKit corrects, which masks the real cold-launch path.
 
 ---
 

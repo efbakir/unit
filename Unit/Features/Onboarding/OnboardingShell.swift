@@ -24,7 +24,7 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let title: String
-    var subtitle: String? = nil
+    let subtitle: String
     var ctaLabel: String = "Continue"
     var ctaEnabled: Bool = true
     /// One-line diagnostic shown above a disabled primary CTA. Pass a string
@@ -52,6 +52,10 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     /// `TextEditor`, where Return inserts a newline and the user needs an
     /// explicit Done button to dismiss the keyboard.
     var showsKeyboardDismissToolbar: Bool = false
+    /// Temporarily removes the progress marker, title, and subtitle when a
+    /// keyboard-heavy step needs to prioritize its input and sticky CTA.
+    /// Screen-owned focus drives this; other steps stay unchanged.
+    var condensesHeader: Bool = false
     @ViewBuilder var content: () -> Content
     /// Optional sticky accessory rendered below the title in the top safe-area
     /// inset (e.g. a horizontal day-chip strip). Stays pinned while the body
@@ -74,18 +78,16 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                 // path as `TodayView`'s leading list-icon button, so the
                 // capsule chrome, sizing, and Liquid Glass treatment match
                 // automatically.
-                if hasProgressBar {
+                if hasProgressBar && !condensesHeader {
                     OnboardingProgressBar(
                         step: progressStep ?? 0,
                         total: progressTotal ?? 0
                     )
                 }
-                // Title + subtitle stay pinned above the scrolling body.
-                // No keyboard-driven collapse: hiding the title on focus made
-                // the first input row jump ~80pt up under the nav bar, which
-                // read as the screen lurching. Standard keyboard avoidance
-                // scrolls the focused field into view instead.
-                titleBlock
+                if !condensesHeader {
+                    titleBlock
+                        .transition(.opacity)
+                }
                 if hasStickyAccessory {
                     // Width clamping for horizontal-scrolling accessories
                     // (e.g. `AppFilterChipBar`) lives at the atom layer so the
@@ -95,6 +97,21 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                     stickyAccessory()
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                TapGesture().onEnded { dismissKeyboard() }
+            )
+            .appAnimation(.appState, value: condensesHeader, reduceMotion: reduceMotion)
+        )
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
         )
     }
 
@@ -102,19 +119,17 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title)
-                .appFont(.largeTitle)
+                .appFont(.productHeading)
                 .foregroundStyle(AppColor.textPrimary)
                 .contentTransition(.opacity)
                 .appAnimation(.appReveal, value: title, reduceMotion: reduceMotion)
 
-            if let subtitle {
-                Text(subtitle)
-                    .appFont(.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .contentTransition(.opacity)
-                    .appAnimation(.appReveal, value: subtitle, reduceMotion: reduceMotion)
-            }
+            Text(subtitle)
+                .appFont(.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.opacity)
+                .appAnimation(.appReveal, value: subtitle, reduceMotion: reduceMotion)
         }
     }
 
@@ -165,7 +180,7 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
 extension OnboardingShell where StickyAccessory == EmptyView, FloatingAccessory == EmptyView {
     init(
         title: String,
-        subtitle: String? = nil,
+        subtitle: String,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
         ctaDisabledReason: String? = nil,
@@ -175,6 +190,7 @@ extension OnboardingShell where StickyAccessory == EmptyView, FloatingAccessory 
         onBack: @escaping () -> Void,
         usesOuterScroll: Bool = true,
         showsKeyboardDismissToolbar: Bool = false,
+        condensesHeader: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
@@ -188,6 +204,7 @@ extension OnboardingShell where StickyAccessory == EmptyView, FloatingAccessory 
         self.onBack = onBack
         self.usesOuterScroll = usesOuterScroll
         self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
+        self.condensesHeader = condensesHeader
         self.content = content
         self.stickyAccessory = { EmptyView() }
         self.floatingAccessory = { EmptyView() }
@@ -197,7 +214,7 @@ extension OnboardingShell where StickyAccessory == EmptyView, FloatingAccessory 
 extension OnboardingShell where FloatingAccessory == EmptyView {
     init(
         title: String,
-        subtitle: String? = nil,
+        subtitle: String,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
         ctaDisabledReason: String? = nil,
@@ -207,6 +224,7 @@ extension OnboardingShell where FloatingAccessory == EmptyView {
         onBack: @escaping () -> Void,
         usesOuterScroll: Bool = true,
         showsKeyboardDismissToolbar: Bool = false,
+        condensesHeader: Bool = false,
         @ViewBuilder content: @escaping () -> Content,
         @ViewBuilder stickyAccessory: @escaping () -> StickyAccessory
     ) {
@@ -221,6 +239,7 @@ extension OnboardingShell where FloatingAccessory == EmptyView {
         self.onBack = onBack
         self.usesOuterScroll = usesOuterScroll
         self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
+        self.condensesHeader = condensesHeader
         self.content = content
         self.stickyAccessory = stickyAccessory
         self.floatingAccessory = { EmptyView() }
@@ -230,7 +249,7 @@ extension OnboardingShell where FloatingAccessory == EmptyView {
 extension OnboardingShell where StickyAccessory == EmptyView {
     init(
         title: String,
-        subtitle: String? = nil,
+        subtitle: String,
         ctaLabel: String = "Continue",
         ctaEnabled: Bool = true,
         ctaDisabledReason: String? = nil,
@@ -240,6 +259,7 @@ extension OnboardingShell where StickyAccessory == EmptyView {
         onBack: @escaping () -> Void,
         usesOuterScroll: Bool = true,
         showsKeyboardDismissToolbar: Bool = false,
+        condensesHeader: Bool = false,
         @ViewBuilder content: @escaping () -> Content,
         @ViewBuilder floatingAccessory: @escaping () -> FloatingAccessory
     ) {
@@ -254,6 +274,7 @@ extension OnboardingShell where StickyAccessory == EmptyView {
         self.onBack = onBack
         self.usesOuterScroll = usesOuterScroll
         self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
+        self.condensesHeader = condensesHeader
         self.content = content
         self.stickyAccessory = { EmptyView() }
         self.floatingAccessory = floatingAccessory

@@ -241,46 +241,54 @@ enum AppCopy {
 
     /// Onboarding step copy — titles, subtitles, CTAs. Minimal-language rule
     /// (2026-07-13, docs/decision-log.md): titles ≤ 4 words, neutral labels,
-    /// no pronoun; a subtitle exists only when it adds information the
-    /// controls don't already show. The first-person rule bans corporate
+    /// no pronoun; every step has one concise subtitle that adds information
+    /// the controls don't already show. The first-person rule bans corporate
     /// "we" — it does not require "my"/"I'll" in UI labels.
     enum Onboarding {
-        static let splashTagline = "Your gym log."
+        static let splashTagline = "Your gym workout log."
         static let splashCTA = "Add program"
-        static let unitTitle = "Weight unit"
+        static let unitTitle = "Choose weight unit"
+        static let unitSubtitle = "You can change this later in Settings."
         static let methodTitle = "Add program"
+        static let methodSubtitle = "Paste your routine or choose a ready-made program."
         static let methodPasteOption = "Paste routine"
         static let methodLibraryOption = "Choose program"
         static let libraryTitle = "Choose program"
+        static let librarySubtitle = "Filter by experience, goal, or training days."
         static let pasteTitle = "Paste program"
-        static let pasteSubtitle = "Or type it here."
-        static let scheduleTitle = "Training days"
-        static let scheduleSubtitle = "Change anytime."
+        static let pasteSubtitle = "Paste or type your workouts, exercises, sets, reps, and weights."
+        static let splitTitle = "Set training split"
+        static let splitSubtitle = "Name each workout in your weekly split."
+        static let scheduleTitle = "Set training days"
+        static let scheduleSubtitle = "Choose fixed weekdays or use a flexible schedule."
         static let flexibleToggle = "Flexible schedule"
         static let flexibleSubtext = "No fixed weekdays."
         static let previewTitle = "Review program"
+        static let previewSubtitle = "Check the details before saving your program."
         static let previewCTA = "Save program"
         static let previewCTASaving = "Saving…"
-        static let demoHeadline = "Try a set"
     }
 
     /// Paywall copy — marketing surface only. Legal disclosure, renewal
     /// wording, Restore/Terms/Privacy, and failure states are compliance
     /// copy and live in the view untouched by minimal-language passes.
     enum Paywall {
-        static let title = "Your program is ready"
-        static let subtitle = "Choose a plan to start."
-        static let benefitLogging = "3-second set logging"
-        static let benefitPrefill = "Last session prefilled"
-        static let benefitRestTimer = "Lock Screen rest timer"
-        /// Personalized hero row — the user's own first lift, weights already
-        /// in ("Bench Press 80kg, ready to log"). The deepest personalization
-        /// the on-device data supports.
-        static func firstLiftReady(_ lift: String) -> String { "\(lift), ready to log" }
+        static let programReady = "Program ready"
+        static let programFallbackTitle = "Your program"
+        static func programDayCount(_ count: Int) -> String {
+            count == 1 ? "1-day program" : "\(count)-day program"
+        }
+        static let choosePlan = "Choose a plan"
         static let subscribeWeekly = "Subscribe weekly"
         static let subscribeMonthly = "Subscribe monthly"
         static let subscribeYearly = "Subscribe yearly"
         static let buyLifetime = "Buy Lifetime"
+        static func subscriptionPurchaseContext(_ price: String) -> String {
+            "\(price) · Auto-renews"
+        }
+        static func lifetimePurchaseContext(_ price: String) -> String {
+            "\(price) · One-time purchase"
+        }
 
         // Renewal-transparency sheet ("what happens next" timeline). One
         // quiet trigger line on the paywall; the sheet answers the
@@ -292,19 +300,19 @@ enum AppCopy {
         static let timelineSavedFallback = "Your program is ready."
         static let timelineTodayTitle = "Today"
         static let timelineTodayMessage = "Everything unlocks. Log your first workout."
-        static let timelineCancelTitle = "Anytime"
+        static let timelineCancelTitle = "Cancel anytime"
         static let timelineCancelMessage = "Cancel in App Store settings. Access lasts through the paid period."
         static let timelineRenewalTitle = "Renewal"
         static let timelineRenewalMessage = "Auto-renews at the price shown until you cancel."
 
-        // Social proof — a real, published App Store review (Türkiye
-        // storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym tracker
-        // app"). Quoted verbatim in translation and attributed as such.
-        // Numeric rating claims stay off the paywall until the count is
-        // meaningful (see the gated follow-up task).
+        // Social proof — a real, published five-star App Store review
+        // (Türkiye storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym
+        // tracker app"). The user-facing quote is its English translation.
+        // Numeric aggregate-rating claims stay off the paywall until the
+        // rating count is meaningful.
         static let reviewStars = "★★★★★"
         static let reviewQuote = "\u{201C}The gym tracker app I\u{2019}ve been looking for for years.\u{201D}"
-        static let reviewAttribution = "App Store review · translated"
+        static let reviewAttribution = "App Store review"
     }
 
     /// Today dashboard state copy. One status line per state — the title

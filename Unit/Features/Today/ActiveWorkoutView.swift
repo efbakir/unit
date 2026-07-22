@@ -62,7 +62,7 @@ struct ActiveWorkoutView: View {
     /// — no eager scan elsewhere.
     @State private var setPRPhase: Int = 0
     /// IDs of `SetEntry`s logged this session that were PRs at log time. `progressSteps`
-    /// reads this to flip the chip to accent chrome, so the milestone persists visually
+    /// reads this to flip the chip to success chrome, so the milestone persists visually
     /// for the rest of the workout (the haptic only fires once at log).
     @State private var prSetEntryIDs: Set<UUID> = []
     /// Sentence-case description of the prior best the most recent PR-set beat — fed to
@@ -686,7 +686,7 @@ struct ActiveWorkoutView: View {
                 reps = entry.reps
                 if entry.weight > 0 {
                     weightText = WorkoutTargetFormatter.weightCompact(entry.weight)
-                } else if section.exercise.isBodyweight {
+                } else {
                     weightText = "BW"
                 }
                 isPR = prSetEntryIDs.contains(entry.id)
@@ -838,6 +838,13 @@ struct ActiveWorkoutView: View {
         isLoggingSet = true
         DispatchQueue.main.async { isLoggingSet = false }
 
+        // An explicitly logged zero means bodyweight. Promote the exercise so
+        // every later surface (prefill, History, progress) keeps rendering BW;
+        // positive values still work for weighted variants such as pull-ups.
+        if weight == 0 {
+            exercise.isBodyweight = true
+        }
+
         let setIndex = (currentEntries(for: exercise.id).map(\.setIndex).max() ?? -1) + 1
 
         let entry = SetEntry(
@@ -875,7 +882,7 @@ struct ActiveWorkoutView: View {
 
         // Compare against the prior all-time best (excluding the just-inserted
         // entry). When it beats the baseline, mark the entry so its chip flips
-        // to accent chrome and stack a heavy-impact haptic on top of the
+        // to success chrome and stack a heavy-impact haptic on top of the
         // success cue. No baseline → no PR (first-ever log doesn't fire).
         if let prior = priorBest(for: exercise.id, excluding: entry.id) {
             let beats = weight > prior.weight
@@ -923,6 +930,9 @@ struct ActiveWorkoutView: View {
             deleteSet(entry, exercise: exercise)
             return
         }
+        if weight == 0 {
+            exercise.isBodyweight = true
+        }
         withAnimation(reduceMotion ? nil : .appReveal) {
             entry.weight = weight
             entry.reps = reps
@@ -949,7 +959,7 @@ struct ActiveWorkoutView: View {
 
     /// Re-evaluate just the edited entry's PR flag against the current baseline.
     /// Unedited entries retain their at-log-time flags — matching the existing
-    /// semantic (the chip Ink chrome marks "this was a PR moment when you logged it",
+    /// semantic (the chip success chrome marks "this was a PR moment when you logged it",
     /// not "this is the current all-time best"). The 3-second PR badge does not
     /// re-fire on edit; this only tracks the persistent chip color.
     private func reevaluatePRFlag(for entry: SetEntry, exerciseID: UUID) {
@@ -1117,13 +1127,14 @@ private struct AdjustResultSheet: View {
         || noteText != seededNoteText
     }
 
-    private var parsedDisplayWeight: Double {
-        Double(weightText.replacingOccurrences(of: ",", with: ".")) ?? 0
+    private var parsedDisplayWeight: Double? {
+        Double(weightText.replacingOccurrences(of: ",", with: "."))
     }
 
     /// SetEntry stores kilograms regardless of the user's display unit.
     private var parsedWeightKg: Double {
-        unitSystem == "lb" ? parsedDisplayWeight / 2.20462 : parsedDisplayWeight
+        guard let parsedDisplayWeight else { return 0 }
+        return unitSystem == "lb" ? parsedDisplayWeight / 2.20462 : parsedDisplayWeight
     }
 
     private func seedWeightText(_ weightKg: Double) -> String {
@@ -1136,8 +1147,19 @@ private struct AdjustResultSheet: View {
         Int(repsText) ?? 0
     }
 
+    private var hasExplicitZeroWeight: Bool {
+        guard let parsedDisplayWeight else { return false }
+        return parsedDisplayWeight == 0
+            && !weightText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private var canSave: Bool {
-        parsedReps > 0 && (isBodyweight || parsedWeightKg > 0)
+        guard parsedReps > 0 else { return false }
+        if isBodyweight && weightText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+        guard let parsedDisplayWeight else { return false }
+        return parsedDisplayWeight >= 0
     }
 
     private var isEditMode: Bool {
@@ -1193,7 +1215,9 @@ private struct AdjustResultSheet: View {
                         title: AppCopy.Workout.weightLabel(isBodyweight: isBodyweight, unitSystem: unitSystem),
                         text: $weightText,
                         keyboardType: .decimalPad,
-                        suffix: isBodyweight ? AppCopy.Workout.bodyweightAbbrev : nil
+                        suffix: (isBodyweight || hasExplicitZeroWeight)
+                            ? AppCopy.Workout.bodyweightAbbrev
+                            : nil
                     )
 
                     manualInputField(
@@ -1263,14 +1287,12 @@ private struct AdjustResultSheet: View {
             switch mode {
             case .log(let prefill):
                 guard let prefill else { return }
-                if prefill.weight > 0 {
+                if prefill.weight > 0 || prefill.source != .planned {
                     weightText = seedWeightText(prefill.weight)
                 }
                 repsText = "\(prefill.reps)"
             case .edit(let weight, let reps, let note, _):
-                if weight > 0 {
-                    weightText = seedWeightText(weight)
-                }
+                weightText = seedWeightText(weight)
                 repsText = "\(reps)"
                 noteText = note
             }

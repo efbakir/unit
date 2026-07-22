@@ -6,7 +6,6 @@
 //
 
 import StoreKit
-import SwiftData
 import SwiftUI
 import UIKit
 
@@ -93,14 +92,10 @@ struct SettingsView: View {
 
     @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
 
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
-    #if DEBUG
-    @State private var debugSeedConfirmation: String?
-    #endif
 
     init(showsCloseButton: Bool = true) {
         self.shouldShowCloseButton = showsCloseButton
@@ -129,17 +124,6 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
-        #if DEBUG
-        .alert(
-            "Marketing data",
-            isPresented: debugSeedAlertBinding,
-            presenting: debugSeedConfirmation
-        ) { _ in
-            Button("OK", role: .cancel) { debugSeedConfirmation = nil }
-        } message: { message in
-            Text(message)
-        }
-        #endif
         .alert(
             "Restore",
             isPresented: infoAlertBinding,
@@ -167,10 +151,6 @@ struct SettingsView: View {
             preferencesSection
             subscriptionSection
             legalSection
-
-            #if DEBUG
-            debugSection
-            #endif
 
             settingsFooter
         }
@@ -325,32 +305,6 @@ struct SettingsView: View {
         case .lifetime: return "Lifetime active"
         }
     }
-
-    #if DEBUG
-    @ViewBuilder
-    private var debugSection: some View {
-        SettingsSection(title: "Debug", contentInset: AppSpacing.sm) {
-            Button {
-                runMarketingSeed()
-            } label: {
-                AppListRow(title: "Seed marketing data")
-            }
-            .buttonStyle(ScaleButtonStyle())
-        }
-    }
-
-    private func runMarketingSeed() {
-        let outcome = MarketingSeed.populateMonthOfHistory(in: modelContext)
-        debugSeedConfirmation = outcome.message
-    }
-
-    private var debugSeedAlertBinding: Binding<Bool> {
-        Binding(
-            get: { debugSeedConfirmation != nil },
-            set: { if !$0 { debugSeedConfirmation = nil } }
-        )
-    }
-    #endif
 
     private var errorAlertBinding: Binding<Bool> {
         Binding(

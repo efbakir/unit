@@ -105,7 +105,7 @@ struct OnboardingScheduleView: View {
                             AppSegmentedControl(
                                 selection: weekdayBinding(for: i),
                                 items: Self.segments,
-                                size: .tall,
+                                size: .weekday,
                                 title: { $0.letter },
                                 accessibilityLabel: { "\(rowLabel(for: i)), \($0.name)" },
                                 isDisabled: { segment in

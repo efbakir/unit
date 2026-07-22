@@ -20,6 +20,46 @@
 
 ---
 
+## 2026-07-17 — Remove the simulated set from program review
+
+**Decision:** Remove the interactive “Try a set” card from the final onboarding review screen without relocating it elsewhere.
+
+**Why:** The screen’s job is to verify exercises, sets, reps, and weights. A simulated log that writes no workout history makes that task less clear and falsely labels planned values as “Last time.”
+
+**Implication:** Program review now leads directly with the user’s workout cards and keeps “Save program” as its only completion action. This resolves the demo-card question left open on 2026-07-11.
+
+## 2026-07-13 — Explicit zero weight means bodyweight in the logging flow
+
+**Decision:** Entering `0` in the weight field is a valid completed set and promotes the exercise to bodyweight. Logged zero values render as `BW` across the active set metric, progress chips, Today, and History; an empty weight remains invalid for an unclassified weighted exercise.
+
+**Why:** Zero is an intentional input, not missing data. Treating it as bodyweight keeps the one-tap logging path available without ever displaying `0 kg`.
+
+**Implication:** PR-completed set chips use the accessible Verde soft-success treatment, distinct from the Ink current-set chip. Positive loads remain supported for weighted bodyweight variants.
+
+## 2026-07-13 — Yearly savings badge returns to the compact percentage
+
+**Decision:** The yearly plan badge reads `Save N%` instead of `Save N% vs weekly`. The percentage remains calculated from the live weekly and yearly StoreKit prices.
+
+**Why:** The comparison suffix makes the chip dominate the selected plan card. The yearly card already communicates the weekly comparison through its `$0.58/week` supporting line.
+
+**Implication:** Supersedes only the badge wording in the earlier RevenueCat paywall pass. Pricing, savings math, per-week anchoring, and purchase behavior are unchanged.
+
+## 2026-07-13 — RevenueCat paywall pass: anchor savings and price at the decision point
+
+**Decision:** Apply the repeatable levers from RevenueCat's [five paywall conversion boosters](https://www.revenuecat.com/blog/growth/paywall-conversion-boosters), not the article's explicitly cautioned success-story patterns. The yearly badge now says `Save N% vs weekly`; the sticky purchase area repeats the live StoreKit price plus `Auto-renews` or `One-time purchase`; the optional "What happens next?" timeline remains a compact sheet instead of becoming another page.
+
+**Why:** Unit already has purposeful entrance motion, direct copy, and per-week price anchoring. It has no free trial, so trial presentation does not apply. The remaining gaps were explaining what the savings compare against and keeping the selected billed amount visible when its card scrolls behind the sticky CTA. RevenueCat explicitly names timelines among tactics prone to survivorship bias, so the reference is not copied into the core funnel.
+
+**Implication:** Supersedes the earlier 2026-07-13 removal of the selected-price summary and the in-session proposal to promote the timeline to a large page. Weekly remains the default; products, prices, purchase behavior, disclosures, and StoreKit-derived math are unchanged.
+
+## 2026-07-13 — Paywall distilled around Unit, the saved program, and plan choice
+
+**Decision:** The hard paywall now follows one hierarchy: compact Unit logo and App Store proof → one card for the saved program → plan selector → sticky purchase action. Removed the next-exercise/weight teaser and the repeated "3-second logging / last session / Lock Screen timer" claims. The real review moves above pricing with larger stars; its attribution reads "App Store review" without the translation qualifier. The in-app brand remains `Unit`; `Unit: Gym Workout Log` remains the App Store listing name.
+
+**Why:** The old top block mixed onboarding payoff, a next-exercise preview, and three generic feature claims with no containing surface. It created a large gap and made the page read as loose text above four unrelated price cards. The paywall's single job is to confirm the user's program and make the purchase choice clear.
+
+**Implication:** Supersedes the first-lift hero and compressed benefit line from the earlier 2026-07-13 conversion/minimal-language passes. StoreKit pricing, yearly savings math, weekly default, disclosure, renewal timeline, Restore, Terms, and Privacy remain unchanged.
+
 ## 2026-07-13 — Localized app names finalized: de/es-MX/fr join tr; pt-BR still open
 
 **Decision:** Founder-final localized App Store names: de `Unit: Trainingstagebuch` (unchanged from the audit candidate), es-MX `Unit: Registro de gym` (supersedes the `Diario de Gym` candidate), fr `Unit: Carnet de Muscu` (resolves the journal-vs-carnet fork toward the conventional category term, superseding the re-derivation's `Journal de Muscu`), tr `Unit: Antrenman Günlüğü` (already final 2026-07-11). pt-BR `Unit: Diário de Treino` remains the one candidate name, pending its native read. Cascades applied: the es-MX subtitle led with *registro*, which the final name now owns, so it becomes `Diario de fuerza y series`; fr keywords gain `journal` (displaced from the retired name), landing the field at exactly 100 chars.

@@ -25,6 +25,60 @@ import XCTest
 /// class runs on MainActor so callers don't need per-method `await`.
 @MainActor
 final class ProgramImporterTests: XCTestCase {
+    func testPickedCatalogProgramKeepsCatalogName() {
+        guard let program = ProgramCatalog.all.first else {
+            return XCTFail("Expected at least one catalog program")
+        }
+        let viewModel = OnboardingViewModel()
+        viewModel.importMethod = .library
+
+        viewModel.applyPickedProgram(program)
+
+        XCTAssertEqual(viewModel.pickedProgram?.name, program.name)
+        XCTAssertEqual(viewModel.resolvedProgramName, program.name)
+        XCTAssertNotEqual(
+            program.days.map(\.name).joined(separator: " / "),
+            program.name
+        )
+    }
+
+    func testCatalogMatcherRecognizesCompleteImportedProgram() {
+        guard let program = ProgramCatalog.all.first else {
+            return XCTFail("Expected at least one catalog program")
+        }
+        let match = ProgramCatalog.matchingProgram(
+            dayNames: program.days.map(\.name),
+            exerciseNamesByDay: program.days.map { day in
+                day.items.map(\.exerciseName)
+            }
+        )
+
+        XCTAssertEqual(match?.id, program.id)
+    }
+
+    func testCatalogMatcherRejectsSimilarCustomProgram() {
+        guard let program = ProgramCatalog.all.first else {
+            return XCTFail("Expected at least one catalog program")
+        }
+        var exercises = program.days.map { day in day.items.map(\.exerciseName) }
+        exercises[0][0] = "A different exercise"
+
+        XCTAssertNil(
+            ProgramCatalog.matchingProgram(
+                dayNames: program.days.map(\.name),
+                exerciseNamesByDay: exercises
+            )
+        )
+    }
+
+    func testPastedProgramStillDerivesNameFromDayLabels() {
+        let viewModel = OnboardingViewModel()
+        viewModel.importMethod = .paste
+        viewModel.dayNames = ["Push", "Pull", "Legs"]
+
+        XCTAssertEqual(viewModel.resolvedProgramName, "Push / Pull / Legs")
+    }
+
     // MARK: - Plate rounding (Q7 round-DOWN to 2.5 kg / 5 lb plate)
 
     func testFloorToPlate_exactPlate_returnsValue() {

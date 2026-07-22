@@ -51,6 +51,7 @@ struct OnboardingProgramImportView: View {
     /// Pair with the auto-presented format sheet so the buzz lands alongside
     /// a visible path forward.
     @State private var parseErrorTrigger: Int = 0
+    @FocusState private var isEditorFocused: Bool
 
     private var canParse: Bool {
         !vm.pastedProgramText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -67,29 +68,17 @@ struct OnboardingProgramImportView: View {
             ctaDisabledReason: canParse ? nil : AppCopy.FormHint.onboardingImportPasteRequired,
             progressStep: progressStep,
             progressTotal: progressTotal,
-            onContinue: { Task { await parseProgram() } },
+            onContinue: {
+                isEditorFocused = false
+                Task { await parseProgram() }
+            },
             onBack: onBack,
-            // No outer ScrollView: the body is one fixed full-height column —
-            // editor flexes (`AppTextEditor.maxHeight: .infinity` + the
-            // surrounding VStack's `frame(maxHeight: .infinity)`) so a long
-            // paste has room and an empty editor still reads as a generous
-            // canvas (the 7-line placeholder fills it). The keyboard never
-            // collides with the customHeader because of
-            // `.ignoresSafeArea(.keyboard, edges: .bottom)` below: the screen
-            // stays at full height when the keyboard appears, so the
-            // topChrome (progress + title + subtitle) stays anchored under
-            // the nav bar and the editor's UITextView scrolls its own
-            // content internally for cursor visibility above the keyboard.
-            //
-            // Note: deliberately *not* opting into `showsKeyboardDismissToolbar`.
-            // iOS 26 renders `ToolbarItemGroup(placement: .keyboard)` content as
-            // a persistent floating Liquid Glass accessory pill at the bottom
-            // safe area — even when the keyboard is dismissed. That pill not
-            // only pollutes the layout but also steals bottom-inset space,
-            // shoving the sticky "Read program" CTA mid-screen. The lifter
-            // dismisses the keyboard with the system swipe-down gesture or by
-            // tapping "Read program" (which submits and removes focus).
-            usesOuterScroll: false
+            // The editor owns scrolling. While it is focused, reclaim the
+            // title/subtitle space for the input + sticky CTA and gate the
+            // keyboard toolbar so its Done control cannot linger after focus.
+            usesOuterScroll: false,
+            showsKeyboardDismissToolbar: isEditorFocused,
+            condensesHeader: isEditorFocused
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 AppTextEditor(
@@ -99,13 +88,17 @@ struct OnboardingProgramImportView: View {
                     // between the subtitle and the ghost button — gives long
                     // pastes room and matches the canonical "big input is the
                     // body of the screen" pattern (iOS Notes, Mail compose).
-                    maxHeight: .infinity
+                    maxHeight: .infinity,
+                    focus: $isEditorFocused
                 )
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
 
-                AppGhostButton("Show format examples") {
-                    showingFormatSheet = true
+                if !isEditorFocused {
+                    AppGhostButton("Show format examples") {
+                        showingFormatSheet = true
+                    }
+                    .transition(.opacity)
                 }
 
                 if isParsing {
@@ -134,19 +127,6 @@ struct OnboardingProgramImportView: View {
             Text(errorMessage ?? "")
         }
         .appHaptic(.validationError, trigger: parseErrorTrigger)
-        // No `.ignoresSafeArea(.keyboard)` here. Earlier we used it to stop
-        // the customHeader from sliding under the back button, but that
-        // combined with the flexing editor (`AppTextEditor.maxHeight: .infinity`)
-        // to push the "Read program" CTA *below* the keyboard — the lifter
-        // couldn't reach it without swiping the keyboard away. With the
-        // keyboard-aware header compression now in `OnboardingShell`
-        // (title + subtitle fade out the moment a field focuses, leaving
-        // just the small STEP indicator), there's no longer a tall chrome
-        // stack that can collide with the nav bar — the original reason for
-        // ignoring the keyboard inset is gone. Standard SwiftUI keyboard
-        // avoidance now applies: layout shrinks, editor flexes within the
-        // smaller `scrollContent` band, and the sticky CTA stays pinned
-        // above the keyboard where the lifter can always tap it.
     }
 
     private var parseLabel: String {

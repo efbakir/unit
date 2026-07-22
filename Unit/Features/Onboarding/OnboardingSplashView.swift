@@ -3,7 +3,7 @@
 //  Unit
 //
 //  Screen 1 — standalone opener, then carousel; no data collected:
-//    1. Opener — logo + "Welcome to Unit" + "Your gym log."
+//    1. Opener — logo + "Welcome to Unit" + "Your gym workout log."
 //       No CTA, no dots, auto-advances after the brand beat.
 //    2. Carousel — 3 auto-advancing value slides that teach what Unit does
 //       *before* the post-onboarding paywall (decision-log 2026-06-16: "the

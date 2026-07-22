@@ -66,7 +66,12 @@ enum WorkoutTargetFormatter {
         bodyweightLabel: String = "BW"
     ) -> String? {
         _ = bodyweightLabel
-        return compactLoadText(sets: nil, reps: reps, weightKg: weightKg, isBodyweight: isBodyweight)
+        return compactLoadText(
+            sets: nil,
+            reps: reps,
+            weightKg: weightKg,
+            isBodyweight: isBodyweight || weightKg == 0
+        )
     }
 
     /// Full session or planned target: `setxrepxkg` / `BW` token.
@@ -100,7 +105,7 @@ enum WorkoutTargetFormatter {
             weightKg: weightKg,
             setCount: setCount,
             reps: reps,
-            isBodyweight: isBodyweight
+            isBodyweight: isBodyweight || weightKg == 0
         ) ?? (reps > 0 ? "\(reps)" : "0")
     }
 
@@ -116,7 +121,7 @@ enum WorkoutTargetFormatter {
         if weightKg > 0 {
             return "\(weightDisplay(weightKg)) × \(reps)"
         }
-        if isBodyweight {
+        if isBodyweight || weightKg == 0 {
             return "BW × \(reps)"
         }
         return nil

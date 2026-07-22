@@ -161,11 +161,13 @@ final class StoreManager {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
+                if let tier = Tier(rawValue: transaction.productID) {
+                    setEntitlement(tier)
+                }
                 await transaction.finish()
-                // Re-derive entitlement from `currentEntitlements` rather than
-                // assuming success implies isPurchased = true. Keeps a single
-                // source of truth and matches the transaction-listener path.
-                await checkEntitlement()
+                // Confirm against currentEntitlements without holding the
+                // paywall closed if StoreKit's second lookup stalls.
+                Task { [weak self] in await self?.checkEntitlement() }
             case .userCancelled:
                 break
             case .pending:
@@ -220,27 +222,22 @@ final class StoreManager {
         var sawAny = false
         for await result in Transaction.currentEntitlements {
             sawAny = true
-            switch result {
-            case .verified(let transaction):
+            do {
+                let transaction = try checkVerified(result)
                 if let tier = Tier(rawValue: transaction.productID) {
                     entitlementTier = tier
                 }
-            case .unverified(let transaction, let error):
-                // Diagnostic only — an unverified entitlement is still skipped.
-                // On-device Xcode StoreKit testing is the known case: test-cert
-                // transactions can fail verification and the wall stays up
-                // with no visible reason. Never seen in production StoreKit.
-                logger.error("Entitlement skipped, failed verification: \(transaction.productID, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+            } catch {
+                let productID = result.unsafePayloadValue.productID
+                logger.error("Entitlement skipped, failed verification: \(productID, privacy: .public) — \(error.localizedDescription, privacy: .public)")
             }
             if entitlementTier != nil { break }
         }
         if entitlementTier == nil {
             logger.info("Entitlement check: none active (any results: \(sawAny, privacy: .public))")
         }
-        activeTier = entitlementTier
-        isPurchased = entitlementTier != nil
+        setEntitlement(entitlementTier)
         hasCheckedEntitlement = true
-        UserDefaults.standard.set(entitlementTier?.rawValue ?? "", forKey: Self.lastKnownEntitlementKey)
     }
 
     /// First-install fallback: no cached answer exists yet, so the launch gate
@@ -267,10 +264,16 @@ final class StoreManager {
                 // isPurchased true". A refund arrives here as a verified
                 // transaction with a revocationDate; without re-checking, the
                 // user would keep Pro until the next cold launch.
-                if case .verified(let transaction) = result,
-                   Self.allProductIDs.contains(transaction.productID) {
-                    await transaction.finish()
-                    await self?.checkEntitlement()
+                guard let self else { return }
+                do {
+                    let transaction = try await self.checkVerified(result)
+                    if Self.allProductIDs.contains(transaction.productID) {
+                        await transaction.finish()
+                        await self.checkEntitlement()
+                    }
+                } catch {
+                    let productID = result.unsafePayloadValue.productID
+                    await self.logUnverifiedTransaction(productID: productID, error: error)
                 }
             }
         }
@@ -278,13 +281,34 @@ final class StoreManager {
 
     // MARK: - Verification
 
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    private func setEntitlement(_ tier: Tier?) {
+        activeTier = tier
+        isPurchased = tier != nil
+        UserDefaults.standard.set(tier?.rawValue ?? "", forKey: Self.lastKnownEntitlementKey)
+    }
+
+    private func checkVerified(_ result: VerificationResult<Transaction>) throws -> Transaction {
         switch result {
         case .unverified(_, let error):
+            #if DEBUG
+            // A local StoreKit configuration signs transactions with Xcode,
+            // not the App Store. On physical devices that test certificate can
+            // fail StoreKit's verification even though the local purchase
+            // completed. Trust only that explicit Xcode test environment, and
+            // compile this exception out of TestFlight/App Store builds.
+            if result.unsafePayloadValue.environment == .xcode {
+                logger.warning("Accepting Xcode StoreKit test transaction for \(result.unsafePayloadValue.productID, privacy: .public) in Debug build.")
+                return result.unsafePayloadValue
+            }
+            #endif
             throw error
         case .verified(let value):
             return value
         }
+    }
+
+    private func logUnverifiedTransaction(productID: String, error: Error) {
+        logger.error("Transaction update skipped, failed verification: \(productID, privacy: .public) — \(error.localizedDescription, privacy: .public)")
     }
 }
 

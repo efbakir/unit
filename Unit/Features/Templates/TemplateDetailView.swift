@@ -76,7 +76,7 @@ struct TemplateDetailView: View {
         }
         .sheet(item: $targetEditPayload) { payload in
             AppSetRepEditorSheet(
-                subtitle: payload.exerciseName,
+                subject: payload.exerciseName,
                 initialSets: payload.setCount,
                 initialReps: payload.reps
             ) { setCount, reps in

@@ -14,6 +14,9 @@ struct ContentView: View {
 
     @State private var selectedTab: RootTab = .today
     @State private var store: StoreManager
+    #if DEBUG
+    @State private var presentsOnboardingAtLaunch = true
+    #endif
     @AppStorage(PersistenceRecoveryState.noticeKey) private var showsPersistenceRecoveryNotice = false
 
     init() {
@@ -32,8 +35,16 @@ struct ContentView: View {
         splits.isEmpty
     }
 
+    private var shouldShowOnboarding: Bool {
+        #if DEBUG
+        return presentsOnboardingAtLaunch || needsOnboarding
+        #else
+        return needsOnboarding
+        #endif
+    }
+
     private var shouldShowPaywall: Bool {
-        !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased
+        return !needsOnboarding && store.hasCheckedEntitlement && !store.isPurchased
     }
 
     private var shouldShowEntitlementLoading: Bool {
@@ -45,12 +56,12 @@ struct ContentView: View {
         // hydrate after the first frame; opacity transitions here can leave
         // the whole root invisible on iOS 27's Xcode launcher path.
         ZStack {
-            if needsOnboarding {
-                OnboardingView()
+            if shouldShowOnboarding {
+                OnboardingView(onCompletion: completeOnboarding)
             } else if shouldShowEntitlementLoading {
                 entitlementLoadingView
             } else if shouldShowPaywall {
-                PaywallView { /* root swap happens via store.isPurchased */ }
+                PaywallView(onDismiss: { /* root swap happens via store.isPurchased */ })
                     .environment(store)
             } else {
                 mainTabView
@@ -67,6 +78,12 @@ struct ContentView: View {
         } message: {
             Text("Unit couldn't open the local training store. Your existing data was left untouched, but changes in this session won't be saved. Close the app and contact support before logging another workout.")
         }
+    }
+
+    private func completeOnboarding() {
+        #if DEBUG
+        presentsOnboardingAtLaunch = false
+        #endif
     }
 
     private var entitlementLoadingView: some View {

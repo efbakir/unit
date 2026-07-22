@@ -44,6 +44,7 @@ struct OnboardingLibraryPickerView: View {
     var body: some View {
         OnboardingShell(
             title: AppCopy.Onboarding.libraryTitle,
+            subtitle: AppCopy.Onboarding.librarySubtitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack

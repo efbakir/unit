@@ -27,7 +27,9 @@ struct UnitApp: App {
 
     @MainActor
     init() {
+        let start = ContinuousClock.now
         self.sharedModelContainer = Self.makeSharedModelContainer()
+        Self.logger.info("Launch: ModelContainer ready in \(ContinuousClock.now - start, privacy: .public)")
     }
 
     private static func makeSharedModelContainer() -> ModelContainer {

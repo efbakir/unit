@@ -267,7 +267,9 @@ struct RecentSessionsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .appNavigationBarChrome()
         .toolbar(.hidden, for: .tabBar)
-        .sheet(item: $selectedPayload) { payload in
+        .sheet(item: $selectedPayload, onDismiss: {
+            selectedDate = nil
+        }) { payload in
             SessionSummarySheet(payload: payload)
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()

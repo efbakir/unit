@@ -235,7 +235,7 @@ The component set is deliberately small. Every primitive lives in `Unit/UI/Desig
 - **Primary** (`AppPrimaryButton`): Ink (`#0A0A0A`) background, Chalk (`#F6F6F6`) label, Label typography. One per screen on logging flows. Disabled state: Pumice background, Mist label.
 - **Secondary** (`AppSecondaryButton`): Pumice (`#E8E8E8`) background, Ink label. Tones: `.default`, `.accentSoft`, `.destructive` (text-only Signal red).
 - **Ghost** (`AppGhostButton`): No fill, no border, Ink label. Used for "Add exercise" / "Add set" triggers inside cards. The `accentSoft` tone of Secondary is **banned for "Add X" actions** — that's Ghost's job.
-- **Pressed:** ScaleButtonStyle (transform only — no color change, no glow).
+- **Pressed:** `ScaleButtonStyle` is the single custom pressed state: 0.96× scale, 14% opacity dim, and 8% brightness reduction over 150ms. Use it on every custom tappable card, row, and button. Native toolbar, alert, toggle, picker, and menu controls keep iOS feedback. Never add a screen-local pressed treatment.
 
 ### Cards & Containers
 

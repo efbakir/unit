@@ -16,6 +16,7 @@ struct OnboardingImportMethodView: View {
     var body: some View {
         OnboardingShell(
             title: AppCopy.Onboarding.methodTitle,
+            subtitle: AppCopy.Onboarding.methodSubtitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack

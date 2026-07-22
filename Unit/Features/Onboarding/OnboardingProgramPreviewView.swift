@@ -11,7 +11,7 @@
 //  2026-07-13 minimal-language pass (see docs/decision-log.md):
 //   - Vertical day cards stacked (not tabs / not swipe).
 //   - First day expanded, others collapsed (user-picked over my "all expanded").
-//   - Title "Review program" (both paths), no subtitle; sticky bottom
+//   - Title "Review program" (both paths), concise subtitle; sticky bottom
 //     "Save program" CTA — one action; commits the program and hands off
 //     to the hard paywall.
 //   - Row tap (name + sets×reps block) opens the edit sheet — no separate
@@ -39,7 +39,6 @@ struct OnboardingProgramPreviewView: View {
     /// names can be edited post-paywall and we don't want state to leak.
     @State private var expandedDays: [Int: Bool] = [0: true]
     @State private var editingExercise: PreviewExerciseEditTarget?
-    @State private var demoSetLogged = false
 
     private struct PreviewExerciseEditTarget: Identifiable {
         let dayIndex: Int
@@ -54,6 +53,7 @@ struct OnboardingProgramPreviewView: View {
     var body: some View {
         OnboardingShell(
             title: previewTitle,
+            subtitle: AppCopy.Onboarding.previewSubtitle,
             ctaLabel: ctaLabel,
             ctaEnabled: ctaEnabled,
             progressStep: progressStep,
@@ -66,9 +66,6 @@ struct OnboardingProgramPreviewView: View {
             } else {
                 emptyParseState
             }
-        }
-        .appHaptic(.setLogged, trigger: demoSetLogged) { old, new in
-            !old && new
         }
         .sheet(item: $editingExercise) { target in
             AppSheetScreen(
@@ -110,7 +107,6 @@ struct OnboardingProgramPreviewView: View {
     private var content: some View {
         VStack(spacing: AppSpacing.md) {
             warningBanner
-            loggingDemoCard
 
             ForEach(Array(vm.dayExercises.enumerated()), id: \.offset) { dayIndex, exercises in
                 AppDisclosureCard(
@@ -128,79 +124,6 @@ struct OnboardingProgramPreviewView: View {
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    private var loggingDemoCard: some View {
-        if let exercise = demoExercise {
-            AppCard {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                            Text(AppCopy.Onboarding.demoHeadline)
-                                .font(AppFont.sectionHeader.font)
-                                .foregroundStyle(AppColor.textPrimary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            if demoSetLogged {
-                                AppIcon.checkmarkFilled.image(size: 15, weight: .semibold)
-                                    .foregroundStyle(AppColor.accent)
-                                    .accessibilityHidden(true)
-                            }
-                        }
-
-                        Text(exercise.name)
-                            .font(AppFont.body.font)
-                            .foregroundStyle(AppColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text("Last time: \(demoValueText(for: exercise))")
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .monospacedDigit()
-                    }
-
-                    if demoSetLogged {
-                        HStack(spacing: AppSpacing.sm) {
-                            AppIcon.checkmarkFilled.image(size: 15, weight: .semibold)
-                                .foregroundStyle(AppColor.accent)
-                                .accessibilityHidden(true)
-
-                            Text("Set logged")
-                                .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.accent)
-                        }
-                        .frame(minHeight: 44)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                .fill(AppColor.accentSoft)
-                        )
-                    } else {
-                        AppGhostButton("Same as last time") {
-                            // Demo only: visual state + haptic. No model write,
-                            // no WorkoutSession, no SetEntry, no history.
-                            demoSetLogged = true
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var demoExercise: OnboardingExercise? {
-        for exercises in vm.dayExercises {
-            if let exercise = exercises.first { return exercise }
-        }
-        return nil
-    }
-
-    private func demoValueText(for exercise: OnboardingExercise) -> String {
-        let weight = formatted(exercise.plannedWeightKg)
-        guard !weight.isEmpty else {
-            return "\(exercise.plannedReps) reps"
-        }
-        return "\(weight)\(vm.unitSystem) × \(exercise.plannedReps)"
     }
 
     private var dayName: (Int) -> String {
@@ -234,7 +157,7 @@ struct OnboardingProgramPreviewView: View {
         dayIndex: Int,
         exercise: OnboardingExercise
     ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
+        HStack(alignment: .center, spacing: AppSpacing.md) {
             // The whole name + sets×reps block is the edit affordance — a
             // separate pencil button next to the weight field read as two
             // unrelated controls (founder feedback 2026-07-11).
@@ -265,9 +188,10 @@ struct OnboardingProgramPreviewView: View {
 
                     if vm.importMethod == .paste, !exercise.originalLine.isEmpty {
                         Text("From: \(exercise.originalLine)")
-                            .font(AppFont.muted.font)
-                            .foregroundStyle(AppColor.textTertiary)
-                            .lineLimit(2)
+                            .appFont(.metadata)
+                            .foregroundStyle(AppColor.textDisabled)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
 
                     if !exercise.note.isEmpty {

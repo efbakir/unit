@@ -17,6 +17,7 @@ struct OnboardingUnitPickerView: View {
     var body: some View {
         OnboardingShell(
             title: AppCopy.Onboarding.unitTitle,
+            subtitle: AppCopy.Onboarding.unitSubtitle,
             progressStep: progressStep,
             progressTotal: progressTotal,
             onBack: onBack

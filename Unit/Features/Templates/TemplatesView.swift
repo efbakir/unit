@@ -52,8 +52,7 @@ struct TemplatesView: View {
         NavigationStack {
             AppScreen(
                 primaryButton: programsCTA,
-                showsNativeNavigationBar: true,
-                usesOuterScroll: false
+                showsNativeNavigationBar: true
             ) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if let split = activeSplit {
@@ -110,6 +109,7 @@ struct TemplatesView: View {
                     templates: templates,
                     sessions: sessions
                 )
+                repairLegacyCatalogProgramNames()
             }
         }
     }
@@ -197,12 +197,16 @@ struct TemplatesView: View {
                 .buttonStyle(ScaleButtonStyle())
 
                 if !days.isEmpty {
-                    PreviewListContainer {
+                    PreviewListContainer(
+                        itemCount: days.count,
+                        visibleItemLimit: 7
+                    ) {
                         ForEach(days, id: \.id) { template in
                             NavigationLink(value: template) {
                                 PreviewListRow(
                                     title: template.displayName,
-                                    subtitle: routineSummary(for: template)
+                                    subtitle: routineSummary(for: template),
+                                    layout: .compactInline
                                 )
                             }
                             .buttonStyle(ScaleButtonStyle())
@@ -229,6 +233,37 @@ struct TemplatesView: View {
             return "Add exercises"
         }
         return "\(count) exercise\(count == 1 ? "" : "s")"
+    }
+
+    /// Library programs created by the old onboarding commit path were named
+    /// by joining every routine title (for example, "Workout A / Workout B /
+    /// Workout A (repeat)"). Repair only exact catalog structures, then persist
+    /// the canonical catalog title so every screen sees the corrected name.
+    private func repairLegacyCatalogProgramNames() {
+        let exerciseByID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0.displayName) })
+        var repairedAnyName = false
+
+        for split in splits {
+            let days = orderedTemplates(for: split)
+            let legacyJoinedName = days.map(\.displayName).joined(separator: " / ")
+            let savedName = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !days.isEmpty, savedName == legacyJoinedName else { continue }
+
+            let exerciseNamesByDay = days.map { day in
+                day.orderedExerciseIds.compactMap { exerciseByID[$0] }
+            }
+            guard let catalogProgram = ProgramCatalog.matchingProgram(
+                dayNames: days.map(\.displayName),
+                exerciseNamesByDay: exerciseNamesByDay
+            ) else { continue }
+
+            split.name = catalogProgram.name
+            repairedAnyName = true
+        }
+
+        if repairedAnyName {
+            try? modelContext.save()
+        }
     }
 }
 

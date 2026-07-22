@@ -105,7 +105,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
         // ── Paywall: loaded products, prices, legal, purchase ──
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.title].waitForExistence(timeout: 20),
+            app.staticTexts[AppCopy.Paywall.programReady].waitForExistence(timeout: 20),
             "paywall header missing after commit"
         )
         XCTAssertTrue(

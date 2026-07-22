@@ -4,11 +4,10 @@
 //
 //  Root coordinator for the onboarding flow.
 //
-//  Routing is state-driven: ContentView shows this view when there is no
-//  program data (new user) or when the user explicitly requests a restart
-//  from Settings. The view never sets a "hasCompletedOnboarding" boolean —
-//  instead, the commit writes real data (Split, DayTemplate, etc.) and
-//  ContentView derives the next screen from that data.
+//  Routing is state-driven: Release builds show this view when there is no
+//  program data, while Debug builds can start here for screenshot capture.
+//  The commit writes real data (Split, DayTemplate, etc.) and notifies
+//  ContentView to advance to the access gate.
 //
 //  Step **swapping** uses `OnboardingFlow` (defined below) — never a
 //  `NavigationStack` push, which would slide the whole view as one opaque
@@ -32,6 +31,7 @@ enum OnboardingPreferencesKeys {
     static let dayWeekdays = "onboarding.dayWeekdays"
     static let useFlexibleSchedule = "onboarding.useFlexibleSchedule"
     static let importMethod = "onboarding.importMethod"
+    static let pickedProgramID = "onboarding.pickedProgramID"
     static let dayExercises = "onboarding.dayExercises"
     static let pastedProgramText = "onboarding.pastedProgramText"
     static let currentStep = "onboarding.currentStep"
@@ -41,7 +41,7 @@ enum OnboardingPreferencesKeys {
 /// Persists the in-flight onboarding state to UserDefaults so a quit-and-relaunch
 /// (notably mid-paste, after the Vision OCR parse has populated the viewmodel)
 /// doesn't reset the user to the splash with empty hands. `OnboardingView` writes
-/// a snapshot on every step transition and on commit success.
+/// a snapshot on every step transition and clears it after a successful commit.
 enum OnboardingPreferences {
     static func save(
         from viewModel: OnboardingViewModel,
@@ -56,6 +56,11 @@ enum OnboardingPreferences {
         defaults.set(viewModel.dayWeekdays, forKey: OnboardingPreferencesKeys.dayWeekdays)
         defaults.set(viewModel.useFlexibleSchedule, forKey: OnboardingPreferencesKeys.useFlexibleSchedule)
         defaults.set(rawImportMethod(from: viewModel.importMethod), forKey: OnboardingPreferencesKeys.importMethod)
+        if let pickedProgramID = viewModel.pickedProgram?.id.uuidString {
+            defaults.set(pickedProgramID, forKey: OnboardingPreferencesKeys.pickedProgramID)
+        } else {
+            defaults.removeObject(forKey: OnboardingPreferencesKeys.pickedProgramID)
+        }
         defaults.set(viewModel.pastedProgramText, forKey: OnboardingPreferencesKeys.pastedProgramText)
         defaults.set(currentStep.rawValue, forKey: OnboardingPreferencesKeys.currentStep)
         defaults.set(history.map(\.rawValue), forKey: OnboardingPreferencesKeys.stepHistory)
@@ -82,6 +87,7 @@ enum OnboardingPreferences {
             OnboardingPreferencesKeys.dayWeekdays,
             OnboardingPreferencesKeys.useFlexibleSchedule,
             OnboardingPreferencesKeys.importMethod,
+            OnboardingPreferencesKeys.pickedProgramID,
             OnboardingPreferencesKeys.dayExercises,
             OnboardingPreferencesKeys.pastedProgramText,
             OnboardingPreferencesKeys.currentStep,
@@ -119,6 +125,12 @@ enum OnboardingPreferences {
 
         if let rawMethod = defaults.string(forKey: OnboardingPreferencesKeys.importMethod) {
             viewModel.importMethod = importMethod(from: rawMethod)
+        }
+
+        if viewModel.importMethod == .library,
+           let rawProgramID = defaults.string(forKey: OnboardingPreferencesKeys.pickedProgramID),
+           let programID = UUID(uuidString: rawProgramID) {
+            viewModel.pickedProgram = ProgramCatalog.all.first { $0.id == programID }
         }
 
         if let pastedText = defaults.string(forKey: OnboardingPreferencesKeys.pastedProgramText) {
@@ -207,6 +219,8 @@ enum OnboardingStep: String, Hashable {
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+
+    var onCompletion: () -> Void = { }
 
     @AppStorage("unitSystem") private var storedUnitSystem: String = "kg"
 
@@ -373,6 +387,7 @@ struct OnboardingView: View {
             try vm.commit(modelContext: modelContext)
             storedUnitSystem = vm.unitSystem
             OnboardingPreferences.clear()
+            onCompletion()
             dismiss()
         } catch {
             isCommitting = false

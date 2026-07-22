@@ -46,7 +46,7 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` (font + tracking together) or `.font(AppFont.X.font)` elsewhere. Sans is **Geist**; numeric/CTA cases (`numericDisplay`, `stepIndicator`, `productAction`, `performance`) use **Geist Mono** for fixed-width digits under fatigue. Both ship as `.ttf` in `Unit/Resources/Fonts/` (registered via `UIAppFonts` in `Info.plist`).
 
-Body hierarchy: `largeTitle`, `title`, `sectionHeader`, `body`, `caption`, `muted`.
+Body hierarchy: `largeTitle`, `title`, `sectionHeader`, `body`, `caption`, `muted`, `metadata`.
 Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`, `numericDisplay`, `stepIndicator`, `productHeading`, `productAction`, `performance`.
 
 **Rules**
@@ -87,7 +87,7 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 
 | Component | Purpose |
 |-----------|---------|
-| `AppListRow` | Standard list row; optional leading icon, title, subtitle, trailing slot |
+| `AppListRow` | Standard list row; optional leading icon, title, subtitle, trailing slot. Use `.cardListContent` only when `AppCardList` owns the row chrome. |
 | `AppStepper` | − / value / + control with fixed internal spacing |
 | `AppTag` | Pills (default, accent, success, warning, error, muted, custom) |
 | `AppPrimaryButton` | Full-width primary CTA (see `visual-language.md` for height/contrast) |
@@ -96,10 +96,18 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 | `ProductTopBarAction` | Shared pill-style header action for text and icon affordances |
 | `IconSquareButton` | 48pt icon action for secondary card controls and compact utility actions |
 | `ExercisePreviewItem` | Compact preview item for exercise name + target inside horizontal summary rails |
-| `SetProgressIndicator` | Neutral set-step tracker with current, completed, failed, and upcoming states |
+| `SetProgressIndicator` | Set-step tracker with Ink current, neutral completed/failed/upcoming, and Verde PR-completed states |
 | `MetricDisplay` | Large numeric/value lockup for target, timer, and command-style data |
 | `RestTimerControl` | Rest countdown control with `-15`, central timer pill, and `+15` |
 | `UnitTabItem` | Custom root-tab item with icon + label and clear active state |
+
+### Pressed-state rule
+
+`ScaleButtonStyle` is the single pressed treatment for every custom tappable
+card, row, and button: 0.96× scale, 14% opacity dim, and 8% brightness reduction
+over the 150ms `AppMotion.Duration.press` token. Native toolbar, alert, toggle,
+picker, and menu controls keep iOS feedback. Fix press feedback in
+`ScaleButtonStyle`; never create a screen-local variant.
 
 Toolbar and nav-bar chrome defers to iOS-native — there is no `AppNavBar` molecule. Use `ProductTopBar` for root/product screens and the system `.toolbar { }` API (no `.weight(...)` on `ToolbarItem` buttons) for detail screens.
 

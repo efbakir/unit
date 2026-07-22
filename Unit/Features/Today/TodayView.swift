@@ -25,19 +25,16 @@ struct ExerciseTarget: Identifiable {
     let id = UUID()
     let exerciseName: String
     let displayTarget: String
-    let lastPerformanceLabel: String?
     /// True when `displayTarget` is empty-state copy (not a reps/sets metric).
     let isEmptyHint: Bool
 
     init(
         exerciseName: String,
         displayTarget: String,
-        lastPerformanceLabel: String?,
         isEmptyHint: Bool = false
     ) {
         self.exerciseName = exerciseName
         self.displayTarget = displayTarget
-        self.lastPerformanceLabel = lastPerformanceLabel
         self.isEmptyHint = isEmptyHint
     }
 }
@@ -48,9 +45,7 @@ struct ReadyTodayContext {
     let templateName: String
     /// Shown when the user picked a different routine than the scheduled one for today.
     let scheduleNote: String?
-    let lastPerformedLabel: String?
     let previewTargets: [ExerciseTarget]
-    let lastSessionDate: Date?
 }
 
 struct SetupIncompleteContext {
@@ -96,6 +91,9 @@ struct TodayView: View {
             }
             .navigationDestination(isPresented: $showsHistory) {
                 RecentSessionsView(showsCloseButton: true)
+            }
+            .navigationDestination(for: DayTemplate.self) { template in
+                TemplateDetailView(template: template)
             }
             .navigationDestination(isPresented: Binding(
                 get: { completedSessionDetail != nil },
@@ -158,8 +156,7 @@ struct TodayView: View {
         )
 
         return AppScreen(
-            showsNativeNavigationBar: true,
-            usesOuterScroll: false
+            showsNativeNavigationBar: true
         ) {
             // Hero: Up Next / Rest Day / Empty state — always the first, most
             // prominent surface on screen (compass: Today → Start in ≤ 2 taps).
@@ -265,15 +262,23 @@ struct TodayView: View {
                     startWorkout(templateId: context.templateId)
                 }
             ) {
-                if !context.previewTargets.isEmpty {
-                    PreviewListContainer {
+                if !context.previewTargets.isEmpty,
+                   let template = templates.first(where: { $0.id == context.templateId }) {
+                    PreviewListContainer(
+                        itemCount: context.previewTargets.count,
+                        visibleItemLimit: 8
+                    ) {
                         ForEach(Array(context.previewTargets.enumerated()), id: \.offset) { _, target in
-                            PreviewListRow(
-                                title: target.exerciseName,
-                                subtitle: target.displayTarget,
-                                trailingLabel: target.lastPerformanceLabel,
-                                isEmptyHint: target.isEmptyHint
-                            )
+                            NavigationLink(value: template) {
+                                PreviewListRow(
+                                    title: target.exerciseName,
+                                    subtitle: target.displayTarget,
+                                    isEmptyHint: target.isEmptyHint,
+                                    layout: .compactInline
+                                )
+                            }
+                            .buttonStyle(ScaleButtonStyle())
+                            .accessibilityHint("Opens \(context.templateName) details.")
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -533,25 +538,13 @@ final class TodayDashboardViewModel {
             )
         }
 
-        let lastDate = lastCompletedDate(for: template.id, sessions: sessions)
-        let lastLabel: String? = lastDate.map { date in
-            let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: date), to: Calendar.current.startOfDay(for: Date())).day ?? 0
-            switch days {
-            case 0: return "Today"
-            case 1: return "Yesterday"
-            default: return "\(days) days ago"
-            }
-        }
-
         return .readyToday(
             ReadyTodayContext(
                 templateId: template.id,
                 programName: split.name,
                 templateName: template.name,
                 scheduleNote: scheduleNote,
-                lastPerformedLabel: lastLabel,
-                previewTargets: previewTargets,
-                lastSessionDate: lastDate
+                previewTargets: previewTargets
             )
         )
     }
@@ -578,7 +571,6 @@ final class TodayDashboardViewModel {
                 return ExerciseTarget(
                     exerciseName: exercise.displayName,
                     displayTarget: plannedTarget,
-                    lastPerformanceLabel: nil,
                     isEmptyHint: false
                 )
             }
@@ -587,7 +579,6 @@ final class TodayDashboardViewModel {
                 displayTarget: hasAnyCompleted
                     ? AppCopy.EmptyState.noPriorSets
                     : AppCopy.EmptyState.noHistoryYet,
-                lastPerformanceLabel: nil,
                 isEmptyHint: true
             )
         }
@@ -617,32 +608,16 @@ final class TodayDashboardViewModel {
                 return emptyTarget(for: exercise)
             }
 
-            if !exercise.isBodyweight, representative.weight <= 0 {
-                return emptyTarget(for: exercise)
-            }
-
             let setCount = max(lastSets.count, 1)
             let displayTarget = WorkoutTargetFormatter.setRepCompact(setCount: setCount, reps: representative.reps)
                 ?? "\(representative.reps)"
 
-            let lastPerformanceLabel: String
-            if representative.weight > 0 {
-                lastPerformanceLabel = "Last \(WorkoutTargetFormatter.weightCompact(representative.weight))"
-            } else {
-                lastPerformanceLabel = "Last BW"
-            }
-
             return ExerciseTarget(
                 exerciseName: exercise.displayName,
                 displayTarget: displayTarget,
-                lastPerformanceLabel: lastPerformanceLabel,
                 isEmptyHint: false
             )
         }
-    }
-
-    private func lastCompletedDate(for templateID: UUID, sessions: [WorkoutSession]) -> Date? {
-        sessions.first { $0.isCompleted && $0.templateId == templateID }?.date
     }
 
     private func plannedTargetText(template: DayTemplate, exerciseID: UUID) -> String? {

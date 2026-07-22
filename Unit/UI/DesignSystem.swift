@@ -171,6 +171,8 @@ enum AppFont {
     case body
     case caption
     case muted
+    /// 11pt sans medium — low-emphasis contextual and source notes.
+    case metadata
 
     // Display / specialized — previously loose `static let`s, now first-class cases
     /// 13pt mono medium UPPERCASE (+0.6 tracking) — card eyebrow, status/filter
@@ -218,6 +220,7 @@ enum AppFont {
         case .body:           return .geist(.medium,   size: 17, relativeTo: .body)
         case .caption:        return .geist(.medium,   size: 15, relativeTo: .subheadline)
         case .muted:          return .geist(.medium,   size: 13, relativeTo: .footnote)
+        case .metadata:       return .geist(.medium,   size: 11, relativeTo: .caption2)
         case .overline:       return .geistMono(.medium,   size: 13, relativeTo: .footnote)
         case .smallLabel:     return .geistMono(.medium,   size: 11, relativeTo: .caption2)
         case .overlineStrong: return .geistMono(.bold,     size: 13, relativeTo: .footnote)
@@ -230,10 +233,10 @@ enum AppFont {
         case .productAction:  return .geist(.bold,         size: 17, relativeTo: .body)
         case .performance:    return .geistMono(.semibold, size: 15, relativeTo: .subheadline)
         case .emojiCaption:
-            if let emoji = UIFont(name: "AppleColorEmoji", size: 15) {
-                return Font(emoji)
-            }
-            return .system(size: 15)
+            // Use SwiftUI's public system-font path so supported runtimes and
+            // physical devices resolve composed sequences through Apple Color
+            // Emoji without depending on a private font-name lookup.
+            return .system(size: 15, weight: .medium)
         }
     }
 
@@ -562,6 +565,7 @@ enum AppIcon: String {
     case photo = "photo"
     case dumbbell = "dumbbell"
     case trophy = "trophy"
+    case starFilled = "star.fill"
     case reorder = "line.3.horizontal"
     case camera = "camera"
     case clipboard = "doc.on.clipboard"
@@ -715,11 +719,14 @@ extension View {
 /// glyph; let context + tap target convey navigation (HIG).
 /// Use `.tappable` (default) for interactive rows — gets 44pt minHeight and a
 /// hit-testable content shape. Use `.display` for read-only catalog rows inside
-/// a shared card — same 8pt vertical breathing as `.tappable`, but drops the
-/// 44pt floor so multi-row catalog blocks pack tighter without going cramped.
+/// a shared card — compact vertical breathing and no 44pt floor so multi-row
+/// catalog blocks pack tighter without going cramped. Use `.cardListContent`
+/// only inside `AppCardList`; the list owns the row insets and minimum height,
+/// while `AppListRow` supplies the icon + text hierarchy.
 enum AppListRowStyle {
     case tappable
     case display
+    case cardListContent
 }
 
 struct AppListRow<Trailing: View>: View {
@@ -762,15 +769,35 @@ struct AppListRow<Trailing: View>: View {
                         .foregroundStyle(AppFont.muted.color)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 
             trailing()
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.vertical, AppSpacing.lg)
-        .frame(minHeight: style == .display ? nil : 44, alignment: .leading)
+        .padding(.horizontal, horizontalInset)
+        .padding(.vertical, verticalInset)
+        .frame(minHeight: minimumHeight, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    private var horizontalInset: CGFloat {
+        style == .cardListContent ? 0 : AppSpacing.lg
+    }
+
+    private var verticalInset: CGFloat {
+        switch style {
+        case .tappable:
+            return AppSpacing.lg
+        case .display:
+            return AppSpacing.sm
+        case .cardListContent:
+            return 0
+        }
+    }
+
+    private var minimumHeight: CGFloat? {
+        style == .tappable ? 44 : nil
     }
 }
 
@@ -826,45 +853,48 @@ struct AppListRowValueLabel: View {
 /// the program-preview weight edit (`OnboardingProgramPreviewView`). Value and
 /// unit sit together on a light inset fill (`cardRowFill`, the Milk recess used
 /// for anything nested inside an `AppCard`, not the darker `controlBackground`
-/// stepper gray that read as too dark on the white preview card) with a hairline
-/// border, so the cell reads as a tappable input without going heavy. Keeping
-/// the suffix inside the box makes "82 kg" read as one value instead of a label
-/// floating detached to the right.
+/// stepper gray that read as too dark on the white preview card). The fill alone
+/// carries the input affordance; no border is needed. Keeping the suffix inside
+/// the box makes "82 kg" read as one value instead of a label floating detached
+/// to the right.
 ///
 /// Empty state shows no placeholder digit: no em dash (a banned placeholder,
 /// §4) and no bare "0" (reads as a real entered value, the sibling of the
-/// banned "0 kg"). The bordered fill plus the inline unit is the affordance.
+/// banned "0 kg"). The filled surface plus the inline unit is the affordance.
 /// The caller binds a plain string and owns any unit conversion (kg / lb) at
 /// its boundary.
 struct AppInlineWeightField: View {
     @Binding var text: String
     let unitSuffix: String
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
             TextField("", text: $text)
                 .keyboardType(.decimalPad)
+                .focused($isFocused)
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .frame(maxWidth: .infinity)
+                .accessibilityLabel("Weight")
+                .accessibilityValue(text.isEmpty ? "Empty, \(unitSuffix)" : "\(text) \(unitSuffix)")
 
             Text(unitSuffix)
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .frame(width: 96)
+        .frame(width: 80)
+        .frame(minHeight: 48)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                 .fill(AppColor.cardRowFill)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                .strokeBorder(AppColor.border, lineWidth: 1)
-        )
+        .contentShape(Rectangle())
+        .onTapGesture { isFocused = true }
     }
 }
 
@@ -950,13 +980,21 @@ struct AppTextEditor: View {
     /// Combine with a parent `VStack(... maxHeight: .infinity)` so the flex
     /// has somewhere to go.
     var maxHeight: CGFloat? = nil
+    /// Optional parent-owned focus binding for screens that need to coordinate
+    /// keyboard chrome or layout with this editor. The editor keeps its local
+    /// focus state by default so existing callers remain unchanged.
+    var focus: FocusState<Bool>.Binding? = nil
 
     /// Bound to the underlying `TextEditor` so the entire card surface — not
     /// just the inner UITextView's hit area — focuses on tap. Without this,
     /// padding around the TextEditor + the placeholder overlay leave dead
     /// zones where the user's tap visually lands on the input but does
     /// nothing (the OnboardingProgramImportView "input doesn't work" bug).
-    @FocusState private var isFocused: Bool
+    @FocusState private var localFocus: Bool
+
+    private var resolvedFocus: FocusState<Bool>.Binding {
+        focus ?? $localFocus
+    }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -964,7 +1002,8 @@ struct AppTextEditor: View {
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .scrollContentBackground(.hidden)
-                .focused($isFocused)
+                .scrollDismissesKeyboard(.interactively)
+                .focused(resolvedFocus)
                 .padding(AppSpacing.md)
 
             if text.isEmpty {
@@ -994,7 +1033,7 @@ struct AppTextEditor: View {
         // visually hit but never focused. Setting `isFocused = true` on top
         // of `TextEditor`'s own focusing is idempotent.
         .contentShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .simultaneousGesture(TapGesture().onEnded { isFocused = true })
+        .simultaneousGesture(TapGesture().onEnded { resolvedFocus.wrappedValue = true })
         .appCardElevation()
     }
 }
@@ -1775,7 +1814,7 @@ struct SetProgressIndicator: View {
         var reps: Int? = nil
         var weightText: String? = nil
         /// Marks a completed step that beat the prior all-time best for this exercise
-        /// (computed in `ActiveWorkoutView.completeSet`). The chip flips to accent
+        /// (computed in `ActiveWorkoutView.completeSet`). The chip flips to success
         /// chrome so the milestone persists for the rest of the session — pairs with
         /// the heavy-impact haptic that fires once at log time.
         var isPR: Bool = false
@@ -1783,7 +1822,7 @@ struct SetProgressIndicator: View {
         /// (`AdjustResultSheet` in `.edit` mode). Renders a slightly darker
         /// chip background so the strip behind the sheet communicates which
         /// set is being modified, even when the current-set accent pill sits
-        /// further down the strip. PR chips keep their accent fill — the PR
+        /// further down the strip. PR chips keep their success fill — the PR
         /// signal outranks the edit affordance.
         var isEditing: Bool = false
         /// Tap handler for completed/failed chips — opens the edit sheet for that set
@@ -1814,6 +1853,7 @@ struct SetProgressIndicator: View {
     /// previously-logged checkmarks a quiet sympathy nod. Newest chip arrives via
     /// the parent's `withAnimation(.appReveal)` and doesn't need its own bounce.
     var setLoggedSignal: Int? = nil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // Most workouts (3-5 sets) fit the card width — render as a plain centered
@@ -1881,10 +1921,11 @@ struct SetProgressIndicator: View {
                     .font(AppFont.stepIndicator.font)
                     .lineLimit(1)
             }
-            .foregroundStyle(step.isPR ? AppColor.accentForeground : AppColor.textSecondary)
+            .foregroundStyle(step.isPR ? AppColor.successOnSoft : AppColor.textSecondary)
             .padding(.horizontal, AppSpacing.sm)
             .frame(height: 24)
             .background(Capsule(style: .continuous).fill(chipFill(for: step)))
+            .appAnimation(.appState, value: step.isPR, reduceMotion: reduceMotion)
         } else {
             ZStack {
                 Circle()
@@ -1908,7 +1949,7 @@ struct SetProgressIndicator: View {
     }
 
     private func chipFill(for step: Step) -> Color {
-        if step.isPR { return AppColor.accent }
+        if step.isPR { return AppColor.successSoft }
         return step.isEditing ? AppColor.controlBackgroundActive : AppColor.controlBackground
     }
 
@@ -1936,9 +1977,10 @@ struct SetProgressIndicator: View {
 
     private func accessibilityLabel(for step: Step) -> String {
         let detail = step.chipText.map { ", \($0)" } ?? ""
+        let milestone = step.isPR ? ", personal record" : ""
         switch step.state {
         case .completed:
-            return "Set \(step.label), completed\(detail)"
+            return "Set \(step.label), completed\(detail)\(milestone)"
         case .failed:
             return "Set \(step.label), below target\(detail)"
         case .current:
@@ -2113,53 +2155,69 @@ struct RestTimerControl: View {
 
 // MARK: - PreviewListRow + PreviewListContainer
 
-/// Two-line row for preview lists inside cards. The title leads in
-/// `sectionHeader`; the subtitle follows in quiet `body`, matching Programs,
-/// Templates, day lists, and Today's exercise preview.
+/// Shared row for preview lists inside cards. The default stacked layout keeps
+/// the established title/subtitle hierarchy used by library and detail lists.
+/// `compactInline` is reserved for recessed, capped previews: body-size title on
+/// the left, body-size metadata on the right, and a 44pt interaction floor.
 ///
 /// `isEmptyHint = true` softens the data line (caption font + secondary color)
 /// for cold-start rows like "No prior sets".
-///
-/// `trailingLabel` renders on the same baseline as the title in muted text —
-/// carries ghost-value memory ("Last 60kg" / "Last BW") so the prior-session
-/// weight surfaces on the Today preview alongside the planned set/rep target
-/// underneath. Suppressed when nil; takes layout priority so a long title
-/// truncates first rather than pushing the weight memory off-screen.
 struct PreviewListRow: View {
+    enum Layout {
+        case stacked
+        case compactInline
+    }
+
     let title: String
     let subtitle: String
-    var trailingLabel: String? = nil
     var isEmptyHint: Bool = false
+    var layout: Layout = .stacked
 
+    @ScaledMetric(relativeTo: .body) private var compactRowHeight: CGFloat = 44
+
+    @ViewBuilder
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+        switch layout {
+        case .stacked:
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(AppFont.sectionHeader.font)
                     .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(trailingLabel == nil ? nil : 1)
-                    .truncationMode(.tail)
 
                 Text(subtitle)
                     .font(subtitleFont)
                     .foregroundStyle(AppColor.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, AppSpacing.sm)
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityLabel)
 
-            if let trailingLabel {
-                Text(trailingLabel)
-                    .font(AppFont.muted.font)
+        case .compactInline:
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                Text(title)
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer(minLength: 0)
+
+                Text(subtitle)
+                    .font(AppFont.body.font)
                     .foregroundStyle(AppColor.textSecondary)
+                    .monospacedDigit()
                     .lineLimit(1)
                     .layoutPriority(1)
-                    .accessibilityHidden(true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: compactRowHeight)
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityLabel)
         }
-        .padding(.vertical, AppSpacing.sm)
-        .frame(minHeight: 52)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
     }
 
     private var subtitleFont: Font {
@@ -2167,39 +2225,48 @@ struct PreviewListRow: View {
     }
 
     private var accessibilityLabel: String {
-        var parts = [title, subtitle]
-        if let trailingLabel { parts.append(trailingLabel) }
-        return parts.joined(separator: ", ")
+        [title, subtitle].joined(separator: ", ")
     }
 }
 
 /// Scrollable, capped-height container for `PreviewListRow`s — used on Today hero
-/// and in program active-card previews. Top + bottom edges fade via the
-/// canonical `appScrollEdgeSoft()` so truncation reads intentionally; the OS
-/// only renders the fade where scrolling actually clips, so short content
-/// stays flat without measuring height by hand.
+/// and in program active-card previews. Content up to `visibleItemLimit` is shown
+/// in full. Overflow reveals half of the next row, flashes the native indicator,
+/// and uses the canonical soft scroll edge so the affordance does not depend on
+/// the transient indicator alone.
 struct PreviewListContainer<Content: View>: View {
-    /// Capped scroll height — declared as `@ScaledMetric` so the cap grows
-    /// proportionally under Dynamic Type. Without this, AX users see rows
-    /// clipped at the same 228pt as default text size, halving how many fit.
-    @ScaledMetric(relativeTo: .body) private var maxHeight: CGFloat = 228
-    /// Vertical gap between rows. Tight by default so the container padding can breathe around the group.
-    var rowSpacing: CGFloat = AppSpacing.xs
-    /// Inner padding between the container edge and its rows.
-    var contentPadding: CGFloat = AppSpacing.md
+    let itemCount: Int
+    let visibleItemLimit: Int
     @ViewBuilder let content: () -> Content
+
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
+
+    private var overflows: Bool {
+        itemCount > visibleItemLimit
+    }
+
+    private var viewportHeight: CGFloat {
+        let visibleRows = min(max(itemCount, 0), max(visibleItemLimit, 0))
+        let fullRowsHeight = CGFloat(visibleRows) * rowHeight
+        let overflowPeekHeight = overflows ? rowHeight / 2 : 0
+        return (AppSpacing.sm * 2) + fullRowsHeight + overflowPeekHeight
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: rowSpacing) {
+            VStack(alignment: .leading, spacing: 0) {
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(contentPadding)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
         }
-        .scrollIndicators(.hidden)
+        .scrollDisabled(!overflows)
+        .scrollIndicators(overflows ? .visible : .hidden)
+        .scrollIndicatorsFlash(onAppear: overflows)
+        .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity)
-        .frame(maxHeight: maxHeight)
+        .frame(maxHeight: viewportHeight)
         .appScrollEdgeSoft()
         // Canonical row-on-card recipe (Figma source of truth, 2026-04-27):
         // `cardRowFill` + `AppRadius.sm` for any element nested inside `AppCard`.
@@ -3310,6 +3377,10 @@ struct WorkoutCommandCard: View {
     /// chip so the peak emotional moment of a session is held visibly long enough
     /// to register before the metric prefill cross-fades to the next set.
     @SwiftUI.State private var prBadgeVisible: Bool = false
+    /// Invalidates an older auto-dismiss task when another PR lands before the
+    /// current badge finishes its dwell. The newest milestone always receives
+    /// the full visible duration instead of being hidden by the first task.
+    @SwiftUI.State private var prBadgeSequence: Int = 0
 
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
@@ -3368,6 +3439,10 @@ struct WorkoutCommandCard: View {
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
         }
+        .onDisappear {
+            prBadgeSequence &+= 1
+            prBadgeVisible = false
+        }
     }
 
     /// Dwell on the PR badge — 3.0 s gives the lifter time to read "Personal record"
@@ -3376,10 +3451,17 @@ struct WorkoutCommandCard: View {
     /// glance landed; the heavy haptic was firing alone.
     private static let prBadgeDwellSeconds: UInt64 = 3
     private func showPRBadge() {
-        prBadgeVisible = true
+        prBadgeSequence &+= 1
+        let sequence = prBadgeSequence
+        withAnimation(reduceMotion ? nil : .appReveal) {
+            prBadgeVisible = true
+        }
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: Self.prBadgeDwellSeconds * 1_000_000_000)
-            prBadgeVisible = false
+            guard sequence == prBadgeSequence else { return }
+            withAnimation(reduceMotion ? nil : .appExit) {
+                prBadgeVisible = false
+            }
         }
     }
 
@@ -3389,8 +3471,7 @@ struct WorkoutCommandCard: View {
             if prBadgeVisible {
                 VStack(spacing: AppSpacing.xs) {
                     HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(AppFont.body.font)
+                        AppIcon.checkmarkFilled.image(size: 17)
                             .foregroundStyle(AppColor.success)
                         Text(AppCopy.Workout.personalRecord)
                             .font(AppFont.caption.font)
@@ -3414,12 +3495,14 @@ struct WorkoutCommandCard: View {
                     priorBestText.map { "\(AppCopy.Workout.personalRecord). \($0)." }
                         ?? AppCopy.Workout.personalRecord
                 )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else if let metricSupportingText, !metricSupportingText.isEmpty {
                 Text(metricSupportingText)
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity)
             }
         }
         .appAnimation(.appReveal, value: prBadgeVisible, reduceMotion: reduceMotion)
@@ -3829,7 +3912,9 @@ struct AppSheetScreen<Content: View>: View {
 
 /// Reusable bottom sheet for editing a routine's working set target. Keeps
 /// template-edit and onboarding-style set/reps controls on the same sheet,
-/// type, spacing, range, and stepper behavior.
+/// type, spacing, range, and stepper behavior. The edited exercise is the
+/// centered subject beneath the native sheet title; both target controls are
+/// centered in equal-width columns so the composition stays balanced.
 struct AppSetRepEditorSheet: View {
     static let defaultSets: Int = 3
     static let defaultReps: Int = 8
@@ -3837,7 +3922,7 @@ struct AppSetRepEditorSheet: View {
     static let defaultRepRange: ClosedRange<Int> = 1...30
 
     let title: String
-    var subtitle: String? = nil
+    var subject: String? = nil
     let setRange: ClosedRange<Int>
     let repRange: ClosedRange<Int>
     let onSave: (_ sets: Int, _ reps: Int) -> Void
@@ -3848,7 +3933,7 @@ struct AppSetRepEditorSheet: View {
 
     init(
         title: String = AppCopy.Workout.editTarget,
-        subtitle: String? = nil,
+        subject: String? = nil,
         initialSets: Int = Self.defaultSets,
         initialReps: Int = Self.defaultReps,
         setRange: ClosedRange<Int> = Self.defaultSetRange,
@@ -3856,7 +3941,7 @@ struct AppSetRepEditorSheet: View {
         onSave: @escaping (_ sets: Int, _ reps: Int) -> Void
     ) {
         self.title = title
-        self.subtitle = subtitle
+        self.subject = subject
         self.setRange = setRange
         self.repRange = repRange
         self.onSave = onSave
@@ -3872,26 +3957,28 @@ struct AppSetRepEditorSheet: View {
             dismissActionPlacement: .cancellation,
             onDismissAction: { dismiss() }
         ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(AppFont.body.font)
-                        .foregroundStyle(AppColor.textSecondary)
+            VStack(alignment: .center, spacing: AppSpacing.lg) {
+                if let subject, !subject.isEmpty {
+                    Text(subject)
+                        .appFont(.title)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.md) {
                         targetStepper(label: AppCopy.Workout.targetSetsLabel, value: $sets, range: setRange)
                         targetStepper(label: AppCopy.Workout.targetRepsLabel, value: $reps, range: repRange)
                     }
 
-                    VStack(spacing: AppSpacing.sm) {
+                    VStack(spacing: AppSpacing.md) {
                         targetStepper(label: AppCopy.Workout.targetSetsLabel, value: $sets, range: setRange)
                         targetStepper(label: AppCopy.Workout.targetRepsLabel, value: $reps, range: repRange)
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .presentationDetents([.medium, .large])
         .appBottomSheetChrome()
@@ -3905,10 +3992,11 @@ struct AppSetRepEditorSheet: View {
     ) -> some View {
         let currentValue = value.wrappedValue
 
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+        VStack(alignment: .center, spacing: AppSpacing.sm) {
             Text(label)
                 .appCapsLabel(.smallLabel)
                 .foregroundStyle(AppColor.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             AppStepper(
                 value: "\(currentValue)",
@@ -3922,8 +4010,9 @@ struct AppSetRepEditorSheet: View {
                     value.wrappedValue = Self.clamped(currentValue + 1, to: range)
                 }
             )
+            .frame(maxWidth: .infinity, alignment: .center)
         }
-        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
     }
 
     private func commit() {
@@ -4783,16 +4872,27 @@ enum AppIconCircleSize {
 struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     enum Size {
         case compact
+        /// Dense seven-item weekday picker: 40pt visible track with the
+        /// canonical 44pt interaction area preserved around it.
+        case weekday
         case tall
 
         var verticalPadding: CGFloat {
             switch self {
             case .compact: return AppSpacing.smd
+            case .weekday: return AppSpacing.sm
             case .tall:    return AppSpacing.xl
             }
         }
 
         var minHeight: CGFloat { 44 }
+
+        var trackHeight: CGFloat? {
+            switch self {
+            case .weekday: return 40
+            case .compact, .tall: return nil
+            }
+        }
     }
 
     /// Visual treatment of the selected pill. `.light` (default) keeps the
@@ -4872,7 +4972,9 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
 
         ZStack(alignment: .leading) {
             // 1. Track background.
-            trackShape.fill(trackFill)
+            trackShape
+                .fill(trackFill)
+                .frame(height: size.trackHeight)
 
             // 2. Pill — flat fill, no shadow.
             GeometryReader { geo in
@@ -4889,13 +4991,13 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                     .animation(.appConfirm, value: selection.id)
             }
             .padding(trackPadding)
+            .frame(height: size.trackHeight)
             .clipShape(trackShape)
 
             // 3. Labels — drawn above the pill, never clipped so text stays crisp.
-            //    Segment buttons span the full track height so the tap target
-            //    matches the visual cell; visual centering is unchanged because
-            //    the text glyph is centered in the frame. Horizontal trackPadding
-            //    still applies so first/last labels don't kiss the track edge.
+            //    Segment buttons keep the 44pt interaction floor even when a
+            //    size uses a denser visible track. Horizontal trackPadding still
+            //    applies so first/last labels don't kiss the track edge.
             HStack(spacing: 0) {
                 ForEach(items) { item in
                     let isSelected = item == selection
@@ -4910,6 +5012,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                             .foregroundStyle(foreground(isSelected: isSelected, isDisabled: disabled))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, verticalPadding)
+                            .frame(minHeight: size.minHeight)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -4975,10 +5078,12 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
     }
 }
 
-/// Canonical press-feedback button style — 0.96x scale + `.appPress` easing.
-/// Apply to every tappable card or row so "press" reads consistently. Press is
-/// a touch confirmation, not motion, so this is intentionally not gated by
-/// Reduce Motion (per Apple HIG: tactile feedback is permitted).
+/// Canonical press-feedback button style — 0.96x scale, 14% opacity dim,
+/// 8% brightness reduction, and `.appPress` easing. Apply to every custom
+/// tappable card, row, or button so "press" reads consistently. Native
+/// toolbars, alerts, toggles, and pickers keep the platform's own feedback.
+/// Press is a touch confirmation, not decorative motion, so it is intentionally
+/// not gated by Reduce Motion.
 /// Canonical press-state treatment for every tappable atom in Unit —
 /// `AppPrimaryButton`, `AppSecondaryButton`, `AppGhostButton`,
 /// `AppFloatingPillButton`, `OnboardingOptionCard`, and every internal
@@ -4989,18 +5094,18 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
 /// Three cues fire on press, all animating together via `.appPress` (0.15s)
 /// in both directions:
 ///
-/// 1. **Opacity → 0.88** — subtle dim. Big filled CTAs (accent primary)
-///    showed too much state change at the original 0.7; 12 % is still
+/// 1. **Opacity → 0.86** — subtle dim. Big filled CTAs (accent primary)
+///    showed too much state change at the original 0.7; 14 % is still
 ///    visible on the orange surface without making the button look broken
 ///    or unavailable mid-tap.
-/// 2. **Brightness → -0.06** — the cue that survives on near-white surfaces.
+/// 2. **Brightness → -0.08** — the cue that survives on near-white surfaces.
 ///    Opacity alone on a white card over a Milk background is invisible
 ///    (you're letting Milk show through Milk). Brightness shifts every
 ///    color channel down by 6 %, so white reads as a perceptible light
 ///    grey, accent reads as a slightly deeper accent, and transparent
 ///    ghosts read as a faded text. Universal — works on every shape we
 ///    have without per-style branching.
-/// 3. **Scale → 0.97** — secondary tactile cue. 3 % is enough to feel
+/// 3. **Scale → 0.96** — secondary tactile cue. 4 % is enough to feel
 ///    without competing with the opacity/brightness shift.
 ///
 /// **Animation is symmetric** (`.appPress` both ways). The earlier asymmetric
@@ -5026,9 +5131,9 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
 struct ScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.88 : 1)
-            .brightness(configuration.isPressed ? -0.06 : 0)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.86 : 1)
+            .brightness(configuration.isPressed ? -0.08 : 0)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.appPress, value: configuration.isPressed)
     }
 }

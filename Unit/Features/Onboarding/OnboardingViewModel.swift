@@ -192,6 +192,23 @@ final class OnboardingViewModel {
 
     var weightUnitLabel: String { unitSystem }
 
+    /// The persisted Split title. Catalog picks retain the title the user saw
+    /// in the library; pasted programs continue to derive a useful title from
+    /// their day labels.
+    var resolvedProgramName: String {
+        if importMethod == .library,
+           let pickedProgram,
+           !pickedProgram.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return pickedProgram.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let allGeneric = dayNames.allSatisfy { isGenericDayName($0) }
+        if allGeneric && !dayNames.isEmpty {
+            return "\(dayNames.count)-Day Split"
+        }
+        return dayNames.joined(separator: " / ")
+    }
+
     /// Display a kg value in the user's chosen unit.
     func displayWeight(_ kg: Double) -> Double {
         unitSystem == "lb" ? kg * 2.20462 : kg
@@ -328,23 +345,10 @@ final class OnboardingViewModel {
 
         // 2. Create Split
         //
-        // Synthesize a concise name when all day labels are generic
-        // placeholders (`Day 1`, `Workout 2`, `Session 3`). The join-on-` / `
-        // form ("Workout 1 / Workout 2 / Push / Pull") was visually noisy in
-        // the Today eyebrow and the Templates list after paste-import when
-        // the lifter hadn't renamed every day yet. The synthesized "4-Day
-        // Split" is still editable post-commit from `TemplatesView`, but
-        // gives the cleaner default. Mixed-naming pastes (some custom + some
-        // generic) keep the original join — the lifter named those days
-        // intentionally.
-        let splitName: String = {
-            let allGeneric = dayNames.allSatisfy { isGenericDayName($0) }
-            if allGeneric && dayNames.count > 0 {
-                return "\(dayNames.count)-Day Split"
-            }
-            return dayNames.joined(separator: " / ")
-        }()
-        let split = Split(name: splitName)
+        // Catalog picks keep the program title shown in the library. Pasted
+        // programs derive a useful title from their day labels, with a concise
+        // fallback when every label is generic.
+        let split = Split(name: resolvedProgramName)
         modelContext.insert(split)
 
         // 3. Create DayTemplates
@@ -436,6 +440,7 @@ extension OnboardingViewModel {
         }
         guard !sanitizedDays.isEmpty else { return }
 
+        pickedProgram = nil
         dayCount = min(max(sanitizedDays.count, Self.dayCountRange.lowerBound), Self.dayCountRange.upperBound)
         dayNames = Array(sanitizedDays.prefix(dayCount).enumerated().map { index, day in
             let trimmed = day.name.trimmingCharacters(in: .whitespacesAndNewlines)

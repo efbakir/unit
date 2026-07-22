@@ -43,7 +43,6 @@
 		FT100000000000000000004 /* GeistMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000004 /* GeistMono-Medium.ttf */; };
 		FT100000000000000000010 /* GeistMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000010 /* GeistMono-SemiBold.ttf */; };
 		FT100000000000000000011 /* GeistMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000011 /* GeistMono-Bold.ttf */; };
-		MKSD100000000000000000001 /* MarketingSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = MKSD200000000000000000001 /* MarketingSeed.swift */; };
 		OB100000000000000000001 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000001 /* OnboardingViewModel.swift */; };
 		OB100000000000000000002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000002 /* OnboardingView.swift */; };
 		OB100000000000000000003 /* OnboardingShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000000000000000000003 /* OnboardingShell.swift */; };
@@ -156,7 +155,6 @@
 		FT000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FT000000000000000000010 /* GeistMono-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-SemiBold.ttf"; sourceTree = "<group>"; };
 		FT000000000000000000011 /* GeistMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeistMono-Bold.ttf"; sourceTree = "<group>"; };
-		MKSD200000000000000000001 /* MarketingSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketingSeed.swift; sourceTree = "<group>"; };
 		OB000000000000000000001 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		OB000000000000000000002 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		OB000000000000000000003 /* OnboardingShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingShell.swift; sourceTree = "<group>"; };
@@ -386,7 +384,6 @@
 			isa = PBXGroup;
 			children = (
 				ECAT200000000000000000001 /* ExerciseCatalog.swift */,
-				MKSD200000000000000000001 /* MarketingSeed.swift */,
 				PTPL200000000000000000001 /* ProgramTemplate.swift */,
 				PCAT200000000000000000001 /* ProgramCatalog.swift */,
 				PIMP200000000000000000001 /* ProgramImporter.swift */,
@@ -612,7 +609,6 @@
 				A10000000000000000000002 /* ContentView.swift in Sources */,
 				A10000000000000000000003 /* Exercise.swift in Sources */,
 				ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */,
-				MKSD100000000000000000001 /* MarketingSeed.swift in Sources */,
 				PTPL100000000000000000001 /* ProgramTemplate.swift in Sources */,
 				PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */,
 				PIMP100000000000000000001 /* ProgramImporter.swift in Sources */,

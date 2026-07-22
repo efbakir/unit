@@ -23,6 +23,45 @@ enum ProgramCatalog {
         phul
     ]
 
+    /// Recognizes an imported catalog program from its ordered day and exercise
+    /// structure. Used only to repair the legacy onboarding bug that saved a
+    /// joined list of day names as the program title. Requiring the complete
+    /// structure prevents similarly named pasted or custom programs from being
+    /// renamed accidentally.
+    static func matchingProgram(
+        dayNames: [String],
+        exerciseNamesByDay: [[String]]
+    ) -> ProgramTemplate? {
+        guard dayNames.count == exerciseNamesByDay.count else { return nil }
+
+        return all.first { program in
+            guard program.days.count == dayNames.count else { return false }
+
+            for index in program.days.indices {
+                let expectedDay = program.days[index]
+                guard normalize(expectedDay.name) == normalize(dayNames[index]) else {
+                    return false
+                }
+
+                let expectedExercises = expectedDay.items.map { canonicalExerciseName($0.exerciseName) }
+                let actualExercises = exerciseNamesByDay[index].map(canonicalExerciseName)
+                guard expectedExercises == actualExercises else { return false }
+            }
+
+            return true
+        }
+    }
+
+    private static func canonicalExerciseName(_ name: String) -> String {
+        normalize(ExerciseCatalog.lookup(name)?.displayName ?? name)
+    }
+
+    private static func normalize(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    }
+
     // MARK: - 1. Full Body (Beginner, Strength, 3 days) — SURFACED
     // Starting % from 1RM: main work sets (3×5) at 70%; the single heavy
     // deadlift set (1×5) at 75%. Conservative novice start that still leaves

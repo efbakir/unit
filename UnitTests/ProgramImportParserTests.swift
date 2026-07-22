@@ -22,6 +22,50 @@
 import XCTest
 @testable import Unit
 
+@MainActor
+final class WorkoutTargetFormatterTests: XCTestCase {
+    func testSetRepCompactContainsOnlySetsAndReps() {
+        let preview = WorkoutTargetFormatter.setRepCompact(setCount: 4, reps: 8)
+
+        XCTAssertEqual(preview, "4x8")
+        XCTAssertFalse(preview?.contains("kg") ?? true)
+        XCTAssertFalse(preview?.contains("BW") ?? true)
+        XCTAssertNil(WorkoutTargetFormatter.setRepCompact(setCount: 0, reps: 8))
+        XCTAssertNil(WorkoutTargetFormatter.setRepCompact(setCount: 4, reps: 0))
+    }
+
+    func testExplicitZeroLoggedSetFormatsAsBodyweight() {
+        XCTAssertEqual(
+            WorkoutTargetFormatter.setMetricText(
+                weightKg: 0,
+                reps: 12,
+                isBodyweight: false
+            ),
+            "BWx12"
+        )
+        XCTAssertEqual(
+            WorkoutTargetFormatter.actualText(
+                weightKg: 0,
+                setCount: 3,
+                reps: 12,
+                isBodyweight: false
+            ),
+            "3x12xBW"
+        )
+    }
+
+    func testMissingPlannedWeightStillDoesNotBecomeBodyweight() {
+        XCTAssertNil(
+            WorkoutTargetFormatter.compactLoadText(
+                sets: 3,
+                reps: 8,
+                weightKg: nil,
+                isBodyweight: false
+            )
+        )
+    }
+}
+
 /// Swift 6 strict concurrency: `OnboardingViewModel`, `Exercise`, and most
 /// of the Unit host module is `@MainActor`-isolated. Annotating the whole
 /// suite is simpler than `await`-ing every call — these are CPU-bound
