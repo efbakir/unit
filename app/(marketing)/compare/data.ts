@@ -70,9 +70,9 @@ export const compareSlugs: Record<string, CompareSlug> = {
     whenCompetitor:
       "If you want a deep stats screen with charts, body measurements, and cross-device sync that updates between phone and tablet, Strong is well-built and widely supported. It is the right choice if you like a richer dashboard and you do not mind making an account.",
     whenUnit:
-      "Pick Unit if logging is the bottleneck. You already know your program, you train with one hand, and you want the set in the log before you re-rack the bar. No account, no cloud, just the numbers on your device.",
+      "Pick Unit if logging is the bottleneck. Start with a built-in program, paste your own, or build one from scratch, then get each set into the log before you re-rack the bar. No account, no cloud, just the numbers on your device.",
     closing:
-      "Unit is the calmer Strong app alternative for lifters who already know what they are doing.",
+      "Unit is the calmer Strong alternative for anyone who wants a faster, simpler workout log.",
   },
 
   "unit-vs-hevy": {
@@ -166,7 +166,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
     whenCompetitor:
       "If you want exercise images, animations, and a deep library you can browse on the gym floor, Jefit has spent years building that. It is the right tool for a lifter who wants a coach-like reference inside the same app.",
     whenUnit:
-      "Pick Unit if you already know the lift and you want the log done. No account, no ads, no extras between you and the next set. A local gym app, in the literal sense.",
+      "Pick Unit if you want the log done without extra steps. No account, no ads, no extras between you and the next set. A local gym app, in the literal sense.",
     closing:
       "Unit is the gym logger no account variant, a local gym app, a quieter Jefit alternative.",
   },

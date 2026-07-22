@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import WaitlistForm from "@/components/marketing/WaitlistForm"
 import AppStoreBadge from "@/components/marketing/AppStoreBadge"
-import { isLaunched, APP_STORE_URL } from "@/lib/launchState"
+import { APP_STORE_URL } from "@/lib/launchState"
 import { programSlugs, programSlugList } from "../data"
 
 export function generateStaticParams() {
@@ -63,14 +62,7 @@ export default async function ProgramPage({ params }: { params: Params }) {
     ],
   }
 
-  const CTA = isLaunched ? (
-    <AppStoreBadge href={APP_STORE_URL} />
-  ) : (
-    <WaitlistForm
-      size="lg"
-      caption="I'll email you once. No spam, no marketing list."
-    />
-  )
+  const CTA = <AppStoreBadge href={APP_STORE_URL} />
 
   return (
     <>

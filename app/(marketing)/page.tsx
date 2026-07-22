@@ -3,12 +3,10 @@ import Image from "next/image"
 import FAQItem from "@/components/marketing/FAQItem"
 import LayeredDeviceStack from "@/components/marketing/LayeredDeviceStack"
 import FeatureShowcase from "@/components/marketing/FeatureShowcase"
-import WaitlistForm from "@/components/marketing/WaitlistForm"
 import AppStoreBadge from "@/components/marketing/AppStoreBadge"
 import TrustBand from "@/components/marketing/TrustBand"
 import FounderStory from "@/components/marketing/FounderStory"
-import { isLaunched, APP_STORE_URL } from "@/lib/launchState"
-import { getWaitlistCount } from "@/lib/waitlist"
+import { APP_STORE_URL } from "@/lib/launchState"
 
 type HeroForegroundMockup = {
   src?: string
@@ -29,19 +27,15 @@ type HeroBackgroundMockup = {
 
 export const metadata: Metadata = {
   description:
-    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in under 3 seconds. Every set opens with what you did last time. No AI, no social, no account.",
+    "Unit is a fast, local-first iOS gym tracker and workout log. Log a set in 3 seconds. Every set opens with what you did last time. No AI, no social, no account.",
   alternates: { canonical: "/" },
 }
-
-// Revalidate the page (and the waitlist count it shows) every minute so the
-// counter stays roughly fresh without hammering Resend.
-export const revalidate = 60
 
 const faqs = [
   {
     question: "What kind of workout log app is Unit?",
     answer:
-      "Unit is an iOS gym tracker for intermediate-to-advanced lifters who already know their program. It's local-first, ad-free, and built around one principle: log a set in under 3 seconds, one-handed, mid-workout.",
+      "Unit is a simple, private workout log for iPhone. Paste a program or build one from scratch, then log each set in under 3 seconds with last time's weight and reps already filled in.",
   },
   {
     question: "Is Unit free?",
@@ -91,8 +85,13 @@ const softwareLd = {
   url: "https://unitlift.app/",
   keywords:
     "gym tracker, workout log, lifting log, strength log, last session values, rest timer, local-first, no account",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  ...(isLaunched ? { installUrl: APP_STORE_URL } : {}),
+  offers: {
+    "@type": "Offer",
+    price: "2.99",
+    priceCurrency: "USD",
+    description: "Weekly access. Monthly, yearly, and optional Lifetime plans are shown in the app.",
+  },
+  installUrl: APP_STORE_URL,
 }
 
 const faqLd = {
@@ -164,20 +163,10 @@ const heroMockups: {
   ],
 }
 
-export default async function LandingPage() {
-  const fetchedCount = await getWaitlistCount()
-  const waitlistCount = fetchedCount ?? undefined
-
+export default function LandingPage() {
   const PrimaryCTA = (
     <div className="space-y-unit-sm">
-      {isLaunched ? (
-        <AppStoreBadge href={APP_STORE_URL} />
-      ) : (
-        <WaitlistForm
-          size="lg"
-          caption="I'll email you once. No spam, no marketing list."
-        />
-      )}
+      <AppStoreBadge href={APP_STORE_URL} />
     </div>
   )
 
@@ -205,7 +194,7 @@ export default async function LandingPage() {
             {/* Copy column */}
             <div className="stagger-hero max-w-2xl">
               <h1 className="h-display mb-unit-lg text-balance">
-                Faster than paper.
+                Log a set in 3 seconds.
               </h1>
               <p className="text-xl leading-snug mb-unit-xl max-w-xl text-unit-text-secondary">
                 Log a set in one tap. Every set opens with what you did last
@@ -213,7 +202,7 @@ export default async function LandingPage() {
               </p>
               {PrimaryCTA}
               <div className="mt-unit-lg">
-                <TrustBand count={waitlistCount} />
+                <TrustBand />
               </div>
             </div>
 
@@ -233,7 +222,7 @@ export default async function LandingPage() {
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
         <div className="max-w-3xl mx-auto px-unit-md md:px-unit-lg text-center">
           <h2 className="h-section">
-            Built for lifters who already know their program.
+            A gym notebook, not a platform.
           </h2>
         </div>
       </section>
@@ -417,8 +406,8 @@ export default async function LandingPage() {
                 body: "No feed. No followers. No likes. Training is personal.",
               },
               {
-                title: "Not for beginners.",
-                body: "Unit assumes you know your way around a barbell. That's a feature, not a limitation.",
+                title: "Not a complicated fitness dashboard.",
+                body: "Start with a built-in program, paste your own, or build one from scratch. Unit keeps the logging simple either way.",
               },
               {
                 title: "Not free.",
@@ -478,39 +467,31 @@ export default async function LandingPage() {
         <div className="max-w-3xl mx-auto px-unit-md md:px-unit-lg text-center">
           <p className="eyebrow mb-unit-md">Ready when you are</p>
           <h2 className="h-display mb-unit-md">
-            Log faster. Keep your data. Train.
+            Log a set in 3 seconds.
           </h2>
           <p className="text-xl leading-snug mb-unit-xl text-unit-text-secondary max-w-xl mx-auto">
             One tap per set. Everything stays on your phone. The notebook,
             upgraded.
           </p>
           <div className="flex flex-col items-center gap-unit-lg">
-            {isLaunched ? (
-              <>
-                <AppStoreBadge href={APP_STORE_URL} />
-                {/* Desktop visitors can't tap the badge on their phone —
-                    the QR bridges the gap. Hidden on mobile, where the badge
-                    itself is the direct path. */}
-                <div className="hidden md:flex items-center gap-unit-md rounded-[24px] border border-unit-border bg-unit-card p-unit-md">
-                  <Image
-                    src="/qr-app-store.svg"
-                    alt="QR code linking to Unit on the App Store"
-                    width={104}
-                    height={104}
-                    className="h-[104px] w-[104px]"
-                  />
-                  <p className="max-w-[16ch] text-left text-sm leading-snug text-unit-text-secondary">
-                    Point your iPhone camera here to get Unit.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <WaitlistForm size="lg" />
-            )}
+            <AppStoreBadge href={APP_STORE_URL} />
+            {/* Desktop visitors can't tap the badge on their phone —
+                the QR bridges the gap. Hidden on mobile, where the badge
+                itself is the direct path. */}
+            <div className="hidden md:flex items-center gap-unit-md rounded-[24px] border border-unit-border bg-unit-card p-unit-md">
+              <Image
+                src="/qr-app-store.svg"
+                alt="QR code linking to Unit on the App Store"
+                width={104}
+                height={104}
+                className="h-[104px] w-[104px]"
+              />
+              <p className="max-w-[16ch] text-left text-sm leading-snug text-unit-text-secondary">
+                Point your iPhone camera here to get Unit.
+              </p>
+            </div>
           </div>
-          {isLaunched && (
-            <p className="eyebrow mt-unit-md">No account. No ads. No AI.</p>
-          )}
+          <p className="eyebrow mt-unit-md">No account. No ads. No social feed.</p>
         </div>
       </section>
     </>
