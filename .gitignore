@@ -41,6 +41,12 @@ lerna-debug.log*
 # Editor / personal
 .obsidian/
 
+# Locally installed AI/editor helper bundles
+.agents/skills/impeccable/
+.claude/skills/impeccable/
+.cursor/skills/impeccable/
+.cursor/hooks.json
+
 # TS incremental build cache
 tsconfig.tsbuildinfo
 
