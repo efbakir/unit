@@ -1,8 +1,7 @@
-# Spanish — Mexico (es-MX) — Tier 1 App Store metadata
+# Spanish — Mexico (es-MX) — Unit 2.1 App Store metadata
 
-> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
-> Register: informal "tú", neutral Latin American Spanish. No "nosotros"-forms (first-person-singular rule).
-> Storefront reach: Mexico + most Latin American storefronts use es-MX metadata. Spain uses es-ES (Tier 2). Bonus: the **US storefront also indexes the es-MX keyword field** — see note at the bottom.
+> Status: **REGENERATED FOR 2.1 — native review required before paste.**
+> Register: informal “tú,” neutral Latin American Spanish. The app UI remains English.
 
 ## App name (30 max)
 
@@ -10,63 +9,57 @@
 Unit: Registro de gym
 ```
 
-21 chars. **Founder-approved and final (2026-07-13)** — supersedes the `Diario de Gym` candidate from the 2026-07-11 audit. *Registro* is the cleanest record/log term (workout-log identity); "gym" is externally attested in MX naming (the market leader's MX listing name uses *gym*; its subtitle uses *gimnasio*). Lowercase "gym" per the founder-final form.
+Founder-approved and unchanged.
 
 ## Subtitle (30 max)
 
 ```
-Diario de fuerza y series
+Seguimiento simple de fuerza
 ```
-
-25 chars. Rewritten 2026-07-13: the founder-final name took *registro*, so the old subtitle's lead word would duplicate it (Apple ignores repeated words across name/subtitle). *Diario* moves in from the retired name — the subtitle now adds *diario / fuerza / series*. The old "3 segundos" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Ya conoces tu programa. Unit lo registra más rápido que el papel — los números de la última sesión ya están puestos, cada serie un toque. Sin IA. Solo tus números.
+Elige una rutina lista o pega la tuya. Los pesos de la última vez ya están cargados, cada serie requiere un toque y el descanso se inicia automáticamente.
 ```
-
-Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
 ```
-Registra una serie en 3 segundos y vuelve a la barra.
+Registra una serie en 3 segundos y sigue entrenando.
 
-Tus pesos de la última sesión ya están precargados — confirma, ajusta, listo. Pega tu rutina como texto y tus pesos de trabajo quedan listos desde el día uno.
+Elige una rutina lista o pega la tuya. Unit mantiene listos los pesos de la última vez para que puedas confirmar o ajustar cada serie rápidamente.
+
+• Registro de series con un toque
+• Rutinas listas para usar
+• Pega cualquier rutina
+• Temporizador de descanso automático en la pantalla bloqueada
+• Historial de entrenamientos y récords personales
 
 Sin cuenta. Sin anuncios. Sin feed social. Tu entrenamiento se queda en tu iPhone.
 
-Un cuaderno de gym, no una plataforma.
-
 Nota: la interfaz de la app está en inglés por ahora.
 
-Unit requiere una compra de pago después de la configuración. Hay suscripciones semanales, mensuales y anuales con renovación automática. La opción Lifetime aparece solo si está configurada. Los precios se muestran en la app antes de comprar. No hay prueba gratuita.
+Unit requiere una compra de pago después de la configuración. Hay suscripciones semanales, mensuales y anuales con renovación automática. La opción Lifetime aparece solo si está disponible. Los precios se muestran en la app antes de comprar. No hay prueba gratuita.
 
 Términos de uso (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Política de privacidad: https://unitlift.app/privacy
 ```
 
-## Keywords (100 max, no spaces, none repeated from name/subtitle)
+## Keywords (100 max, comma-separated, no spaces)
 
 ```
 rutina,gimnasio,pesas,entrenamiento,musculación,ejercicio,bitácora,progreso,reps,sentadilla
 ```
 
-91 chars. Re-deduped 2026-07-13 against the final name (*registro, gym*) and subtitle (*diario, fuerza, series*): no collisions (*gimnasio* and *gym* index as different words; *bitácora* ≠ *diario*). Intent notes:
-- "rutina" — the word LatAm lifters use for their program ("pega tu rutina"); highest intent.
-- "pesas" — colloquial for lifting ("hacer pesas"), stronger than the formal "levantamiento".
-- "bitácora" — log/journal; the notebook concept in search form.
-- English queries stay with the en-US field.
-
-## What's New — v2 (4000 max)
+## What’s New — v2.1
 
 ```
-• Registra una serie en 3 segundos — los pesos de la última vez ya están precargados
-• Pega tu rutina y empieza desde el día uno con tus pesos reales
-• Primer arranque rediseñado: de la instalación a tu rutina lista en menos de un minuto
+Unit 2.1 hace más claros la configuración y el registro.
 
-Unit ahora requiere una compra de pago después de la configuración — los planes se muestran antes de pagar. No hay prueba gratuita. Tus datos de entrenamiento se quedan en este iPhone.
+• Elige una rutina lista o pega la tuya
+• Mejoras en el registro de entrenamientos y el historial de peso corporal
+• Mejor gestión de compras y correcciones de estabilidad
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)
@@ -78,21 +71,15 @@ Unit ahora requiere una compra de pago después de la configuración — los pla
 | `com.unit.annual` | `Unit Anual` | `Acceso anual a Unit.` |
 | `com.unit.lifetime` | `Unit de por Vida` | `Pago único. Acceso a Unit para siempre.` |
 
-Group display name: `Unit Pro` (unchanged — brand).
+Group display name: `Unit Pro`.
 
-## Screenshot captions (pre-translated for a later Figma pass; v2 ships English screenshots)
+## Native review gate
 
-1. `3 segundos y de vuelta a la barra`
-2. `Pega tu rutina, empieza a entrenar`
-3. `Sin cuenta. Funciona sin conexión.`
-4. `Un cuaderno, no una red social`
-5. `Descanso cronometrado en tu pantalla de bloqueo`
+Approve or correct:
 
-## Review-risk notes
+- Does `Seguimiento simple de fuerza` sound natural in Mexico?
+- Is `rutina lista` clear for a ready-made workout program?
+- Should the timer use `temporizador de descanso` or another common gym term?
+- Does `Unit de por Vida` read naturally as a product name?
 
-- Copy is neutral-LatAm; a Spain reader will find "gym" and "pega tu rutina" informal but comprehensible. Spain gets its own es-ES pass in Tier 2.
-- "Unit de por Vida" (16 chars) — native should confirm it reads as a product name and not a sentence fragment; fallback `Unit Lifetime`.
-
-## Later ASO experiment (not v1)
-
-The US storefront indexes es-MX keywords alongside en-US. Swapping this field to English overflow keywords would add ~100 chars of US keyword space at the cost of Mexican local intent. Decide only with storefront-level install data; keep Spanish for launch.
+Screenshots remain the inherited English set.

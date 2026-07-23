@@ -1,8 +1,7 @@
-# Portuguese — Brazil (pt-BR) — Tier 1 App Store metadata
+# Portuguese — Brazil (pt-BR) — Unit 2.1 App Store metadata
 
-> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
-> Register: "você" (implicit), Brazilian vocabulary. No "nós"-forms (first-person-singular rule).
-> Storefront reach: Brazil. Portugal uses pt-PT (not planned; Brazil is the market).
+> Status: **REGENERATED FOR 2.1 — native review required before paste.**
+> Register: Brazilian Portuguese with implicit “você.” The app UI remains English.
 
 ## App name (30 max)
 
@@ -10,63 +9,57 @@
 Unit: Diário de Treino
 ```
 
-22 chars. Candidate pending native review. "Diário de treino" = training log — the log-family identity the EN name moved to (`Gym Workout Log`); translation hypothesis requiring native validation. Replaces "Ficha de Treino" (the paper workout sheet — a plan/prescription object more than a log); *ficha* keeps its search value in the keyword field instead.
+Candidate pending native approval.
 
 ## Subtitle (30 max)
 
 ```
-Registro de cargas e séries
+Controle simples de força
 ```
-
-27 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *registro / cargas / séries*. The old "3 segundos" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Você já conhece seu treino. Unit registra mais rápido que papel — os números da última sessão já preenchidos, cada série um toque. Sem IA. Só seus números.
+Escolha um treino pronto ou cole o seu. As últimas cargas já vêm preenchidas, cada série leva um toque e o timer de descanso inicia automaticamente.
 ```
-
-Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
 ```
-Registre uma série em 3 segundos e volte para a barra.
+Registre uma série em 3 segundos e continue o treino.
 
-Suas cargas do último treino já vêm preenchidas — confirme, ajuste, pronto. Cole sua ficha como texto e suas cargas de trabalho ficam prontas desde o primeiro dia.
+Escolha um treino pronto ou cole o seu. O Unit mantém suas últimas cargas prontas para você confirmar ou ajustar cada série rapidamente.
+
+• Registro de séries com um toque
+• Treinos prontos para usar
+• Cole qualquer treino
+• Timer de descanso automático na tela bloqueada
+• Histórico de treinos e recordes pessoais
 
 Sem conta. Sem anúncios. Sem feed social. Seu treino fica no seu iPhone.
 
-Uma ficha de treino, não uma plataforma.
-
 Observação: a interface do app está em inglês por enquanto.
 
-O Unit exige uma compra paga após a configuração. Há assinaturas semanais, mensais e anuais com renovação automática. A opção Lifetime aparece somente se estiver configurada. Os preços são mostrados no app antes da compra. Não há teste grátis.
+O Unit exige uma compra paga após a configuração. Há assinaturas semanais, mensais e anuais com renovação automática. A opção Lifetime aparece somente se estiver disponível. Os preços são mostrados no app antes da compra. Não há teste grátis.
 
 Termos de uso (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Política de privacidade: https://unitlift.app/privacy
 ```
 
-## Keywords (100 max, no spaces, none repeated from name/subtitle)
+## Keywords (100 max, comma-separated, no spaces)
 
 ```
 academia,musculação,hipertrofia,progressão,supino,agachamento,peso,anotar,ficha,halteres
 ```
 
-88 chars. Re-deduped 2026-07-11 against the new name (*diário*) and subtitle (*registro, cargas, séries*): removed `diário`, `carga`; added `ficha` (displaced from the name — the culturally specific term for the gym workout sheet; requires native validation) and `halteres` (dumbbells). Intent notes:
-- "academia" — Brazilian for gym; the category's anchor term.
-- "musculação" — weight training as Brazilians name it; category term Unit must rank for.
-- "anotar" — "anotar treino" (write down the workout) is the notebook behavior in verb form.
-- "supino"/"agachamento" (bench/squat) — exercise-name searches with app intent; cheap long-tail.
-
-## What's New — v2 (4000 max)
+## What’s New — v2.1
 
 ```
-• Registre uma série em 3 segundos — as cargas da última vez já vêm preenchidas
-• Cole sua ficha e comece do primeiro dia com suas cargas reais
-• Primeiro uso refeito: da instalação à sua ficha montada em menos de um minuto
+O Unit 2.1 deixa a configuração e o registro mais claros.
 
-O Unit agora exige uma compra paga após a configuração — os planos aparecem antes de pagar. Não há teste grátis. Seus dados de treino ficam neste iPhone.
+• Escolha um treino pronto ou cole o seu
+• Melhorias no registro de treinos e no histórico de peso corporal
+• Melhor processamento de compras e correções de estabilidade
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)
@@ -78,17 +71,15 @@ O Unit agora exige uma compra paga após a configuração — os planos aparecem
 | `com.unit.annual` | `Unit Anual` | `Acesso anual ao Unit.` |
 | `com.unit.lifetime` | `Unit Vitalício` | `Pagamento único. Acesso vitalício.` |
 
-Group display name: `Unit Pro` (unchanged — brand).
+Group display name: `Unit Pro`.
 
-## Screenshot captions (pre-translated for a later Figma pass; v2 ships English screenshots)
+## Native review gate
 
-1. `3 segundos e de volta à barra`
-2. `Cole sua ficha, comece a treinar`
-3. `Sem conta. Funciona offline.`
-4. `Um caderno, não um feed`
-5. `Timer de descanso na tela de bloqueio`
+Approve or correct:
 
-## Review-risk notes
+- Is `Unit: Diário de Treino` the right app name, or is another log term more natural?
+- Does `Controle simples de força` read naturally?
+- Are `treino pronto`, `cole o seu`, and `timer de descanso` normal Brazilian gym language?
+- Is using the article in `O Unit` consistent and natural?
 
-- Willingness to pay is lower in Brazil; the auto-converted Yearly (~R$ equivalent of $29.99) is the tier that will carry conversion there. No custom pricing — see README §Pricing.
-- Native should confirm "cole sua ficha" reads naturally (paste your sheet) and that "O Unit" vs "Unit" article use is consistent.
+Screenshots remain the inherited English set.

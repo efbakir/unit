@@ -20,6 +20,10 @@
 
 ---
 
+## 2026-07-23 — Localized metadata is a Unit 2.1 submission gate
+
+**Decision:** Version 2.1 will not be submitted until PRO-32 is complete. German, Spanish (Mexico), Portuguese (Brazil), French, and Turkish metadata must derive from the frozen beginner-inclusive English copy, pass the repository localization test, and receive the recorded native/founder approvals. The app UI and inherited screenshots remain English.
+
 ## 2026-07-23 — Version 2.1 engagement prompts and inclusive App Store positioning
 
 **Decision:** Version 2.1 counts only newly completed workout session IDs in a version-scoped UserDefaults tracker. It makes one StoreKit review-request attempt after workout one’s summary closes, and shows one non-blocking feedback card on workout three’s summary. The card opens `https://calendar.notion.so/meet/efbakir/unit-feedback` or a prefilled email to `support@unitlift.app`. Neither prompt can interrupt active logging. App Store English copy now welcomes beginner-to-experienced users through ready-made programs or pasted routines; the five existing metadata translations are stale and must not ship in 2.1. Release identity is **2.1 (58)**.

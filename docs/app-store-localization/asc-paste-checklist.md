@@ -1,15 +1,16 @@
-# ASC paste checklist — founder execution runbook
+# Unit 2.1 localized metadata — ASC paste checklist
 
-> One sitting, ~60 min in App Store Connect. Everything here is manual web work; nothing ships in code.
+> One sitting in App Store Connect. Start only after PRO-32 is Done and `asc-execution-status.md` says every locale is ready.
 > **The in-app UI stays English.** Nothing you paste below changes that, and every localized description says so. Do not remove that line while pasting.
 
 ---
 
-## 0. Merge order (do nothing in ASC before this)
+## 0. Release gate (do nothing in ASC before this)
 
-1. **PR #1** (`release/onboarding-paywall-qa`) merges **first** — and only after the manual StoreKit/paywall QA passes (`docs/pricing.md` §StoreKit sandbox verification checklist, all 5 steps on the submission build).
-2. **PR #2** (`docs/app-store-localization`) merges second. It cites PR #1's pricing ladder; merging it first puts contradictory pricing docs on `main`.
-3. Only then start the ASC work below.
+1. All five locale files have a recorded native/founder approval.
+2. `npm run test:localizations` passes after the final reviewer edits.
+3. PRO-32 is Done.
+4. The approved locale commit is on `main`.
 
 ## 1. Pre-checks (5 min)
 
@@ -28,7 +29,7 @@ Start with **Turkish** (you can self-verify the flow end to end), then de → es
 
 ## 3. Version metadata — exact actions per locale
 
-ASC → Apps → Unit → App Store tab → the v2 version page → language selector (top right) → **Add language**. Add exactly these five, one at a time:
+ASC → Apps → Unit → App Store tab → the 2.1 version page → language selector (top right) → **Add language**. Add exactly these five, one at a time:
 
 | ASC language menu item | Paste from |
 |---|---|
@@ -70,7 +71,7 @@ Product IDs never change. If any screen asks you to create a product, stop — w
 - [ ] Each of the 4 products → Pricing → confirm prices are **automatically generated** from the USD base (Weekly $2.99 / Monthly $4.99 / Yearly $29.99 / Lifetime $44.99). Do **not** enter custom storefront prices.
 - [ ] Spot-check "view all prices" for Turkey, Brazil, India, Mexico, Japan: local-currency order must be Weekly < Monthly < Yearly < Lifetime. Any inversion or tie → stop and open a decision-log entry before touching anything.
 
-## 6. Skip for v1 (deliberate, not forgotten)
+## 6. Skip for 2.1 (deliberate, not forgotten)
 
 - Localized screenshots (inherited English is the decision; captions are pre-translated in the locale files for a later Figma pass)
 - Localized app previews / videos
@@ -103,4 +104,4 @@ Per language, still in ASC:
 - [ ] Subscriptions: each product shows the language listed with a green/complete state, no "Missing Metadata"
 - [ ] After v2 approval: switch your App Store account region or use the web preview links per storefront (Germany, Mexico, Brazil, France, Turkey) and check the listing shows the localized name + subtitle
 
-Final gate before Submit: the v2 version has all 5 languages attached, English (U.S.) is still the primary language, and the binary attached is the QA-passed build from PR #1.
+Final gate before Submit: version 2.1 has all five approved languages attached, English (U.S.) is still the primary language, and the attached binary is exactly 2.1 (58).

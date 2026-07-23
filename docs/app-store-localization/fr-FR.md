@@ -1,8 +1,7 @@
-# French (fr-FR) — Tier 1 App Store metadata
+# French (fr-FR) — Unit 2.1 App Store metadata
 
-> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
-> Register: "vous" — safer default for a paid app. **Open question for the native reader:** French lifter culture leans "tu"; if the reviewer says "tu" reads better for this audience, switch the description + promo consistently. No "nous"-forms (first-person-singular rule).
-> Storefront reach: France (+ fr-FR shown in Belgium, Luxembourg, francophone Africa storefronts). Canada uses fr-CA (not planned).
+> Status: **REGENERATED FOR 2.1 — native review required before paste.**
+> Register: “vous” until the native reviewer confirms “tu” would be better. The app UI remains English.
 
 ## App name (30 max)
 
@@ -10,62 +9,57 @@
 Unit: Carnet de Muscu
 ```
 
-21 chars. **Founder-approved and final (2026-07-13)** — resolves the journal-vs-carnet fork from the 2026-07-11 audit in favor of the conventional category term (founder rule: a conventional term is acceptable and often desirable; competitor differentiation is not a criterion). "Carnet de muscu" is what French lifters call their training logbook, externally attested (the market leader's French title uses "Carnet de Musculation"). *Muscu* stays as the colloquial category anchor.
+Founder-approved and unchanged.
 
 ## Subtitle (30 max)
 
 ```
-Suivi de force et de séries
+Suivi de force simple
 ```
-
-27 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"), and the old subtitle's *journal* would now duplicate the name. Adds *suivi / force / séries*; *musculation* moves to the keyword field.
 
 ## Promotional text (170 max)
 
 ```
-Vous connaissez votre programme. Unit le note plus vite que le papier — les charges de la dernière séance déjà remplies, chaque série en un tap. Pas d'IA. Vos chiffres.
+Choisissez un programme prêt à l’emploi ou collez le vôtre. Les dernières charges sont déjà remplies, chaque série prend un tap et le minuteur démarre automatiquement.
 ```
-
-Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
 ```
-Enregistrez une série en 3 secondes et retournez sous la barre.
+Enregistrez une série en 3 secondes et reprenez votre entraînement.
 
-Vos charges de la dernière séance sont déjà remplies — confirmez, ajustez, terminé. Collez votre programme en texte et vos charges de travail sont prêtes dès le premier jour.
+Choisissez un programme prêt à l’emploi ou collez le vôtre. Unit garde vos dernières charges prêtes pour confirmer ou ajuster rapidement chaque série.
+
+• Saisie des séries en un tap
+• Programmes prêts à l’emploi
+• Collez n’importe quel programme
+• Minuteur de repos automatique sur l’écran verrouillé
+• Historique des entraînements et records personnels
 
 Pas de compte. Pas de publicité. Pas de fil social. Votre entraînement reste sur votre iPhone.
 
-Un carnet de muscu, pas une plateforme.
+Remarque : l’interface de l’app est en anglais pour le moment.
 
-Remarque : l'interface de l'app est en anglais pour le moment.
+Unit nécessite un achat payant après la configuration. Des abonnements hebdomadaires, mensuels et annuels à renouvellement automatique sont proposés. L’option Lifetime n’apparaît que si elle est disponible. Les prix sont affichés dans l’app avant l’achat. Il n’y a pas d’essai gratuit.
 
-Unit nécessite un achat payant après la configuration. Des abonnements hebdomadaires, mensuels et annuels à renouvellement automatique sont proposés. L'option Lifetime n'apparaît que si elle est configurée. Les prix sont affichés dans l'app avant l'achat. Il n'y a pas d'essai gratuit.
-
-Conditions d'utilisation (CLUF) : https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Conditions d’utilisation (CLUF) : https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Politique de confidentialité : https://unitlift.app/privacy
 ```
 
-## Keywords (100 max, no spaces, none repeated from name/subtitle)
+## Keywords (100 max, comma-separated, no spaces)
 
 ```
 entraînement,fitness,salle,haltères,squat,répétitions,poids,programme,musculation,développé,journal
 ```
 
-99 chars. Re-deduped 2026-07-13 against the final name (*carnet, muscu*) and subtitle (*suivi, force, séries*): no collisions; added `journal` (displaced from the retired name — the other attested log term keeps its search value here, mirroring how pt-BR keeps *ficha*). Earlier dedup (2026-07-11) removed `force`, `séries`; `musculation` and `développé` stand. Intent notes:
-- "salle" — "la salle" is common French lifter shorthand for the gym (translation hypothesis; requires native validation).
-- "entraînement" — the training category term.
-- "squat" — exercise-name search with app intent.
-
-## What's New — v2 (4000 max)
+## What’s New — v2.1
 
 ```
-• Enregistrez une série en 3 secondes — les charges de la dernière fois sont déjà remplies
-• Collez votre programme et démarrez dès le premier jour avec vos charges réelles
-• Premier lancement repensé : de l'installation à votre programme prêt en moins d'une minute
+Unit 2.1 clarifie la configuration et la saisie.
 
-Unit nécessite désormais un achat payant après la configuration — les formules s'affichent avant de payer. Pas d'essai gratuit. Vos données d'entraînement restent sur cet iPhone.
+• Choisissez un programme prêt à l’emploi ou collez le vôtre
+• Amélioration de la saisie des entraînements et de l’historique du poids du corps
+• Gestion des achats et fiabilité améliorées
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)
@@ -77,18 +71,15 @@ Unit nécessite désormais un achat payant après la configuration — les formu
 | `com.unit.annual` | `Unit Annuel` | `Accès annuel à Unit.` |
 | `com.unit.lifetime` | `Unit à Vie` | `Achat unique. Accès à Unit à vie.` |
 
-Group display name: `Unit Pro` (unchanged — brand).
+Group display name: `Unit Pro`.
 
-## Screenshot captions (pre-translated for a later Figma pass; v2 ships English screenshots)
+## Native review gate
 
-1. `3 secondes, retour sous la barre`
-2. `Collez votre programme, c'est parti`
-3. `Pas de compte. Fonctionne hors ligne.`
-4. `Un carnet, pas un réseau social`
-5. `Minuteur de repos sur l'écran verrouillé`
+Approve or correct:
 
-## Review-risk notes
+- Should the whole listing use “vous” or “tu”?
+- Does `Suivi de force simple` read naturally?
+- Are `programme prêt à l’emploi`, `saisie des séries`, and `minuteur de repos` normal gym-app language?
+- Does `Unit à Vie` read naturally as a product name?
 
-- The tu/vous call is the main register risk — resolve with the native reader before paste (see header).
-- French typography uses a space before `:` and `!`; kept above. ASC renders it fine.
-- "Muscu" in the app name is informal; if App Review or the native reader objects, fallback name: `Unit: Journal d'entraînement` (28 chars).
+Screenshots remain the inherited English set.

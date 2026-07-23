@@ -1,45 +1,51 @@
-# ASC execution status — ALL FIVE LOCALES STALE FOR VERSION 2.1
+# Unit 2.1 localization status
 
-> Updated 2026-07-23. The English 2.1 positioning now includes ready-made programs and beginners. The existing de-DE, es-MX, pt-BR, fr-FR, and tr files derive from the retired experienced-lifter positioning. They are reference material only: **do not paste or publish any of them for 2.1.** Version 2.1 ships English-only until every translated field is regenerated and receives a native-speaker review.
+> PRO-32 is a hard pre-submission gate. **Do not paste any locale into App Store Connect until every row is approved and this file says READY TO PASTE.**
 
-## Changed fields per locale (re-derivation, 2026-07-11)
+## Current state
 
-| Field | tr | de-DE | es-MX | pt-BR | fr-FR |
-|---|---|---|---|---|---|
-| App name | **changed** — `Antrenman Defteri` (notebook) → `Antrenman Günlüğü` (log) | unchanged (`Trainingstagebuch` is already log-family) | unchanged (`Diario de Gym` is already log-family) | **changed** — `Ficha de Treino` (sheet) → `Diário de Treino` (log) | **changed** — `Carnet de Muscu` (notebook) → `Journal de Muscu` (log) |
-| Subtitle | **changed** — now `Kuvvet ve ağırlık takibi` | **changed** — now `Krafttraining-Tracker` | **changed** — now `Registro de fuerza y series` | **changed** — now `Registro de cargas e séries` | **changed** — now `Suivi de force et de séries` (old one duplicated the new name's *journal*) |
-| Promo text | **changed** — evergreen paper-comparison line (all five; the "New in v2" promo is superseded) | changed | changed | changed | changed |
-| What's New | **changed** — paid-purchase disclosure paragraph appended (all five) | changed | changed | changed | changed |
-| Keywords | **re-deduped** against new name/subtitle (all five; see each file's note for removed/added terms) | re-deduped | re-deduped | re-deduped | re-deduped |
-| Description | unchanged (EN source did not change) | unchanged | unchanged | unchanged | unchanged |
-| Subscriptions table | unchanged | unchanged | unchanged | unchanged | unchanged |
-| Screenshot captions | unchanged (the notebook *metaphor* stays in brand copy; only the name field moved to log-family) | unchanged | unchanged | unchanged | unchanged |
+| Locale | Regenerated from frozen 2.1 English | Machine validation | Human approval | ASC |
+|---|---:|---:|---|---|
+| de-DE | Yes | Passed | Native read pending | Do not paste |
+| es-MX | Yes | Passed | Native Mexican read pending | Do not paste |
+| pt-BR | Yes | Passed | Native Brazilian read and final name pending | Do not paste |
+| fr-FR | Yes | Passed | Native read and vous/tu decision pending | Do not paste |
+| tr | Yes | Passed | Founder read pending | Do not paste |
 
-Character limits: **all 20 re-derived fields machine-checked within ASC limits** (name/subtitle 30, promo 170, keywords 100, sub name 30, sub desc 45).
+Machine command:
 
-## Second regeneration — APPLIED (post-freeze fixes, 2026-07-11)
+```
+npm run test:localizations
+```
 
-The English copy is **FROZEN** (founder-approved, `docs/app-store-copy.md`). The three approved post-freeze fixes are now applied to all five locale files:
+It validates:
 
-1. **Name separator** — all five names read `Unit: …` (colon), matching the frozen `Unit: Gym Workout Log`: tr `Unit: Antrenman Günlüğü` (23), de `Unit: Trainingstagebuch` (23), es `Unit: Diario de Gym` (19), pt `Unit: Diário de Treino` (22), fr `Unit: Journal de Muscu` (22).
-2. **What's New bullet 2** — "your program" equivalents: tr `Programını yapıştır…`, es `Pega tu rutina…`, pt `Cole sua ficha…`, fr `Collez votre programme…`. de already read `dein Programm` — untouched.
-3. **What's New bullet 3** — now ends at the free surface (program built), not past the paywall (first logged set): tr `…yüklemeden programın hazır olmasına bir dakikadan kısa sürede`, de `…zum fertigen Programm in unter einer Minute`, es `…a tu rutina lista en menos de un minuto`, pt `…à sua ficha montada em menos de um minuto`, fr `…à votre programme prêt en moins d'une minute`.
+- Name, subtitle, promotional text, description, keywords, and subscription limits
+- Exactly five description bullets and three What’s New bullets
+- No spaces in keywords
+- No exact keyword duplication with the localized name or subtitle
+- English-only UI disclosure
+- EULA and privacy URLs
+- Removal of the retired “you already know your program” positioning
 
-Everything else from the first re-derivation stands. Descriptions untouched (their English source did not change in the freeze). Character limits re-run after the fixes: **every field in all five files within ASC limits** (name/subtitle 30, promo 170, keywords 100, What's New 4000, sub name 30, sub desc 45).
+## Human review evidence
 
-## Native-review inputs received (record for the per-locale gates)
+Record each approval here before changing the status:
 
-- **es-MX (native reviewer, WhatsApp 2026-07-11):** proposed name `Unit: Registro de gym` — **ADOPTED, founder-final 2026-07-13** (see `es-MX.md`; the subtitle swapped to `Diario de fuerza y series` to clear the *registro* dupe). Recorded here for provenance only.
-- **EN freeze amendment #1** swapped keyword `planner` → `simple`. At each locale review, consider the local equivalent in the keyword field (es *sencillo*, de *einfach*, pt *simples*, fr *simple*, tr *basit*) — swap against the weakest existing keyword, keep ≤100 chars, and keep the no-dupes-vs-name/subtitle rule.
+| Locale | Reviewer | Date | Result / edits |
+|---|---|---|---|
+| de-DE | — | — | Pending |
+| es-MX | — | — | Pending |
+| pt-BR | — | — | Pending |
+| fr-FR | — | — | Pending |
+| tr | Efe | — | Pending |
 
-## Gate before any ASC paste
+## Release rule
 
-- [x] Founder reads + approves **tr** (native) — **approved 2026-07-11, name final `Unit: Antrenman Günlüğü`.** Explicit "paste tr" still required before any ASC action.
-- [ ] One native read each: **de-DE**, **es-MX**, **pt-BR**, **fr-FR** — copy/register only for de/es/fr (names are founder-final); pt-BR's read also confirms its candidate name. fr keeps the open tu/vous question.
-- [ ] Founder says "paste locale X" per locale — no blanket approval.
+After all five approvals:
 
-## Still true from the aborted preflight
-
-1. No v2.0 version record existed in ASC — it appears when build 35 is uploaded (or create it manually first; build renumbered 16 → 35 per decision log 2026-07-11: ASC already held Xcode Cloud builds 24–34, all pre-dating the launch-hang fix).
-2. The live listing name showed **"Unit: Gym Notebook"** (colon) — consistent with the adopted colon separator; all five locale names use `Unit: …`.
-3. Localization remains **optional for the v2 submission** — English-only metadata is complete and unblocked today; locales can ride any later metadata update.
+1. Apply reviewer edits to the locale files.
+2. Run `npm run test:localizations` again.
+3. Change every ASC cell above to `Ready to paste`.
+4. Mark PRO-32 Done.
+5. Only then follow `asc-paste-checklist.md`.

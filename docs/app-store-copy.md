@@ -1,6 +1,6 @@
 # Unit — App Store copy (canonical)
 
-> **FROZEN 2026-07-23 FOR VERSION 2.1 — founder-approved.** The single source of truth for every App Store Connect text field; if a string isn't here, it isn't canon. The five locale files are stale for 2.1 and must not be published without a new native review.
+> **FROZEN 2026-07-23 FOR VERSION 2.1 — founder-approved.** The single English source of truth for every App Store Connect text field. The five locale files have been regenerated from this source, but none may be pasted until PRO-32 records all required native/founder approvals.
 > Process (what to click, in what order): `docs/app-store-submission/final-submit-checklist.md`.
 > Localized metadata derives from this file — see `docs/app-store-localization/README.md`.
 > Consolidated 2026-07-11 from `docs/marketing/app-store-copy.md` (deleted), the old draft here, and `source-en.md`. Conflicting variants live in git history only.

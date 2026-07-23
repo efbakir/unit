@@ -1,8 +1,7 @@
-# Turkish (tr) — Tier 1 App Store metadata
+# Turkish (tr) — Unit 2.1 App Store metadata
 
-> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
-> Register: "sen". No "biz"-forms (first-person-singular rule).
-> Storefront reach: Turkey.
+> Status: **REGENERATED FOR 2.1 — founder review required before paste.**
+> Register: “sen.” The app UI remains English.
 
 ## App name (30 max)
 
@@ -10,85 +9,77 @@
 Unit: Antrenman Günlüğü
 ```
 
-23 chars. **Founder-approved Turkish wording (native review complete 2026-07-11).** "Antrenman günlüğü" = training log — the log-family identity the EN name moved to (`Gym Workout Log`). Replaces "Antrenman Defteri" (notebook), which carried the superseded name metaphor. Alternatives weighed in the 2026-07-11 naming audit: "Antrenman Kaydı" (rejected — *kayıt* also reads as enrollment/recording), "Antrenman Takibi" (rejected — collides with the subtitle's *takibi*).
+Founder-approved wording from the previous round; reconfirm for the new 2.1 listing.
 
 ## Subtitle (30 max)
 
 ```
-Kuvvet ve ağırlık takibi
+Basit kuvvet takibi
 ```
-
-24 chars. Mirrors the EN subtitle logic ("Strength tracker for lifters"): the name owns the log terms, so the subtitle adds *kuvvet / ağırlık / takip*. The old "Seti 3 saniyede kaydet" claim lives on in the description's first line.
 
 ## Promotional text (170 max)
 
 ```
-Programını zaten biliyorsun. Unit kağıttan hızlı kaydeder — geçen seferki sayıların zaten dolu, her set tek dokunuş. Yapay zekâ yok, sosyal yok. Sadece sayıların.
+Hazır bir program seç veya kendi programını yapıştır. Geçen seferki ağırlıkların dolu gelir, her set tek dokunuş sürer ve dinlenme sayacı otomatik başlar.
 ```
-
-Evergreen (derives from the canonical paper-comparison promo, not the superseded "New in v2" line).
 
 ## Description (4000 max)
 
 ```
-Bir seti 3 saniyede kaydet, barın altına dön.
+Bir seti 3 saniyede kaydet ve antrenmanına dön.
 
-Son antrenmandaki ağırlıkların zaten dolu — onayla, gerekirse düzelt, bitti. Programını metin olarak yapıştır; çalışma ağırlıkların ilk günden hazır.
+Hazır bir program seç veya kendi programını yapıştır. Unit son ağırlıklarını hazır tutar; böylece her seti hızlıca onaylayabilir veya düzenleyebilirsin.
 
-Hesap yok. Reklam yok. Sosyal akış yok. Antrenmanın iPhone'unda kalır.
+• Tek dokunuşla set kaydı
+• Hazır antrenman programları
+• İstediğin programı yapıştır
+• Kilit Ekranı’nda otomatik dinlenme sayacı
+• Antrenman geçmişi ve kişisel rekorlar
 
-Bir antrenman defteri, platform değil.
+Hesap yok. Reklam yok. Sosyal akış yok. Antrenmanın iPhone’unda kalır.
 
 Not: Uygulama arayüzü şimdilik İngilizce.
 
-Unit, kurulumdan sonra ücretli satın alma gerektirir. Haftalık, aylık ve yıllık otomatik yenilenen abonelikler sunulur. Lifetime seçeneği yalnızca yapılandırılmışsa görünür. Fiyatlar satın almadan önce uygulamada gösterilir. Ücretsiz deneme yoktur.
+Unit, kurulumdan sonra ücretli satın alma gerektirir. Haftalık, aylık ve yıllık otomatik yenilenen abonelikler sunulur. İsteğe bağlı Lifetime seçeneği yalnızca mevcutsa görünür. Fiyatlar satın almadan önce uygulamada gösterilir. Ücretsiz deneme yoktur.
 
 Kullanım Koşulları (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Gizlilik Politikası: https://unitlift.app/privacy
 ```
 
-## Keywords (100 max, no spaces, none repeated from name/subtitle)
+## Keywords (100 max, comma-separated, no spaces)
 
 ```
 gym,fitness,vücut,geliştirme,egzersiz,program,spor,salonu,demir,kayıt,halter,tekrar
 ```
 
-83 chars. Re-deduped 2026-07-11 against the new name (*günlüğü*) and subtitle (*kuvvet, ağırlık, takip*): removed `günlük`, `ağırlık`, `takip`; added `kayıt` (logging), `halter` (barbell/weights), `tekrar` (reps). Intent notes:
-- "gym" + "spor,salonu" — Turkish gym-goers use both the English word and "spor salonu"; comma-split covers the two-word phrase's parts.
-- "vücut,geliştirme" — bodybuilding ("vücut geliştirme"), split the same way.
-- "demir" — "demir basmak" (pressing iron) is lifter slang; cheap long-tail.
-- Parser already reads Turkish pasted programs (v1.1) — honest to market the paste path here.
-
-## What's New — v2 (4000 max)
+## What’s New — v2.1
 
 ```
-• Bir seti 3 saniyede kaydet — geçen seferki ağırlıkların zaten dolu
-• Programını yapıştır, ilk günden gerçek çalışma ağırlıklarınla başla
-• Yenilenen ilk kurulum: yüklemeden programın hazır olmasına bir dakikadan kısa sürede
+Unit 2.1, kurulumu ve antrenman kaydını daha anlaşılır hale getiriyor.
 
-Unit artık kurulumdan sonra ücretli satın alma gerektiriyor — planlar ödemeden önce gösterilir. Ücretsiz deneme yok. Mevcut antrenman verilerin bu iPhone'da kalır.
+• Hazır bir program seç veya kendi programını yapıştır
+• Geliştirilmiş antrenman kaydı ve vücut ağırlığı geçmişi
+• Daha güvenilir satın alma işlemleri ve hata düzeltmeleri
 ```
 
 ## Subscriptions (display name ≤30 / description ≤45)
 
 | Product ID | Display name | Description |
 |---|---|---|
-| `com.unit.weekly` | `Unit Haftalık` | `Unit'e haftalık erişim.` |
-| `com.unit.monthly` | `Unit Aylık` | `Unit'e aylık erişim.` |
-| `com.unit.annual` | `Unit Yıllık` | `Unit'e yıllık erişim.` |
+| `com.unit.weekly` | `Unit Haftalık` | `Unit’e haftalık erişim.` |
+| `com.unit.monthly` | `Unit Aylık` | `Unit’e aylık erişim.` |
+| `com.unit.annual` | `Unit Yıllık` | `Unit’e yıllık erişim.` |
 | `com.unit.lifetime` | `Unit Ömür Boyu` | `Tek seferlik satın alma. Ömür boyu erişim.` |
 
-Group display name: `Unit Pro` (unchanged — brand).
+Group display name: `Unit Pro`.
 
-## Screenshot captions (pre-translated for a later Figma pass; v2 ships English screenshots)
+## Founder review gate
 
-1. `3 saniye, tekrar barın altına`
-2. `Programını yapıştır, kaldırmaya başla`
-3. `Hesap yok. Çevrimdışı çalışır.`
-4. `Bir defter, sosyal ağ değil`
-5. `Dinlenme sayacı kilit ekranında`
+Read the description once and approve or correct:
 
-## Review-risk notes
+- `Basit kuvvet takibi`
+- `Hazır antrenman programları`
+- `Kilit Ekranı’nda otomatik dinlenme sayacı`
+- `Unit Ömür Boyu`
 
-- Willingness to pay in Turkey is low and the lira is volatile — this is the storefront to watch in the quarterly price spot-check (README §Pricing). Auto-converted prices only; no custom TRY prices.
-- Founder: read the description once out loud — the only quality gate this file needs.
+Screenshots remain the inherited English set.

@@ -3,7 +3,7 @@
 > Decision doc + rollout plan. Written 2026-07-11. Supersedes the earlier "defer localization until $5k MRR" position (from the v1 submission doc, since deleted — git history has it).
 > Three separate tracks. Do not mix them: shipping track 1 does **not** mean the app is translated.
 
-**The plan in one paragraph:** Localize App Store **metadata only**, in 5 languages (German, Spanish-MX, Portuguese-BR, French, Turkish), riding the v2 submission. Screenshots stay English. All prices stay on Apple's automatic conversion from the USD base — no custom storefront prices. The in-app UI stays English; UI localization is a separate future project with its own infra and QA gate. Every localized description states, honestly, that the app UI is in English.
+**The plan in one paragraph:** Ship App Store **metadata only** in five languages with 2.1: German, Spanish-MX, Portuguese-BR, French, and Turkish. The 2026-07-23 files are regenerated and machine-tested, but they do not ship until PRO-32 records the required native approvals. Screenshots and the in-app UI stay English. Prices continue to use Apple’s automatic conversion from the USD base.
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Track | What it is | Status |
 |---|---|---|
-| 1. App Store metadata | Per-locale name, subtitle, description, keywords, promo text, What's New, subscription names/descriptions | **Do now** — Tier 1 copy is in this folder, ready for ASC |
+| 1. App Store metadata | Per-locale name, subtitle, description, keywords, promo text, What's New, subscription names/descriptions | **2.1 release gate** — regenerated and machine-tested; native reviews pending |
 | 2. In-app UI | `.xcstrings` String Catalog, translated `AppCopy.swift`, layout QA per language | **Not now** — binary has `knownRegions = (en, Base)`; zero localization infra exists. Tier 3 below. |
 | 3. Regional pricing | Per-storefront prices for the 4 products | **No change** — keep Apple automatic conversion. See §Pricing. |
 
@@ -23,17 +23,17 @@ Rule from track separation: localized metadata must never claim or imply a trans
 
 ### Tier 0 — English (source of truth)
 
-Canonical English strings live in [`docs/app-store-copy.md`](../app-store-copy.md) (single source of truth since 2026-07-11); [`source-en.md`](source-en.md) holds the derivation rules. All translations derive from the canonical file; when English changes, locale files are stale until re-derived (last re-derivation: 2026-07-11 — see [`asc-execution-status.md`](asc-execution-status.md)).
+Canonical English strings live in [`docs/app-store-copy.md`](../app-store-copy.md); [`source-en.md`](source-en.md) holds the derivation rules. All translations derive from the canonical file. Last regeneration: **2026-07-23 for Unit 2.1**. Run `npm run test:localizations` after every locale edit.
 
 ### Tier 1 — ship with v2 (metadata only)
 
 | Locale | ASC language | Why in | Founder review |
 |---|---|---|---|
-| `de-DE` | German | Largest EU paid-fitness market, high willingness to pay; "Trainingstagebuch" is an externally attested category term (market leader's German listing title uses it) | **Name final 2026-07-13**; copy awaits native read |
-| `es-MX` | Spanish (Mexico) | Covers Mexico + most Latin America storefronts; es-MX metadata is also keyword-indexed on the **US** storefront (bonus reach) | **Name final 2026-07-13**; copy awaits native read |
-| `pt-BR` | Portuguese (Brazil) | Brazil is a top-2 country by gym count; "ficha de treino" is the culturally specific concept (keyword-field term — the candidate name uses log-family "Diário de Treino") | Awaiting native review |
-| `fr-FR` | French | Large market, low English search tolerance, strong muscu niche vocabulary | **Name final 2026-07-13**; copy awaits native read |
-| `tr` | Turkish | Founder is a native speaker — zero review risk; parser already handles Turkish programs; near-zero cost | **Founder-approved 2026-07-11 — name final** |
+| `de-DE` | German | Largest EU paid-fitness market, high willingness to pay | 2.1 copy awaits native read |
+| `es-MX` | Spanish (Mexico) | Covers Mexico + most Latin American storefronts | 2.1 copy awaits native Mexican read |
+| `pt-BR` | Portuguese (Brazil) | Brazil is a top market by gym count | Name and 2.1 copy await native read |
+| `fr-FR` | French | Large market with strong local gym vocabulary | 2.1 copy and vous/tu choice await native read |
+| `tr` | Turkish | Founder is the native reviewer | New 2.1 copy awaits founder approval |
 
 Five languages is the ceiling for one review pass. Each file in this folder = one ASC language, paste-ready.
 
@@ -70,7 +70,7 @@ German, Portuguese-BR, Spanish, Turkish — decided by Tier 1 install data. Hard
 3. **Subscriptions localize separately.** Each product takes a per-locale display name (≤30) + description (≤45); the subscription group display name localizes too. Every added locale must have both fields filled or ASC flags Missing Metadata. ([ASC subscriptions help](https://developer.apple.com/help/app-store-connect/manage-subscriptions/manage-pricing-for-auto-renewable-subscriptions/))
 4. **Pricing: one base price, 175 storefronts.** Apple generates comparable prices from the base (USD) across all storefronts and currencies, following local price conventions and taxes. Auto-generated **app/IAP** prices track FX changes; auto-generated **subscription** prices do NOT auto-adjust after creation — updates are manual. ([Apple: set a price](https://developer.apple.com/help/app-store-connect/manage-app-pricing/set-a-price/), [subscription pricing](https://developer.apple.com/help/app-store-connect/manage-subscriptions/manage-pricing-for-auto-renewable-subscriptions/))
 5. **ASC API covers all of this** — `appInfoLocalizations` (name/subtitle), `appStoreVersionLocalizations` (description/keywords/promo), `subscriptionLocalizations`, screenshot sets. No API key exists in this repo, so v1 is manual paste (~30 min for 5 languages). ([API docs](https://developer.apple.com/documentation/appstoreconnectapi/app-store-version-localizations))
-6. **Timing:** name, subtitle, description, keywords ship with the next version's review. Promotional text is editable any time without review. So: paste Tier 1 into the v2 version before submitting.
+6. **Timing:** name, subtitle, description, and keywords ship with the next version review. Promotional text is editable any time. Paste the five approved locales into version 2.1 before submitting.
 7. **Cross-localization bonus:** the US storefront also indexes es-MX (and some other) keyword fields. v1 keeps es-MX keywords Spanish (honest local intent). Using that field for English keyword overflow is a later ASO experiment, noted in `es-MX.md`. ([MobileAction](https://www.mobileaction.co/blog/app-store-cross-localization/), [AppTweak](https://www.apptweak.com/en/aso-blog/how-to-benefit-from-cross-localization-on-the-app-store))
 
 ---
@@ -118,21 +118,21 @@ Locked USD ladder (source of truth `docs/pricing.md`, decision 2026-07-02):
 
 ## App Store Connect actions (founder, in order)
 
-Execution runbook with merge order, per-click detail, and post-paste verification: [`asc-paste-checklist.md`](asc-paste-checklist.md). Summary below. Everything is manual web work; no code ships. ~45 min total.
+Execution runbook with per-click detail and post-paste verification: [`asc-paste-checklist.md`](asc-paste-checklist.md). Do not begin it until PRO-32 is Done. Everything is manual web work; no app code ships.
 
 1. **Pre-check:** confirm the 2026-07-02 Weekly price change ($4.99 → $2.99) is done in ASC. It gates v2 regardless of localization.
-2. **App Store tab → v2 version → add languages:** German, Spanish (Mexico), French, Portuguese (Brazil), Turkish. For each, paste from the locale file in this folder: name, subtitle, description, keywords, promotional text, What's New. Screenshots: leave inherited (English).
+2. **App Store tab → 2.1 version → add languages:** German, Spanish (Mexico), French, Portuguese (Brazil), Turkish. For each, paste from the approved locale file in this folder: name, subtitle, description, keywords, promotional text, What's New. Screenshots remain inherited English.
 3. **Features → Subscriptions → Unit Pro group:** for each of Weekly / Monthly / Yearly, add the 5 localizations (display name + description from the locale files). Also add the 5 group-display-name localizations (keep "Unit Pro" as the name).
 4. **Features → In-App Purchases → Unit Lifetime:** same 5 localizations — only if the non-consumable is configured at all.
 5. **Pricing check:** each product → Pricing → confirm "automatically generated" from the USD base, then run the §Pricing spot-check list.
-6. **Submit v2** with the new languages attached. Reviewer notes stay English (App Review works in English; do not localize the notes).
+6. **Submit 2.1** with the five approved languages attached. Reviewer notes stay English.
 7. Post-approval: promotional text per locale is editable anytime without review — safe channel for later tweaks.
 
 ---
 
 ## Native-speaker review risks
 
-- All non-Turkish Tier 1 copy is **Claude-translated, unreviewed by a native**. Quality target is high but subtle register errors are possible. Before submission: one native read per language (de, es-MX, pt-BR, fr) — gym-goers preferred, ~10 min each. Turkish: founder reviews directly.
+- The 2.1 locale files are AI-assisted and machine-tested, not native-approved. Before submission: one native read per language (de, es-MX, pt-BR, fr), preferably by a gym-goer. Turkish: founder reviews directly.
 - Register choices made and flagged per file: German "du", Spanish "tú", Portuguese "você", French "vous" (open question — lifter slang leans "tu"; see `fr-FR.md`), Turkish "sen".
 - First-person-singular rule (`PRODUCT.md`): no we-forms in any language (kein "wir", no "nosotros", "nós", "nous", "biz"). Checked in each file.
 - Subscription disclosure language (Guideline 3.1.2(b)) is translated inside every description — do not trim those paragraphs when pasting.

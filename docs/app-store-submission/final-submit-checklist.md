@@ -66,8 +66,12 @@ The description's paid-purchase paragraph and the two legal URLs are Guideline 3
 
 ## 8. Localization
 
-- [ ] Ship 2.1 English-only.
-- [ ] Do not paste or publish de-DE, es-MX, pt-BR, fr-FR, or tr. All five files are explicitly stale after the beginner-inclusive English rewrite.
+- [ ] PRO-32 is Done.
+- [ ] `npm run test:localizations` passes after all reviewer edits.
+- [ ] `docs/app-store-localization/asc-execution-status.md` records approval for de-DE, es-MX, pt-BR, fr-FR, and tr.
+- [ ] Add all five approved metadata locales before submission.
+- [ ] Keep the in-app UI and inherited screenshots English.
+- [ ] Do not paste any locale still marked pending.
 
 ## 9. Privacy / age rating / URLs
 
