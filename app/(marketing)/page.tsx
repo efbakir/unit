@@ -227,9 +227,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 2b. App Store reviews — real, published, quoted verbatim in
-          translation (Türkiye storefront, v1.0). Attribution carries the
-          "translated" note so the quotes stay fully honest. ── */}
+      {/* ── 2b. App Store reviews — real, published reviews from the
+          Türkiye storefront, presented as a compact social-proof section. ── */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
         <div className="max-w-4xl mx-auto px-unit-md md:px-unit-lg">
           <p className="eyebrow mb-unit-xl text-center">From the App Store</p>
@@ -244,7 +243,10 @@ export default function LandingPage() {
                 original: "Pratik ve hızlı",
               },
             ].map((review) => (
-              <figure key={review.original} className="text-center md:text-left">
+              <figure
+                key={review.original}
+                className="mx-auto flex w-full max-w-md flex-col items-center text-center"
+              >
                 <p className="text-sm tracking-[0.2em] mb-unit-sm" aria-label="5 out of 5 stars">
                   ★★★★★
                 </p>
@@ -255,7 +257,7 @@ export default function LandingPage() {
                   {review.quote}
                 </blockquote>
                 <figcaption className="mt-unit-sm text-sm text-unit-text-secondary">
-                  App Store review · translated from Turkish
+                  App Store review
                 </figcaption>
               </figure>
             ))}
