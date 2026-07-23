@@ -168,6 +168,12 @@ body {
   .h-section {
     @apply text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-unit-text-primary;
   }
+  .editorial-display {
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.045em;
+  }
 
   /* The Ink radial-gradient ambient blur used behind hero mockup and
      bento accent cards. Sized + positioned by the consumer; the recipe

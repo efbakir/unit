@@ -1,30 +1,14 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import FAQItem from "@/components/marketing/FAQItem"
-import LayeredDeviceStack from "@/components/marketing/LayeredDeviceStack"
 import FeatureShowcase from "@/components/marketing/FeatureShowcase"
 import AppStoreBadge from "@/components/marketing/AppStoreBadge"
-import TrustBand from "@/components/marketing/TrustBand"
 import FounderStory from "@/components/marketing/FounderStory"
 import SecondaryFeatures from "@/components/marketing/SecondaryFeatures"
+import EditorialHero from "@/components/marketing/EditorialHero"
+import HumanMomentSection from "@/components/marketing/HumanMomentSection"
+import AudienceStrip from "@/components/marketing/AudienceStrip"
 import { APP_STORE_URL } from "@/lib/launchState"
-
-type HeroForegroundMockup = {
-  src?: string
-  alt: string
-  priority?: boolean
-  sizes?: string
-}
-
-type HeroBackgroundMockup = {
-  src?: string
-  alt: string
-  offsetX?: number
-  offsetY?: number
-  scale?: number
-  rotate?: number
-  z?: number
-}
 
 export const metadata: Metadata = {
   description:
@@ -120,48 +104,7 @@ const importSources = [
 const HERO_W = 1658
 const HERO_H = 2386
 
-const heroMockups: {
-  foreground: HeroForegroundMockup
-  background: HeroBackgroundMockup[]
-} = {
-  // Hero layers use the transparent-background exports (hero-*.png) so the
-  // foreground phone overlaps the back phones without painting a canvas
-  // rectangle over them. Feature cards keep the tiled crops.
-  foreground: {
-    src: "/screenshots/hero-active-workout.png",
-    alt: "Unit active workout: Bench Press 80 kg × 8 from last time, one tap to complete the set",
-    priority: true,
-    sizes: "(min-width: 1024px) 460px, 360px",
-  },
-  background: [
-    {
-      src: "/screenshots/hero-history-calendar.png",
-      alt: "Unit history calendar with logged sessions",
-      offsetX: -38,
-      offsetY: -8,
-      scale: 0.78,
-      rotate: -7,
-      z: 0,
-    },
-    {
-      src: "/screenshots/hero-ghost-values.png",
-      alt: "Unit last session's weight and reps filled in",
-      offsetX: 38,
-      offsetY: 6,
-      scale: 0.78,
-      rotate: 7,
-      z: 0,
-    },
-  ],
-}
-
 export default function LandingPage() {
-  const PrimaryCTA = (
-    <div className="space-y-unit-sm">
-      <AppStoreBadge href={APP_STORE_URL} />
-    </div>
-  )
-
   return (
     <>
       <script
@@ -173,50 +116,9 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
-      {/* ── 1. Hero (layered) ── */}
-      {/* overflow-x-clip: the rotated background layers may poke past the
-          viewport on lg screens; clip the bleed instead of growing the page
-          scroll width. */}
-      <section className="overflow-x-clip pt-32 md:pt-40 pb-unit-xxl md:pb-unit-xxxl">
-        <div className="max-w-6xl mx-auto px-unit-md md:px-unit-lg">
-          {/* Device column sized so the phone inside the hero export (61% of
-              the canvas width; the rest is shadow margin) renders at the same
-              visual size the old margin-less exports had at 420/460px. */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(0,500px)] xl:grid-cols-[1fr_minmax(0,560px)] gap-unit-xxl items-center">
-            {/* Copy column */}
-            <div className="stagger-hero max-w-2xl">
-              <h1 className="h-display mb-unit-lg text-balance">
-                Log a set in 3 seconds.
-              </h1>
-              <p className="text-xl leading-snug mb-unit-xl max-w-xl text-unit-text-secondary">
-                Your last weight and reps are ready. Tap Done and keep lifting.
-              </p>
-              {PrimaryCTA}
-              <div className="mt-unit-lg">
-                <TrustBand />
-              </div>
-            </div>
+      <EditorialHero />
 
-            <div className="relative w-full max-w-[480px] mx-auto lg:mx-0 lg:justify-self-end">
-              <LayeredDeviceStack
-                width={HERO_W}
-                height={HERO_H}
-                foreground={heroMockups.foreground}
-                background={heroMockups.background}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. One-line positioning ── */}
-      <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
-        <div className="max-w-3xl mx-auto px-unit-md md:px-unit-lg text-center">
-          <h2 className="h-section">
-            A gym notebook, not a platform.
-          </h2>
-        </div>
-      </section>
+      <HumanMomentSection />
 
       {/* 2b. Published App Store reviews from the Türkiye storefront. */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
@@ -257,6 +159,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <AudienceStrip />
 
       {/* ── 3. Product showcase ── */}
       <section
