@@ -6,6 +6,7 @@ import FeatureShowcase from "@/components/marketing/FeatureShowcase"
 import AppStoreBadge from "@/components/marketing/AppStoreBadge"
 import TrustBand from "@/components/marketing/TrustBand"
 import FounderStory from "@/components/marketing/FounderStory"
+import SecondaryFeatures from "@/components/marketing/SecondaryFeatures"
 import { APP_STORE_URL } from "@/lib/launchState"
 
 type HeroForegroundMockup = {
@@ -110,15 +111,6 @@ const importSources = [
   "paper",
   "CSV",
   "Markdown",
-]
-
-const secondaryFeatures = [
-  { title: "Offline · local-first", body: "No account. No sync. Always works on the gym floor." },
-  { title: "Lock Screen timer", body: "Starts when you tap Done. Visible in Live Activities." },
-  { title: "PR detection", body: "See your best weight, reps, and volume." },
-  { title: "Calendar", body: "See every session at a glance." },
-  { title: "Quick Start", body: "Start a session without a template." },
-  { title: "Eight starter programs", body: "Choose one or paste your own." },
 ]
 
 // Crops of the approved App Store listing screenshots: transparent-background
@@ -357,24 +349,7 @@ export default function LandingPage() {
       {/* 4. Secondary features */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
         <div className="max-w-6xl mx-auto px-unit-md md:px-unit-lg">
-          <div className="mx-auto mb-unit-xl max-w-3xl text-center">
-            <p className="eyebrow mb-unit-sm">More features</p>
-            <h2 className="h-section">
-              More, without the clutter.
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-x-unit-xl gap-y-unit-lg sm:grid-cols-2 lg:grid-cols-3">
-            {secondaryFeatures.map((f) => (
-              <div key={f.title} className="border-t border-unit-border pt-unit-md">
-                <h3 className="text-base font-bold tracking-tight leading-snug mb-unit-xs">
-                  {f.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-unit-text-secondary">
-                  {f.body}
-                </p>
-              </div>
-            ))}
-          </div>
+          <SecondaryFeatures />
         </div>
       </section>
 
