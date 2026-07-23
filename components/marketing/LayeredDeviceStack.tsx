@@ -20,7 +20,7 @@ type Layer = {
 // Bevel-style depth composition: one foreground mockup in focus, with
 // 2-3 background images staggered behind it (offset, scaled down,
 // gently rotated). On mobile, the background layers collapse so only
-// the foreground remains — the depth illusion needs lateral room.
+// the foreground remains. The depth illusion needs lateral room.
 //
 // Reuses DeviceFrame for every layer so placeholder and real-image behavior
 // stay canonical.
@@ -39,7 +39,7 @@ export default function LayeredDeviceStack({
 }) {
   return (
     <div className={`relative w-full ${className}`}>
-      {/* Background layers — hidden on mobile so the depth doesn't crowd
+      {/* Background layers are hidden on mobile so the depth doesn't crowd
           the narrow viewport. Each layer is absolutely positioned
           relative to the wrapper; the foreground frame defines the box
           via its own intrinsic size. */}
@@ -73,7 +73,7 @@ export default function LayeredDeviceStack({
         })}
       </div>
 
-      {/* Foreground — always on top by default (z-10). */}
+      {/* Foreground is always on top by default (z-10). */}
       <div className="relative z-10">
         <DeviceFrame
           src={foreground.src}

@@ -99,7 +99,7 @@ export default async function ComparePage({ params }: { params: Params }) {
       <section className="py-unit-xl border-t border-unit-border">
         <div className="max-w-3xl mx-auto px-unit-md md:px-unit-lg">
           <p className="eyebrow mb-unit-md">Side by side</p>
-          <div className="rounded-md border border-unit-border bg-unit-card overflow-hidden">
+          <div className="rounded-md bg-unit-card overflow-hidden">
             <div
               role="table"
               aria-label={`Unit vs ${data.competitor} comparison`}

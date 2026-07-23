@@ -8,10 +8,10 @@ export default function FounderStory() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-unit-xl items-start">
       <div className="order-1">
-        <div className="aspect-square w-full max-w-[260px] mx-auto md:mx-0 rounded-2xl bg-unit-muted overflow-hidden border border-unit-border">
+        <div className="aspect-square w-full max-w-[260px] mx-auto md:mx-0 rounded-2xl bg-unit-muted overflow-hidden">
           <Image
             src="/founder.jpg"
-            alt={`${DEVELOPER_NAME} — maker of Unit, at his desk`}
+            alt={`${DEVELOPER_NAME}, maker of Unit, at his desk`}
             width={600}
             height={600}
             className="h-full w-full object-cover"
@@ -22,22 +22,15 @@ export default function FounderStory() {
       <div className="order-2 max-w-[600px] space-y-unit-md">
         <p className="eyebrow">From the maker</p>
         <p className="text-lg leading-relaxed">
-          Trained for years with a paper notebook. Tried the gym apps. All
-          of them slowed me down: too many menus, too much typing, screens
-          designed for a desk, not a deadlift platform.
+          I trained with a paper notebook for years. Gym apps added too many
+          menus and too much typing.
         </p>
         <p className="text-lg leading-relaxed text-unit-text-secondary">
-          Built Unit instead. One tap per set. What you did last time is
-          already there. Rest timer follows you to the Lock Screen.
-          Everything stays on your phone. No social, no AI, no ceremony.
-        </p>
-        <p className="text-lg leading-relaxed text-unit-text-secondary">
-          The app I wanted. Whether you start with a built-in program or
-          bring your own, if you&rsquo;re tired of fighting your tracker
-          between sets, it might be the one you wanted too.
+          I built Unit to do one job: log each set fast. Your last numbers are
+          ready, the timer follows you, and your data stays on your phone.
         </p>
         <p className="pt-unit-xs text-base font-semibold tracking-tight">
-          — {DEVELOPER_NAME.split(" ")[0]}
+          {DEVELOPER_NAME.split(" ")[0]}
         </p>
       </div>
     </div>

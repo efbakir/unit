@@ -56,11 +56,11 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Legal strip — separated by whitespace, not a second hairline.
+        {/* Legal strip separated by whitespace, not a second hairline.
             The outer footer border-t already marks the boundary; a second
             divider here adds chrome the page doesn't need. */}
         <div className="mt-unit-xxl flex flex-col md:flex-row md:items-center md:justify-between gap-unit-sm">
-          <Link href="/" aria-label="Unit — home" className="flex items-center">
+          <Link href="/" aria-label="Unit home" className="flex items-center">
             <Image
               src="/app-icon.png"
               alt="Unit"

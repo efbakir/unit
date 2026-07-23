@@ -48,8 +48,8 @@ export default function PrivacyPage() {
 
           <h2 id="data-storage">Data Storage</h2>
           <p>
-            All data you create in Unit — exercises, workout sessions, cycles,
-            progression rules, and set entries — is stored locally on your
+            All data you create in Unit, including exercises, workout sessions,
+            cycles, progression rules, and set entries, is stored locally on your
             device using Apple&apos;s SwiftData framework. This data is not
             transmitted to any external server.
           </p>

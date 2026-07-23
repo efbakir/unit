@@ -22,7 +22,7 @@ const programItems = programSlugList.map((slug) => ({
   label: programSlugs[slug].title,
 }))
 
-// Intent delay before hover-leave closes the menu — long enough to traverse
+// Intent delay before hover-leave closes the menu. Long enough to traverse
 // the trigger→panel gap without flicker, short enough to feel snappy.
 const HOVER_CLOSE_DELAY = 140
 
@@ -57,7 +57,7 @@ export default function Header() {
       <nav className="max-w-6xl mx-auto px-unit-md md:px-unit-lg flex items-center justify-between h-16">
         <Link
           href="/"
-          aria-label="Unit — home"
+          aria-label="Unit home"
           className="flex items-center"
         >
           <Image
@@ -219,10 +219,10 @@ function DesktopDropdown({
       </button>
       {isOpen && (
         // pt-unit-xs (instead of mt-unit-xs on the chrome below) keeps the
-        // hover surface continuous from trigger → panel — the visual gap is
+        // hover surface continuous from trigger → panel. The visual gap is
         // padding inside the hoverable element, not an empty layout gap.
         <div role="menu" className="absolute right-0 top-full pt-unit-xs">
-          <div className="min-w-[200px] rounded-md border border-unit-border bg-unit-background py-unit-xs shadow-sm">
+          <div className="min-w-[200px] rounded-md bg-unit-background py-unit-xs shadow-sm">
             {items.map((item) => (
               <Link
                 key={item.href}

@@ -40,7 +40,7 @@ const faqs = [
   {
     question: "Is Unit free?",
     answer:
-      "No. Setup is free — bring your program and see it built in the app — then a subscription unlocks logging. Weekly, monthly, and yearly plans; every price is shown in the app before you pay. No free trial, no ads, no account.",
+      "Setup is free. A subscription unlocks logging. Weekly, monthly, and yearly prices appear before you pay. No trial, ads, or account.",
   },
   {
     question: "How does Unit fill in my numbers?",
@@ -55,22 +55,22 @@ const faqs = [
   {
     question: "How do I import my program?",
     answer:
-      "During onboarding, choose 'Paste my routine' and paste from Notes, WhatsApp, or anywhere else. Unit reads exercise names, sets, reps, and weights automatically. Or pick a proven starter program from the built-in library.",
+      "Paste a routine from Notes, WhatsApp, or anywhere else. Unit reads the exercises, sets, reps, and weights. You can also choose a starter program.",
   },
   {
     question: "What programs does Unit support?",
     answer:
-      "Any program with a fixed split. PPL, Upper/Lower, Full Body, or custom splits. You define the exercises and days; Unit doesn't impose structure.",
+      "PPL, Upper/Lower, Full Body, and custom splits. You choose the days and exercises.",
   },
   {
     question: "What if Unit gets discontinued?",
     answer:
-      "Your data lives on your iPhone. iCloud Backup covers it. Nothing depends on a Unit server. You'd lose the app; you wouldn't lose your history.",
+      "Your data stays on your iPhone and can be included in iCloud Backup. It does not depend on a Unit server.",
   },
   {
     question: "Where can I download Unit?",
     answer:
-      "Unit is live on the App Store as “Unit — Gym Workout Log”. Tap any download button on this page, or search the App Store directly. Free to download; a subscription unlocks logging after setup. No account needed.",
+      "Tap any download button on this page. Unit is free to download. A subscription unlocks logging after setup.",
   },
 ]
 
@@ -114,11 +114,11 @@ const importSources = [
 
 const secondaryFeatures = [
   { title: "Offline · local-first", body: "No account. No sync. Always works on the gym floor." },
-  { title: "Lock Screen rest timer", body: "Live Activity in the Dynamic Island. Auto-starts on Done." },
-  { title: "PR detection", body: "Heaviest set, best rep, best volume. Auto-flagged in history." },
-  { title: "Calendar overview", body: "Every session at a glance. Streaks without the badges." },
-  { title: "Quick Start", body: "Freestyle session, no template required. Tap, lift, log." },
-  { title: "Eight starter programs", body: "5/3/1, GZCLP, Upper/Lower, PPL, more — pick one or paste your own." },
+  { title: "Lock Screen timer", body: "Starts when you tap Done. Visible in Live Activities." },
+  { title: "PR detection", body: "See your best weight, reps, and volume." },
+  { title: "Calendar", body: "See every session at a glance." },
+  { title: "Quick Start", body: "Start a session without a template." },
+  { title: "Eight starter programs", body: "Choose one or paste your own." },
 ]
 
 // Crops of the approved App Store listing screenshots: transparent-background
@@ -137,14 +137,14 @@ const heroMockups: {
   // rectangle over them. Feature cards keep the tiled crops.
   foreground: {
     src: "/screenshots/hero-active-workout.png",
-    alt: "Unit — active workout: Bench Press 80 kg × 8 from last time, one tap to complete the set",
+    alt: "Unit active workout: Bench Press 80 kg × 8 from last time, one tap to complete the set",
     priority: true,
     sizes: "(min-width: 1024px) 460px, 360px",
   },
   background: [
     {
       src: "/screenshots/hero-history-calendar.png",
-      alt: "Unit — history calendar with logged sessions",
+      alt: "Unit history calendar with logged sessions",
       offsetX: -38,
       offsetY: -8,
       scale: 0.78,
@@ -153,7 +153,7 @@ const heroMockups: {
     },
     {
       src: "/screenshots/hero-ghost-values.png",
-      alt: "Unit — last session's weight and reps filled in",
+      alt: "Unit last session's weight and reps filled in",
       offsetX: 38,
       offsetY: 6,
       scale: 0.78,
@@ -197,8 +197,7 @@ export default function LandingPage() {
                 Log a set in 3 seconds.
               </h1>
               <p className="text-xl leading-snug mb-unit-xl max-w-xl text-unit-text-secondary">
-                Log a set in one tap. Every set opens with what you did last
-                time. No typing. No menus. Under three seconds.
+                Your last weight and reps are ready. Tap Done and keep lifting.
               </p>
               {PrimaryCTA}
               <div className="mt-unit-lg">
@@ -227,8 +226,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 2b. App Store reviews — real, published reviews from the
-          Türkiye storefront, presented as a compact social-proof section. ── */}
+      {/* 2b. Published App Store reviews from the Türkiye storefront. */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
         <div className="max-w-5xl mx-auto px-unit-md md:px-unit-lg">
           <div className="mb-unit-xl text-center">
@@ -248,7 +246,7 @@ export default function LandingPage() {
             ].map((review) => (
               <figure
                 key={review.original}
-                className="flex min-h-[240px] w-full flex-col items-center justify-between rounded-2xl border border-unit-border bg-unit-card p-unit-lg text-center md:min-h-[280px] md:p-unit-xl"
+                className="flex min-h-[240px] w-full flex-col items-center justify-between rounded-2xl bg-unit-card p-unit-lg text-center md:min-h-[280px] md:p-unit-xl"
               >
                 <p className="text-sm tracking-[0.2em]" aria-label="5 out of 5 stars">
                   ★★★★★
@@ -277,16 +275,16 @@ export default function LandingPage() {
           <FeatureShowcase
             eyebrow="How it works"
             title="Designed for the bench, not your desk."
-            body="The core workflow stays predictable: bring your program, log against last time, rest, and review later."
+            body="Bring your program. Log each set. Review your progress."
             items={[
               {
                 eyebrow: "One tap per set",
                 title: "Last time does the typing.",
-                body: "Weight and reps from your last session are already there. Tap Done. Move on. The Gym Test: one-handed, sweaty, under three seconds to log a set.",
-                microStat: "Avg log: 2.4s",
+                body: "Your last weight and reps are ready. Tap Done. Keep lifting.",
+                microStat: "Average log: 2.4s",
                 mockup: {
                   src: "/screenshots/hero-ghost-values.png",
-                  alt: "Unit — active set showing last time: 3×5×140 kg, ready to confirm",
+                  alt: "Unit active set showing last time: 3×5×140 kg, ready to confirm",
                   width: HERO_W,
                   height: HERO_H,
                   sizes: "380px",
@@ -295,7 +293,7 @@ export default function LandingPage() {
               {
                 eyebrow: "Bring your program",
                 title: "Paste from Notes. Done.",
-                body: "Paste your routine from anywhere and Unit reads exercises, sets, reps, and weights automatically. Or build from scratch in under two minutes.",
+                body: "Paste a routine or build one. Unit reads the exercises, sets, reps, and weights.",
                 children: (
                   <>
                     <div className="mt-unit-lg flex flex-wrap items-center gap-x-unit-md gap-y-unit-xs">
@@ -311,11 +309,11 @@ export default function LandingPage() {
                         </span>
                       ))}
                     </div>
-                    {/* A pasted-program snippet instead of a device mockup —
+                    {/* A pasted-program snippet instead of a device mockup:
                         the paste flow's "before" state is a note, not an app
                         screen. flex-1 keeps the card height level with its
                         image-card siblings. */}
-                    <div className="mt-unit-lg flex-1 rounded-[24px] border border-unit-border bg-unit-background p-unit-lg">
+                    <div className="mt-unit-lg flex-1 rounded-[24px] bg-unit-background p-unit-lg">
                       <p className="eyebrow mb-unit-sm">Pasted from Notes</p>
                       <p className="whitespace-pre-line font-mono text-sm leading-relaxed text-unit-text-secondary">
                         {"push day\nbench press 5x5 @ 80kg\nohp 3x8 @ 40kg\nincline db 3x10 @ 24kg\nlateral raise 3x12"}
@@ -327,10 +325,10 @@ export default function LandingPage() {
               {
                 eyebrow: "History · PRs",
                 title: "Every set. Every PR.",
-                body: "Calendar of every session. Heaviest set, best rep, and best volume PRs detected automatically. You decide when to add weight — Unit just remembers what you did.",
+                body: "See every session and PR. You decide when to add weight.",
                 mockup: {
                   src: "/screenshots/hero-history-calendar.png",
-                  alt: "Unit — history calendar, April 2026, logged days highlighted",
+                  alt: "Unit history calendar, April 2026, logged days highlighted",
                   width: HERO_W,
                   height: HERO_H,
                   sizes: "380px",
@@ -339,13 +337,13 @@ export default function LandingPage() {
               {
                 eyebrow: "Rest timer",
                 title: "Follows you to the Lock Screen.",
-                body: "Auto-starts on Done. Lives in the Dynamic Island and on the Lock Screen. No need to reopen the app between sets.",
+                body: "Starts when you tap Done. Check it on the Dynamic Island or Lock Screen.",
                 mockup: {
                   // Background-keyed crop of listing screenshot 2, padded to
                   // the same 1658×2386 geometry as the hero exports so all
                   // cards render at one scale.
                   src: "/screenshots/rest-timer-transparent.png",
-                  alt: "Unit — rest timer running at 1:57 with the set editor below",
+                  alt: "Unit rest timer running at 1:57 with the set editor below",
                   width: HERO_W,
                   height: HERO_H,
                   sizes: "380px",
@@ -356,13 +354,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 4. And that's not all — secondary features grid ── */}
+      {/* 4. Secondary features */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
         <div className="max-w-6xl mx-auto px-unit-md md:px-unit-lg">
           <div className="mx-auto mb-unit-xl max-w-3xl text-center">
-            <p className="eyebrow mb-unit-sm">And that's not all</p>
+            <p className="eyebrow mb-unit-sm">More features</p>
             <h2 className="h-section">
-              Quiet features doing real work.
+              More, without the clutter.
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-x-unit-xl gap-y-unit-lg sm:grid-cols-2 lg:grid-cols-3">
@@ -388,9 +386,8 @@ export default function LandingPage() {
             Local-first. Stays on your phone.
           </h2>
           <p className="text-xl leading-snug text-unit-text-secondary max-w-xl mx-auto">
-            No account. No sync. No internet. Your full workout history and PRs
-            live on-device, where they belong. iCloud Backup covers your data
-            the same way it covers your photos — no Unit account needed.
+            No account or server sync. Your history stays on your iPhone and
+            can be included in iCloud Backup.
           </p>
         </div>
       </section>
@@ -403,20 +400,20 @@ export default function LandingPage() {
           <div className="divide-y divide-unit-border">
             {[
               {
-                title: "Not an AI coach.",
-                body: "Unit doesn't tell you what to lift. You bring the program; Unit makes logging instant.",
+                title: "No coaching.",
+                body: "You choose the program. Unit logs it.",
               },
               {
-                title: "Not a social platform.",
-                body: "No feed. No followers. No likes. Training is personal.",
+                title: "No social feed.",
+                body: "No followers or likes. Training stays personal.",
               },
               {
-                title: "Not a complicated fitness dashboard.",
-                body: "Start with a built-in program, paste your own, or build one from scratch. Unit keeps the logging simple either way.",
+                title: "No clutter.",
+                body: "Only what you need to log and review.",
               },
               {
-                title: "Not free.",
-                body: "Setup is free; logging is a subscription. That's the entire business model — no ads, no selling your data, no feature bait.",
+                title: "No ads.",
+                body: "Setup is free. A subscription unlocks logging.",
               },
             ].map((item) => (
               <div
@@ -464,7 +461,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 9. Footer CTA — emotional close ── */}
+      {/* 9. Footer CTA */}
       <section
         id="download"
         className="py-unit-xxxl md:py-unit-xxxxl border-t border-unit-border"
@@ -480,10 +477,10 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col items-center gap-unit-lg">
             <AppStoreBadge href={APP_STORE_URL} />
-            {/* Desktop visitors can't tap the badge on their phone —
+            {/* Desktop visitors can't tap the badge on their phone.
                 the QR bridges the gap. Hidden on mobile, where the badge
                 itself is the direct path. */}
-            <div className="hidden md:flex items-center gap-unit-md rounded-[24px] border border-unit-border bg-unit-card p-unit-md">
+            <div className="hidden md:flex items-center gap-unit-md rounded-[24px] bg-unit-card p-unit-md">
               <Image
                 src="/qr-app-store.svg"
                 alt="QR code linking to Unit on the App Store"

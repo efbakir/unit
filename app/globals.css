@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Unit light theme — derived from DesignSystem.swift AppColor (light mode) */
+  /* Unit light theme, derived from DesignSystem.swift AppColor (light mode) */
   --unit-background: #F5F5F5;
   --unit-card: #FFFFFF;
   --unit-surface: #FFFFFF;
@@ -18,7 +18,7 @@
   --unit-error: #FF3B30;
 
   /* 14px = AppRadius.md (iOS button standard). Always rendered with iOS-native
-     squircle corner smoothing — see the @supports block at the bottom of @layer base. */
+     squircle corner smoothing. See the @supports block at the bottom of @layer base. */
   --radius: 0.875rem;
   --header-height: 64px; /* h-16 on Header */
   --button-height-lg: 60px;
@@ -73,7 +73,7 @@ body {
      Round Display Module ships in a browser, every existing border-radius
      on the marketing site renders as a superellipse without per-element
      migration. Browsers without support fall back to standard circular
-     corners (today's behavior — no breakage). */
+     corners without changing current behavior. */
   @supports (corner-shape: squircle) {
     *,
     *::before,
@@ -149,7 +149,7 @@ body {
 
   /* The 13px Geist Mono uppercase eyebrow used in hero label, bento
      eyebrows, founder section header, trust band, "What Unit is not"
-     header. Single canonical recipe — never inline-duplicate. */
+     header. Single canonical recipe, never inline-duplicate. */
   .eyebrow {
     @apply text-[13px] font-medium font-mono uppercase tracking-[0.6px] text-unit-text-secondary;
   }
@@ -160,7 +160,7 @@ body {
     @apply eyebrow transition-colors hover:text-unit-text-primary;
   }
 
-  /* Marketing type scale — 13 mono / 16 body / 20 lead / 28 section / 44 hero.
+  /* Marketing type scale: 13 mono / 16 body / 20 lead / 28 section / 44 hero.
      Five steps total. Never extend with a sixth without removing one first. */
   .h-display {
     @apply text-[44px] md:text-[60px] font-bold tracking-tight leading-[1.04] text-unit-text-primary;
@@ -180,9 +180,9 @@ body {
   /* Canonical primary CTA chrome. Single source of truth for every
      accent-filled button across the marketing site (header CTA, hero
      waitlist submit, mobile-menu CTA, etc.). Brand voice is uppercase
-     Geist Mono with 0.6px tracking — the same recipe as .eyebrow, in
+     Geist Mono with 0.6px tracking, the same recipe as .eyebrow, in
      button form. Consumers compose with size utilities (h-11 / h-[60px],
-     px-*, text-*) — never re-derive the chrome inline. */
+     px-*, text-*). Never re-derive the chrome inline. */
   .btn-primary {
     @apply press-spring inline-flex items-center justify-center rounded-xl
       bg-unit-accent text-unit-accent-foreground
@@ -191,7 +191,7 @@ body {
   }
 
   /* Calibrated press feedback for primary CTAs and pressable nav
-     elements. Fast in, slow settle — feels mechanical, not laggy. */
+     elements. Fast in, slow settle. Feels mechanical, not laggy. */
   .press-spring {
     transition: transform 240ms var(--ease-out-quart);
   }
@@ -201,29 +201,25 @@ body {
   }
 
   /* Subtle hover lift for bento cards and other elevation-affording
-     surfaces. -2px Y on hover-capable devices, with a border-color
-     darken as the reduced-motion fallback. */
+     surfaces. -2px Y on hover-capable devices. */
   .lift-hover {
-    transition: transform 240ms var(--ease-out-expo),
-      border-color 240ms var(--ease-out-expo);
+    transition: transform 240ms var(--ease-out-expo);
   }
 
   @media (hover: hover) {
     .lift-hover:hover {
       transform: translateY(-2px);
-      border-color: var(--unit-text-secondary);
     }
   }
 
-  /* Reduced-motion: kill transforms, keep border-darken so hover state
-     is still legible. */
+  /* Reduced-motion: remove transforms. */
   @media (prefers-reduced-motion: reduce) {
     .press-spring,
     .press-spring:active,
     .lift-hover,
     .lift-hover:hover {
       transform: none;
-      transition: border-color 240ms var(--ease-out-expo);
+      transition: none;
     }
   }
 }
@@ -266,7 +262,7 @@ body {
 @layer components {
   /* Wrapped around the marketing layout's children. The PageTransition
      client component re-keys this element on pathname change, so the
-     animation restarts every navigation — a gentle settle, never theatrical.
+     animation restarts every navigation. A gentle settle, never theatrical.
      Same easing + 8px translate as the hero stagger so the surface feels
      coherent across first-paint and route changes. */
   .page-fade-in {

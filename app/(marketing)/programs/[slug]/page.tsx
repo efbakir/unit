@@ -107,7 +107,7 @@ export default async function ProgramPage({ params }: { params: Params }) {
       <section className="py-unit-xl border-t border-unit-border">
         <div className="max-w-3xl mx-auto px-unit-md md:px-unit-lg">
           <p className="eyebrow mb-unit-sm">Copy paste this</p>
-          <pre className="bg-unit-card rounded-md p-unit-md text-sm font-mono leading-relaxed text-unit-text-primary border border-unit-border overflow-x-auto whitespace-pre">
+          <pre className="bg-unit-card rounded-md p-unit-md text-sm font-mono leading-relaxed text-unit-text-primary overflow-x-auto whitespace-pre">
             {data.template}
           </pre>
         </div>

@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 
-// Sans is the LCP font (hero h1, body copy). Preload, weights 500-700 only —
+// Sans is the LCP font (hero h1, body copy). Preload, weights 500-700 only.
 // DESIGN.md medium-floor rule means 400 is unused.
 const geistSans = Geist({
   subsets: ["latin"],
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
-  // Smart App Banner — iOS Safari shows a native install/open strip for the
+  // Smart App Banner. iOS Safari shows a native install/open strip for the
   // live App Store listing (id 6775008893).
   itunes: { appId: "6775008893" },
 }

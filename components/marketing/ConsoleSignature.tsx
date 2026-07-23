@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 // Quiet message for anyone who opens DevTools. Same voice as the rest of
-// the page — utility-first, peer-to-peer. Runs once on mount.
+// the page. Utility-first, peer-to-peer. Runs once on mount.
 export default function ConsoleSignature() {
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -15,7 +15,7 @@ export default function ConsoleSignature() {
     const styleBody = "font: 500 12px/1.4 Geist, system-ui; color: #595959;"
 
     // Single grouped log so the page console isn't noisy. No ASCII art,
-    // no emoji, no playful filler — Unit's voice is direct.
+    // no emoji or playful filler. Unit's voice is direct.
     /* eslint-disable no-console */
     console.log("%cUnit", styleHeading)
     console.log(

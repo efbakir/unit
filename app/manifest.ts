@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Unit — Gym Logger & Workout Tracker",
+    name: "Unit: Gym Logger & Workout Tracker",
     short_name: "Unit",
     description:
       "Fast iOS gym tracker and workout log. Log a set in under 3 seconds.",

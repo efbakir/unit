@@ -2,7 +2,7 @@ import Image from "next/image"
 
 // Official Apple "Download on the App Store" badge (US-UK, black) from
 // Apple Marketing Resources. Apple brand guidelines require the unmodified
-// artwork — no recoloring, no custom chrome around the mark. The interaction
+// artwork. No recoloring or custom chrome around the mark. The interaction
 // spring lives on the anchor, not the badge.
 export default function AppStoreBadge({
   href,

@@ -23,7 +23,7 @@ export default function SupportPage() {
         </p>
 
         {/* Contact */}
-        <address className="not-italic block rounded-xl p-unit-lg border border-unit-border bg-unit-card mb-unit-xxl">
+        <address className="not-italic block rounded-xl p-unit-lg bg-unit-card mb-unit-xxl">
           <h2 className="text-lg font-semibold mb-unit-xs">Contact me</h2>
           <p className="text-[15px] mb-unit-md text-unit-text-secondary">
             I typically respond within 24 hours.
