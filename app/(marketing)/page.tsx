@@ -230,9 +230,12 @@ export default function LandingPage() {
       {/* ── 2b. App Store reviews — real, published reviews from the
           Türkiye storefront, presented as a compact social-proof section. ── */}
       <section className="py-unit-xxl md:py-unit-xxxl border-t border-unit-border">
-        <div className="max-w-4xl mx-auto px-unit-md md:px-unit-lg">
-          <p className="eyebrow mb-unit-xl text-center">From the App Store</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-unit-xl md:gap-unit-xxl">
+        <div className="max-w-5xl mx-auto px-unit-md md:px-unit-lg">
+          <div className="mb-unit-xl text-center">
+            <p className="eyebrow mb-unit-sm">From the App Store</p>
+            <h2 className="h-section">What lifters say.</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-unit-md md:grid-cols-2">
             {[
               {
                 quote: "\u201CThe gym tracker app I\u2019ve been looking for for years.\u201D",
@@ -245,18 +248,18 @@ export default function LandingPage() {
             ].map((review) => (
               <figure
                 key={review.original}
-                className="mx-auto flex w-full max-w-md flex-col items-center text-center"
+                className="flex min-h-[240px] w-full flex-col items-center justify-between rounded-2xl border border-unit-border bg-unit-card p-unit-lg text-center md:min-h-[280px] md:p-unit-xl"
               >
-                <p className="text-sm tracking-[0.2em] mb-unit-sm" aria-label="5 out of 5 stars">
+                <p className="text-sm tracking-[0.2em]" aria-label="5 out of 5 stars">
                   ★★★★★
                 </p>
                 <blockquote
-                  className="text-xl font-bold tracking-tight leading-snug"
+                  className="my-unit-lg max-w-[28ch] text-xl font-bold tracking-tight leading-snug"
                   title={review.original}
                 >
                   {review.quote}
                 </blockquote>
-                <figcaption className="mt-unit-sm text-sm text-unit-text-secondary">
+                <figcaption className="eyebrow">
                   App Store review
                 </figcaption>
               </figure>
