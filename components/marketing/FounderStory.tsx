@@ -32,9 +32,9 @@ export default function FounderStory() {
           Everything stays on your phone. No social, no AI, no ceremony.
         </p>
         <p className="text-lg leading-relaxed text-unit-text-secondary">
-          The app I wanted. If you know your program and you&rsquo;re tired
-          of fighting your tracker between sets, might be the one you
-          wanted too.
+          The app I wanted. Whether you start with a built-in program or
+          bring your own, if you&rsquo;re tired of fighting your tracker
+          between sets, it might be the one you wanted too.
         </p>
         <p className="pt-unit-xs text-base font-semibold tracking-tight">
           — {DEVELOPER_NAME.split(" ")[0]}
