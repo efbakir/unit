@@ -324,6 +324,15 @@ enum AppCopy {
         static let restDayCTA = "Choose routine"
     }
 
+    enum Engagement {
+        static let feedbackTitle = "Help improve Unit"
+        static let feedbackBody = "Unit is built by one person. Have 15 minutes to tell me what worked or got in your way?"
+        static let bookCall = "Book a 15-minute call"
+        static let emailFeedback = "Email feedback"
+        static let noThanks = "No thanks"
+        static let linkError = "Couldn’t open that link"
+    }
+
     /// Shared transient-toast copy. The pill is narrow and time-bound, so the
     /// action label stays terse. Body strings name the affected noun so the
     /// undo target is never ambiguous.

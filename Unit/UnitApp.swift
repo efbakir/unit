@@ -25,6 +25,7 @@ struct UnitApp: App {
         ])
     private static let uiTestingArgument = "-ui-testing"
     private static let uiTestingResetArgument = "-ui-testing-reset"
+    private static let uiTestingSeedTwoCompletedWorkoutsArgument = "-ui-testing-seed-engagement-two"
     var sharedModelContainer: ModelContainer
 
     @MainActor
@@ -45,6 +46,10 @@ struct UnitApp: App {
             let storeURL = try persistentStoreURL(isRunningUITests: isRunningUITests)
             if isRunningUITests, CommandLine.arguments.contains(uiTestingResetArgument) {
                 try resetUITestState(at: storeURL)
+            }
+            if isRunningUITests,
+               CommandLine.arguments.contains(uiTestingSeedTwoCompletedWorkoutsArgument) {
+                EngagementPromptTracker.seedCompletedWorkoutCountForUITesting(2)
             }
             let configuration = ModelConfiguration(schema: schema, url: storeURL)
             let container = try makePersistentContainer(configuration: configuration)

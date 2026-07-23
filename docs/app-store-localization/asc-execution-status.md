@@ -1,6 +1,6 @@
-# ASC execution status — 4 OF 5 NAMES FOUNDER-FINAL; COPY AWAITS NATIVE REVIEW
+# ASC execution status — ALL FIVE LOCALES STALE FOR VERSION 2.1
 
-> Updated 2026-07-11 (second update). **English copy is frozen** (`docs/app-store-copy.md`, canonical since commit `49e4f36`) and the founder confirmed the direction ("the app is *workout log* now — see the bigger picture"). The resume protocol ran: all five locale files are re-derived from the frozen canonical. **Nothing is pasted into ASC yet.** Founder-final names (2026-07-13): tr `Unit: Antrenman Günlüğü`, de `Unit: Trainingstagebuch`, es-MX `Unit: Registro de gym` (subtitle cascaded to `Diario de fuerza y series` — the old subtitle led with *registro*), fr `Unit: Carnet de Muscu` (fr keywords gained `journal`, displaced from the retired name). pt-BR's name (`Unit: Diário de Treino`) is still a candidate. Copy gates unchanged: tr is founder-reviewed; de/es-MX/pt-BR/fr each need one native-speaker read; explicit per-locale "paste X" required. Founder naming rule: competitor differentiation is not a naming criterion; conventional category terms are acceptable and often desirable.
+> Updated 2026-07-23. The English 2.1 positioning now includes ready-made programs and beginners. The existing de-DE, es-MX, pt-BR, fr-FR, and tr files derive from the retired experienced-lifter positioning. They are reference material only: **do not paste or publish any of them for 2.1.** Version 2.1 ships English-only until every translated field is regenerated and receives a native-speaker review.
 
 ## Changed fields per locale (re-derivation, 2026-07-11)
 

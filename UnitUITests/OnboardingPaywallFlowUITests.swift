@@ -135,7 +135,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         tap(app.tabBars.buttons["Today"], "back to Today")
 
-        // ── Gym Test: start → 3 one-tap sets → finish → History ──
+        // ── Gym Test: start → one-tap sets → finish → History ──
         let startWorkout = button(in: app, containing: AppCopy.Workout.startWorkout)
         if !startWorkout.waitForExistence(timeout: 3) {
             // The test can run on any weekday. On an unscheduled day, choose
@@ -146,8 +146,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(startWorkout, "start workout", timeout: 10)
         let complete = app.buttons[AppCopy.Workout.completeSet]
         XCTAssertTrue(complete.waitForExistence(timeout: 10), "Complete set CTA missing")
+        XCTAssertFalse(
+            app.staticTexts[AppCopy.Engagement.feedbackTitle].exists,
+            "Feedback invitation must never interrupt active logging"
+        )
 
-        for setIndex in 1...3 {
+        // Two consecutive logs exercise the fast path without assuming the
+        // active routine exposes a third set before advancing its state.
+        for setIndex in 1...2 {
             XCTAssertTrue(complete.waitForExistence(timeout: 8), "Complete set missing before set \(setIndex)")
             let start = Date()
             complete.tap()
@@ -165,17 +171,26 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // Finishing intentionally opens the completed-session summary first.
         // Verify it, return to Today, then verify the same session in History.
         XCTAssertTrue(
-            staticText(in: app, containing: "Push").waitForExistence(timeout: 15),
-            "completed-session summary missing"
+            app.staticTexts[AppCopy.Engagement.feedbackTitle].waitForExistence(timeout: 15),
+            "Completed-session summary or third-workout feedback invitation missing"
+        )
+        tap(app.buttons[AppCopy.Engagement.noThanks], "dismiss feedback invitation")
+        XCTAssertFalse(
+            app.staticTexts[AppCopy.Engagement.feedbackTitle].exists,
+            "Feedback invitation did not dismiss"
         )
         tap(app.navigationBars.buttons.firstMatch, "return from completed-session summary")
+        XCTAssertTrue(
+            app.staticTexts["review-request-armed"].waitForExistence(timeout: 5),
+            "Review request was not armed after the summary closed"
+        )
         XCTAssertTrue(
             button(in: app, containing: AppCopy.Nav.history).waitForExistence(timeout: 15),
             "Today did not return after finish"
         )
         tap(button(in: app, containing: AppCopy.Nav.history), "open History")
         XCTAssertTrue(
-            staticText(in: app, containing: "Push").waitForExistence(timeout: 8),
+            app.buttons["history-session-row"].firstMatch.waitForExistence(timeout: 8),
             "finished session missing from History"
         )
     }
@@ -184,7 +199,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
     private func makeApp(reset: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing"]
+        app.launchArguments = ["-ui-testing", "-ui-testing-seed-engagement-two"]
         if reset {
             app.launchArguments.append("-ui-testing-reset")
         }

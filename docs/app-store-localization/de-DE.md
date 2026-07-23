@@ -1,6 +1,6 @@
 # German (de-DE) — Tier 1 App Store metadata
 
-> Status: **name founder-approved and FINAL 2026-07-13 (`Unit: Trainingstagebuch`). Remaining copy awaits one native-speaker read before ASC paste.**
+> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
 > Register: informal "du" (standard for German fitness apps). No "wir"-forms anywhere (first-person-singular rule).
 > Storefront reach: Germany, Austria, Switzerland (de is the primary metadata language on all three).
 

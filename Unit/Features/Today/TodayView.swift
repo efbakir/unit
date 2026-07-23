@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import StoreKit
 
 // MARK: - Dashboard state
 
@@ -59,6 +60,8 @@ struct SetupIncompleteContext {
 struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appTabSelection) private var appTabSelection
+    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
 
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @Query(sort: \Split.name) private var splits: [Split]
@@ -70,9 +73,12 @@ struct TodayView: View {
     @State private var viewModel = TodayDashboardViewModel()
     @State private var showsHistory = false
     @State private var completedSessionDetail: WorkoutSession?
+    @State private var showsCompletedSessionDetail = false
     @State private var staleSessionPrompt: WorkoutSession?
     @State private var toastMessage: String?
     @State private var showsRoutinePickSheet = false
+    @State private var reviewRequestTask: Task<Void, Never>?
+    @State private var reviewRequestAttemptedForUITest = false
     /// Bumps when override storage changes so `dashboardState` recomputes.
     @State private var routinePickRefresh = 0
 
@@ -84,7 +90,9 @@ struct TodayView: View {
         NavigationStack {
             Group {
                 if let session = activeSession {
-                    ActiveWorkoutView(session: session)
+                    ActiveWorkoutView(session: session) { completedSession in
+                        presentCompletedSession(completedSession)
+                    }
                 } else {
                     dashboardContent
                 }
@@ -95,10 +103,7 @@ struct TodayView: View {
             .navigationDestination(for: DayTemplate.self) { template in
                 TemplateDetailView(template: template)
             }
-            .navigationDestination(isPresented: Binding(
-                get: { completedSessionDetail != nil },
-                set: { if !$0 { completedSessionDetail = nil } }
-            )) {
+            .navigationDestination(isPresented: $showsCompletedSessionDetail) {
                 if let session = completedSessionDetail {
                     let templateName = templates.first(where: { $0.id == session.templateId })?.name ?? "Workout"
                     SessionDetailView(session: session, templateName: templateName)
@@ -119,8 +124,21 @@ struct TodayView: View {
                 // completed workout (cancel deletes the session, so there is no match).
                 let previousId = previous.id
                 if let match = sessions.first(where: { $0.id == previousId && $0.isCompleted }) {
-                    completedSessionDetail = match
+                    presentCompletedSession(match)
                 }
+            }
+            .onChange(of: showsCompletedSessionDetail) { oldValue, newValue in
+                guard oldValue, !newValue else { return }
+                completedSessionDetail = nil
+                scheduleReviewRequestIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, newValue in
+                guard newValue == .active else { return }
+                scheduleReviewRequestIfNeeded()
+            }
+            .onDisappear {
+                reviewRequestTask?.cancel()
+                reviewRequestTask = nil
             }
             .alert(
                 AppCopy.Session.staleSessionTitle,
@@ -143,6 +161,15 @@ struct TodayView: View {
                 Text(AppCopy.Session.staleSessionMessage)
             }
             .appToast(message: $toastMessage)
+            .overlay(alignment: .topLeading) {
+                if CommandLine.arguments.contains("-ui-testing"),
+                   reviewRequestAttemptedForUITest {
+                    Text("Review request armed")
+                        .frame(width: 1, height: 1)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("review-request-armed")
+                }
+            }
         }
     }
 
@@ -337,8 +364,49 @@ struct TodayView: View {
     private func saveStaleSession(_ session: WorkoutSession) {
         session.isCompleted = true
         try? modelContext.save()
+        EngagementPromptTracker().recordCompletedWorkout(sessionID: session.id)
         // Land on SessionDetailView via the existing completedSessionDetail path.
+        presentCompletedSession(session)
+    }
+
+    private func presentCompletedSession(_ session: WorkoutSession) {
         completedSessionDetail = session
+        guard !showsCompletedSessionDetail else { return }
+        // The active-workout branch disappears when `isCompleted` changes.
+        // Present on the next main-actor turn so NavigationStack receives the
+        // destination after its Today content has settled.
+        Task { @MainActor in
+            await Task.yield()
+            showsCompletedSessionDetail = true
+        }
+    }
+
+    private func scheduleReviewRequestIfNeeded() {
+        let tracker = EngagementPromptTracker()
+        guard tracker.shouldRequestReview,
+              activeSession == nil,
+              !showsCompletedSessionDetail,
+              scenePhase == .active,
+              reviewRequestTask == nil else { return }
+
+        reviewRequestTask = Task { @MainActor in
+            defer { reviewRequestTask = nil }
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled,
+                  activeSession == nil,
+                  !showsCompletedSessionDetail,
+                  scenePhase == .active else { return }
+
+            let currentTracker = EngagementPromptTracker()
+            guard currentTracker.shouldRequestReview else { return }
+            currentTracker.markReviewRequestAttempted()
+            reviewRequestAttemptedForUITest = true
+
+            // StoreKit review UI is intentionally suppressed in UI automation.
+            // The durable attempt flag still lets the test verify the policy.
+            guard !CommandLine.arguments.contains("-ui-testing") else { return }
+            requestReview()
+        }
     }
 
     private func discardStaleSession(_ session: WorkoutSession) {

@@ -1,6 +1,6 @@
 # Portuguese — Brazil (pt-BR) — Tier 1 App Store metadata
 
-> Status: **awaiting native-speaker review — re-derived 2026-07-11 from the frozen canonical (`docs/app-store-copy.md`). The name is a candidate, not founder-final.**
+> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
 > Register: "você" (implicit), Brazilian vocabulary. No "nós"-forms (first-person-singular rule).
 > Storefront reach: Brazil. Portugal uses pt-PT (not planned; Brazil is the market).
 

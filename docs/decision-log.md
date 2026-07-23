@@ -20,6 +20,10 @@
 
 ---
 
+## 2026-07-23 — Version 2.1 engagement prompts and inclusive App Store positioning
+
+**Decision:** Version 2.1 counts only newly completed workout session IDs in a version-scoped UserDefaults tracker. It makes one StoreKit review-request attempt after workout one’s summary closes, and shows one non-blocking feedback card on workout three’s summary. The card opens `https://calendar.notion.so/meet/efbakir/unit-feedback` or a prefilled email to `support@unitlift.app`. Neither prompt can interrupt active logging. App Store English copy now welcomes beginner-to-experienced users through ready-made programs or pasted routines; the five existing metadata translations are stale and must not ship in 2.1. Release identity is **2.1 (58)**.
+
 ## 2026-07-22 — Recover the agreed v2.1 working state and bind releases to clean main
 
 **Decision:** Preserve the complete July 13–17 working tree, remove the Debug-only forced-onboarding path, and ship the recovered product work as **2.1 (36)**. Xcode Run and Release now derive onboarding, paywall, and app entry from the same persisted program and entitlement state. Every App Store archive must come from a clean, tagged `main`; the tag and build number are recorded together before upload.

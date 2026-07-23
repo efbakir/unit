@@ -1,6 +1,6 @@
 # Unit — App Store copy (canonical)
 
-> **FROZEN 2026-07-11 — founder-approved.** The single source of truth for every App Store Connect text field; if a string isn't here, it isn't canon. Any change after the freeze requires a decision-log entry and re-stales the five locale files (regeneration list: `docs/app-store-localization/asc-execution-status.md`).
+> **FROZEN 2026-07-23 FOR VERSION 2.1 — founder-approved.** The single source of truth for every App Store Connect text field; if a string isn't here, it isn't canon. The five locale files are stale for 2.1 and must not be published without a new native review.
 > Process (what to click, in what order): `docs/app-store-submission/final-submit-checklist.md`.
 > Localized metadata derives from this file — see `docs/app-store-localization/README.md`.
 > Consolidated 2026-07-11 from `docs/marketing/app-store-copy.md` (deleted), the old draft here, and `source-en.md`. Conflicting variants live in git history only.
@@ -19,16 +19,15 @@ Locale names take the same separator — flagged for the next locale regeneratio
 ## Subtitle (30)
 
 ```
-Strength tracker for lifters
+Simple strength tracker
 ```
 
-Why: the new app name already owns *gym, workout, log* — Apple ignores duplicated keywords across name/subtitle, so the subtitle must add fresh terms. This adds *strength, tracker, lifters*. 28 chars.
-Superseded alternates (git history): live v1 `Log a set in 3 seconds` (no new keywords), `Fast workout & strength log` (duplicates name terms), `Log every set in one tap.` (near-dupe of live).
+Inclusive positioning for beginner-to-experienced gym users. It describes the product without implying that users must already have a program.
 
 ## Promotional text (170, editable anytime without review)
 
 ```
-You already know your program. Unit logs it faster than paper — last time's numbers are already filled in, every set one tap. No AI. No social. Just your numbers.
+Choose a ready-made program or paste your own. Last time’s weights are filled in, every set takes one tap, and the rest timer starts automatically.
 ```
 
 Evergreen (reads right for cold visitors after launch week too). Update-announcement variants belong in What's New, not here.
@@ -36,13 +35,17 @@ Evergreen (reads right for cold visitors after launch week too). Update-announce
 ## Description (4000)
 
 ```
-Log a set in 3 seconds and get back under the bar.
+Log a set in 3 seconds and get back to your workout.
 
-Your weights from last time are already filled in — confirm, adjust, done. Paste your program and your working numbers are ready from day one.
+Choose a ready-made program or paste your own. Unit keeps your last weights ready, so each set is quick to confirm or adjust.
+
+• One-tap set logging
+• Ready-made programs
+• Paste any routine
+• Automatic rest timer on the Lock Screen
+• Workout history and personal records
 
 No account. No ads. No social feed. Your training stays on your iPhone.
-
-A gym notebook, not a platform.
 
 Unit requires a paid purchase after setup. Weekly, monthly, and yearly auto-renewing subscriptions are available. Optional Lifetime appears only if available. Prices are shown in the app before purchase. There is no free trial.
 
@@ -55,36 +58,24 @@ Short on purpose: iOS descriptions are conversion-only (not search-indexed) and 
 ## Keywords (100, comma-separated, no spaces)
 
 ```
-lifting,rest,timer,set,counter,weights,reps,training,routine,progressive,overload,history,simple
+beginner,program,routine,lifting,rest,timer,weights,reps,training,progress,history,sets
 ```
 
-96 chars. Freeze amendment #2 (2026-07-11, user feedback: "your strength is that it is minimalistic — put it in the keywords"): added `simple` — the exact qualifier lifters fleeing bloated apps search ("simple workout tracker"). Dropped `rep` (redundant — Apple stems singular/plural, `reps` covers it) and `notes` (generic, polluted by Apple Notes searches). All behavior combinations from the post-freeze correction stay intact: rest+timer, set/reps+counter, weights+history, progressive+overload.
+Beginner-inclusive feature and behavior terms, deduped against the app name and subtitle.
 
-99 chars. Founder-corrected 2026-07-11 post-freeze (see decision log): dropped the narrow style terms (*powerlifting, barbell, 5x5, hypertrophy, squat*) for behavior and feature terms lifters actually search. Still deduped against name (*gym, workout, log*) and subtitle (*strength, tracker, lifters*) — duplicates index once, so every slot here adds a new term.
-
-## What's New — v2.0
+## What's New — v2.1
 
 ```
-• Log a set in 3 seconds — last time's weights are already filled in
-• Paste your program and start with real working numbers from day one
-• Rebuilt first run: from install to your program built in under a minute
+Unit 2.1 makes setup and logging clearer.
 
-Unit now requires a paid purchase after setup — plans are shown before you pay. No free trial. Existing training data stays on this iPhone.
+• Choose a ready-made program or paste your own
+• Improved workout logging and bodyweight history
+• Better purchase handling and reliability fixes
 ```
 
-The paid paragraph is deliberate: v1 users read What's New before updating, and this is the only channel that warns them about the wall. The data-stays line is the reassurance that matters to them.
+## Screenshots
 
-## Screenshot captions (5 slots — caption is the only text on the shot)
-
-| # | Caption | Image |
-|---|---|---|
-| 1 | `3 seconds, back under the bar` | ✅ live — logging screen, last time's weights pre-filled, one set ticked |
-| 2 | `Paste your program, start lifting` | ⚠️ recapture — program preview right after a paste import (days + exercises + weights filled). Current shot shows the set editor, which doesn't match the caption |
-| 3 | `No account. Works offline.` | ✅ live — no-signup proof + "Stored on this iPhone"; airplane glyph as quiet secondary |
-| 4 | `A notebook, not a feed` | 🟡 acceptable (History calendar) once #5 stops duplicating it; stronger alternative: the calm Today screen |
-| 5 | `Your rest timer, on the lock screen` | ⚠️ recapture — real Lock Screen with the rest-timer Live Activity counting down. Current shot duplicates #4's calendar |
-
-Screenshots don't block the binary upload. If recaptures aren't ready at submission, reuse the current approved set (strategy (b): reviewer notes carry the paywall story) and swap shots in a later metadata update.
+Keep the five currently approved screenshots in their current order for 2.1. Do not replace, reorder, or localize them in this submission. The English metadata follows their existing speed, program-import, privacy, notebook, and rest-timer story.
 
 ## Reviewer notes (App Review Information → Notes)
 
@@ -96,6 +87,11 @@ To evaluate:
 2. After onboarding completes, the paywall appears with these StoreKit products: Weekly com.unit.weekly $2.99/week, Monthly com.unit.monthly $4.99/month, Yearly com.unit.annual $29.99/year, and Lifetime com.unit.lifetime $44.99 one-time only if that non-consumable is configured and returned by StoreKit. Weekly is selected by default. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
 3. Subscribe to any recurring tier, or buy Lifetime if visible, via the sandbox account. The paywall dismisses and the Today tab unlocks. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
 4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
+
+Engagement prompts in version 2.1 count only workouts completed after installing this version:
+- After the first new completed workout, close its workout summary. Two seconds after Today is active, Unit makes one standard StoreKit review-request attempt. iOS may suppress the visible prompt.
+- On the third new completed workout’s summary, Unit shows a one-time “Help improve Unit” card. “Book a 15-minute call” opens https://calendar.notion.so/meet/efbakir/unit-feedback and “Email feedback” opens a prefilled email to support@unitlift.app.
+- Neither prompt appears during an active workout. Both attempt/shown states persist locally and do not repeat.
 
 There is no free trial. Apple Guideline 3.1.2(b) disclosure is satisfied: each tier card shows product title, full StoreKit price, and billing period; the selected billed amount remains visible directly above the CTA; auto-renewal and cancel-via-Settings copy is on the paywall itself. No deceptive trial framing.
 

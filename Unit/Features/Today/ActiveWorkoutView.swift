@@ -11,6 +11,7 @@ import SwiftData
 
 struct ActiveWorkoutView: View {
     @Bindable var session: WorkoutSession
+    var onFinished: ((WorkoutSession) -> Void)? = nil
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
@@ -980,6 +981,8 @@ struct ActiveWorkoutView: View {
         restTimer.stop()
         session.isCompleted = true
         try? modelContext.save()
+        EngagementPromptTracker().recordCompletedWorkout(sessionID: session.id)
+        onFinished?(session)
         workoutFinishedPhase &+= 1
     }
 

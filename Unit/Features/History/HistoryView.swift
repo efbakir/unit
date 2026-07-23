@@ -382,6 +382,7 @@ struct RecentSessionsView: View {
                                 } label: {
                                     historySessionRow(for: snapshot)
                                 }
+                                .accessibilityIdentifier("history-session-row")
                                 .buttonStyle(ScaleButtonStyle())
                             }
                         }

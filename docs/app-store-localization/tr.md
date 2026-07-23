@@ -1,6 +1,6 @@
 # Turkish (tr) — Tier 1 App Store metadata
 
-> Status: **founder-reviewed and approved 2026-07-11 — the name is final. ASC paste still requires the founder's explicit "paste tr" go-ahead.**
+> Status: **STALE FOR 2.1 — do not paste or publish.** Regenerate from the 2026-07-23 English source, then obtain a native-speaker review.
 > Register: "sen". No "biz"-forms (first-person-singular rule).
 > Storefront reach: Turkey.
 
