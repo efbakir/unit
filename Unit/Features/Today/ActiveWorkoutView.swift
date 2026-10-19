@@ -222,6 +222,7 @@ struct ActiveWorkoutView: View {
                 progressSteps: progressSteps(for: section),
                 exerciseName: section.exercise.displayName,
                 metricValue: metricValue(for: section),
+                exerciseID: section.exercise.id,
                 metricSupportingText: metricSupportingText(for: section),
                 metricIsHint: metricIsPlaceholder(for: section),
                 metricIsGhost: metricIsGhost(for: section),
@@ -235,6 +236,7 @@ struct ActiveWorkoutView: View {
                     )
                 },
                 onSecondaryAction: section.hasReachedPlannedSetGoal ? nil : {
+                    guard currentSection?.exercise.id == section.exercise.id else { return }
                     adjustResultPayload = AdjustResultPayload(
                         exercise: section.exercise,
                         prefill: section.prefill
@@ -890,16 +892,18 @@ struct ActiveWorkoutView: View {
         guard selectedExerciseIndex < sectionModels.count - 1 else { return }
         showsReadyState = false
         restTimer.stop()
-        withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appExit : nil) {
-            selectedExerciseIndex += 1
-        }
+        // The shared card owns the exercise blur/fade handoff. Do not animate
+        // the whole screen's geometry, rest controls, sheets and draft fields.
+        selectedExerciseIndex += 1
     }
 
     private func completeSuggestedSet(
         exercise: Exercise,
         prefill: SetPrefill?
     ) {
-        guard !isLoggingSet else { return }
+        // An outgoing crossfading card cannot log a set for the exercise that
+        // has just been left, even if its old button receives a late tap.
+        guard !isLoggingSet, currentSection?.exercise.id == exercise.id else { return }
 
         if let prefill,
            prefill.source != .planned || exercise.isBodyweight || prefill.weight > 0 {

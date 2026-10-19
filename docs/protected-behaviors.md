@@ -78,3 +78,7 @@ Native navigation backgrounds/separators stay scroll-driven via `.automatic`; ne
 ## Preparation is not completion — October 19
 
 Saving an upcoming target never creates a completed set, advances set progress, starts rest or emits completion feedback. `AdjustResultSheet.prepare` saves the target; `Complete set` alone records performance. Prepared targets persist separately by session/exercise, survive relaunch and clear only after successful logging/finish/cancellation. Recorded-set chip editing remains distinct. Preserve entered notes and canonical kg/BW values. No fabricated history rows.
+
+## Workout geometry — October 19
+
+Logging the first set must not change the set strip’s hit-area height or collapse the metric/supporting/CTA slots. Timer adjust controls retain their positions through state changes. Exercise handoffs replace only exercise content; no whole-screen animation may morph the timer/sheet/input layout. Set chip state changes use the canonical arrival/removal transitions; Undo restores the exact saved values and identity. Revisit long exercise names and compact PR evidence when visually checking these owners.

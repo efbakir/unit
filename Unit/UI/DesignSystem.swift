@@ -2203,7 +2203,10 @@ struct SetProgressIndicator: View {
             ForEach(steps) { step in
                 renderStep(step)
                     .id(step.state)
-                    .transition(AppBlurTransition().animation(.appReveal))
+                    .transition(AsymmetricTransition(
+                        insertion: AppBlurTransition(),
+                        removal: AppBlurTransition(scales: true)
+                    ).animation(AppMotion.collectionChange))
             }
         }
         .appAnimation(AppMotion.collectionChange, value: steps.map(\.state), reduceMotion: reduceMotion)
@@ -2211,9 +2214,9 @@ struct SetProgressIndicator: View {
 
     /// Tap-edit on a logged chip is the only interaction in the strip — wrap it in a
     /// `Button` (which auto-applies the `isButton` trait) and inflate the hit area
-    /// to 44pt to meet the gym-test touch-target floor. The visible capsule stays
-    /// 24pt; the extra 20pt is invisible padding so the HStack grows from 24pt to
-    /// 44pt only when chips are interactive.
+    /// to 44pt to meet the gym-test touch-target floor. Every state reserves
+    /// that same invisible hit-area height; the first log must not grow the row
+    /// from 24pt to 44pt and push the entire timer downward.
     @ViewBuilder
     private func renderStep(_ step: Step) -> some View {
         if (step.state == .completed || step.state == .failed), let onTap = step.onTap {
@@ -2228,6 +2231,7 @@ struct SetProgressIndicator: View {
             .accessibilityAddTraits(.isButton)
         } else {
             stepContent(step)
+                .frame(minHeight: 44)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(accessibilityLabel(for: step))
         }
@@ -2358,16 +2362,11 @@ struct RestTimerControl: View {
                 )
 
                 Button(action: { onToggle?() }) {
-                    Group {
-                        if showsTimerCapsule {
-                            timerCenterTapLabel
-                                .clipShape(Capsule(style: .continuous))
-                                .contentShape(Capsule(style: .continuous))
-                        } else {
-                            timerCenterTapLabel
-                                .contentShape(Rectangle())
-                        }
-                    }
+                    // Keep one label hierarchy and one centre column when
+                    // idle/paused becomes running; only its chrome crossfades.
+                    timerCenterTapLabel
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .disabled(onToggle == nil || state == .disabled)
@@ -2380,7 +2379,8 @@ struct RestTimerControl: View {
                 )
             }
         }
-        .opacity(state == .disabled ? 0.5 : 1)
+        .opacity(state == .disabled ? AppMotion.disabledOpacity : 1)
+        .animation(AppMotion.transition, value: state)
     }
 
     private var timerCenterTapLabel: some View {
@@ -4015,6 +4015,7 @@ struct WorkoutCommandCard: View {
     let progressSteps: [SetProgressIndicator.Step]
     let exerciseName: String
     let metricValue: String
+    var exerciseID: UUID? = nil
     var metricSupportingText: String? = nil
     /// When true, the metric line uses body-sized copy instead of the large numeric display (placeholders).
     var metricIsHint: Bool = false
@@ -4061,31 +4062,35 @@ struct WorkoutCommandCard: View {
     /// the full visible duration instead of being hidden by the first task.
     @SwiftUI.State private var prBadgeSequence: Int = 0
 
+    private var exerciseTransitionID: String { exerciseID?.uuidString ?? exerciseName }
+
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
-            VStack(alignment: .center, spacing: AppSpacing.lg) {
-                HStack {
-                    Spacer(minLength: 0)
-                    SetProgressIndicator(steps: progressSteps)
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity)
+            // PlateSteps pattern: replace only exercise content. The timer is
+            // outside the identity boundary and never gets rebuilt with a step.
+            ZStack(alignment: .top) {
+                VStack(alignment: .center, spacing: AppSpacing.lg) {
+                    HStack {
+                        Spacer(minLength: 0)
+                        SetProgressIndicator(steps: progressSteps)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity)
 
-                Text(exerciseName)
-                    .contentTransition(.opacity)
-                    .animation(AppMotion.reveal, value: exerciseName)
-                    .font(AppFont.productHeading.font)
-                    .tracking(AppFont.productHeading.tracking)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(exerciseName)
+                        .font(AppFont.productHeading.font)
+                        .tracking(AppFont.productHeading.tracking)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .center, spacing: AppSpacing.sm) {
-                    metricHero
-                    metricSupportingSlot
-                }
+                    VStack(alignment: .center, spacing: AppSpacing.sm) {
+                        metricHero.frame(minHeight: 60)
+                        metricSupportingSlot
+                    }
 
-                if state != .completed || setConfirmationVisible {
+                    // Keep the existing 60pt slot after completion, so the
+                    // confirmation timing cannot collapse the timer's layout.
                     AppPrimaryButton(
                         primaryLabel,
                         isEnabled: setConfirmationVisible || (state == .active && onPrimaryAction != nil),
@@ -4095,12 +4100,16 @@ struct WorkoutCommandCard: View {
                             onPrimaryAction?()
                         }
                     )
+                    .opacity(state == .completed && !setConfirmationVisible ? 0 : 1)
                     .allowsHitTesting(state == .active)
-                    .transition(.opacity.animation(AppMotion.reveal))
+                    .accessibilityHidden(state == .completed && !setConfirmationVisible)
+                    .animation(AppMotion.transition, value: setConfirmationVisible)
                 }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.lg)
+                .id(exerciseTransitionID)
+                .transition(AppBlurTransition().animation(AppMotion.transition))
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.lg)
 
             if let timerValue {
                 Rectangle()
@@ -4121,7 +4130,9 @@ struct WorkoutCommandCard: View {
         }
         .frame(maxWidth: .infinity)
         .appWorkoutPanelChrome()
-        .appAnimation(.appState, value: state, reduceMotion: reduceMotion)
+        .appAnimation(AppMotion.collectionChange, value: exerciseTransitionID, reduceMotion: reduceMotion)
+        .appAnimation(AppMotion.collectionChange, value: prBadgeVisible, reduceMotion: reduceMotion)
+        .appAnimation(AppMotion.collectionChange, value: metricSupportingText, reduceMotion: reduceMotion)
         .appHaptic(.success, trigger: setLoggedSignal)
         .onChange(of: setLoggedSignal) { _, _ in
             // Parent increments only after persistence succeeds. The next set
@@ -4136,8 +4147,10 @@ struct WorkoutCommandCard: View {
             } catch { return }
             withAnimation(AppMotion.transition) { setConfirmationVisible = false }
         }
-        .onChange(of: exerciseName) { _, _ in
+        .onChange(of: exerciseTransitionID) { _, _ in
             setConfirmationVisible = false
+            prBadgeSequence &+= 1
+            prBadgeVisible = false
         }
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
@@ -4169,81 +4182,100 @@ struct WorkoutCommandCard: View {
         }
     }
 
-    @ViewBuilder
-    private var metricSupportingSlot: some View {
-        Group {
-            if prBadgeVisible {
-                VStack(spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.xs) {
-                        AppIcon.checkmarkFilled.image(size: 17)
-                            .foregroundStyle(AppColor.success)
-                        Text(AppCopy.Workout.personalRecord)
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textPrimary)
-                    }
-                    .padding(.horizontal, AppSpacing.smd)
-                    .padding(.vertical, AppSpacing.xs)
-                    .background(AppColor.successSoft, in: Capsule(style: .continuous))
+    private var personalRecordBadge: some View {
+        HStack(spacing: AppSpacing.xs) {
+            AppIcon.checkmarkFilled.image(size: 17)
+                .foregroundStyle(AppColor.success)
+            Text(AppCopy.Workout.personalRecord)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textPrimary)
+        }
+        .padding(.horizontal, AppSpacing.smd)
+        .padding(.vertical, AppSpacing.xs)
+        .background(AppColor.successSoft, in: Capsule(style: .continuous))
+        .fixedSize()
+    }
 
-                    if let priorBestText, !priorBestText.isEmpty {
-                        Text(priorBestText)
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .monospacedDigit()
+    private var metricSupportingSlot: some View {
+        ZStack {
+            // Reserve a caption/badge line even when the evidence clears.
+            Text(AppCopy.Workout.startingTargetLabel)
+                .font(AppFont.caption.font)
+                .padding(.vertical, AppSpacing.xs)
+                .hidden()
+                .accessibilityHidden(true)
+
+            if prBadgeVisible {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        personalRecordBadge
+                        if let priorBestText, !priorBestText.isEmpty {
+                            Text(priorBestText)
+                                .font(AppFont.caption.font)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .monospacedDigit()
+                                .fixedSize()
+                        }
+                    }
+                    VStack(spacing: AppSpacing.xs) {
+                        personalRecordBadge
+                        if let priorBestText, !priorBestText.isEmpty {
+                            Text(priorBestText)
+                                .font(AppFont.caption.font)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .monospacedDigit()
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                    priorBestText.map { "\(AppCopy.Workout.personalRecord). \($0)." }
-                        ?? AppCopy.Workout.personalRecord
-                )
-                .transition(.opacity.animation(AppMotion.reveal))
-            } else if let metricSupportingText, !metricSupportingText.isEmpty {
-                Text(metricSupportingText)
+                .transition(AppBlurTransition().animation(AppMotion.transition))
+            } else {
+                Text(metricSupportingText ?? " ")
                     .contentTransition(.opacity)
-                    .animation(AppMotion.feedback, value: metricSupportingText)
+                    .animation(AppMotion.transition, value: metricSupportingText)
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .opacity(metricSupportingText == nil ? 0 : 1)
+                    .accessibilityHidden(metricSupportingText == nil)
                     .transition(.opacity)
             }
         }
-        .appAnimation(.appReveal, value: prBadgeVisible, reduceMotion: reduceMotion)
     }
 
     @ViewBuilder
     private var metricHero: some View {
-        if onSecondaryAction != nil {
-            if metricIsHint {
-                AppSecondaryButton(
-                    AppCopy.Workout.logMetricHint,
-                    isEnabled: state == .active,
-                    fillsAvailableWidth: false,
-                    action: { onSecondaryAction?() }
-                )
-                .accessibilityLabel("Log weight and reps")
-            } else {
-                Button(action: { onSecondaryAction?() }) {
-                    VStack(spacing: AppSpacing.xs) {
-                        metricValueText
-
-                        Text("Adjust")
-                            .appCapsLabel(.smallLabel)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
+        if metricIsHint {
+            AppSecondaryButton(
+                AppCopy.Workout.logMetricHint,
+                isEnabled: state == .active,
+                fillsAvailableWidth: false,
+                action: { onSecondaryAction?() }
+            )
+        } else if onSecondaryAction != nil {
+            Button(action: { onSecondaryAction?() }) {
+                metricValueLabel
                     .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
-                }
-                .buttonStyle(ScaleButtonStyle())
-                .accessibilityLabel(
-                    "Adjust weight and reps, \(Self.voiceOverLabel(forMetric: metricValue))"
-                )
             }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel("Adjust weight and reps, \(Self.voiceOverLabel(forMetric: metricValue))")
         } else {
+            metricValueLabel
+        }
+    }
+
+    private var metricValueLabel: some View {
+        VStack(spacing: AppSpacing.xs) {
             metricValueText
+            Text("Adjust")
+                .appCapsLabel(.smallLabel)
+                .foregroundStyle(AppColor.textSecondary)
+                .opacity(onSecondaryAction == nil ? 0 : 1)
+                .accessibilityHidden(onSecondaryAction == nil)
         }
     }
 
@@ -4360,6 +4392,8 @@ struct SessionStateBar: View {
                             .foregroundStyle(AppColor.textSecondary)
                         Text(subtitle)
                             .foregroundStyle(AppColor.textPrimary)
+                            .contentTransition(.opacity)
+                            .animation(AppMotion.transition, value: subtitle)
                     }
                     // `productAction` (17pt bold) matches `AppPrimaryButton`'s
                     // label font so the secondary "Next exercise" CTA reads at
