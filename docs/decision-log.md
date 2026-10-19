@@ -544,3 +544,8 @@ The user requested automatic preparation of the next exercise after completing t
 Approved the R5 Analytics content: one four-week status summary, Squat/Bench Press/Deadlift cards and plain Other exercise rows. A pure read-only engine compares valid completed working sets, retains real gaps, persists the status deterministically for three days and reads accepted targets without generating recommendations. No strength score, schema change or logging/progression edit.
 
 Explicitly approved `AppStatusSummaryCard`, `AppMainLiftCard`, `AppTrendChart`, a 34pt status role, 96/120pt chart heights and missing SF Symbol tokens. Reuse native navigation, sheets and segmented controls. Keep the existing bottom navigation unchanged. Keep copy short and literal. Work stays local; delivery requires a later instruction from Efe.
+
+
+## 2026-10-19 — Let SwiftUI own tab-bar backgrounds
+
+Efe rejected the full-width background behind the floating bottom navigation and requested native SwiftUI defaults. Removed forced hard/soft scroll-edge styles from the shared compatibility modifier, the extra AppScreen content clip that cut off scrolling above the bar, and the UITabBarItem font override. This supersedes the earlier hard-edge styling decision. Native TabView, Analytics content, layout sizes, app palette and phone build remain unchanged. No replacement gradient, material, background or custom tab bar was added.

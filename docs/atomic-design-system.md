@@ -236,7 +236,7 @@ Workout targets and their weight/reps editor reuse the existing `AppFont.numeric
 
 ## Native bar material — October 19 override
 
-Navigation backgrounds use SwiftUI `toolbarBackgroundVisibility(.automatic, for: .navigationBar)`. Do not force `.visible`, a `.bar` background style or custom standard/scroll-edge appearances: the system decides when scrolling content needs a backdrop. Existing typography and tint remain. The canonical `appScrollEdgeSoft` owner keeps the approved hard vertical edge style on iOS26+, soft horizontal clipping and native iOS18 fallback; its legacy name is retained for callers.
+Navigation backgrounds use SwiftUI `toolbarBackgroundVisibility(.automatic, for: .navigationBar)`. Do not force `.visible`, a `.bar` background style or custom standard/scroll-edge appearances: the system decides when scrolling content needs a backdrop. Existing typography and tint remain. The latest native-only correction removes all forced hard/soft scroll-edge styles. `appScrollEdgeSoft` is a pass-through compatibility entry point; SwiftUI chooses its default effect. Tab labels use the system font with no UITabBarItem appearance override. AppScreen does not add an outer clip around its native ScrollView; the system owns content clipping beneath the bars.
 
 Pinned header/action sections in AppScreen occupy separate layout space, so content cannot scroll behind them. They match the page surface with no permanent material strip or separator. Native bars retain their own scroll-driven separation. No hand-drawn gradients. Sheets keep their native background. Content-card styling and all sizes stay unchanged.
 

@@ -5377,7 +5377,6 @@ struct AppScreen<Content: View>: View {
             }
             scrollContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
                 .overlay(alignment: .bottom) {
                     floatingAccessoryOverlay
                 }
@@ -5594,24 +5593,11 @@ extension View {
         self.font(AppFont.body.font.weight(.semibold))
     }
 
-    /// Canonical scroll-edge treatment. Legacy name retained for existing callers.
-    /// User override (2026-10-19): hard native vertical bar edges, soft horizontal
-    /// clipping for content strips. No hand-drawn gradients behind headers/actions.
-    @ViewBuilder
+    /// Compatibility entry point for existing screens. SwiftUI owns scroll edges:
+    /// do not force hard/soft effects or draw a backdrop behind native bars.
+    /// The legacy parameters remain so callers need no layout changes.
     func appScrollEdgeSoft(top: Bool = true, bottom: Bool = true) -> some View {
-        if #available(iOS 26.0, *) {
-            switch (top, bottom) {
-            case (true, true):
-                self.scrollEdgeEffectStyle(.hard, for: .vertical)
-                    .scrollEdgeEffectStyle(.soft, for: .horizontal)
-            case (true, false): self.scrollEdgeEffectStyle(.hard, for: .top)
-            case (false, true): self.scrollEdgeEffectStyle(.hard, for: .bottom)
-            case (false, false): self
-            }
-        } else {
-            // iOS 18 uses its native material navigation bars and separators.
-            self
-        }
+        self
     }
 
     func eraseToAnyView() -> AnyView {

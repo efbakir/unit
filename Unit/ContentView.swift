@@ -60,7 +60,6 @@ struct ContentView: View {
         .onAppear {
             configureNavigationBarAppearance()
             configureSegmentedControlAppearance()
-            configureTabBarAppearance()
         }
         .alert("Training data unavailable", isPresented: $showsPersistenceRecoveryNotice) {
             Button("Continue temporarily", role: .cancel) { }
@@ -139,12 +138,6 @@ struct ContentView: View {
         )
     }
 
-    private func configureTabBarAppearance() {
-        let tabFont = UIFont.geist(.medium, size: 10, relativeTo: .caption2)
-        let attributes: [NSAttributedString.Key: Any] = [.font: tabFont]
-        UITabBarItem.appearance().setTitleTextAttributes(attributes, for: .normal)
-        UITabBarItem.appearance().setTitleTextAttributes(attributes, for: .selected)
-    }
 }
 
 struct AppTabSelection {

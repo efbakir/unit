@@ -91,7 +91,7 @@ Files deleted from repo (don't recreate): see [`docs/claude/scope.md`](docs/clau
 Claude **invents a new struct / helper / modifier / variant when extending the existing canonical one would do.** This is worse than any hex literal — it bakes drift into the design system itself.
 
 - **Default: extend > create.** Before any new `struct X: View` / `ViewModifier` / variant in `DesignSystem.swift`, grep for the closest primitive. Cover ~80% → extend with `style:` / `variant:` / `tone:`. Otherwise justify in one sentence.
-- **One canonical modifier per concern.** `appScrollEdgeSoft(top:bottom:)` for native bar edges (legacy name; hard vertical edges, soft horizontal clipping). `AppCardList(data) { row }` for lists in cards. `AppGhostButton` for "Add X" triggers. Never fork.
+- **One canonical modifier per concern.** `appScrollEdgeSoft(top:bottom:)` as a compatibility entry point for native bar edges (pass-through; SwiftUI owns the defaults). `AppCardList(data) { row }` for lists in cards. `AppGhostButton` for "Add X" triggers. Never fork.
 - **Fix the canonical, migrate callers, don't create a parallel.**
 - **Toolbar chrome defers to iOS-native.** No `.weight(...)` on `ToolbarItem` buttons.
 - **Sheet roots are plain `VStack`.** No `ScrollView` / `AppCard` wrapper inside `.sheet { }`.
@@ -123,7 +123,7 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 - Inline button/card chrome instead of `AppPrimaryButton` / `AppCard` / `AppScreen`
 - `regular` font weight; orange `#FF4400`
 - `.preferredColorScheme(.dark)` outside the recorded two-second `OnboardingSplashView` opener; landscape assumptions
-- Inline `.scrollEdgeEffectStyle(...)` — route through `appScrollEdgeSoft(top:bottom:)`; the shared owner uses native hard vertical edges per the October 19 user override.
+- Inline `.scrollEdgeEffectStyle(...)` — route through `appScrollEdgeSoft(top:bottom:)`; the latest October 19 user correction removes forced hard/soft styles and leaves SwiftUI defaults.
 - `LinearGradient` / `.mask` fade under fixed bars in `Features/**/*.swift`
 - `.weight(.semibold/.bold/.heavy)` on `ToolbarItem` buttons
 - `AppSecondaryButton(tone: .accentSoft, icon: .add, ...)` for "Add X" — use `AppGhostButton`

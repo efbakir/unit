@@ -73,7 +73,7 @@ owned by the coordinating release chat.
 
 ## Native chrome override — October 19
 
-Native navigation backgrounds/separators stay scroll-driven via `.automatic`; never force them visible at rest. Nonoverlapping pinned headers/action areas match the page surface without a permanent tint or separator. The existing canonical edge modifier owns hard vertical/soft horizontal clipping; feature-local gradient fades must not return. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.
+Native navigation backgrounds/separators stay scroll-driven via `.automatic`; never force them visible at rest. Nonoverlapping pinned headers/action areas match the page surface without a permanent tint or separator. The existing canonical edge modifier is a pass-through: SwiftUI owns its default edge effects. Do not restore forced hard/soft styles, tab-label font appearance overrides or feature-local gradient fades. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.
 
 ## Preparation is not completion — October 19
 

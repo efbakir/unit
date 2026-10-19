@@ -72,3 +72,8 @@ No missing model field blocks the requested analytics. Hardware performance and 
 1. Efe reviews the iOS27 main, scrolled and detail screenshots, with the existing rounded bottom bar.
 2. Complete remaining manual chart/accessibility and physical-device performance checks when access permits.
 3. Only after Efe requests delivery: prepare a new build, upgrade in place and confirm launch/history. Leave public submission to Efe.
+
+
+## Follow-up: native tab-bar correction
+
+After the R5 checkpoint, Efe rejected the background behind the floating bar and explicitly requested SwiftUI defaults. Removed forced hard/soft edges, the extra outer AppScreen scrolling clip and the tab-item title-font override. This later correction supersedes the earlier unchanged-appearance note; tab composition and Analytics content are still unchanged. See [current screenshots and scope](../qa/native-tabbar/README.md). Build84 remains local-only; no phone update.
