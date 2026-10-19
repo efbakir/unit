@@ -80,13 +80,12 @@ struct ActiveWorkoutView: View {
     /// first set-edit sheet — confirms the just-discovered tap-to-edit gesture
     /// is reusable on every set. Persisted across launches so it never repeats.
     @AppStorage("hasSeenSetEditHint") private var hasSeenSetEditHint: Bool = false
-    /// Bound to `appToast(message:)` on the screen root; the watcher on
+    /// Bound to `appToast(event:)` on the screen root; the watcher on
     /// `editingSetPayload` sets it to the hint copy and clears the AppStorage flag.
-    @State private var setEditHintToast: String? = nil
+    @State private var setEditHintToast: AppToastEvent? = nil
     @State private var saveFailed = false
     @State private var removedSet: SetEntrySnapshot?
     @State private var removedSetWasPR = false
-    @State private var showsSetUndo = false
     @State private var didTrackWorkoutStart = false
     @State private var noKeyboardSetCount = 0
     /// Plus / minus on the rest timer adjust by this many seconds (minimum rest stays 30s).
@@ -502,14 +501,11 @@ struct ActiveWorkoutView: View {
         // copy reads as reinforcement ("you can do that on any set anytime").
         .onChange(of: editingSetPayload != nil) { wasShowing, isShowing in
             guard wasShowing, !isShowing, !hasSeenSetEditHint else { return }
-            guard !showsSetUndo else { return }
+            guard setEditHintToast?.action == nil else { return }
             hasSeenSetEditHint = true
-            setEditHintToast = AppCopy.Workout.setEditHint
+            setEditHintToast = .init(AppCopy.Workout.setEditHint)
         }
-        .appToast(
-            message: $setEditHintToast,
-            action: showsSetUndo ? AppToastAction(label: AppCopy.Toast.undo, handler: undoRemovedSet) : nil
-        )
+        .appToast(event: $setEditHintToast)
         .alert("Couldn't save workout", isPresented: $saveFailed) {
             Button(AppCopy.Nav.close, role: .cancel) { }
         } message: {
@@ -1016,14 +1012,15 @@ struct ActiveWorkoutView: View {
         prSetEntryIDs.remove(snapshot.id)
         removedSet = snapshot
         removedSetWasPR = wasPR
-        showsSetUndo = true
-        setEditHintToast = "Set removed"
+        setEditHintToast = .init("Set removed", action: AppToastAction(id: snapshot.id, label: AppCopy.Toast.undo) {
+            undoRemovedSet(snapshotID: snapshot.id)
+        })
         AppHaptic.warning.fire()
         return true
     }
 
-    private func undoRemovedSet() {
-        guard let snapshot = removedSet,
+    private func undoRemovedSet(snapshotID: UUID) {
+        guard let snapshot = removedSet, snapshot.id == snapshotID,
               !session.setEntries.contains(where: { $0.id == snapshot.id }) else { return }
         withAnimation(reduceMotion ? nil : .appReveal) {
             modelContext.insert(snapshot.restore(in: session))
@@ -1031,7 +1028,6 @@ struct ActiveWorkoutView: View {
         guard saveWorkoutChanges() else { return }
         if removedSetWasPR { prSetEntryIDs.insert(snapshot.id) }
         removedSet = nil
-        showsSetUndo = false
         AppHaptic.tap.fire()
     }
 

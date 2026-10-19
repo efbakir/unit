@@ -67,4 +67,43 @@ final class AppFeedbackPolicyTests: XCTestCase {
             XCTAssertLessThan(value, 1)
         }
     }
+    func testIdenticalToastMessagesAreSeparateOccurrences() {
+        let first = AppToastEvent("Set removed")
+        let second = AppToastEvent("Set removed")
+        XCTAssertNotEqual(first.id, second.id)
+        XCTAssertEqual(first.text, second.text)
+    }
+
+    func testToastReadingWindowsAndPersistentError() {
+        XCTAssertEqual(AppToastEvent("Saved").duration, 2)
+        let target = UUID()
+        let undo = AppToastAction(id: target, label: "Undo", handler: {})
+        let removed = AppToastEvent("Set removed", action: undo)
+        XCTAssertEqual(removed.duration, 4)
+        XCTAssertEqual(removed.action?.id, target)
+        XCTAssertNil(AppToastEvent("Couldn't save", kind: .error).duration)
+        XCTAssertNil(AppToastEvent("Couldn't undo", kind: .error, action: undo).duration)
+    }
+
+    func testCelebrationReconstructionPreservesSeedAndDeadline() {
+        let id = UUID()
+        let start = Date(timeIntervalSince1970: 100)
+        let first = AppCelebrationMoment(style: .shower, id: id, startedAt: start)
+        let reconstructed = AppCelebrationMoment(style: .shower, id: id, startedAt: start)
+        XCTAssertEqual(first, reconstructed)
+        XCTAssertEqual(first.seed, reconstructed.seed)
+        XCTAssertEqual(first.endsAt, reconstructed.endsAt)
+        XCTAssertLessThan(first.endsAt, Date(timeIntervalSince1970: 103))
+        XCTAssertGreaterThan(first.endsAt, start)
+    }
+
+    func testAcceptanceBurstHasEightDotsAndExactLifetime() {
+        let start = Date(timeIntervalSince1970: 100)
+        let burst = AppCelebrationMoment(style: .burst, startedAt: start)
+        XCTAssertEqual(AppMotion.burstDots, 8)
+        XCTAssertEqual(burst.duration, 0.45)
+        XCTAssertEqual(burst.endsAt.timeIntervalSince(start), 0.45, accuracy: 0.0001)
+        XCTAssertLessThan(AppMotion.Confetti.popperCount, AppMotion.Confetti.count)
+    }
+
 }

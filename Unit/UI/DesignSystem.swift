@@ -356,6 +356,7 @@ enum AppMotion {
     static let collectionChange = Animation.smooth(duration: Duration.transition)
     static let settle = Animation.spring(duration: 0.5, bounce: 0.22)
     static let confirmSpring = settle
+    static let immediate = Animation.linear(duration: 0)
     static let pressedScale: CGFloat = 0.96
     static let liftScale: CGFloat = 1.06
     static let leaveScale: CGFloat = 0.92
@@ -390,9 +391,10 @@ enum AppMotion {
     /// Deterministic inputs for the later celebration renderer, with Unit colors only.
     enum Confetti {
         static let count = 32
+        static let popperCount = 12
         static let lifetime: Double = 1.8
         static let stagger: Double = 0.2
-        static let colors: [Color] = [AppColor.accent, AppColor.success, AppColor.warning]
+        static let colors: [Color] = [AppColor.accent, AppColor.textSecondary, AppColor.textDisabled]
         static let pieceSize = CGSize(width: 6, height: 10)
         static let spread: CGFloat = 160
         static let rise: CGFloat = 120
@@ -420,7 +422,7 @@ extension Animation {
         AppMotion.allowsSpatialMotion(
             reduceMotion: UIAccessibility.isReduceMotionEnabled,
             voiceOver: UIAccessibility.isVoiceOverRunning
-        ) ? AppMotion.settle : .linear(duration: 0)
+        ) ? AppMotion.settle : AppMotion.immediate
     }
 }
 
@@ -476,6 +478,7 @@ private struct AppScreenEnter: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(visible ? 1 : 0)
+            .scaleEffect(visible || !scales || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? 1 : AppMotion.leaveScale)
             .blur(radius: visible || !spatial ? 0 : AppMotion.revealBlur)
             .offset(y: visible || !spatial || isSelected != nil ? 0 : AppMotion.revealTravel)
             .onGeometryChange(for: Bool.self) { geometry in
@@ -521,9 +524,11 @@ private struct AppBlurVisibility: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     let visible: Bool
+    var scales: Bool = false
     func body(content: Content) -> some View {
         content
             .opacity(visible ? 1 : 0)
+            .scaleEffect(visible || !scales || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? 1 : AppMotion.leaveScale)
             .blur(radius: visible || !AppMotion.allowsSpatialMotion(
                 reduceMotion: reduceMotion, voiceOver: voiceOver
             ) ? 0 : AppMotion.revealBlur)
@@ -531,8 +536,9 @@ private struct AppBlurVisibility: ViewModifier {
 }
 
 struct AppBlurTransition: Transition {
+    var scales = false
     func body(content: Content, phase: TransitionPhase) -> some View {
-        content.modifier(AppBlurVisibility(visible: phase.isIdentity))
+        content.modifier(AppBlurVisibility(visible: phase.isIdentity, scales: scales))
     }
 }
 
@@ -550,6 +556,126 @@ extension View {
     /// Arrival only; native TabView still owns navigation and selection.
     func appTabEntrance(isSelected: Bool) -> some View {
         modifier(AppScreenEnter(enabled: true, isSelected: isSelected))
+    }
+}
+
+/// A number animates at its owner regardless of which caller changed it.
+private struct AppNumericValue<Value: Equatable>: ViewModifier {
+    let value: Value
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? .numericText() : .opacity)
+            .animation(AppMotion.feedback, value: value)
+    }
+}
+
+extension View {
+    func appNumericValue<Value: Equatable>(value: Value) -> some View {
+        modifier(AppNumericValue(value: value))
+    }
+}
+
+/// Immutable event time and seed: remounting continues the same moment, never replays it.
+struct AppCelebrationMoment: Identifiable, Equatable {
+    enum Style: Equatable { case shower, popper, burst }
+    let id: UUID
+    let startedAt: Date
+    let seed: UInt64
+    let style: Style
+
+    init(style: Style, id: UUID = UUID(), startedAt: Date = .now) {
+        self.id = id
+        self.startedAt = startedAt
+        self.style = style
+        self.seed = id.uuidString.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) }
+    }
+
+    var duration: Double {
+        style == .burst ? AppMotion.Duration.burst : AppMotion.Confetti.lifetime + AppMotion.Confetti.stagger
+    }
+    var endsAt: Date { startedAt.addingTimeInterval(duration) }
+}
+
+/// The single celebration renderer. All particles share one Canvas and clock.
+/// Motion-disabled and VoiceOver users retain the saved result and its haptic.
+struct AppCelebration: View {
+    let moment: AppCelebrationMoment?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @State private var landedID: UUID?
+
+    var body: some View {
+        ZStack {
+            if let moment, landedID != moment.id, moment.endsAt > .now,
+               AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) {
+                TimelineView(.animation) { timeline in
+                    Canvas { context, size in
+                        draw(moment, elapsed: timeline.date.timeIntervalSince(moment.startedAt), in: context, size: size)
+                    } symbols: {
+                        AppIcon.checkmark.image(size: AppMotion.Confetti.pieceSize.height, weight: .bold)
+                            .foregroundStyle(AppColor.accent)
+                            .tag(0)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .task(id: moment?.id) {
+            guard let moment else { return }
+            let remaining = moment.endsAt.timeIntervalSinceNow
+            if remaining > 0 {
+                do { try await Task.sleep(for: .seconds(remaining)) }
+                catch { return }
+            }
+            guard !Task.isCancelled else { return }
+            landedID = moment.id
+        }
+    }
+
+    private func draw(_ moment: AppCelebrationMoment, elapsed: Double, in context: GraphicsContext, size: CGSize) {
+        let count = moment.style == .burst ? AppMotion.burstDots : (moment.style == .shower ? AppMotion.Confetti.count : AppMotion.Confetti.popperCount)
+        for index in 0..<count {
+            if moment.style == .burst {
+                let progress = min(1, max(0, elapsed / AppMotion.Duration.burst))
+                guard progress < 1 else { continue }
+                let angle = Double(index) / Double(count) * .pi * 2
+                let distance = AppMotion.burstStart + (AppMotion.burstEnd - AppMotion.burstStart) * progress
+                let side = AppMotion.burstDot * (1 - (1 - AppMotion.burstShrink) * progress)
+                let point = CGPoint(x: size.width / 2 + cos(angle) * distance, y: size.height / 2 + sin(angle) * distance)
+                var particle = context
+                particle.opacity = 1 - progress
+                particle.fill(Path(ellipseIn: CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)), with: .color(AppColor.accent))
+                continue
+            }
+            let sample = { (channel: Int) in AppMotion.Confetti.sample(seed: moment.seed, index: index, channel: channel) }
+            let local = elapsed - sample(0) * AppMotion.Confetti.stagger
+            guard local >= 0, local < AppMotion.Confetti.lifetime else { continue }
+            let progress = local / AppMotion.Confetti.lifetime
+            let spread = AppMotion.Confetti.spread
+            let x: Double
+            let y: Double
+            if moment.style == .shower {
+                x = sample(1) * size.width + (sample(2) - 0.5) * spread * progress
+                y = -AppMotion.Confetti.pieceSize.height + (size.height + AppMotion.Confetti.pieceSize.height * 2) * progress
+            } else {
+                x = size.width / 2 + (sample(1) - 0.5) * spread * 2 * (1 - pow(1 - progress, 3))
+                y = size.height / 3 - sin(progress * .pi) * AppMotion.Confetti.rise + progress * progress * AppMotion.Confetti.fall
+            }
+            var particle = context
+            particle.opacity = min(1, (1 - progress) * 4)
+            particle.translateBy(x: x, y: y)
+            particle.rotate(by: .radians((sample(3) - 0.5) * .pi * 4 * progress))
+            if index.isMultiple(of: 3), let check = particle.resolveSymbol(id: 0) {
+                particle.draw(check, at: .zero)
+            } else {
+                let piece = AppMotion.Confetti.pieceSize
+                particle.fill(Path(roundedRect: CGRect(x: -piece.width / 2, y: -piece.height / 2, width: piece.width, height: piece.height), cornerRadius: piece.width / 2), with: .color(AppMotion.Confetti.colors[index % AppMotion.Confetti.colors.count]))
+            }
+        }
     }
 }
 
@@ -1059,8 +1185,7 @@ struct AppStepper: View {
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .frame(minWidth: minimumValueWidth)
-                .contentTransition(.numericText())
-                .animation(.appReveal, value: value)
+                .appNumericValue(value: value)
 
             stepButton(icon: .add, isEnabled: isIncrementEnabled) {
                 incrementPhase &+= 1
@@ -1240,11 +1365,14 @@ struct AppPrimaryButton: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.sm)
                         .opacity(isLoading ? 0 : 1)
+                        .animation(AppMotion.feedback, value: isLoading)
                     if isLoading {
                         ProgressView()
                             .tint(AppColor.accentForeground)
+                            .transition(.opacity)
                     }
                 }
+                .animation(AppMotion.feedback, value: isLoading)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
                 .background(isEnabled ? AppColor.accent : AppColor.controlBackground)
@@ -2068,7 +2196,8 @@ struct SetProgressIndicator: View {
             HStack(spacing: AppSpacing.xxs) {
                 if step.state == .completed {
                     AppIcon.checkmark.image(size: 10, weight: .bold)
-                        .symbolEffect(.bounce, options: .nonRepeating, value: setLoggedSignal ?? 0)
+                        .symbolEffect(.bounce, options: .nonRepeating, value: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? (setLoggedSignal ?? 0) : 0)
+                        .symbolEffectsRemoved(!AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning))
                 } else {
                     AppIcon.remove.image(size: 10, weight: .bold)
                 }
@@ -2238,7 +2367,7 @@ struct RestTimerControl: View {
     }
 
     private var timerContentTransition: ContentTransition {
-        state == .ready ? .opacity : .numericText(countsDown: true)
+        state == .ready || UIAccessibility.isReduceMotionEnabled || UIAccessibility.isVoiceOverRunning ? .opacity : .numericText(countsDown: true)
     }
 
     /// Capsule fill + stroke for **idle / paused / disabled** so the affordance reads as
@@ -3039,109 +3168,145 @@ extension AppSessionHighlightCard where BelowContent == EmptyView {
     }
 }
 
-/// Optional trailing action on a transient `AppToast` — single reversible step
-/// (e.g. "Undo" after a non-destructive deletion). The handler is responsible
-/// for the actual reversal; the toast dismisses automatically when tapped.
+/// Each occurrence has its own identity, even when the words repeat.
+struct AppToastEvent: Identifiable {
+    enum Kind: Equatable { case information, success, error }
+    let id: UUID
+    let text: String
+    let kind: Kind
+    let action: AppToastAction?
+
+    init(_ text: String, kind: Kind = .information, action: AppToastAction? = nil, id: UUID = UUID()) {
+        self.id = id
+        self.text = text
+        self.kind = kind
+        self.action = action
+    }
+
+    var duration: Double? {
+        kind == .error ? nil : (action == nil ? AppMotion.Duration.toast : AppMotion.Duration.toastAction)
+    }
+}
+
+/// The target identifies the exact reversible operation, never the message text.
 struct AppToastAction {
+    var id = UUID()
     let label: String
     let handler: () -> Void
 }
 
-/// Transient pill-shaped notification mounted as a top overlay (not a
-/// `safeAreaInset`) so showing or hiding it does **not** reflow layout — sticky
-/// CTAs stay pinned, scroll content stays where it is. Sits at the top of the
-/// safe area, horizontally centered, on the same line as the host's
-/// navigation-bar leading button so the eye lands on it without leaving the
-/// "where I just acted" zone. The pill is the canonical Cupertino top toast:
-/// drop-shadowed white capsule that floats over content rather than docking to
-/// the home-indicator edge.
-///
-/// Bind `message` to a `String?` `@State`; setting non-nil shows the toast,
-/// which auto-dismisses after `duration` seconds. When an `action` is set
-/// (e.g. `AppToastAction(label: AppCopy.Toast.undo, handler: ...)`), the pill
-/// gains a trailing tap target — same auto-dismiss timing whether or not the
-/// user taps it.
+/// Event-owned overlay: cancellation cannot clear a replacement message.
 struct AppToast: ViewModifier {
-    @Binding var message: String?
-    var duration: TimeInterval = 3.0
-    var action: AppToastAction? = nil
+    @Binding var event: AppToastEvent?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @State private var announcedID: UUID?
 
     func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .top) {
-                ZStack {
-                    if let text = message {
-                        AppToastPill(
-                            text: text,
-                            action: action,
-                            onActionTap: { withAnimation(.appState) { message = nil } }
-                        )
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .task(id: text) {
-                            try? await Task.sleep(for: .seconds(duration))
-                            withAnimation(.appState) { message = nil }
+        content.overlay(alignment: .top) {
+            ZStack {
+                if let current = event {
+                    AppToastPill(event: current, dismiss: { dismiss(current.id) }) {
+                        guard event?.id == current.id else { return }
+                        // Clear this occurrence before the handler can post another result.
+                        dismiss(current.id)
+                        current.action?.handler()
+                    }
+                    .id(current.id)
+                    .transition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+                        ? .move(edge: .top).combined(with: .opacity) : .opacity)
+                    .task(id: current.id.uuidString + String(voiceOver)) {
+                        if announcedID != current.id {
+                            announcedID = current.id
+                            AccessibilityNotification.Announcement(current.text).post()
                         }
+                        guard !voiceOver, let duration = current.duration else { return }
+                        do { try await Task.sleep(for: .seconds(duration)) }
+                        catch { return }
+                        guard !Task.isCancelled, !voiceOver else { return }
+                        dismiss(current.id)
                     }
                 }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.xs)
-                .animation(.appState, value: message)
-                // Transparent overlay area must stay tap-through so the toast
-                // doesn't shadow taps on the navigation-bar back button or any
-                // top-of-screen affordance behind it.
-                .allowsHitTesting(message != nil)
             }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.xs)
+            .animation(AppMotion.transition, value: event?.id)
+            .allowsHitTesting(event != nil)
+        }
+    }
+
+    private func dismiss(_ id: UUID) {
+        guard event?.id == id else { return }
+        event = nil
     }
 }
 
-/// Floating pill shell for `AppToast`. Light card fill on a soft drop-shadow
-/// pair (one large/diffuse for lift, one tight for edge definition) — the only
-/// shadowed surface in the system, justified by the pill needing to feel
-/// detached from whatever screen content sits beneath it.
+/// Wrapping text and full-sized actions remain readable at accessibility sizes.
 private struct AppToastPill: View {
-    let text: String
-    let action: AppToastAction?
-    let onActionTap: () -> Void
-
+    let event: AppToastEvent
+    let dismiss: () -> Void
+    let performAction: () -> Void
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            Text(text)
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            if let action {
-                Button {
-                    action.handler()
-                    onActionTap()
-                } label: {
-                    Text(action.label)
-                        .font(AppFont.productAction.font)
-                        .foregroundStyle(AppColor.accent)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: AppSpacing.sm) {
+                message.fixedSize(horizontal: true, vertical: false)
+                actionButton
+                dismissButton
+            }
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    message
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    dismissButton
                 }
-                .buttonStyle(ScaleButtonStyle())
-                .accessibilityLabel(action.label)
+                actionButton
             }
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.vertical, AppSpacing.smd)
-        .frame(minHeight: 44)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
         .background(AppColor.cardBackground)
-        .clipShape(Capsule(style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .appFloatingShadow()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("toast")
+    }
+
+    private var message: some View {
+        Text(event.text)
+            .font(AppFont.body.font)
+            .foregroundStyle(AppColor.textPrimary)
+    }
+
+    @ViewBuilder private var actionButton: some View {
+        if let action = event.action {
+            Button(action: performAction) {
+                Text(action.label)
+                    .font(AppFont.productAction.font)
+                    .foregroundStyle(AppColor.accent)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityIdentifier("toast-action")
+        }
+    }
+
+    private var dismissButton: some View {
+        Button(action: dismiss) {
+            AppIcon.close.image(size: AppIconSize.readiness, weight: .semibold)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Dismiss message")
+        .buttonStyle(ScaleButtonStyle())
     }
 }
 
 extension View {
-    /// Show a transient bottom toast bound to a `String?` state. Pass `action`
-    /// to add a single trailing tap target (e.g. "Undo"); the toast dismisses
-    /// after the user taps it or after `duration` elapses, whichever first.
-    func appToast(
-        message: Binding<String?>,
-        duration: TimeInterval = 3.0,
-        action: AppToastAction? = nil
-    ) -> some View {
-        modifier(AppToast(message: message, duration: duration, action: action))
+    func appToast(event: Binding<AppToastEvent?>) -> some View {
+        modifier(AppToast(event: event))
     }
 
     /// Two-layer drop shadow applied to surfaces that genuinely float over
@@ -3960,7 +4125,7 @@ struct WorkoutCommandCard: View {
             // logged set, the weight × reps swap reads as a soft handoff
             // instead of a flicker. SwiftUI selects per-glyph fade for the
             // changed digits and leaves the rest static.
-            .contentTransition(.numericText())
+            .appNumericValue(value: metricValue)
             .accessibilityLabel(Self.voiceOverLabel(forMetric: metricValue))
     }
 
@@ -5464,8 +5629,7 @@ struct OnboardingProgressBar: View {
                     .foregroundStyle(AppColor.textSecondary)
                 Text(stepText)
                     .foregroundStyle(AppColor.textPrimary)
-                    .contentTransition(.numericText())
-                    .appAnimation(.appReveal, value: clampedStep, reduceMotion: reduceMotion)
+                    .appNumericValue(value: clampedStep)
                 Text(" / \(totalText)")
                     .foregroundStyle(AppColor.textDisabled)
             }
@@ -5475,8 +5639,7 @@ struct OnboardingProgressBar: View {
             if let detail {
                 Text(detail.label)
                     .foregroundStyle(AppColor.textSecondary)
-                    .contentTransition(.numericText())
-                    .appAnimation(.appReveal, value: detail.label, reduceMotion: reduceMotion)
+                    .appNumericValue(value: detail.label)
             }
         }
         .font(AppFont.stepIndicator.font)

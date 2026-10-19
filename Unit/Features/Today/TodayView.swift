@@ -76,10 +76,12 @@ struct TodayView: View {
 
     @State private var viewModel = TodayDashboardViewModel()
     @State private var showsHistory = false
+    @State private var completionMoment: AppCelebrationMoment?
+    @State private var celebratedSessionIDs: Set<UUID> = []
     @State private var completedSessionDetail: WorkoutSession?
     @State private var showsCompletedSessionDetail = false
     @State private var staleSessionPrompt: WorkoutSession?
-    @State private var toastMessage: String?
+    @State private var toastMessage: AppToastEvent?
     @State private var showsRoutinePickSheet = false
     @State private var reviewRequestTask: Task<Void, Never>?
     @State private var reviewRequestAttemptedForUITest = false
@@ -95,7 +97,7 @@ struct TodayView: View {
             Group {
                 if let session = activeSession {
                     ActiveWorkoutView(session: session) { completedSession in
-                        presentCompletedSession(completedSession)
+                        presentCompletedSession(completedSession, celebrates: true)
                     }
                 } else {
                     dashboardContent
@@ -110,7 +112,7 @@ struct TodayView: View {
             .navigationDestination(isPresented: $showsCompletedSessionDetail) {
                 if let session = completedSessionDetail {
                     let templateName = templates.first(where: { $0.id == session.templateId })?.name ?? "Workout"
-                    SessionDetailView(session: session, templateName: templateName)
+                    SessionDetailView(session: session, templateName: templateName, completionMoment: completionMoment)
                 }
             }
             .tint(AppColor.accent)
@@ -134,6 +136,7 @@ struct TodayView: View {
             .onChange(of: showsCompletedSessionDetail) { oldValue, newValue in
                 guard oldValue, !newValue else { return }
                 completedSessionDetail = nil
+                completionMoment = nil
                 scheduleReviewRequestIfNeeded()
             }
             .onChange(of: scenePhase) { _, newValue in
@@ -164,7 +167,7 @@ struct TodayView: View {
             } message: { _ in
                 Text(AppCopy.Session.staleSessionMessage)
             }
-            .appToast(message: $toastMessage)
+            .appToast(event: $toastMessage)
             .overlay(alignment: .topLeading) {
                 if CommandLine.arguments.contains("-ui-testing"),
                    reviewRequestAttemptedForUITest {
@@ -363,7 +366,7 @@ struct TodayView: View {
         if !hasLoggedSets {
             modelContext.delete(session)
             try? modelContext.save()
-            toastMessage = AppCopy.Session.staleEmptyDiscardedToast
+            toastMessage = .init(AppCopy.Session.staleEmptyDiscardedToast)
             return
         }
 
@@ -385,7 +388,16 @@ struct TodayView: View {
         presentCompletedSession(session)
     }
 
-    private func presentCompletedSession(_ session: WorkoutSession) {
+    private func presentCompletedSession(_ session: WorkoutSession, celebrates: Bool = false) {
+        // Only the successful-save callback produces an event. The query observer
+        // can arrive before or after it, and history/relaunch never creates one.
+        if celebrates, celebratedSessionIDs.insert(session.id).inserted {
+            AppHaptic.success.fire()
+            completionMoment = AppCelebrationMoment(
+                style: sessions.filter(\.isCompleted).count <= 1 ? .shower : .popper,
+                id: session.id
+            )
+        }
         completedSessionDetail = session
         guard !showsCompletedSessionDetail else { return }
         // The active-workout branch disappears when `isCompleted` changes.

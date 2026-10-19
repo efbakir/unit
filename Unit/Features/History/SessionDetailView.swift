@@ -11,6 +11,7 @@ import SwiftData
 struct SessionDetailView: View {
     @Bindable var session: WorkoutSession
     let templateName: String
+    var completionMoment: AppCelebrationMoment? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -22,7 +23,10 @@ struct SessionDetailView: View {
     @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]
     @AppStorage("unitSystem") private var unitSystem = "kg"
     @State private var showsFeedbackInvitation = false
-    @State private var toastMessage: String?
+    @State private var acceptedMoment: AppCelebrationMoment?
+    @State private var acceptedExerciseID: UUID?
+    @State private var pendingAcceptedExerciseID: UUID?
+    @State private var toastMessage: AppToastEvent?
     @State private var editingRecommendationID: UUID?
     @State private var editingWeightText = ""
     @State private var editingTargetReps = 1
@@ -155,12 +159,14 @@ struct SessionDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .appNavigationBarChrome()
         .toolbar(.hidden, for: .tabBar)
-        .appToast(message: $toastMessage)
+        .overlay { AppCelebration(moment: completionMoment) }
+        .appToast(event: editingRecommendationID == nil ? $toastMessage : .constant(nil))
         .sheet(
             isPresented: Binding(
                 get: { editingRecommendationID != nil },
                 set: { if !$0 { editingRecommendationID = nil } }
-            )
+            ),
+            onDismiss: playAcceptedMomentIfNeeded
         ) {
             recommendationEditSheet
         }
@@ -284,6 +290,9 @@ struct SessionDetailView: View {
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .overlay {
+            AppCelebration(moment: acceptedExerciseID == recommendation.exerciseID ? acceptedMoment : nil)
+        }
     }
 
     @ViewBuilder
@@ -364,6 +373,7 @@ struct SessionDetailView: View {
         }
         .presentationDetents([.medium, .large])
         .appBottomSheetChrome()
+        .appToast(event: $toastMessage)
     }
 
     private func recommendationWeightEditor(
@@ -423,6 +433,7 @@ struct SessionDetailView: View {
     }
 
     private func beginEditing(_ recommendation: ProgressionRecommendationRow) {
+        toastMessage = nil
         guard let target = recommendation.displayTarget else { return }
         editingWeightText = displayedWeight(target.weightKg)
         editingTargetReps = target.reps
@@ -483,6 +494,7 @@ struct SessionDetailView: View {
               target.reps <= recommendation.record.upperRepBound else {
             return false
         }
+        let previousTarget = template.progressionState(for: recommendation.exerciseID)?.acceptedTarget
         let absoluteRecommendation = DoubleProgressionRecommendation(
             target: target,
             reason: reason,
@@ -512,14 +524,26 @@ struct SessionDetailView: View {
                     outcome: analyticsOutcome(for: reason)
                 )
             )
-            toastMessage = AppCopy.Workout.targetsSaved
+            if previousTarget != target {
+                pendingAcceptedExerciseID = recommendation.exerciseID
+                if editingRecommendationID == nil { playAcceptedMomentIfNeeded() }
+                AppHaptic.success.fire()
+            }
+            toastMessage = .init(AppCopy.Workout.targetsSaved, kind: .success)
             return true
         } catch {
             modelContext.rollback()
-            toastMessage = AppCopy.Workout.targetsSaveFailed
+            toastMessage = .init(AppCopy.Workout.targetsSaveFailed, kind: .error)
             AppHaptic.error.fire()
             return false
         }
+    }
+
+    private func playAcceptedMomentIfNeeded() {
+        guard let exerciseID = pendingAcceptedExerciseID else { return }
+        acceptedExerciseID = exerciseID
+        acceptedMoment = AppCelebrationMoment(style: .burst)
+        pendingAcceptedExerciseID = nil
     }
 
     private func isValidRecommendation(_ recommendation: ProgressionRecommendationRow) -> Bool {
@@ -707,7 +731,7 @@ struct SessionDetailView: View {
 
                 AppGhostButton(AppCopy.Engagement.emailFeedback) {
                     guard let url = EngagementPromptTracker.feedbackEmailURL() else {
-                        toastMessage = AppCopy.Engagement.linkError
+                        toastMessage = .init(AppCopy.Engagement.linkError, kind: .error)
                         return
                     }
                     UnitAnalytics.shared.track(.feedbackAction(action: .email))
@@ -755,7 +779,7 @@ struct SessionDetailView: View {
     private func open(_ url: URL) {
         openURL(url) { accepted in
             if !accepted {
-                toastMessage = AppCopy.Engagement.linkError
+                toastMessage = .init(AppCopy.Engagement.linkError, kind: .error)
             }
         }
     }

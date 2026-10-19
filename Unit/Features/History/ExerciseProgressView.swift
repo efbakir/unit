@@ -147,7 +147,7 @@ struct ExerciseProgressView: View {
                 .font(AppFont.title.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .monospacedDigit()
-                .contentTransition(.numericText())
+                .appNumericValue(value: bestSetEvidence(for: pr))
 
             Text(totalVolumeEvidence(for: pr))
                 .font(AppFont.body.font)

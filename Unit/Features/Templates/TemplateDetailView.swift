@@ -14,15 +14,15 @@ struct TemplateDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @State private var showingAddExercise = false
     @State private var draggedExerciseID: UUID?
     @State private var targetEditPayload: TargetEditPayload?
     /// Toast message shown after a non-destructive × removal. Bound to the
-    /// `appToast(message:action:)` modifier on the screen root; auto-dismiss is
-    /// owned by `AppToast` (3s) so this view only sets it.
-    @State private var toastMessage: String?
+    /// `appToast(event:)` modifier owns the four-second Undo window.
+    @State private var toastMessage: AppToastEvent?
     @State private var saveFailed = false
     /// Snapshot of the most recently removed exercise so Undo can restore it
     /// at its original index, with its prior planned sets/reps. Nil after a
@@ -55,6 +55,7 @@ struct TemplateDetailView: View {
                 } else {
                     AppCardList(orderedExercises) { exercise in
                         exerciseRow(exercise)
+                            .transition(AppBlurTransition(scales: true))
                     } trailing: {
                         AppCardListAddRow(AppCopy.Workout.addExercise) {
                             showingAddExercise = true
@@ -62,6 +63,7 @@ struct TemplateDetailView: View {
                     }
                 }
             }
+            .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.collectionChange : nil, value: template.orderedExerciseIds)
             .appScreenEnter()
         }
         .navigationBarTitleTruncated(navigationTitleRaw)
@@ -90,12 +92,7 @@ struct TemplateDetailView: View {
                 )
             }
         }
-        .appToast(
-            message: $toastMessage,
-            action: lastRemoved == nil
-                ? nil
-                : AppToastAction(label: AppCopy.Toast.undo, handler: undoRemove)
-        )
+        .appToast(event: $toastMessage)
         .alert("Couldn't save routine", isPresented: $saveFailed) {
             Button(AppCopy.Nav.close, role: .cancel) { }
         } message: {
@@ -400,9 +397,10 @@ struct TemplateDetailView: View {
     /// Snapshot of a just-removed exercise so the toast Undo can restore the
     /// row at its original position with its prior planned target. Reordering
     /// or further edits in the meantime aren't a concern: the snapshot is
-    /// scoped to a single 3-second toast lifetime, and a new removal supersedes
+    /// scoped to a single four-second toast lifetime, and a new removal supersedes
     /// the prior snapshot before its toast fires.
     private struct RemovedExerciseSnapshot {
+        let id = UUID()
         let exerciseName: String
         let templateState: DayTemplateExerciseStateSnapshot
     }
@@ -421,11 +419,13 @@ struct TemplateDetailView: View {
         )
         guard persistRoutine() else { return }
         lastRemoved = snapshot
-        toastMessage = AppCopy.Toast.removedExercise(exercise.displayName)
+        toastMessage = .init(AppCopy.Toast.removedExercise(exercise.displayName), action: AppToastAction(id: snapshot.id, label: AppCopy.Toast.undo) {
+            undoRemove(snapshotID: snapshot.id)
+        })
     }
 
-    private func undoRemove() {
-        guard let snapshot = lastRemoved else { return }
+    private func undoRemove(snapshotID: UUID) {
+        guard let snapshot = lastRemoved, snapshot.id == snapshotID else { return }
         template.restoreExerciseState(snapshot.templateState)
         guard persistRoutine() else { return }
         lastRemoved = nil

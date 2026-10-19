@@ -97,7 +97,7 @@ struct SettingsView: View {
 
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
-    @State private var toastMessage: String?
+    @State private var toastMessage: AppToastEvent?
     @State private var analyticsEnabled = UnitAnalytics.shared.isEnabled
 
     init(showsCloseButton: Bool = true) {
@@ -123,7 +123,7 @@ struct SettingsView: View {
             }
         }
         .tint(AppColor.accent)
-        .appToast(message: $toastMessage)
+        .appToast(event: $toastMessage)
         .alert("Purchases restored", isPresented: $showingRestoreSuccess) {
             Button("OK", role: .cancel) { }
         }
@@ -319,14 +319,14 @@ struct SettingsView: View {
 
     private func openFeatureRequestPortal() {
         guard let url = AppCopy.FeatureRequest.portalURL else {
-            toastMessage = AppCopy.FeatureRequest.openError
+            toastMessage = .init(AppCopy.FeatureRequest.openError, kind: .error)
             return
         }
 
         UnitAnalytics.shared.track(.feedbackAction(action: .portal))
         openURL(url) { accepted in
             if !accepted {
-                toastMessage = AppCopy.FeatureRequest.openError
+                toastMessage = .init(AppCopy.FeatureRequest.openError, kind: .error)
             }
         }
     }
