@@ -741,7 +741,7 @@ private struct AppWorkoutPanelChrome: ViewModifier {
 /// pair, the only call site is the History calendar month nav). The
 /// raw-glyph ban keeps feature code on the canonical icon/row API.
 /// Navigation disclosures are explicitly approved as of 2026-10-19.
-enum AppIcon: String {
+nonisolated enum AppIcon: String, Sendable {
     case back = "chevron.left"
     case forward = "chevron.right"
     case chevronDown = "chevron.down"
@@ -786,15 +786,58 @@ enum AppIcon: String {
     case climbing = "figure.climbing"
     case core = "figure.core.training"
 
-    var systemName: String { rawValue }
+    case liftSquat = "unit.lift.squat"
+    case liftBench = "unit.lift.bench"
+    case liftDeadlift = "unit.lift.deadlift"
+    case liftOverhead = "unit.lift.overhead"
+    case liftRow = "unit.lift.row"
+    case liftPullup = "unit.lift.pullup"
 
-    func image(size: CGFloat = 17, weight: Font.Weight = .semibold) -> some View {
-        // Scale the SF Symbol point size via UIFontMetrics so glyphs grow under
-        // Dynamic Type the same way text does. Anchor to `.body` since icons
-        // sit alongside body-scale labels in rows, chips, and toolbar buttons.
-        let scaled = UIFontMetrics(forTextStyle: .body).scaledValue(for: size)
-        return Image(systemName: systemName)
-            .font(.system(size: scaled, weight: weight))
+    static let liftIconsAreSymbols = false
+    static let liftImagesetOpticalScale: CGFloat = 1
+    var isLiftAsset: Bool { rawValue.hasPrefix("unit.lift.") }
+    var systemName: String { isLiftAsset ? AppIcon.deadlift.rawValue : rawValue }
+
+    @MainActor func image(size: CGFloat = 17, weight: Font.Weight = .semibold, maximumScale: CGFloat? = nil) -> some View {
+        Glyph(icon: self, size: size, weight: weight, maximumScale: maximumScale)
+    }
+
+    /// Internal rendering implementation of AppIcon, shared by assets and symbols.
+    @MainActor private struct Glyph: View {
+        let icon: AppIcon
+        let size: CGFloat
+        let weight: Font.Weight
+        let maximumScale: CGFloat?
+        @ScaledMetric(relativeTo: .body) private var scale = 1.0
+
+        var body: some View {
+            let pointSize = size * min(scale, maximumScale ?? .greatestFiniteMagnitude)
+            Group {
+                if icon.isLiftAsset, let asset = loadedAsset {
+                    if AppIcon.liftIconsAreSymbols {
+                        Image(uiImage: asset).renderingMode(.template)
+                            .font(.system(size: pointSize, weight: .regular))
+                    } else {
+                        Image(uiImage: asset).renderingMode(.template).resizable().scaledToFit()
+                            .frame(width: pointSize * AppIcon.liftImagesetOpticalScale,
+                                   height: pointSize * AppIcon.liftImagesetOpticalScale)
+                    }
+                } else if maximumScale != nil {
+                    // Exercise symbols share the vector glyph box, including wide figures.
+                    Image(systemName: icon.systemName).resizable().scaledToFit()
+                        .font(.system(size: pointSize, weight: weight))
+                        .frame(width: pointSize, height: pointSize)
+                } else {
+                    Image(systemName: icon.systemName)
+                        .font(.system(size: pointSize, weight: weight))
+                }
+            }.symbolRenderingMode(.monochrome)
+        }
+        private var loadedAsset: UIImage? {
+            let image = UIImage(named: icon.rawValue)
+            assert(image != nil, "Missing lift asset: \(icon.rawValue)")
+            return image
+        }
     }
 }
 
@@ -805,6 +848,9 @@ enum AppIconSize {
     static let indicator: CGFloat = 12
     static let readiness: CGFloat = 16
     static let reward: CGFloat = 20
+    static let exercise: CGFloat = 20
+    static let exerciseDetail: CGFloat = 28
+    static let exerciseDetailTile: CGFloat = 44
 }
 
 extension Double {
@@ -5640,6 +5686,8 @@ struct AppIconCircle<Icon: View>: View {
     var diameter: CGFloat = 36
     var shape: Shape = .circle
     var surface: Surface = .control
+    var maximumScale: CGFloat? = nil
+    @ScaledMetric(relativeTo: .body) private var iconScale = 1.0
     @ViewBuilder let icon: () -> Icon
 
     var body: some View {
@@ -5647,7 +5695,7 @@ struct AppIconCircle<Icon: View>: View {
         // glyph grows in lockstep with `AppIcon.image`'s scaled point size —
         // otherwise large-text users see a tiny icon floating in a fixed
         // 36×36 well. Anchored to `.body` to match the icon scaling above.
-        let scaledDiameter = UIFontMetrics(forTextStyle: .body).scaledValue(for: diameter)
+        let scaledDiameter = diameter * min(iconScale, maximumScale ?? .greatestFiniteMagnitude)
         let glyph = icon()
             .frame(width: scaledDiameter, height: scaledDiameter)
             .background(surface.backgroundColor)
@@ -6345,7 +6393,7 @@ struct AppMainLiftCard: View {
         AppCard(contentInset: 0, cornerRadius: AppRadius.md) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    Self.iconTile(icon, side: 30)
+                    Self.iconTile(icon, side: 30, empty: lift == nil)
                     Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
@@ -6413,9 +6461,10 @@ struct AppMainLiftCard: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-    static func iconTile(_ icon: AppIcon, side: CGFloat) -> some View {
-        AppIconCircle(diameter: side, shape: .roundedRect(radius: AppRadius.sm), surface: .background) {
-            icon.image(size: AppIconSize.readiness).foregroundStyle(AppColor.textSecondary)
+    static func iconTile(_ icon: AppIcon, side: CGFloat, detail: Bool = false, empty: Bool = false) -> some View {
+        AppIconCircle(diameter: side, shape: .roundedRect(radius: AppRadius.sm), surface: .background, maximumScale: 2) {
+            icon.image(size: detail ? AppIconSize.exerciseDetail : AppIconSize.exercise, weight: .regular, maximumScale: 2)
+                .foregroundStyle(empty ? AppColor.textSecondary : AppColor.textPrimary)
         }.accessibilityHidden(true)
     }
     static func metric(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String, numberStyle: AppFont = .numericInput) -> some View {

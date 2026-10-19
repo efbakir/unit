@@ -69,7 +69,7 @@ Use named steps (`xs` … `xl` / `sm` … `lg`) for padding, `VStack` spacing, a
 
 ### Icons — `AppIcon`
 
-SF Symbol names as `String` raw values; use `.image(size:weight:)` for consistent sizing.
+SF Symbol names and six approved `unit.lift.*` vector asset names as `String` raw values; use `.image(size:weight:)` for consistent sizing. `ExerciseIconResolver` owns exercise movement mapping. `AppIcon` owns template rendering and `AppMainLiftCard.iconTile` owns exercise tiles; screens never load assets directly. See `docs/qa/lift-icons/README.md`.
 
 **Rules**
 

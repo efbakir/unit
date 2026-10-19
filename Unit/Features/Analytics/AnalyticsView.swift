@@ -95,13 +95,10 @@ struct AnalyticsView: View {
                         chart: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift?.bodyweight == true ? .reps : .weight, unit: unit), unit: unit, now: output.today)
     }
     static func icon(for slot: AnalyticsEngine.Slot) -> AppIcon {
-        switch slot { case .squat: .squat; case .bench: .dumbbell; case .deadlift: .deadlift }
+        switch slot { case .squat: .liftSquat; case .bench: .liftBench; case .deadlift: .liftDeadlift }
     }
     static func icon(for exercise: AnalyticsEngine.ExerciseInput) -> AppIcon {
-        if exercise.muscleGroup == "shoulders" { return .deadlift }
-        let name = exercise.name.lowercased()
-        if exercise.muscleGroup == "back" && ["pull-up", "chin", "pulldown"].contains(where: name.contains) { return .climbing }
-        return exercise.muscleGroup == "core" ? .core : .dumbbell
+        ExerciseIconResolver.icon(name: exercise.name, muscleGroup: exercise.muscleGroup, equipment: exercise.equipment)
     }
     private var explanationSheet: some View {
         VStack(spacing: 0) {

@@ -14,6 +14,7 @@
 		A10000000000000000000001 /* UnitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* UnitApp.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Exercise.swift */; };
+		140300CE9E064ADAAE05AF08 /* Exercise+Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617B66067DB34B9B960A9C60 /* Exercise+Icon.swift */; };
 		A10000000000000000000004 /* DayTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* DayTemplate.swift */; };
 		A10000000000000000000005 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WorkoutSession.swift */; };
 		A10000000000000000000006 /* SetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* SetEntry.swift */; };
@@ -87,6 +88,7 @@
 		978ABAE042AB735F1585EB91 /* AnalyticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86E6B92A45BF7EFFC8F4F1B /* AnalyticsEngine.swift */; };
 		5984E5FA51CDE7DE10A95A7E /* AnalyticsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266B0D9D8F85DCFA3658F850 /* AnalyticsSnapshot.swift */; };
 		11133D3987E11AFC2FED1A27 /* AnalyticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */; };
+		DDF5A7E4C221443092E6BC44 /* ExerciseIconResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */; };
 		3587D3ADE48DC774203C3C99 /* AnalyticsFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B996A9E2DBB3201556B4C6 /* AnalyticsFormatting.swift */; };
 		EC5DFA95D6B67F403B8E34EF /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */; };
 		731891AABC1DC739C9D4D21F /* AnalyticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57A78E537603FFC994E344E /* AnalyticsStore.swift */; };
@@ -141,6 +143,7 @@
 		A20000000000000000000001 /* UnitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		617B66067DB34B9B960A9C60 /* Exercise+Icon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Exercise+Icon.swift"; sourceTree = "<group>"; };
 		A20000000000000000000004 /* DayTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTemplate.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSession.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* SetEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetEntry.swift; sourceTree = "<group>"; };
@@ -216,6 +219,7 @@
 		D86E6B92A45BF7EFFC8F4F1B /* AnalyticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsEngine.swift; sourceTree = "<group>"; };
 		266B0D9D8F85DCFA3658F850 /* AnalyticsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsSnapshot.swift; sourceTree = "<group>"; };
 		18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsEngineTests.swift; sourceTree = "<group>"; };
+		5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExerciseIconResolverTests.swift"; sourceTree = "<group>"; };
 		F8B996A9E2DBB3201556B4C6 /* AnalyticsFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsFormatting.swift; sourceTree = "<group>"; };
 		3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsView.swift; sourceTree = "<group>"; };
 		F57A78E537603FFC994E344E /* AnalyticsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsStore.swift; sourceTree = "<group>"; };
@@ -267,6 +271,7 @@
 				UT200000000000000000005 /* EntitlementRefreshStateTests.swift */,
 				UT200000000000000000006 /* FeedbackPortalConfigurationTests.swift */,
 				18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */,
+				5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */,
 				UT200000000000000000007 /* UnitAnalyticsTests.swift */,
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
 				165569863085B0817806842D /* ProgramImporterTests.swift */,
@@ -361,6 +366,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* Exercise.swift */,
+				617B66067DB34B9B960A9C60 /* Exercise+Icon.swift */,
 				A20000000000000000000004 /* DayTemplate.swift */,
 				A20000000000000000000005 /* WorkoutSession.swift */,
 				A20000000000000000000006 /* SetEntry.swift */,
@@ -698,6 +704,7 @@
 				A10000000000000000000002 /* ContentView.swift in Sources */,
 				AN100000000000000000001 /* UnitAnalytics.swift in Sources */,
 				A10000000000000000000003 /* Exercise.swift in Sources */,
+				140300CE9E064ADAAE05AF08 /* Exercise+Icon.swift in Sources */,
 				ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */,
 				PTPL100000000000000000001 /* ProgramTemplate.swift in Sources */,
 				PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */,
@@ -757,6 +764,7 @@
 				UT100000000000000000005 /* EntitlementRefreshStateTests.swift in Sources */,
 				UT100000000000000000006 /* FeedbackPortalConfigurationTests.swift in Sources */,
 				11133D3987E11AFC2FED1A27 /* AnalyticsEngineTests.swift in Sources */,
+				DDF5A7E4C221443092E6BC44 /* ExerciseIconResolverTests.swift in Sources */,
 				UT100000000000000000007 /* UnitAnalyticsTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */,

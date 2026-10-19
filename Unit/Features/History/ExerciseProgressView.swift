@@ -44,11 +44,9 @@ struct ExerciseProgressView: View {
             if let lift, let output, let latest = lift.latest {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     HStack(spacing: AppSpacing.smd) {
-                        AppIconCircle(diameter: AppSpacing.xxl, shape: .roundedRect(radius: AppRadius.sm), surface: .control) {
-                            (AnalyticsEngine.slot(for: lift.exercise).map(AnalyticsView.icon(for:)) ?? AnalyticsView.icon(for: lift.exercise)).image(size: AppIconSize.readiness).foregroundStyle(AppColor.textSecondary)
-                        }.accessibilityHidden(true)
+                        AppMainLiftCard.iconTile(AnalyticsView.icon(for: lift.exercise), side: AppIconSize.exerciseDetailTile, detail: true)
                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                            Text(exerciseName).appFont(.productHeading).fixedSize(horizontal: false, vertical: true)
+                            Text(lift.exercise.name).appFont(.productHeading).fixedSize(horizontal: false, vertical: true)
                             Text(metadata(lift.exercise)).font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                         }
                     }
