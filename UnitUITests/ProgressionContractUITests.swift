@@ -479,6 +479,8 @@ final class ProgressionContractUITests: XCTestCase {
         XCTAssertTrue(error.exists, "Old toast timeout cleared the replacement error")
         attachScreenshot(of: app, named: "14-persistent-error-toast")
         tap(app.buttons["Dismiss message"], "Dismiss error")
+        XCTAssertTrue(error.waitForNonExistence(timeout: 3), "Dismiss did not remove the error toast")
+        scrollTo(app.buttons["Undo message"], in: app)
         tap(app.buttons["Undo message"], "Actionable toast")
         tap(app.buttons["toast-action"], "Undo sample")
         XCTAssertTrue(app.staticTexts["Sample restored"].waitForExistence(timeout: 3))
