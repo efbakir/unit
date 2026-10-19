@@ -426,6 +426,37 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "10-first-session-set-completed")
     }
 
+    func testSetUndoAndInterruptedWorkoutSurviveRelaunch() throws {
+        var app = makeStartingTargetApp(reset: true)
+        app.launch()
+        tap(app.buttons[AppCopy.Workout.startWorkout], "Start isolated workout", timeout: 20)
+        tap(app.buttons[AppCopy.Workout.completeSet], "Log seeded 60 kg × 8 set")
+        let loggedSet = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "Set 1, completed")
+        ).firstMatch
+        XCTAssertTrue(loggedSet.waitForExistence(timeout: 8))
+        let originalLabel = loggedSet.label
+        tap(loggedSet, "Edit completed set")
+        tap(app.buttons[AppCopy.Workout.deleteSet], "Delete completed set")
+        let undo = app.buttons["toast-action"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 2), "Set removal did not offer Undo")
+        undo.tap()
+        XCTAssertTrue(loggedSet.waitForExistence(timeout: 5), "Undo did not restore the set")
+        XCTAssertEqual(loggedSet.label, originalLabel, "Undo changed the original set values")
+        attachScreenshot(of: app, named: "11-set-undo-restored")
+
+        app.terminate()
+        app = makeStartingTargetApp()
+        app.launch()
+        let restoredSet = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "Set 1, completed")
+        ).firstMatch
+        XCTAssertTrue(restoredSet.waitForExistence(timeout: 20), "Interrupted workout lost its completed set")
+        XCTAssertEqual(restoredSet.label, originalLabel)
+        assertNoProgressionDecisionUI(in: app)
+        attachScreenshot(of: app, named: "12-interrupted-workout-restored")
+    }
+
     // MARK: - Helpers
 
     private func makeApp(reset: Bool = false) -> XCUIApplication {
