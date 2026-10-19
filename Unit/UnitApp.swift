@@ -166,6 +166,7 @@ struct UnitApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .appFeedbackScene()
                 .preferredColorScheme(.light)
         }
         .modelContainer(sharedModelContainer)

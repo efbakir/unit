@@ -331,83 +331,97 @@ enum AppProgressChipMetrics {
     static var compactHorizontalPadding: CGFloat { AppSpacing.sm }
 }
 
-/// Motion tokens. The single source of truth for every duration, curve, and spring
-/// in the app. Page files call `.appPress` / `.appState` / etc. — never raw
-/// `.easeInOut(duration:)` literals.
-///
-/// Doctrine, restated for the next reader:
-/// - **State only.** Motion conveys feedback, reveal, transition between views.
-///   Decorative motion is banned in the hot loop (PRODUCT.md, DESIGN.md §4).
-/// - **Ease-out only.** No bounce, no elastic, no overshoot. Users are mid-set.
-/// - **≤ 320 ms.** The product register cap. Anything longer reads as laggy.
-/// - **Exit ≈ 75 % of enter.** Symmetry between dismissal and presentation reads
-///   wrong on touch devices — exits should feel decisive.
-///
-/// Reduce Motion is a call-site contract: `reduceMotion ? nil : .appXxx`, or use
-/// `.appAnimation(_:value:reduceMotion:)`. There is no global wrapper because
-/// every surface needs to decide its own fallback (sometimes nil, sometimes a
-/// shorter cross-fade). See `OnboardingSplashView` for the canonical pattern.
+/// One motion vocabulary. Active logging stays quiet; staged moments may settle.
+/// Reduce Motion OR VoiceOver permits fades only. Shared animated owners apply
+/// `allowsSpatialMotion`; callers must not animate travel, blur, or scale otherwise.
 enum AppMotion {
     enum Duration {
-        /// 150 ms — instant feedback (button press, toggle confirm). Matches `ScaleButtonStyle`.
-        static let press: Double = 0.15
-        /// 200 ms — state toggle (toast in/out, tier select, mode swap).
-        static let state: Double = 0.20
-        /// 250 ms — content reveal (text content swap, progress fill).
-        static let reveal: Double = 0.25
-        /// 320 ms — entrance (card / sheet appear, hero element).
-        static let enter: Double = 0.32
-        /// 180 ms — exit (~75 % of enter; dismissal is decisive).
-        static let exit: Double = 0.18
-        /// 70 ms — per-index delay between sibling blocks in a staggered
-        /// entrance (`appScreenEnter(index:)`). Short enough that a
-        /// six-block cascade completes inside ~750 ms total.
-        static let staggerStep: Double = 0.07
+        static let feedback: Double = 0.15
+        static let transition: Double = 0.28
+        static let press = feedback
+        static let state = transition
+        static let reveal = transition
+        static let enter = transition
+        static let exit = transition
+        /// Staged introductions only. Never stagger scrolling lists or logging taps.
+        static let staggerStep: Double = 0.1
+        static let burst: Double = 0.45
+        static let toast: Double = 2
+        static let toastAction: Double = 4
     }
 
-    /// Easing curves translated from the design-for-AI motion doctrine
-    /// (cubic-bezier values are the same as `--ease-out-quart/quint/expo`).
-    enum Curve {
-        /// `cubic-bezier(0.25, 1, 0.5, 1)` — smooth, refined. Default for state changes.
-        static func quart(_ duration: Double) -> Animation {
-            .timingCurve(0.25, 1, 0.5, 1, duration: duration)
-        }
-        /// `cubic-bezier(0.22, 1, 0.36, 1)` — slightly snappier. Default for entrances.
-        static func quint(_ duration: Double) -> Animation {
-            .timingCurve(0.22, 1, 0.36, 1, duration: duration)
-        }
-        /// `cubic-bezier(0.16, 1, 0.3, 1)` — confident, decisive. Reserve for hero moments.
-        static func expo(_ duration: Double) -> Animation {
-            .timingCurve(0.16, 1, 0.3, 1, duration: duration)
-        }
+    static let feedback = Animation.timingCurve(0.2, 0, 0, 1, duration: Duration.feedback)
+    static let transition = Animation.timingCurve(0.2, 0, 0, 1, duration: Duration.transition)
+    static let reveal = Animation.easeOut(duration: Duration.transition)
+    static let collectionChange = Animation.smooth(duration: Duration.transition)
+    static let settle = Animation.spring(duration: 0.5, bounce: 0.22)
+    static let confirmSpring = settle
+    static let pressedScale: CGFloat = 0.96
+    static let liftScale: CGFloat = 1.06
+    static let leaveScale: CGFloat = 0.92
+    static let markPopScale: CGFloat = 0.25
+    static let pressedOpacity: Double = 0.82
+    static let disabledOpacity: Double = 0.45
+    static let revealTravel: CGFloat = 12
+    static let revealBlur: CGFloat = 4
+    static let burstDots = 8
+    static let burstDot: CGFloat = 4
+    static let burstStart: CGFloat = 10
+    static let burstEnd: CGFloat = 32
+    static let burstShrink: CGFloat = 0.5
+    static let edgeGive: CGFloat = 0.55
+    static let edgeGiveLimit: CGFloat = 64
+
+    static func allowsSpatialMotion(reduceMotion: Bool, voiceOver: Bool) -> Bool {
+        !reduceMotion && !voiceOver
     }
 
-    /// Confirmation spring (segmented pill, set-completed pulse). Damping ≥ 0.85
-    /// keeps it brisk — anything looser reads as "bouncy" and is banned by doctrine.
-    static let confirmSpring: Animation = .spring(response: 0.32, dampingFraction: 0.85)
+    static func give(_ overshoot: CGFloat) -> CGFloat {
+        guard overshoot != 0 else { return 0 }
+        let travel = (1 - 1 / (abs(overshoot) * edgeGive / edgeGiveLimit + 1)) * edgeGiveLimit
+        return overshoot < 0 ? -travel : travel
+    }
+
+    static func give(from limit: CGSize, toward proposed: CGSize) -> CGSize {
+        CGSize(width: limit.width + give(proposed.width - limit.width),
+               height: limit.height + give(proposed.height - limit.height))
+    }
+
+    /// Deterministic inputs for the later celebration renderer, with Unit colors only.
+    enum Confetti {
+        static let count = 32
+        static let lifetime: Double = 1.8
+        static let stagger: Double = 0.2
+        static let colors: [Color] = [AppColor.accent, AppColor.success, AppColor.warning]
+        static let pieceSize = CGSize(width: 6, height: 10)
+        static let spread: CGFloat = 160
+        static let rise: CGFloat = 120
+        static let fall: CGFloat = 320
+
+        /// Stable across redraws and processes; never use randomized `hashValue`.
+        static func sample(seed: UInt64, index: Int, channel: Int = 0) -> Double {
+            var value = seed &+ UInt64(truncatingIfNeeded: index) &* 0x9E3779B97F4A7C15
+            value &+= UInt64(truncatingIfNeeded: channel) &* 0xBF58476D1CE4E5B9
+            value = (value ^ (value >> 30)) &* 0xBF58476D1CE4E5B9
+            value = (value ^ (value >> 27)) &* 0x94D049BB133111EB
+            value ^= value >> 31
+            return Double(value >> 11) / Double(UInt64(1) << 53)
+        }
+    }
 }
 
 extension Animation {
-    /// 150 ms easeInOut — button press feedback. Ties `ScaleButtonStyle` to
-    /// the token system; previously hardcoded.
-    static let appPress: Animation = .easeInOut(duration: AppMotion.Duration.press)
-
-    /// 200 ms ease-out-quart — state toggles (visibility, mode swaps, tier select).
-    static let appState: Animation = AppMotion.Curve.quart(AppMotion.Duration.state)
-
-    /// 250 ms ease-out-quart — content swap (numeric text, progress fills).
-    static let appReveal: Animation = AppMotion.Curve.quart(AppMotion.Duration.reveal)
-
-    /// 320 ms ease-out-quint — entrance (card appear, sheet present, hero land).
-    static let appEnter: Animation = AppMotion.Curve.quint(AppMotion.Duration.enter)
-
-    /// 180 ms ease-out-quart — exit (75 % of enter, decisive).
-    static let appExit: Animation = AppMotion.Curve.quart(AppMotion.Duration.exit)
-
-    /// Spring for confirmation pulses (segmented pill move, set logged). Same
-    /// numbers the segmented pill already used; lifted so all confirm-class
-    /// motion stays in lockstep.
-    static let appConfirm: Animation = AppMotion.confirmSpring
+    static let appPress = AppMotion.feedback
+    static let appState = AppMotion.transition
+    static let appReveal = AppMotion.reveal
+    static let appEnter = AppMotion.transition
+    static let appExit = AppMotion.transition
+    static var appConfirm: Animation {
+        AppMotion.allowsSpatialMotion(
+            reduceMotion: UIAccessibility.isReduceMotionEnabled,
+            voiceOver: UIAccessibility.isVoiceOverRunning
+        ) ? AppMotion.settle : .linear(duration: 0)
+    }
 }
 
 extension View {
@@ -419,40 +433,30 @@ extension View {
         value: V,
         reduceMotion: Bool
     ) -> some View {
-        self.animation(reduceMotion ? nil : animation, value: value)
+        self.animation(reduceMotion || UIAccessibility.isVoiceOverRunning ? nil : animation, value: value)
     }
 }
 
-/// Canonical screen-entrance animation. Subtle fade + 6pt upward slide using
-/// the existing `.appEnter` curve (320 ms ease-out-quint). Runs once on first
-/// `.onAppear`, then becomes a no-op for the lifetime of the view — so
-/// scrolling, state changes, and re-renders never re-trigger it.
-///
-/// Reduce Motion: opacity-only, animation skipped (instant appearance). Per
-/// the call-site contract in `AppMotion`, reduceMotion users get no motion.
-///
-/// Apply at the screen-content layer (typically the root `ScrollView` or
-/// the content `VStack` inside `AppScreen`), not per-element. Single
-/// canonical implementation — never hand-roll a parallel `.opacity` /
-/// `.offset` entrance, never extend with stagger or per-row variants.
+/// Existing whole-screen entrance: one fade and small travel on first appearance.
+/// Reduce Motion and VoiceOver use a fade without travel or stagger. Indexed
+/// arrivals are reserved for staged introductions, never scrolling rows.
 private struct AppScreenEnter: ViewModifier {
-    /// Stagger position. 0 = no delay (the classic whole-screen entrance);
-    /// 1, 2, 3… delay by `index × AppMotion.Duration.staggerStep` so sibling
-    /// blocks cascade top-to-bottom in one rehearsed arrival instead of
-    /// popping in as a wall. Reduce Motion: everything lands instantly.
+    /// Only explicitly staged sibling blocks receive an index.
     var index: Int = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var hasAppeared = false
 
     func body(content: Content) -> some View {
+        let spatial = AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
         content
             .opacity(hasAppeared ? 1 : 0)
-            .offset(y: (hasAppeared || reduceMotion) ? 0 : 6)
+            .offset(y: hasAppeared || !spatial ? 0 : AppMotion.revealTravel)
             .onAppear {
                 guard !hasAppeared else { return }
-                let delay = Double(index) * AppMotion.Duration.staggerStep
-                withAnimation(reduceMotion ? nil : .appEnter.delay(delay)) {
+                let delay = spatial ? Double(max(0, index)) * AppMotion.Duration.staggerStep : 0
+                withAnimation(.appReveal.delay(delay)) {
                     hasAppeared = true
                 }
             }
@@ -601,121 +605,123 @@ extension Double {
 
 // MARK: - Haptics
 
-/// Single canonical haptic vocabulary for the app. Cases name **moments**
-/// (set logged, rest ready, PR, rejected tap…), not mechanisms (light impact,
-/// notification success). That keeps tactile intent paired with product intent
-/// — if the meaning of "PR" changes, one line moves.
-///
-/// HIG mapping:
-/// - `.success / .warning / .error` → notification class (state-of-task signals).
-/// - `.selection` → discrete change with no impact metaphor (tabs, picker reflow).
-/// - `.increase / .decrease` → stepper-native pair (iOS 17).
-/// - `.impact(weight:intensity:)` → physical metaphor (lift, PR celebration).
-///
-/// Two ways to fire:
-/// 1. **Declarative** — `.appHaptic(.setLogged, trigger: signal)` modifier on the
-///    view that owns the moment. Preferred — keeps haptic next to the state.
-/// 2. **Imperative** — `AppHaptic.reorderLift.fire()` from gesture/drop
-///    delegates that don't have a SwiftUI state to bind to.
-///
-/// New moments belong here, not as ad-hoc `.sensoryFeedback(...)` calls in
-/// feature views — that's how the taxonomy drifts.
-enum AppHaptic {
-    // Logging hot loop
-    case setLogged
-    case personalRecord
-    case setDeleted
+/// Seven tactile intents. Secondary links, ordinary rows, typing and scrolling
+/// stay quiet. Both trigger modifiers and imperative gestures use scene admission.
+enum AppHaptic: CaseIterable, Equatable, Sendable {
+    case select, tap, lift, firm, success, warning, error
 
-    // Rest timer
-    case restFinalCountdown
-    case restReady
-
-    // Workout-level
-    case workoutFinished
-
-    // CTAs / form
-    case rejectedTap
-    case validationError
-
-    // Steppers
-    case stepperIncrement
-    case stepperDecrement
-
-    // Navigation
-    case tabChange
-
-    // Reorder gesture
-    case reorderLift
-    case reorderSwap
-
-    // Purchase
-    case purchaseSuccess
-    /// Paywall tier tap — same `.selection` class as `tabChange`: a light
-    /// tick that confirms the choice registered without celebrating it.
-    case tierSelected
-
-    var feedback: SensoryFeedback {
+    var strength: Int {
         switch self {
-        case .setLogged, .restReady, .workoutFinished, .purchaseSuccess:
-            return .success
-        case .personalRecord:
-            return .impact(weight: .heavy, intensity: 1.0)
-        case .setDeleted:
-            return .impact(weight: .light, intensity: 0.7)
-        case .restFinalCountdown:
-            return .warning
-        case .rejectedTap, .validationError:
-            return .error
-        case .stepperIncrement:
-            return .increase
-        case .stepperDecrement:
-            return .decrease
-        case .tabChange, .reorderSwap, .tierSelected:
-            return .selection
-        case .reorderLift:
-            return .impact(weight: .medium, intensity: 1.0)
+        case .select: 0
+        case .tap, .lift: 1
+        case .firm: 2
+        case .success, .warning: 3
+        case .error: 4
         }
     }
 
-    /// Imperative trigger for sites without SwiftUI state to bind to —
-    /// `onDrag` closures, `DropDelegate` callbacks. Prefer the modifier.
-    func fire() {
+    var feedback: SensoryFeedback {
         switch self {
-        case .setLogged, .restReady, .workoutFinished, .purchaseSuccess:
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-        case .restFinalCountdown:
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-        case .rejectedTap, .validationError:
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
-        case .personalRecord:
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 1.0)
-        case .setDeleted:
-            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
-        case .reorderLift:
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        case .stepperIncrement, .stepperDecrement, .tabChange, .reorderSwap, .tierSelected:
-            UISelectionFeedbackGenerator().selectionChanged()
+        case .select: .selection
+        case .tap: .impact(weight: .light)
+        case .lift: .impact(flexibility: .soft)
+        case .firm: .impact(weight: .medium)
+        case .success: .success
+        case .warning: .warning
+        case .error: .error
+        }
+    }
+
+    /// Gestures use the active scene; declarative controls supply their own scene.
+    /// No scene means silence, including previews. Haptics remain on with accessibility.
+    @MainActor
+    func fire(in scene: AppFeedbackState? = nil) {
+        guard (scene ?? AppFeedbackState.activeScene)?.admitHaptic(self) == true else { return }
+        switch self {
+        case .select: UISelectionFeedbackGenerator().selectionChanged()
+        case .tap: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        case .lift: UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        case .firm: UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        }
+    }
+}
+
+/// Scene-local admission, shared by all control and outcome delivery paths.
+@MainActor
+final class AppFeedbackState {
+    static weak var activeScene: AppFeedbackState?
+    static let repeatWindow: Duration = .milliseconds(80)
+    private(set) var isActive = false
+    private(set) var lastHaptic: AppHaptic?
+    private var lastHapticTime: ContinuousClock.Instant?
+    var clock: () -> ContinuousClock.Instant = { .now }
+
+    func setActive(_ active: Bool) {
+        isActive = active
+        lastHaptic = nil
+        lastHapticTime = nil
+        if active { Self.activeScene = self }
+        else if Self.activeScene === self { Self.activeScene = nil }
+    }
+
+    func admitHaptic(_ intent: AppHaptic) -> Bool {
+        guard isActive else { return false }
+        let now = clock()
+        if let lastHaptic, let lastHapticTime,
+           now - lastHapticTime < Self.repeatWindow,
+           intent.strength <= lastHaptic.strength { return false }
+        lastHaptic = intent
+        lastHapticTime = now
+        return true
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var appFeedback: AppFeedbackState? = nil
+}
+
+/// Owns admission for one WindowGroup root, including presented sheets.
+private struct AppFeedbackScene: ViewModifier {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var feedback = AppFeedbackState()
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.appFeedback, feedback)
+            .onAppear { feedback.setActive(scenePhase == .active) }
+            .onChange(of: scenePhase) { _, phase in feedback.setActive(phase == .active) }
+            .onDisappear { feedback.setActive(false) }
+    }
+}
+
+/// The trigger path intentionally calls the same player as imperative gestures.
+private struct AppHapticModifier<Trigger: Equatable>: ViewModifier {
+    @Environment(\.appFeedback) private var feedback
+    @Environment(\.isEnabled) private var isEnabled
+    let intent: AppHaptic
+    let trigger: Trigger
+    let condition: (Trigger, Trigger) -> Bool
+
+    func body(content: Content) -> some View {
+        content.onChange(of: trigger) { old, new in
+            guard isEnabled, condition(old, new), let feedback else { return }
+            intent.fire(in: feedback)
         }
     }
 }
 
 extension View {
-    /// Fires `haptic` whenever `trigger` changes. Use on the view that owns the
-    /// moment so the haptic lives next to the state, not threaded through a
-    /// callback chain. Prefer this over inline `.sensoryFeedback(...)`.
-    func appHaptic<T: Equatable>(_ haptic: AppHaptic, trigger: T) -> some View {
-        sensoryFeedback(haptic.feedback, trigger: trigger)
-    }
+    func appFeedbackScene() -> some View { modifier(AppFeedbackScene()) }
 
-    /// Fires `haptic` only when the `(old, new)` transition matches `condition`.
-    /// Use for boolean edges where you want one direction (e.g. `false → true`)
-    /// without spamming on every tick: `.appHaptic(.restFinalCountdown, trigger: isFinal) { !$0 && $1 }`.
     func appHaptic<T: Equatable>(
         _ haptic: AppHaptic,
         trigger: T,
-        condition: @escaping (T, T) -> Bool
+        condition: @escaping (T, T) -> Bool = { _, _ in true }
     ) -> some View {
-        sensoryFeedback(haptic.feedback, trigger: trigger, condition: condition)
+        modifier(AppHapticModifier(intent: haptic, trigger: trigger, condition: condition))
     }
 }
 
@@ -985,8 +991,8 @@ struct AppStepper: View {
         .padding(.vertical, verticalPadding)
         .background(AppColor.controlBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        .appHaptic(.stepperIncrement, trigger: incrementPhase)
-        .appHaptic(.stepperDecrement, trigger: decrementPhase)
+        .appHaptic(.select, trigger: incrementPhase)
+        .appHaptic(.select, trigger: decrementPhase)
     }
 
     private var valueFont: AppFont {
@@ -1126,7 +1132,7 @@ struct AppPrimaryButton: View {
     let action: () -> Void
 
     /// Bumped each time a disabled (not loading) tap is absorbed so
-    /// `AppHaptic.rejectedTap` fires. A silently-rejected primary CTA is the
+    /// `AppHaptic.error` fires. A silently-rejected primary CTA is the
     /// worst-of-both-worlds; a soft buzz tells the user the system saw the
     /// tap but the gate isn't passable. Pair with `disabledReason` on
     /// `PrimaryButtonConfig` to also explain *why*.
@@ -1182,7 +1188,7 @@ struct AppPrimaryButton: View {
                     .accessibilityHidden(true)
             }
         }
-        .appHaptic(.rejectedTap, trigger: disabledTapTrigger)
+        .appHaptic(.error, trigger: disabledTapTrigger)
     }
 }
 
@@ -2527,7 +2533,7 @@ struct AppOptionTileCard: View {
             }
             .appCardStyle(isSelected: isSelected)
         }
-        // Press feedback (opacity dim + brightness shift + scale) is the
+        // Press feedback (opacity dim + accessible scale) is the
         // canonical system-level treatment on `ScaleButtonStyle`. Every
         // tappable atom in Unit uses the same style so onboarding cards,
         // CTAs, ghost buttons, and floating pills all flash the same way on
@@ -2544,7 +2550,7 @@ struct AppOptionTileCard: View {
         // Selection haptic fires at the same instant the press-state
         // animation begins (via `ScaleButtonStyle`). Visual + tactile
         // together so the tap feels received in two senses.
-        UISelectionFeedbackGenerator().selectionChanged()
+        AppHaptic.select.fire()
         // Hold the action by 50ms so a couple of frames of press-state dim
         // from `ScaleButtonStyle` register before the forward transition
         // slides the card fully off-screen and fades it
@@ -3577,7 +3583,7 @@ private struct AppReorderableRow<Preview: View>: ViewModifier {
         return content
             .onDrag {
                 draggedID = id
-                AppHaptic.reorderLift.fire()
+                AppHaptic.lift.fire()
                 return NSItemProvider(object: id.uuidString as NSString)
             } preview: {
                 preview()
@@ -3666,7 +3672,7 @@ struct WorkoutCommandCard: View {
     var primaryLabel: String = AppCopy.Workout.completeSet
     var onPrimaryAction: (() -> Void)? = nil
     var onSecondaryAction: (() -> Void)? = nil
-    /// Bumped by the parent each time a set is logged. Drives `AppHaptic.setLogged`
+    /// Bumped by the parent each time a set is logged. Drives `AppHaptic.success`
     /// on this card so the feedback lives at the atom layer instead of being
     /// threaded through a generator at the call site.
     /// Pass `nil` for non-active surfaces (previews) — feedback is a no-op then.
@@ -3750,8 +3756,7 @@ struct WorkoutCommandCard: View {
         }
         .frame(maxWidth: .infinity)
         .appWorkoutPanelChrome()
-        .appHaptic(.setLogged, trigger: setLoggedSignal)
-        .appHaptic(.personalRecord, trigger: setPRSignal)
+        .appHaptic(.success, trigger: setLoggedSignal)
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
         }
@@ -5660,63 +5665,21 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
     }
 }
 
-/// Canonical press-feedback button style — 0.96x scale, 14% opacity dim,
-/// 8% brightness reduction, and `.appPress` easing. Apply to every custom
-/// tappable card, row, or button so "press" reads consistently. Native
-/// toolbars, alerts, toggles, and pickers keep the platform's own feedback.
-/// Press is a touch confirmation, not decorative motion, so it is intentionally
-/// not gated by Reduce Motion.
-/// Canonical press-state treatment for every tappable atom in Unit —
-/// `AppPrimaryButton`, `AppSecondaryButton`, `AppGhostButton`,
-/// `AppFloatingPillButton`, `OnboardingOptionCard`, and every internal
-/// `Button(...).buttonStyle(ScaleButtonStyle())` call site. **Fix here, not
-/// at the screen layer**: any change to how a tap looks is a system-level
-/// change and belongs in this struct so every surface flips together.
-///
-/// Three cues fire on press, all animating together via `.appPress` (0.15s)
-/// in both directions:
-///
-/// 1. **Opacity → 0.86** — subtle dim. Big filled CTAs (accent primary)
-///    showed too much state change at the original 0.7; 14 % is still
-///    visible on the orange surface without making the button look broken
-///    or unavailable mid-tap.
-/// 2. **Brightness → -0.08** — the cue that survives on near-white surfaces.
-///    Opacity alone on a white card over a Milk background is invisible
-///    (you're letting Milk show through Milk). Brightness shifts every
-///    color channel down by 6 %, so white reads as a perceptible light
-///    grey, accent reads as a slightly deeper accent, and transparent
-///    ghosts read as a faded text. Universal — works on every shape we
-///    have without per-style branching.
-/// 3. **Scale → 0.96** — secondary tactile cue. 4 % is enough to feel
-///    without competing with the opacity/brightness shift.
-///
-/// **Animation is symmetric** (`.appPress` both ways). The earlier asymmetric
-/// version (snap-on, ease-off) was meant to register 30ms taps but read as
-/// a hard cut — "jumping from one side to the other". 0.15s in both
-/// directions is short enough that even a fast tap renders a visible frame
-/// or two of dim, and the on-and-off motion stays a single continuous gesture
-/// rather than two disjoint moments.
-///
-/// **Navigation cards must hold the action briefly** (see
-/// `OnboardingOptionCard.handleTap`'s 110ms `asyncAfter`). The press state
-/// only exists while the finger is down — for surfaces that auto-advance to
-/// another screen on release (option cards, but not regular CTAs that stay
-/// in place), the slide transition starts the instant the action fires, so
-/// without a tiny delay the press is gone before the eye registers it. The
-/// hold is the *timing* fix; this style is the *visual* fix. Both layers
-/// are needed for tap-to-navigate to feel acknowledged.
-///
-/// Outline / border highlights were rejected: an accent stroke around a card
-/// reads as a selected *state* (persistent), not a momentary press feedback,
-/// and looked wrong on filled CTAs where there is no white background to
-/// stroke against.
+/// Shared custom-control press feedback. Disabled fill/foreground pairs remain
+/// owned by the button; no second disabled dim is applied. Native controls retain
+/// their platform style. Reduce Motion and VoiceOver use only the opacity fade.
 struct ScaleButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = isEnabled && configuration.isPressed
+        let spatial = AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
         configuration.label
-            .opacity(configuration.isPressed ? 0.86 : 1)
-            .brightness(configuration.isPressed ? -0.08 : 0)
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.appPress, value: configuration.isPressed)
+            .opacity(pressed ? AppMotion.pressedOpacity : 1)
+            .scaleEffect(pressed && spatial ? AppMotion.pressedScale : 1)
+            .animation(.appPress, value: pressed)
     }
 }
 

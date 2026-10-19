@@ -50,10 +50,10 @@ struct PaywallView: View {
         .onChange(of: store.isPurchased) { _, purchased in
             if purchased { onDismiss() }
         }
-        .appHaptic(.purchaseSuccess, trigger: store.isPurchased) { old, new in
+        .appHaptic(.success, trigger: store.isPurchased) { old, new in
             !old && new
         }
-        .appHaptic(.tierSelected, trigger: store.selectedTier)
+        .appHaptic(.select, trigger: store.selectedTier)
         .alert(
             "Something went wrong",
             isPresented: errorAlertBinding,

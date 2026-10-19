@@ -97,7 +97,7 @@ struct ContentView: View {
         }
         .tint(AppColor.accent)
         .toolbar(hasActiveSession ? .hidden : .visible, for: .tabBar)
-        .appHaptic(.tabChange, trigger: selectedTab)
+        .appHaptic(.select, trigger: selectedTab)
         .environment(store)
         .environment(\.appTabSelection, AppTabSelection { tab in
             selectedTab = tab

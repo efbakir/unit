@@ -449,7 +449,7 @@ private struct TemplateExerciseReorderDropDelegate: DropDelegate {
             ids.insert(moved, at: toIndex)
             template.orderedExerciseIds = ids
         }
-        AppHaptic.reorderSwap.fire()
+        AppHaptic.select.fire()
     }
 
     func performDrop(info: DropInfo) -> Bool {

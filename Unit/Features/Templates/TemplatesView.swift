@@ -588,7 +588,7 @@ private struct RoutineReorderDropDelegate: DropDelegate {
             ids.insert(moved, at: toIndex)
             split.orderedTemplateIds = ids
         }
-        AppHaptic.reorderSwap.fire()
+        AppHaptic.select.fire()
     }
 
     func performDrop(info: DropInfo) -> Bool {

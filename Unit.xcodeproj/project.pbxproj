@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AFA100000000000000000001 /* AppFeedbackPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA200000000000000000001 /* AppFeedbackPolicyTests.swift */; };
 		1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */; };
 		4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842C /* ProgramImportParserTests.swift */; };
 		4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165569863085B0817806842D /* ProgramImporterTests.swift */; };
@@ -124,6 +125,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AFA200000000000000000001 /* AppFeedbackPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeedbackPolicyTests.swift; sourceTree = "<group>"; };
 		165569863085B0817806842C /* ProgramImportParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParserTests.swift; sourceTree = "<group>"; };
 		165569863085B0817806842D /* ProgramImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImporterTests.swift; sourceTree = "<group>"; };
 		543AA9CD3011424800AC9494 /* Unit.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unit.xctestplan; sourceTree = "<group>"; };
@@ -247,6 +249,7 @@
 				PSTST200000000000000001 /* ProgressionPersistenceTests.swift */,
 				PSTST300000000000000001 /* Fixtures */,
 				UT200000000000000000004 /* EngagementPromptTrackerTests.swift */,
+				AFA200000000000000000001 /* AppFeedbackPolicyTests.swift */,
 				UT200000000000000000005 /* EntitlementRefreshStateTests.swift */,
 				UT200000000000000000006 /* FeedbackPortalConfigurationTests.swift */,
 				UT200000000000000000007 /* UnitAnalyticsTests.swift */,
@@ -724,6 +727,7 @@
 				DPTST100000000000000001 /* DoubleProgressionEngineTests.swift in Sources */,
 				PSTST100000000000000001 /* ProgressionPersistenceTests.swift in Sources */,
 				UT100000000000000000004 /* EngagementPromptTrackerTests.swift in Sources */,
+				AFA100000000000000000001 /* AppFeedbackPolicyTests.swift in Sources */,
 				UT100000000000000000005 /* EntitlementRefreshStateTests.swift in Sources */,
 				UT100000000000000000006 /* FeedbackPortalConfigurationTests.swift in Sources */,
 				UT100000000000000000007 /* UnitAnalyticsTests.swift in Sources */,

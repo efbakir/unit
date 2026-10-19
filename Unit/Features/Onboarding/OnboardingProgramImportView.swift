@@ -46,7 +46,7 @@ struct OnboardingProgramImportView: View {
     /// + ghost button + sticky CTA, no expand/collapse chrome competing with
     /// the editor.
     @State private var showingFormatSheet = false
-    /// Bumped on parse failure so `AppHaptic.validationError` fires —
+    /// Bumped on parse failure so `AppHaptic.error` fires —
     /// silent rejection of a "Read program" tap is the worst-of-both-worlds.
     /// The alert owns the path to the examples sheet so SwiftUI never has to
     /// resolve competing alert and sheet presentations in the same frame.
@@ -129,7 +129,7 @@ struct OnboardingProgramImportView: View {
         } message: {
             Text(errorMessage ?? "")
         }
-        .appHaptic(.validationError, trigger: parseErrorTrigger)
+        .appHaptic(.error, trigger: parseErrorTrigger)
     }
 
     private var parseLabel: String {

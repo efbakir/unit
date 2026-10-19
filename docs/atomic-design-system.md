@@ -103,8 +103,9 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 ### Pressed-state rule
 
 `ScaleButtonStyle` is the single pressed treatment for every custom tappable
-card, row, and button: 0.96× scale, 14% opacity dim, and 8% brightness reduction
-over the 150ms `AppMotion.Duration.press` token. Native toolbar, alert, toggle,
+card, row, and button: 0.96× scale and 18% opacity dim over the 150ms
+`AppMotion.Duration.press` token. Reduce Motion or VoiceOver uses only the fade;
+disabled controls retain their paired fill and foreground colors. Native toolbar, alert, toggle,
 picker, and menu controls keep iOS feedback. Fix press feedback in
 `ScaleButtonStyle`; never create a screen-local variant.
 

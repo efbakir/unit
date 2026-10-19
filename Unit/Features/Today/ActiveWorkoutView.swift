@@ -44,7 +44,7 @@ struct ActiveWorkoutView: View {
     @State private var showsAddExercise = false
     @State private var pendingExerciseForSetup: Exercise?
     @State private var customSetCounts: [UUID: Int] = [:]
-    /// Bumped on every successful `completeSet`. Drives `AppHaptic.setLogged`
+    /// Bumped on every successful `completeSet`. Drives `AppHaptic.success`
     /// on `WorkoutCommandCard`, so the haptic lives at the atom layer instead
     /// of being fired imperatively from the view-model. Wraps via `&+=` to
     /// stay non-monotonic-safe.
@@ -170,7 +170,7 @@ struct ActiveWorkoutView: View {
     }
 
     /// True while the rest timer is running and ≤ 3 seconds remain.
-    /// Drives `AppHaptic.restFinalCountdown` on the screen — with a
+    /// Drives `AppHaptic.warning` on the screen — with a
     /// `false → true` filter so the haptic fires once when the lifter
     /// enters the heads-up window, not on every tick. Visual treatment
     /// is intentionally absent (numeric countdown already cross-fades;
@@ -430,19 +430,19 @@ struct ActiveWorkoutView: View {
         // and the haptic survives Reduce Motion (it is permitted tactile
         // feedback). The closure filter fires only on `false → true` so we
         // don't haptic-spam every tick.
-        .appHaptic(.restFinalCountdown, trigger: isRestFinalCountdown) { old, new in
+        .appHaptic(.warning, trigger: isRestFinalCountdown) { old, new in
             !old && new
         }
         // Rest finished → soft success on transition to ready. Distinct from
         // the warning above so the lifter can hear/feel "now". Filter mirrors
         // the heads-up: only `false → true`.
-        .appHaptic(.restReady, trigger: showsReadyState) { old, new in
+        .appHaptic(.success, trigger: showsReadyState) { old, new in
             !old && new
         }
         // Workout finished → success haptic, fired from the screen rather
         // than imperatively in `finishWorkout` so it survives Reduce Motion
         // gating identically to the in-flow haptics.
-        .appHaptic(.workoutFinished, trigger: workoutFinishedPhase)
+        .appHaptic(.success, trigger: workoutFinishedPhase)
         .sheet(isPresented: $showLineup) {
             exerciseListSheet
                 .presentationDetents([.medium, .large])
@@ -1011,7 +1011,7 @@ struct ActiveWorkoutView: View {
             try? modelContext.save()
         }
         prSetEntryIDs.remove(entry.id)
-        AppHaptic.setDeleted.fire()
+        AppHaptic.warning.fire()
     }
 
     /// Re-evaluate just the edited entry's PR flag against the current baseline.
