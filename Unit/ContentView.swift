@@ -78,18 +78,18 @@ struct ContentView: View {
     }
 
     private var mainTabView: some View {
-        // Tab swaps are intentionally instant — iOS-native expectation
-        // (Mail, Messages, Settings, Calendar). The .selection haptic is the
-        // delight signal; visual content motion fights TabView's own swap and
-        // reads as buggy. CLAUDE.md §4 (Prefer iOS-native: tab bar).
+        // Native tabs retain their stacks; only the arriving page fades out of blur.
+        // Entitlement/onboarding/root swaps above remain immediate (iOS 27).
         TabView(selection: $selectedTab) {
             TodayView()
+                .appTabEntrance(isSelected: selectedTab == .today)
                 .tabItem {
                     Label(RootTab.today.title, systemImage: RootTab.today.systemImage)
                 }
                 .tag(RootTab.today)
 
             TemplatesView()
+                .appTabEntrance(isSelected: selectedTab == .program)
                 .tabItem {
                     Label(RootTab.program.title, systemImage: RootTab.program.systemImage)
                 }

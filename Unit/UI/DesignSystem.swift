@@ -437,39 +437,119 @@ extension View {
     }
 }
 
-/// Existing whole-screen entrance: one fade and small travel on first appearance.
-/// Reduce Motion and VoiceOver use a fade without travel or stagger. Indexed
-/// arrivals are reserved for staged introductions, never scrolling rows.
-private struct AppScreenEnter: ViewModifier {
-    /// Only explicitly staged sibling blocks receive an index.
-    var index: Int = 0
+/// Owned by the scroll surface, so recycled intro/media views remember their arrival.
+@MainActor
+final class AppRevealSession {
+    private var revealed: Set<String> = []
+    func contains(_ id: String) -> Bool { revealed.contains(id) }
+    func record(_ id: String) { revealed.insert(id) }
+}
 
+extension EnvironmentValues {
+    @Entry var appRevealSession: AppRevealSession? = nil
+}
+
+/// One entrance owner for introductions, staged moments and native tab arrivals.
+/// Legacy whole-screen calls are immediate: lists, controls and errors never hide.
+private struct AppScreenEnter: ViewModifier {
+    var index: Int = 0
+    var enabled = false
+    var id: String? = nil
+    var onScroll = false
+    var isSelected: Bool? = nil
+    @Environment(\.appRevealSession) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var hasAppeared = false
+    @State private var tabVisible = true
+    @State private var tabMounted = false
+
+    private var spatial: Bool {
+        AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+    }
+    private var visible: Bool {
+        guard enabled else { return true }
+        if isSelected != nil { return tabVisible }
+        return hasAppeared || id.map { session?.contains($0) == true } == true
+    }
 
     func body(content: Content) -> some View {
-        let spatial = AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
         content
-            .opacity(hasAppeared ? 1 : 0)
-            .offset(y: hasAppeared || !spatial ? 0 : AppMotion.revealTravel)
-            .onAppear {
-                guard !hasAppeared else { return }
-                let delay = spatial ? Double(max(0, index)) * AppMotion.Duration.staggerStep : 0
-                withAnimation(.appReveal.delay(delay)) {
-                    hasAppeared = true
-                }
+            .opacity(visible ? 1 : 0)
+            .blur(radius: visible || !spatial ? 0 : AppMotion.revealBlur)
+            .offset(y: visible || !spatial || isSelected != nil ? 0 : AppMotion.revealTravel)
+            .onGeometryChange(for: Bool.self) { geometry in
+                guard enabled, onScroll,
+                      let viewport = geometry.bounds(of: .scrollView(axis: .vertical)) else { return true }
+                let intersection = viewport.intersection(CGRect(origin: .zero, size: geometry.size))
+                return !intersection.isNull && intersection.width > 0 && intersection.height > 0
+            } action: { inViewport in
+                if inViewport { reveal() }
             }
+            .onAppear {
+                if !onScroll || !spatial { reveal() }
+            }
+            .onChange(of: reduceMotion) { _, _ in if !spatial { reveal() } }
+            .onChange(of: voiceOver) { _, _ in if !spatial { reveal() } }
+            .task(id: isSelected) {
+                guard let selected = isSelected else { return }
+                guard tabMounted else { tabMounted = true; return }
+                guard selected else { tabVisible = true; return }
+                var instant = Transaction()
+                instant.disablesAnimations = true
+                withTransaction(instant) { tabVisible = false }
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                withAnimation(.appReveal) { tabVisible = true }
+            }
+            .onDisappear { tabVisible = true }
+    }
+
+    private func reveal() {
+        guard enabled, isSelected == nil, !hasAppeared else { return }
+        let remembered = id.map { session?.contains($0) == true } == true
+        let delay = spatial ? Double(max(0, index)) * AppMotion.Duration.staggerStep : 0
+        withAnimation(remembered ? nil : .appReveal.delay(delay)) {
+            hasAppeared = true
+            if let id { session?.record(id) }
+        }
+    }
+}
+
+/// Transition-only visibility: it never animates a destination's layout or drafts.
+private struct AppBlurVisibility: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    let visible: Bool
+    func body(content: Content) -> some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .blur(radius: visible || !AppMotion.allowsSpatialMotion(
+                reduceMotion: reduceMotion, voiceOver: voiceOver
+            ) ? 0 : AppMotion.revealBlur)
+    }
+}
+
+struct AppBlurTransition: Transition {
+    func body(content: Content, phase: TransitionPhase) -> some View {
+        content.modifier(AppBlurVisibility(visible: phase.isIdentity))
     }
 }
 
 extension View {
-    /// Apply the canonical screen-entrance animation. See `AppScreenEnter` for
-    /// doctrine. Apply at the screen-content layer (root `ScrollView` / content
-    /// `VStack`), not per-element — unless staggering sibling blocks, in which
-    /// case pass ascending `index:` values and apply per-block.
-    func appScreenEnter(index: Int = 0) -> some View {
-        modifier(AppScreenEnter(index: index))
+    /// Existing whole-content calls stay immediate. Opt in only for paywall/success chunks.
+    func appScreenEnter(index: Int = 0, staged: Bool = false) -> some View {
+        modifier(AppScreenEnter(index: index, enabled: staged))
+    }
+
+    /// Introductory copy and media only. Supply a scroll-owned session for stable memory.
+    func appReveal(id: String, onScroll: Bool = true) -> some View {
+        modifier(AppScreenEnter(enabled: true, id: id, onScroll: onScroll))
+    }
+
+    /// Arrival only; native TabView still owns navigation and selection.
+    func appTabEntrance(isSelected: Bool) -> some View {
+        modifier(AppScreenEnter(enabled: true, isSelected: isSelected))
     }
 }
 

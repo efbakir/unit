@@ -528,58 +528,21 @@ enum OnboardingSlideDirection {
     case back
 }
 
-/// Owns the single Milk page surface and animates step swaps in place.
-///
-/// Why not `NavigationStack`: a NavigationStack push slides both source and
-/// destination as opaque view-controller rects, which makes the shared Milk
-/// page appear to translate between steps even though it never actually
-/// changes. `OnboardingFlow` paints the page once at the root and slides only
-/// the step content layer — header, body, sticky CTA — over a still surface.
-///
-/// Reduce Motion: the slide collapses to a pure cross-fade. Per AppMotion
-/// doctrine, no horizontal translation when the user has the system
-/// preference on.
+/// Owns the still Milk page. Animation belongs to the transition, so new step
+/// layout and caller-owned drafts update immediately. Native chrome stays native.
 struct OnboardingFlow<StepContent: View>: View {
     let step: OnboardingStep
     let direction: OnboardingSlideDirection
     @ViewBuilder let stepContent: (OnboardingStep) -> StepContent
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         ZStack {
             AppColor.background.ignoresSafeArea()
-
             stepContent(step)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .id(step)
-                .transition(stepTransition)
+                .transition(AppBlurTransition().animation(.appReveal))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(reduceMotion ? .appReveal : .appEnter, value: step)
-        // No `.toolbar(.hidden)` here: each `OnboardingShell` step wants the
-        // host `NavigationStack`'s nav bar visible to host its real back-
-        // button `ToolbarItem`. Steps that don't use `OnboardingShell` (the
-        // splash) hide the nav bar at their own level.
-    }
-
-    private var stepTransition: AnyTransition {
-        if reduceMotion {
-            return .opacity
-        }
-        switch direction {
-        case .forward:
-            return .asymmetric(
-                insertion: .move(edge: .trailing).combined(with: .opacity),
-                removal: .move(edge: .leading).combined(with: .opacity)
-            )
-        case .back:
-            return .asymmetric(
-                insertion: .move(edge: .leading).combined(with: .opacity),
-                removal: .move(edge: .trailing).combined(with: .opacity)
-            )
-        case .none:
-            return .opacity
-        }
     }
 }

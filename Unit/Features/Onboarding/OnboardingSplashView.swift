@@ -27,8 +27,7 @@ struct OnboardingSplashView: View {
 
     private static let logoSide: CGFloat = 144
     /// How long the brand opener holds before the carousel reveals. Short on
-    /// purpose — the opener is a transient intro, not a screen to dwell on. Must
-    /// outlast the staggered parallax reveal (~0.5s) so it lands before passing.
+    /// purpose — the opener is a transient intro, not a screen to dwell on.
     private static let openerDuration: TimeInterval = 2.0
     /// First carousel beat — shorter than the steady cadence so the deck starts
     /// moving soon after the opener (opener + this ≈ one steady beat), instead of
@@ -40,11 +39,12 @@ struct OnboardingSplashView: View {
     private static let slideInterval: TimeInterval = 4.5
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var revealSession = AppRevealSession()
     @State private var phase: Phase = .opener
     @State private var selection: Int = 0
-    /// Drives the opener's staggered parallax *exit*. Set true at handoff so each
-    /// brand layer lifts + fades out on its per-index delay (mirroring the
-    /// entrance), instead of the opener flat-fading as one block.
+    /// Drives the shared fade/lift departure at handoff; accessibility fades only.
     @State private var openerLeaving = false
     /// Keeps the opener mounted through its exit animation, then unmounts it once
     /// the lift-away has played so it leaves the view hierarchy.
@@ -61,9 +61,7 @@ struct OnboardingSplashView: View {
                 carousel
                     .transition(.opacity)
             }
-            // Opener sits above the carousel and lifts away on its own staggered
-            // parallax exit (see `ParallaxEntry.leaving`) while the carousel fades
-            // in beneath it. Kept mounted through the exit, then unmounted.
+            // Keep the opener mounted until its departure finishes above the carousel.
             if openerVisible {
                 SplashOpener(logoSide: Self.logoSide, leaving: openerLeaving)
                     // Once the hand-off starts the opener is fading away on top of
@@ -101,40 +99,35 @@ struct OnboardingSplashView: View {
         // the black two-second opener, then return to Unit's light appearance
         // as soon as the opener unmounts.
         .preferredColorScheme(openerVisible ? .dark : .light)
-        .task {
-            // The opener is mounted on first render, with the carousel kept as
-            // a separate surface underneath after hand-off. If this task is
-            // cancelled, the opener remains visible rather than leaving a blank
-            // page.
+        .environment(\.appRevealSession, revealSession)
+        // Changing accessibility or scene state cancels the current sleep immediately.
+        .task(id: "\(reduceMotion)-\(voiceOver)-\(scenePhase)") {
+            guard scenePhase == .active else { return }
             if phase == .opener {
-                try? await Task.sleep(for: .seconds(Self.openerDuration))
-                if Task.isCancelled { return }
-                // Hand off with a parallax *disappearance*: the opener's layers
-                // lift + fade out staggered (driven by `ParallaxEntry`'s `leaving`
-                // branch) while the carousel cross-fades in beneath. Then unmount
-                // the now-invisible opener once the lift-away has played.
+                // Accessible users reach the manually controlled carousel directly.
+                if allowsAutoplay {
+                    do { try await Task.sleep(for: .seconds(Self.openerDuration)) }
+                    catch { return }
+                }
+                guard !Task.isCancelled else { return }
                 openerLeaving = true
-                withAnimation(reduceMotion ? nil : .appEnter) { phase = .carousel }
+                withAnimation(.appReveal) { phase = .carousel }
                 recordVisibleSlide()
-                try? await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.65))
-                if Task.isCancelled { return }
+            }
+            // Also finishes an interrupted handoff after returning from background.
+            if openerVisible {
+                do { try await Task.sleep(for: .seconds(AppMotion.Duration.transition)) }
+                catch { return }
                 openerVisible = false
             }
-
-            // Reduce Motion → no unprompted motion; a single slide → nothing to
-            // advance. UI tests paginate explicitly so their accessibility and
-            // screenshot assertions cannot race the timer. Production keeps the
-            // first shorter beat, then settles into the steady interval.
-            guard !reduceMotion,
-                  slides.count > 1,
-                  !CommandLine.arguments.contains("-ui-testing") else {
-                return
-            }
+            guard allowsAutoplay, slides.count > 1,
+                  !CommandLine.arguments.contains("-ui-testing") else { return }
             var interval = Self.firstSlideInterval
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(interval))
-                if Task.isCancelled || phase != .carousel { return }
-                withAnimation(.appEnter) { selection = (selection + 1) % slides.count }
+                do { try await Task.sleep(for: .seconds(interval)) }
+                catch { return }
+                guard !Task.isCancelled, allowsAutoplay, phase == .carousel else { return }
+                withAnimation(.appReveal) { selection = (selection + 1) % slides.count }
                 recordVisibleSlide()
                 interval = Self.slideInterval
             }
@@ -143,6 +136,12 @@ struct OnboardingSplashView: View {
             guard phase == .carousel else { return }
             recordVisibleSlide()
         }
+    }
+
+    private var allowsAutoplay: Bool {
+        scenePhase == .active && AppMotion.allowsSpatialMotion(
+            reduceMotion: reduceMotion, voiceOver: voiceOver
+        )
     }
 
     private func recordVisibleSlide() {
@@ -214,11 +213,11 @@ struct OnboardingSlideViewTracker {
 /// File-private, splash-only.
 private struct SplashOpener: View {
     let logoSide: CGFloat
-    /// When true, the opener plays its staggered parallax *exit* — each layer
-    /// lifts + fades out on a per-index delay, mirroring the entrance.
+    /// When true, all brand layers fade/lift together before unmounting.
     var leaving: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var appeared = true
 
     var body: some View {
@@ -237,7 +236,7 @@ private struct SplashOpener: View {
                             style: .continuous
                         )
                     )
-                    .modifier(ParallaxEntry(index: 0, appeared: appeared, leaving: leaving, reduceMotion: reduceMotion))
+                    .modifier(ParallaxEntry(appeared: appeared, leaving: leaving, reduceMotion: reduceMotion || voiceOver))
 
                 VStack(spacing: AppSpacing.xxs) {
                     Text("Welcome to")
@@ -250,7 +249,7 @@ private struct SplashOpener: View {
                         .foregroundStyle(AppColor.accentForeground)
                 }
                 .padding(.top, AppSpacing.xl)
-                .modifier(ParallaxEntry(index: 1, appeared: appeared, leaving: leaving, reduceMotion: reduceMotion))
+                .modifier(ParallaxEntry(appeared: appeared, leaving: leaving, reduceMotion: reduceMotion || voiceOver))
 
                 Text(AppCopy.Onboarding.splashTagline)
                     .font(AppFont.splashWelcome.font)
@@ -259,7 +258,7 @@ private struct SplashOpener: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
                     .padding(.top, AppSpacing.xl)
-                    .modifier(ParallaxEntry(index: 2, appeared: appeared, leaving: leaving, reduceMotion: reduceMotion))
+                    .modifier(ParallaxEntry(appeared: appeared, leaving: leaving, reduceMotion: reduceMotion || voiceOver))
             }
             .padding(.horizontal, AppSpacing.xl)
 
@@ -270,19 +269,15 @@ private struct SplashOpener: View {
     }
 }
 
-/// Staggered "parallax" entrance for the opener — each layer fades + rises into
-/// place on a per-index delay, deeper layers travelling further so the reveal
-/// reads as depth rather than one block appearing at once. Honors Reduce Motion
-/// (fade only, no stagger or offset). File-private, splash-only: the opener is
-/// the app's one sanctioned hero-entrance moment.
+/// Existing splash departure owner. Layers share one restrained departure;
+/// Reduce Motion and VoiceOver keep the fade only.
 private struct ParallaxEntry: ViewModifier {
-    let index: Int
     let appeared: Bool
     var leaving: Bool = false
     let reduceMotion: Bool
 
-    /// Deeper layers travel further so both entrance and exit read as depth.
-    private var offset: CGFloat { CGFloat(8 + index * 6) }
+    /// Shared travel token; the brand departure does not stagger sibling layers.
+    private var offset: CGFloat { AppMotion.revealTravel }
 
     private var isVisible: Bool { appeared && !leaving }
 
@@ -299,11 +294,11 @@ private struct ParallaxEntry: ViewModifier {
             .opacity(isVisible ? 1 : 0)
             .offset(y: offsetY)
             .animation(
-                reduceMotion ? .appReveal : .appEnter.delay(Double(index) * 0.10),
+                .appReveal,
                 value: appeared
             )
             .animation(
-                reduceMotion ? .appReveal : .appEnter.delay(Double(index) * 0.10),
+                .appReveal,
                 value: leaving
             )
     }
@@ -405,6 +400,7 @@ private struct MarketingSlideView: View {
                         maxHeight: imageMaxHeight
                     )
                         .padding(.horizontal, AppSpacing.md)
+                        .appReveal(id: "splash.\(slide.id).artwork")
 
                     VStack(spacing: AppSpacing.smd) {
                         Text(slide.headline)
@@ -422,6 +418,7 @@ private struct MarketingSlideView: View {
                     }
                     .padding(.top, AppSpacing.lg)
                     .padding(.horizontal, AppSpacing.xl)
+                    .appReveal(id: "splash.\(slide.id).intro")
 
                     Spacer(minLength: AppSpacing.lg)
                 }

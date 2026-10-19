@@ -21,6 +21,7 @@ struct PaywallView: View {
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @State private var showingManageSubscriptions = false
+    @State private var revealSession = AppRevealSession()
     @State private var didTrackView = false
     @State private var reminderRequested = false
     var onDismiss: () -> Void
@@ -37,6 +38,7 @@ struct PaywallView: View {
                 purchaseContent
             }
         }
+        .environment(\.appRevealSession, revealSession)
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
         .task {
             await store.loadProducts()
@@ -95,8 +97,10 @@ struct PaywallView: View {
         if selectedPresentation != nil {
             VStack(alignment: .leading, spacing: 0) {
                 purchaseHeader
+                    .appScreenEnter(index: 0, staged: true)
 
                 programSummaryCard
+                    .appScreenEnter(index: 1, staged: true)
                     .padding(.top, AppSpacing.xl)
 
                 planSelectionSection
@@ -116,6 +120,7 @@ struct PaywallView: View {
                 }
 
                 includedFeaturesSection
+                    .appReveal(id: "paywall.features")
                     .padding(.top, AppSpacing.xxl)
 
                 subscriptionDisclosure
@@ -152,6 +157,7 @@ struct PaywallView: View {
     private var activeSubscriptionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             activeSubscriptionHeader
+                .appScreenEnter(staged: true)
 
             AppCard {
                 VStack(alignment: .leading, spacing: AppSpacing.smd) {
