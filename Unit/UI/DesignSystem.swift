@@ -2454,7 +2454,7 @@ struct RestTimerControl: View {
 /// Shared row for preview lists inside cards. The default stacked layout keeps
 /// the established title/subtitle hierarchy used by library and detail lists.
 /// `compactInline` is reserved for recessed, capped previews: body-size title on
-/// the left, body-size metadata on the right, and a 44pt interaction floor.
+/// the left, body-size metadata on the right, and a comfortable 64pt row.
 /// `identityFirst` gives the title the full row width, then places the complete
 /// target and optional evidence beneath it. Use it when truncating the subject
 /// would make a compact metric meaningless (Today exercise previews).
@@ -2478,7 +2478,6 @@ struct PreviewListRow: View {
     var showsDisclosure: Bool = false
     var showsSeparator: Bool = false
 
-    @ScaledMetric(relativeTo: .body) private var compactRowHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .body) private var compactTwoLineRowHeight: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var identityFirstRowHeight: CGFloat = 80
 
@@ -2487,7 +2486,7 @@ struct PreviewListRow: View {
             rowContent
             if showsDisclosure {
                 AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(AppColor.textTertiary)
                     .accessibilityHidden(true)
             }
         }
@@ -2552,8 +2551,8 @@ struct PreviewListRow: View {
                 .layoutPriority(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, AppSpacing.sm)
-            .frame(minHeight: supportingText == nil ? compactRowHeight : compactTwoLineRowHeight)
+            .padding(.vertical, AppSpacing.md)
+            .frame(minHeight: compactTwoLineRowHeight)
             .contentShape(Rectangle())
             .accessibilityElement(children: .combine)
             .accessibilityLabel(accessibilityLabel)
@@ -2616,7 +2615,7 @@ struct PreviewListContainer<Content: View>: View {
     var usesTwoLineRows: Bool = false
     @ViewBuilder let content: () -> Content
 
-    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var twoLineRowHeight: CGFloat = 80
 
     private var overflows: Bool {
@@ -2636,9 +2635,11 @@ struct PreviewListContainer<Content: View>: View {
         let fullRowsHeight = CGFloat(visibleRows) * resolvedRowHeight
         let overflowPeekHeight: CGFloat
         if overflows {
+            // Keep the next row's title visible after centering its content;
+            // a smaller peek would expose only blank inset or clipped glyphs.
             overflowPeekHeight = usesTwoLineRows
-                ? resolvedRowHeight / 4
-                : resolvedRowHeight / 2
+                ? resolvedRowHeight / 2
+                : resolvedRowHeight / 2 + AppSpacing.smd
         } else {
             overflowPeekHeight = 0
         }

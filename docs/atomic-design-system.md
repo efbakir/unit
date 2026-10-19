@@ -222,3 +222,5 @@ Touch-target floors stay explicit at 44pt. Native widget metrics are unchanged.
 ### Preview row spacing and separators — 19 October 2026
 
 `PreviewListRow` owns the recessed preview’s 16pt horizontal inset and symmetric vertical breathing. Its identity-first content is vertically centered within the existing 80pt minimum, growing for longer content. `PreviewListContainer` owns the surface and capped scroll viewport only, with no second layer of row padding. Separators overlay the full row width outside the content inset. `AppDividedList` no longer supports inset separator variants; its rows own padding and its dividers span the container. No new tokens, components or visual variants were introduced.
+
+Recessed compact navigation rows use a 64pt minimum with 16pt vertical breathing, matching the preview viewport estimate. Disclosure arrows reuse `AppColor.textTertiary` across preview navigation and the active-program header. Overflow keeps the next title visible rather than exposing only its inset.

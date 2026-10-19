@@ -190,7 +190,7 @@ struct TemplatesView: View {
 
                         Spacer(minLength: 0)
                         AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                            .foregroundStyle(AppColor.textSecondary)
+                            .foregroundStyle(AppColor.textTertiary)
                             .accessibilityHidden(true)
                     }
                     .frame(minHeight: 44)
