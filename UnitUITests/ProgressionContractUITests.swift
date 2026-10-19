@@ -21,7 +21,7 @@ final class ProgressionContractUITests: XCTestCase {
         let app = makeStartingTargetApp(reset: true)
         app.launch()
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 20))
-        tap(app.tabBars.buttons["Profile"], "empty Profile tab")
+        tap(app.tabBars.buttons["Analytics"], "empty Profile tab")
         XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["Progress starts with a workout"].exists)
         XCTAssertFalse(staticText(in: app, containing: "Accepted next target").exists)
@@ -207,7 +207,7 @@ final class ProgressionContractUITests: XCTestCase {
         // The same completed-session evidence must stay readable in History:
         // sentence-friendly set formatting, explicit volume units, and an
         // exact day on the chart rather than repeated month-only labels.
-        tap(app.tabBars.buttons["Profile"], "Profile tab")
+        tap(app.tabBars.buttons["Analytics"], "Profile tab")
         XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["Progressive overload"].exists)
         attachScreenshot(of: app, named: "09-profile-summary-kg")

@@ -184,7 +184,7 @@ struct ContentView: View {
                 }
                 .appScreenEnter()
             }
-            .navigationTitle("Profile")
+            .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
             .appNavigationBarChrome()
             .navigationDestination(for: Exercise.self) { exercise in
@@ -307,7 +307,7 @@ enum RootTab: String, CaseIterable, Hashable {
         case .program:
             return "Programs"
         case .profile:
-            return "Profile"
+            return "Analytics"
         }
     }
 

@@ -508,3 +508,8 @@
 - **Honesty:** Use valid completed working sets in finished workouts; compare sets within the same routine. Recorded load × reps has explicit units; BW volume uses total reps. No imputed workouts, composite strength score or claimed progress when load and reps both change.
 - **Scope:** Personal local analytics are authorized; social profiles, accounts, new progression algorithms and active-logging decisions remain excluded. No persistence-schema or training-data changes.
 - **Evidence:** `docs/research/2026-10-19-profile-progress.md`. Edits applied; builds and visual verification remain in the coordinator's queue.
+
+
+### 2026-10-19 — Analytics tab and navigation cues
+
+The user renamed the third private progress tab to **Analytics**. Existing internal root-tab identity remains unchanged; no data or navigation-stack migration is needed. The user also explicitly approved right-side chevrons on tappable navigation cards/rows and visible boundaries between grouped navigation rows. `PreviewListRow` owns optional disclosure/separator behavior; read-only previews retain their plain default. This supersedes the older blanket no-disclosure-chevron rule for these navigation consumers.
