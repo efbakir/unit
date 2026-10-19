@@ -513,3 +513,8 @@
 ### 2026-10-19 — Analytics tab and navigation cues
 
 The user renamed the third private progress tab to **Analytics**. Existing internal root-tab identity remains unchanged; no data or navigation-stack migration is needed. The user also explicitly approved right-side chevrons on tappable navigation cards/rows and visible boundaries between grouped navigation rows. `PreviewListRow` owns optional disclosure/separator behavior; read-only previews retain their plain default. This supersedes the older blanket no-disclosure-chevron rule for these navigation consumers.
+
+
+### 2026-10-19 — Celebrate the workout start
+
+The user explicitly requested a more energetic Start Workout moment after trying build 71. Today now animates the dashboard-to-workout boundary with the existing spring and blur/scale transition, accompanied by one success haptic. This overrides quiet presentation for this deliberate action only. Session creation and logging stay immediate; resuming a session does not replay the launch. Reduce Motion and VoiceOver retain fades and haptic feedback. The active weight/reps target uses the existing 24pt productHeading font instead of 36pt numericInput. No new tokens, components, or root-routing changes.

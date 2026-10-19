@@ -66,6 +66,8 @@ struct TodayView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @Query(sort: \Split.name) private var splits: [Split]
@@ -77,6 +79,7 @@ struct TodayView: View {
     @State private var viewModel = TodayDashboardViewModel()
     @State private var showsHistory = false
     @State private var completionMoment: AppCelebrationMoment?
+    @State private var launchSessionID: UUID?
     @State private var celebratedSessionIDs: Set<UUID> = []
     @State private var completedSessionDetail: WorkoutSession?
     @State private var showsCompletedSessionDetail = false
@@ -94,15 +97,21 @@ struct TodayView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
                 if let session = activeSession {
                     ActiveWorkoutView(session: session) { completedSession in
                         presentCompletedSession(completedSession, celebrates: true)
                     }
+                    .transition(AppBlurTransition(scales: launchSessionID != nil).animation(launchAnimation))
+                    .zIndex(1)
                 } else {
                     dashboardContent
+                        .transition(.opacity.animation(AppMotion.feedback))
+                        .allowsHitTesting(activeSession == nil)
                 }
             }
+            .animation(launchAnimation, value: activeSession?.id)
+            .appHaptic(.success, trigger: launchSessionID) { _, new in new != nil }
             .navigationDestination(isPresented: $showsHistory) {
                 RecentSessionsView(showsCloseButton: true)
             }
@@ -126,6 +135,7 @@ struct TodayView: View {
             }
             .onChange(of: activeSession) { oldValue, newValue in
                 guard let previous = oldValue, newValue == nil else { return }
+                launchSessionID = nil
                 // Only show summary for the session that was just finished — not any older
                 // completed workout (cancel deletes the session, so there is no match).
                 let previousId = previous.id
@@ -343,8 +353,17 @@ struct TodayView: View {
         startWorkout(template)
     }
 
+    private var launchAnimation: Animation {
+        launchSessionID != nil && AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+            ? AppMotion.settle : AppMotion.reveal
+    }
+
     private func startWorkout(_ template: DayTemplate) {
-        template.startWorkoutSession(in: modelContext)
+        guard activeSession == nil else { return }
+        // Save immediately. The launch accompanies the new session; it never
+        // holds the first set behind a timer or replays when resuming the app.
+        let session = template.startWorkoutSession(in: modelContext)
+        launchSessionID = session.id
     }
 
     private func checkStaleSession() {

@@ -4222,13 +4222,11 @@ struct WorkoutCommandCard: View {
     @ViewBuilder
     private var metricValueText: some View {
         Text(metricValue)
-            // Targets mix numbers with language (`3 × 8 at 140 lb`). A fully
-            // monospaced face gives spaces and short words the same wide cell
-            // as digits, visually splitting one target into several columns.
-            // `numericInput` keeps the digits tabular while the surrounding
-            // words and punctuation remain proportionally spaced.
-            .font(AppFont.numericInput.font)
-            .tracking(AppFont.numericInput.tracking)
+            // Keep the mixed weight/reps target compact and proportional while
+            // retaining stable digit widths as sets advance.
+            .font(AppFont.productHeading.font)
+            .tracking(AppFont.productHeading.tracking)
+            .monospacedDigit()
             .foregroundStyle(metricIsGhost ? AppColor.textDisabled : AppColor.textPrimary)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.55)
