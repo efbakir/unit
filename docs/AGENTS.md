@@ -21,7 +21,7 @@ Unit is a **zero-friction, progression-guided gym logging tool** for beginner-to
 | **Data** | SwiftData, local-first. No network calls required for core functionality. |
 | **Design system** | Read `DESIGN.md`, `docs/atomic-design-system.md`, and `Unit/UI/DesignSystem.swift` before creating or modifying any view. No exceptions. |
 | **Screen wrapper** | Every screen uses `AppScreen`. No custom nav bars. |
-| **No chevrons** | `chevron.right` and `chevron.forward` are banned everywhere except the system back button. |
+| **Navigation disclosure** | Navigating rows/cards show a trailing chevron via shared components (`PreviewListRow(showsDisclosure: true)`) or `AppIcon.forward` for card headers. Read-only and selection rows do not. Raw SF Symbol literals remain banned. |
 
 ---
 

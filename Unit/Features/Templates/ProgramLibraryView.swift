@@ -100,7 +100,8 @@ struct ProgramLibraryView: View {
     private func programRow(_ program: ProgramTemplate) -> some View {
         PreviewListRow(
             title: program.name,
-            subtitle: "\(program.level.displayName) · \(program.goal.displayName) · \(program.daysPerWeek) days/week"
+            subtitle: "\(program.level.displayName) · \(program.goal.displayName) · \(program.daysPerWeek) days/week",
+            showsDisclosure: true
         )
     }
 }

@@ -143,7 +143,8 @@ struct TemplatesView: View {
                     NavigationLink(value: split) {
                         PreviewListRow(
                             title: split.name.isEmpty ? "Untitled Program" : split.name,
-                            subtitle: "\(dayCount) day\(dayCount == 1 ? "" : "s") · \(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")"
+                            subtitle: "\(dayCount) day\(dayCount == 1 ? "" : "s") · \(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")",
+                            showsDisclosure: true
                         )
                     }
                     .buttonStyle(ScaleButtonStyle())
@@ -188,7 +189,11 @@ struct TemplatesView: View {
                         AppTag(text: "Active", style: .muted, layout: .compactCapsule)
 
                         Spacer(minLength: 0)
+                        AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .accessibilityHidden(true)
                     }
+                    .frame(minHeight: 44)
                     .contentShape(Rectangle())
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(displayName), active program")
@@ -206,7 +211,9 @@ struct TemplatesView: View {
                                 PreviewListRow(
                                     title: template.displayName,
                                     subtitle: routineSummary(for: template),
-                                    layout: .compactInline
+                                    layout: .compactInline,
+                                    showsDisclosure: true,
+                                    showsSeparator: template.id != days.last?.id
                                 )
                             }
                             .buttonStyle(ScaleButtonStyle())
@@ -418,7 +425,8 @@ struct EditProgramView: View {
             NavigationLink(value: template) {
                 PreviewListRow(
                     title: template.displayName,
-                    subtitle: subtitle(for: template)
+                    subtitle: subtitle(for: template),
+                    showsDisclosure: true
                 )
             }
             .buttonStyle(ScaleButtonStyle())
@@ -458,7 +466,8 @@ struct EditProgramView: View {
             NavigationLink(value: template) {
                 PreviewListRow(
                     title: template.displayName,
-                    subtitle: subtitle(for: template)
+                    subtitle: subtitle(for: template),
+                    showsDisclosure: true
                 )
             }
             .buttonStyle(ScaleButtonStyle())

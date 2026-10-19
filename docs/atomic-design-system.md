@@ -74,7 +74,7 @@ SF Symbol names as `String` raw values; use `.image(size:weight:)` for consisten
 **Rules**
 
 - Set icon size explicitly at the call site (see `ProductTopBar` / `AppListRow` for defaults).
-- **List rows**: `AppListRow` is chevron-free by design; do not add `chevron.right` for “disclosure” — use context and tap targets (HIG: don’t rely on chevrons alone for meaning).
+- **Navigation preview rows**: `PreviewListRow(showsDisclosure: true)` owns the trailing chevron. Use `showsSeparator` between recessed preview rows. Read-only previews default to neither; selection/action rows retain their own semantics.
 
 ### Divider — `AppDivider`
 
@@ -173,7 +173,7 @@ Allowed in `*View.swift`:
 | Rounded rectangles with default corner rendering | `RoundedRectangle(..., style: .continuous)` |
 | Custom root-tab chrome | Native `TabView` / `UITabBar` behavior |
 | `AppTabHeader` large-title root chrome on Today / Program | `ProductTopBar` |
-| `chevron.right` on `AppListRow`-style content | Context + row tap; no decorative chevron |
+| Raw disclosure glyph in feature code | Shared navigation row disclosure or `AppIcon.forward` for a navigating card header |
 | `.regular` weight anywhere; calling `Font.custom("Geist*"/"GeistMono*")` directly | `AppFont` cases (Medium minimum); never bypass `AppFont` for typography |
 | New hex colours in Features | `AppColor` extension or asset + wrapper |
 | Page-specific workout timer cards / custom command panels | `WorkoutCommandCard` + `SessionStateBar` |

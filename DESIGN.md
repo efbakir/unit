@@ -367,7 +367,7 @@ These guardrails carry PRODUCT.md's anti-references through into pixels. Every "
 
 - **Don't** introduce a parallel `LinearGradient` or `.mask` for scroll-edge fades — `appScrollEdgeSoft` is the single canonical implementation.
 - **Don't** invent a new `struct X: View` / `ViewModifier` / variant when the existing canonical primitive in `DesignSystem.swift` covers ~80% of the case. Extend the canonical with `style:` / `variant:` / `tone:` instead. Parallel implementations are the worst drift in the system.
-- **Don't** use `chevron.right` / `chevron.forward` anywhere. The system has no row-disclosure chevrons by doctrine.
+- **Do** show a trailing disclosure chevron on navigating cards/rows through the shared owner. Use `PreviewListRow(showsDisclosure: true)`; preserve plain read-only previews and selection controls. User decision: 2026-10-19.
 - **Don't** use raw `Divider()`. Use `AppDivider` (Hairline at 55% opacity).
 - **Don't** apply `.weight(.semibold/.bold/.heavy)` to `ToolbarItem` buttons. Toolbar chrome defers to iOS-native.
 - **Don't** put `ScrollView` or `AppCard` as the root child of `.sheet { }`. Sheet roots are plain `VStack`.

@@ -110,7 +110,7 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 - [ ] Bug fix: confirmed whether the bug is at the atom/molecule layer. If yes, fix only `DesignSystem.swift`.
 - [ ] `ToolbarItem` button has no `.weight(...)`.
 - [ ] `.sheet { }` root is a plain `VStack` with `presentationDetents`.
-- [ ] Screen wrapped in `AppScreen`. CTAs use `AppPrimaryButton`. Cards use `AppCard`. No `chevron.right`. No raw `Divider()`.
+- [ ] Screen wrapped in `AppScreen`. CTAs use `AppPrimaryButton`. Cards use `AppCard`. Navigation rows show shared disclosure chevrons; no raw glyph literals. No raw `Divider()`.
 - [ ] Touch targets ≥ 44×44pt. No regular weight. No orange `#FF4400` (accent is `0x0A0A0A`).
 - [ ] Copy is explicit. Bodyweight shows "BW", not "0 kg". No `–` / `—` placeholders.
 - [ ] No `ProcessInfo.processInfo.environment["UNIT_*"]` scaffolding left in `ContentView.swift` or `Features/**/*.swift`.
@@ -119,7 +119,7 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 
 - Hex literals, `Color(red:..)`, `Color.black/.white/.gray/...`, `.foregroundStyle(.gray)`
 - `.font(.system(size:))`, raw `.font(.body/.caption/.title)`, `.padding(<int>)`, hardcoded radii
-- `chevron.right` / `chevron.forward`; `Divider()` where `AppDivider` applies
+- Raw `chevron.right` / `chevron.forward` literals (use shared navigation disclosure); `Divider()` where `AppDivider` applies
 - Inline button/card chrome instead of `AppPrimaryButton` / `AppCard` / `AppScreen`
 - `regular` font weight; orange `#FF4400`
 - `.preferredColorScheme(.dark)` outside the recorded two-second `OnboardingSplashView` opener; landscape assumptions

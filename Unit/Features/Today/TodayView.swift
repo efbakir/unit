@@ -307,14 +307,16 @@ struct TodayView: View {
                         visibleItemLimit: todayPreviewVisibleItemLimit,
                         usesTwoLineRows: true
                     ) {
-                        ForEach(Array(context.previewTargets.enumerated()), id: \.offset) { _, target in
+                        ForEach(Array(context.previewTargets.enumerated()), id: \.offset) { index, target in
                             NavigationLink(value: template) {
                                 PreviewListRow(
                                     title: target.exerciseName,
                                     subtitle: target.displayTarget,
                                     supportingText: target.supportingText,
                                     isEmptyHint: target.isEmptyHint,
-                                    layout: .identityFirst
+                                    layout: .identityFirst,
+                                    showsDisclosure: true,
+                                    showsSeparator: index < context.previewTargets.count - 1
                                 )
                             }
                             .buttonStyle(ScaleButtonStyle())

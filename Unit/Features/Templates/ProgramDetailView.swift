@@ -105,7 +105,8 @@ struct ProgramDetailView: View {
                     NavigationLink(value: template) {
                         PreviewListRow(
                             title: template.displayName,
-                            subtitle: routineSubtitle(dayIndex: index, template: template)
+                            subtitle: routineSubtitle(dayIndex: index, template: template),
+                            showsDisclosure: true
                         )
                     }
                     .buttonStyle(ScaleButtonStyle())

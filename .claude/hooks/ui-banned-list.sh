@@ -35,7 +35,7 @@ check() {
 }
 
 # --- §5 banned-in-view-code list ---
-check 'chevron\.right|chevron\.forward'                                    'chevron.right / chevron.forward — banned (CLAUDE.md §5)'
+check 'chevron\.right|chevron\.forward'                                    'raw disclosure glyph — use shared PreviewListRow disclosure or AppIcon.forward (CLAUDE.md §5)'
 check 'Color\(red:[[:space:]]*[0-9.]'                                      'Color(red:green:blue:) — use AppColor.* tokens'
 check 'Color\.(black|white|gray|red|green|blue|primary|secondary)\b'       'Color.black/.white/.gray/.red/etc — use AppColor.* tokens'
 check '0x[0-9A-Fa-f]{6,8}'                                                 'hex literal — define in DesignSystem.swift, not in feature code'

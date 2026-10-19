@@ -725,16 +725,15 @@ private struct AppWorkoutPanelChrome: ViewModifier {
 }
 
 /// SF Symbol catalog as role-named cases. Always invoke via `.image(size:weight:)`
-/// so icons across the app share the same stroke weight. Disclosure chevrons are
-/// intentionally not exposed here.
+/// so icons across the app share the same stroke weight. Navigation disclosure
+/// uses `forward` through the shared row owner (user direction, 2026-10-19).
 ///
 /// `back` + `forward` are a paired set — both chevrons so the visual rhythm
 /// reads as one nav control. The earlier `arrow.right` for `.forward` paired
 /// awkwardly with `chevron.left` (chevron + straight arrow = inconsistent
 /// pair, the only call site is the History calendar month nav). The
-/// chevron-right ban in CLAUDE.md §4 is on raw `chevron.right` in view code
-/// as a disclosure indicator — using it here via the design-system atom is
-/// fine; the hook excludes `DesignSystem.swift`.
+/// raw-glyph ban keeps feature code on the canonical icon/row API.
+/// Navigation disclosures are explicitly approved as of 2026-10-19.
 enum AppIcon: String {
     case back = "chevron.left"
     case forward = "chevron.right"
@@ -2476,12 +2475,33 @@ struct PreviewListRow: View {
     var isEmptyHint: Bool = false
     var layout: Layout = .stacked
 
+    /// Opt in only when the row opens another screen; read-only previews stay plain.
+    var showsDisclosure: Bool = false
+    var showsSeparator: Bool = false
+
     @ScaledMetric(relativeTo: .body) private var compactRowHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .body) private var compactTwoLineRowHeight: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var identityFirstRowHeight: CGFloat = 80
 
-    @ViewBuilder
     var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            rowContent
+            if showsDisclosure {
+                AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .overlay(alignment: .bottom) {
+            if showsSeparator { AppDivider() }
+        }
+    }
+
+    @ViewBuilder
+    private var rowContent: some View {
+
         switch layout {
         case .stacked:
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
