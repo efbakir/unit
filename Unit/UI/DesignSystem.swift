@@ -1390,7 +1390,7 @@ struct AppPrimaryButton: View {
                     }
                 }
                 .animation(AppMotion.feedback, value: isLoading)
-                .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.settle : AppMotion.feedback, value: isConfirmed)
+                .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) && isConfirmed ? AppMotion.settle : AppMotion.transition, value: isConfirmed)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
                 .background {
@@ -4055,7 +4055,7 @@ struct WorkoutCommandCard: View {
     @SwiftUI.State private var prBadgeVisible: Bool = false
     @SwiftUI.State private var setConfirmationVisible = false
     @SwiftUI.State private var setConfirmationSequence = 0
-    private static let setConfirmationDwellSeconds: Double = 1
+    private static let setConfirmationDwellSeconds: Double = 2.5
     /// Invalidates an older auto-dismiss task when another PR lands before the
     /// current badge finishes its dwell. The newest milestone always receives
     /// the full visible duration instead of being hidden by the first task.
@@ -4134,7 +4134,7 @@ struct WorkoutCommandCard: View {
             do {
                 try await Task.sleep(for: .seconds(Self.setConfirmationDwellSeconds))
             } catch { return }
-            withAnimation(AppMotion.feedback) { setConfirmationVisible = false }
+            withAnimation(AppMotion.transition) { setConfirmationVisible = false }
         }
         .onChange(of: exerciseName) { _, _ in
             setConfirmationVisible = false
