@@ -2,7 +2,7 @@
 
 ## Status and source
 
-This is a development release pass, not an App Store submission. The public app is **2.0** (Apple lookup checked October 19). The connected iPhone started with **2.1 (65)**; the repository started at **2.1 (67)**. This pass prepares **2.1 (68)**, **development-only and unreserved** until App Store Connect's highest uploaded build can be read. Final device/test results are recorded below as they complete.
+This is a development release pass, not an App Store submission. The public app is **2.0** (Apple lookup checked October 19). The connected iPhone started with **2.1 (65)**; the repository started at **2.1 (67)**. This pass prepares **2.1 (68)**, **development-only and unreserved** until App Store Connect's highest uploaded build can be read. The build is installed and launched on the connected iPhone. Detailed evidence and limits are below.
 
 - Original checkout: `/Users/efbakir/unit`; its existing edits were preserved and left in place.
 - Original HEAD: `765437b6a22feef3c1bab2a9a689e4ed9ab48e5a`.
@@ -78,7 +78,13 @@ Review SF Pro and compact heading spacing on Today and Programs; crisp set compl
 ## Final evidence and delivery
 
 - **Final compact verification:** `/private/tmp/unit-final-undo-progression.xcresult`: **203 passed, 0 failed** (201 unit + full progression journey + exact set Undo/interrupted-session relaunch), iPhone SE 3, iOS 18.6. Xcode reports TEST SUCCEEDED. This includes final SF Pro and the delete-toolbar repair.
-- **Visuals:** final SF Pro Today, active workout, progression explanation, target editor, History, and Undo/relaunch screenshots are saved in `../evidence/final/` relative to the checkout parent. The compact Simulator's system appearance was dark; Unit stayed light. Main screens were inspected directly.
+- **Visuals:** final SF Pro Today, active workout, progression explanation, target editor, History, and Undo/relaunch screenshots are saved in `../evidence/final/` relative to the checkout. The compact Simulator's system appearance was dark; Unit stayed light. Main screens were inspected directly.
 - **Guard:** final 26-mutation self-test passed.
-- **Device build:** signed Debug build succeeded from code checkpoint `f9087ae`; **2.1 (68)** installed in place successfully. The first normal launch attempt hit a wireless CoreDevice tunnel timeout; retry and post-install data comparison are pending.
-- Further final evidence follows below.
+- **Device build:** signed Debug build succeeded from code checkpoint `f9087ae`; **2.1 (68)** installed in place successfully. The initial wireless tunnel timeout was followed by an iOS locked-device refusal. After the user unlocked the phone, normal launch succeeded; the Unit process and widget were read back as running. No test launch arguments were used.
+- **Post-install preservation:** every database row and all preferences matched the pre-install backup exactly, before normal launch (`phone-install-preservation.json`).
+- **Post-launch preservation:** SQLite integrity OK; all **12 workout records and 208 set records remain byte-for-byte equal at the row level**, as do both splits and all 19 original exercises. Four templates remain. One routine now has one additional exercise appended while its original order remains; the exercise catalog expanded to 932 rows. These live additions were preserved, not reversed. StoreKit updated its last-check timestamp and the existing trial-reminder preference initialized; kg, cached entitlement, and `persistenceRecoveryNotice=false` remain intact (`phone-launch-preservation.json`). No automated phone UI interactions or workout edits were performed.
+- **Final iOS 27 / Reduce Motion:** `/private/tmp/unit-final-reduced-motion.xcresult`: **4 UI journeys passed**, covering full import/onboarding/purchase/logging, pending-purchase tap blocking, failed/partial product loading recovery, and progression decisions through relaunch and next-workout prefill. The actual Simulator Reduce Motion setting was confirmed on, then returned off for normal-motion review.
+- **Normal-motion recording:** `motion-normal-se.mp4` captures real completion confetti and acceptance feedback. The progression journey passed again. The catalog repeat found its Undo sample below the viewport; the harness now scrolls to it and explicitly asserts error dismissal. Final catalog rerun and iOS 27 recording are listed below.
+- **Compatibility priorities:** per the user's latest direction, iOS 27 is the primary visual/interaction target and iOS 18 is the compatibility baseline. Compact checks catch clipping and older runtime behavior; they do not drive enlarged-font layouts.
+- **Original checkout:** final status comparison matched the pre-work status exactly. All implementation remains in the isolated integrated branch.
+- Remaining final evidence follows below.
