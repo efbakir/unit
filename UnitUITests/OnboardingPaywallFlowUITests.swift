@@ -313,7 +313,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(failureAlert.waitForExistence(timeout: 8), "parse failure alert missing")
         tap(failureAlert.buttons["Show examples"], "parse recovery — Show examples")
         XCTAssertTrue(sheetTitle.waitForExistence(timeout: 8), "format sheet did not open")
-        tap(app.buttons["Done"], "dismiss format sheet")
+        tap(app.buttons["Close"], "dismiss format sheet")
 
         // ── Launch 2: snapshot restore preserves the unfinished paste draft ──
         app.terminate()

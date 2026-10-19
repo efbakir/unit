@@ -457,6 +457,49 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "12-interrupted-workout-restored")
     }
 
+    func testSharedFeedbackCatalogAndFailedSaveRetry() throws {
+        let app = makeStartingTargetApp(reset: true)
+        app.launch()
+        tap(app.tabBars.buttons["Programs"], "Programs", timeout: 20)
+        tap(app.buttons["Settings"], "Settings")
+        let components = button(in: app, containing: "Components")
+        scrollTo(components, in: app)
+        tap(components, "Component catalog")
+        XCTAssertTrue(app.buttons["Default · press and hold"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Inherited disabled"].isEnabled)
+        attachScreenshot(of: app, named: "13-catalog-default-states")
+
+        let success = app.buttons["Success message"]
+        scrollTo(success, in: app)
+        tap(success, "Success toast")
+        tap(app.buttons["Error message"], "Replacement error toast")
+        let error = app.staticTexts["Sample failed. Try again."]
+        XCTAssertTrue(error.waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 2.5)
+        XCTAssertTrue(error.exists, "Old toast timeout cleared the replacement error")
+        attachScreenshot(of: app, named: "14-persistent-error-toast")
+        tap(app.buttons["Dismiss message"], "Dismiss error")
+        tap(app.buttons["Undo message"], "Actionable toast")
+        tap(app.buttons["toast-action"], "Undo sample")
+        XCTAssertTrue(app.staticTexts["Sample restored"].waitForExistence(timeout: 3))
+
+        let targetEditor = app.buttons["Target editor"]
+        scrollTo(targetEditor, in: app)
+        tap(targetEditor, "Target editor sample")
+        tap(app.buttons[AppCopy.Workout.saveChanges], "Simulate failed target save")
+        let alert = app.alerts["Couldn't save target"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        tap(alert.buttons["Close"], "Close failure alert")
+        XCTAssertTrue(app.staticTexts["Sample exercise"].exists, "Failure dismissed the edit draft")
+        attachScreenshot(of: app, named: "15-target-draft-after-failure")
+        tap(app.buttons[AppCopy.Workout.saveChanges], "Retry target save")
+        XCTAssertTrue(targetEditor.waitForExistence(timeout: 5), "Successful retry did not dismiss")
+
+        for _ in 0..<8 { app.swipeDown() }
+        tap(app.switches["Large text preview"], "Large text preview")
+        attachScreenshot(of: app, named: "16-catalog-large-text")
+    }
+
     // MARK: - Helpers
 
     private func makeApp(reset: Bool = false) -> XCUIApplication {

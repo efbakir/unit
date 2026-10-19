@@ -5961,10 +5961,7 @@ extension String {
 /// no workout/template data is written and no purchase actions are invoked.
 struct AppComponentCatalog: View {
     @Environment(\.dynamicTypeSize) private var systemTypeSize
-    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
-    @Environment(\.accessibilityVoiceOverEnabled) private var systemVoiceOver
     @State private var largeText = false
-    @State private var fadesOnly = false
     @State private var selected = false
     @State private var stepCount = 3
     @State private var field = ""
@@ -5979,17 +5976,12 @@ struct AppComponentCatalog: View {
                 SettingsSection(title: "Preview policy", contentInset: AppSpacing.md) {
                     Toggle("Large text preview", isOn: $largeText)
                         .font(AppFont.body.font)
-                    AppDivider()
-                    Toggle("Fade-only preview", isOn: $fadesOnly)
-                        .font(AppFont.body.font)
-                    Text("System accessibility settings always apply. Press and hold an enabled control to inspect its pressed state. Samples never save workout data.")
+                    Text("Use iOS Accessibility settings to review Reduce Motion and VoiceOver. Press and hold an enabled control to inspect its pressed state. Samples never save workout data.")
                         .appFont(.caption)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 samples
                     .environment(\.dynamicTypeSize, largeText ? .accessibility3 : systemTypeSize)
-                    .environment(\.accessibilityReduceMotion, fadesOnly || systemReduceMotion)
-                    .environment(\.accessibilityVoiceOverEnabled, fadesOnly || systemVoiceOver)
             }
         }
         .navigationTitle("Components")
@@ -5999,8 +5991,6 @@ struct AppComponentCatalog: View {
         .appToast(event: $toast)
         .overlay { AppCelebration(moment: celebration) }
         .environment(\.dynamicTypeSize, largeText ? .accessibility3 : systemTypeSize)
-        .environment(\.accessibilityReduceMotion, fadesOnly || systemReduceMotion)
-        .environment(\.accessibilityVoiceOverEnabled, fadesOnly || systemVoiceOver)
         .sheet(isPresented: $showsEditor) {
             VStack(spacing: 0) {
                 AppSetRepEditorSheet(subject: "Sample exercise") { _, _, _ in
