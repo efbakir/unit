@@ -11,13 +11,10 @@ import UIKit
 struct ContentView: View {
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
-    @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
-    @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
 
     @State private var selectedTab: RootTab = .today
     @State private var store: StoreManager
     @AppStorage(PersistenceRecoveryState.noticeKey) private var showsPersistenceRecoveryNotice = false
-    @AppStorage("unitSystem") private var unitSystem = "kg"
 
     init() {
         _splits = Query(sort: \Split.name)
@@ -107,126 +104,8 @@ struct ContentView: View {
         })
     }
 
-    // Page composition uses existing primitives; no new component or variant.
     private var profileTab: some View {
-        let now = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -29, to: Calendar.current.startOfDay(for: now)) ?? now
-        let finished = sessions.filter { $0.isCompleted && $0.date <= now }
-        let recent = finished.filter { $0.date >= start }
-        let workingSets = recent.flatMap(\.setEntries).filter(\.isValidCompletedWorkingSet)
-        let metrics = [
-            (title: "Workouts", value: "\(recent.filter { $0.setEntries.contains(where: \.isValidCompletedWorkingSet) }.count)"),
-            (title: "Working sets", value: WorkoutTargetFormatter.groupedCountDisplay(workingSets.count) ?? "0"),
-            (title: "Total reps", value: WorkoutTargetFormatter.groupedCountDisplay(workingSets.reduce(0) { $0 + $1.reps }) ?? "0")
-        ]
-        let points = ExerciseProgressView.sessionPointsByExercise(in: finished)
-        let loggedExercises = exercises.filter { points[$0.id] != nil }.sorted {
-            let lhs = points[$0.id]?.last?.date ?? .distantPast
-            let rhs = points[$1.id]?.last?.date ?? .distantPast
-            return lhs == rhs ? $0.displayName < $1.displayName : lhs > rhs
-        }
-
-        return NavigationStack {
-            AppScreen(showsNativeNavigationBar: true) {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        AppSectionHeader("Last 30 days")
-                        AppCardList(data: metrics, id: \.title) { metric in
-                            AppListRow(title: metric.title, value: metric.value, style: .cardListContent)
-                                .accessibilityElement(children: .combine)
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        AppSectionHeader("Progressive overload")
-                        if loggedExercises.isEmpty {
-                            EmptyStateCard(
-                                title: "Progress starts with a workout",
-                                message: "Finish a workout with working sets to see your weight, reps and volume here."
-                            )
-                        } else {
-                            Text("Heaviest working set, compared with the previous session in the same routine. Tap an exercise for its full history.")
-                                .font(AppFont.caption.font)
-                                .foregroundStyle(AppColor.textSecondary)
-                            AppCardList(loggedExercises) { exercise in
-                                NavigationLink(value: exercise) {
-                                    AppListRow(
-                                        title: exercise.displayName,
-                                        subtitle: profileEvidence(for: exercise, points: points[exercise.id] ?? []),
-                                        leadingIcon: .chart,
-                                        style: .cardListContent,
-                                        showsDisclosure: true
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityHint("Opens weight, reps and working-set volume history")
-                            }
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        AppSectionHeader("Training log")
-                        AppCardList(data: ["History", "Settings"], id: \.self) { destination in
-                            NavigationLink(value: destination) {
-                                AppListRow(
-                                    title: destination,
-                                    subtitle: destination == "History" ? "All sessions and next-target decisions" : "Weight unit, subscription and data",
-                                    leadingIcon: destination == "History" ? .calendarClock : .settingsOutline,
-                                    style: .cardListContent,
-                                    showsDisclosure: true
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    Text("Based on completed working sets saved on this iPhone. Warmups, unfinished workouts and invalid entries are excluded. Missing workouts are not estimated.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .appScreenEnter()
-            }
-            .navigationTitle("Analytics")
-            .navigationBarTitleDisplayMode(.inline)
-            .appNavigationBarChrome()
-            .navigationDestination(for: Exercise.self) { exercise in
-                ExerciseProgressView(
-                    exerciseId: exercise.id,
-                    exerciseName: exercise.displayName,
-                    isBodyweight: exercise.isBodyweight,
-                    sessions: sessions,
-                    templates: templates
-                )
-            }
-            .navigationDestination(for: String.self) { destination in
-                if destination == "History" {
-                    RecentSessionsView(showsCloseButton: false)
-                } else {
-                    SettingsView(showsCloseButton: false)
-                }
-            }
-        }
-    }
-
-    private func profileEvidence(for exercise: Exercise, points: [ExerciseProgressView.SessionPoint]) -> String {
-        guard let latest = points.last else { return "No completed working sets" }
-        let previous = points.dropLast().last { $0.templateId == latest.templateId }
-        let template = templates.first { $0.id == latest.templateId }
-        let routine = template?.displayName ?? "Past routine"
-        let date = latest.date.formatted(.dateTime.month(.abbreviated).day())
-        let performance = ExerciseProgressView.performanceText(for: latest, isBodyweight: exercise.isBodyweight)
-        let comparison = ExerciseProgressView.comparisonText(for: latest, previous: previous, isBodyweight: exercise.isBodyweight)
-        var evidence = "\(performance) · \(date) · \(routine)\n\(comparison)"
-        if let template,
-           let target = template.progressionState(for: exercise.id)?.acceptedTarget,
-           let targetText = WorkoutTargetFormatter.completeTargetText(
-                weightKg: target.weightKg,
-                setCount: template.plannedSets(for: exercise.id) ?? 0,
-                reps: target.reps
-           ) {
-            evidence += "\nAccepted next target · \(targetText)"
-        }
-        return evidence
+        NavigationStack { AnalyticsView() }
     }
 
     private func configureNavigationBarAppearance() {

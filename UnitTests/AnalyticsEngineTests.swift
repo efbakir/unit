@@ -91,6 +91,7 @@ final class AnalyticsEngineTests: XCTestCase {
     }
     func testDecimalAndPoundsFormattingNeverShowsZeroDelta() {
         XCTAssertEqual(WorkoutTargetFormatter.analyticsWeight(1.25, unit: "kg", locale: Locale(identifier: "en_US")), "1.25 kg")
+        XCTAssertEqual(WorkoutTargetFormatter.analyticsWeight(1.25, unit: "kg", locale: Locale(identifier: "de_DE")), "1,25 kg")
         XCTAssertEqual(WorkoutTargetFormatter.analyticsWeight(2.5, unit: "kg", locale: Locale(identifier: "en_US")), "2.5 kg")
         XCTAssertEqual(WorkoutTargetFormatter.analyticsWeight(0.01, unit: "lb", locale: Locale(identifier: "en_US"), delta: true), "0.1 lb")
         XCTAssertEqual(WorkoutTargetFormatter.analyticsChange(.up(weight: 0, reps: 1), unit: "kg"), "+1 rep")
@@ -147,6 +148,45 @@ final class AnalyticsEngineTests: XCTestCase {
         let snapshot = AnalyticsSnapshot.make(sessions: [workout], exercises: [exercise], templates: [], plannedDaysPerWeek: 0)
         XCTAssertEqual(AnalyticsEngine.compute(snapshot, now: now, calendar: calendar).lifts[exerciseID]?.latest?.weight, 81.25)
         XCTAssertFalse(context.hasChanges)
+    }
+    func testPersistenceLiveCountsAndFlipFlopping() {
+        let history = [session(-50)] + (-27 ... -22).map { session($0) }
+        XCTAssertEqual(compute(history, at: 1).summary?.status, .steady)
+        XCTAssertEqual(compute(history, at: 1).summary?.sessions, 5)
+        XCTAssertEqual(compute(history, at: 2).summary?.status, .steady)
+        XCTAssertEqual(compute(history, at: 3).summary?.status, .fewer)
+        let flips = history + [session(2), session(2), session(4), session(4)]
+        for offset in 1...5 { XCTAssertEqual(compute(flips, at: offset).summary?.status, .steady) }
+    }
+    func testWeightedBodyweightRetainsRecentUnloadedSession() {
+        let value = compute([session(-35), session(-1, weight: 0, reps: 12)]).lifts[exerciseID]
+        XCTAssertEqual(value?.sessions.count, 2)
+        XCTAssertEqual(value?.latest?.weight, 0)
+        XCTAssertEqual(value?.best?.weight, 80)
+        XCTAssertEqual(value?.bodyweight, false)
+        XCTAssertEqual(WorkoutTargetFormatter.analyticsPerformance(value!.latest!, bodyweight: false, unit: "kg"), "BW × 12")
+    }
+    func testChartDomainGapsAndAcceptedTargetFromLatestContainingRoutine() {
+        let otherID = UUID(), secondTemplate = UUID()
+        let target = AnalyticsEngine.Target(weight: 82.5, reps: 5, templateName: "Other routine")
+        let templates: [AnalyticsEngine.TemplateInput] = [.init(id: templateID, name: "Original", exerciseIDs: [exerciseID], targets: [:]), .init(id: secondTemplate, name: "Other routine", exerciseIDs: [exerciseID, otherID], targets: [exerciseID: target])]
+        let sessions = [session(-7), AnalyticsEngine.SessionInput(id: UUID(), date: now, templateID: secondTemplate, sets: [.init(exerciseID: otherID, weight: 40, reps: 5)])]
+        let original = input(sessions)
+        let result = AnalyticsEngine.compute(.init(exercises: original.exercises, sessions: sessions, templates: templates, plannedDaysPerWeek: 3), now: now, calendar: calendar)
+        let lift = result.lifts[exerciseID]
+        XCTAssertEqual(lift?.target, target)
+        let chart = AnalyticsEngine.chart(lift: lift, weekStarts: result.weekStarts, metric: .weight, unit: "lb")
+        XCTAssertEqual(chart.points.count, 1)
+        XCTAssertEqual(chart.xLabels.count, 4)
+        XCTAssertTrue(chart.yDomain.contains(chart.points[0].value))
+        XCTAssertEqual(AnalyticsEngine.chart(lift: nil, weekStarts: result.weekStarts, metric: .weight, unit: "kg").points.count, 0)
+    }
+    func testEpsilonDoesNotCompoundAcrossSessionsOrDayBuckets() {
+        let values = [session(-1, weight: 80, reps: 5), session(-1, weight: 79.995, reps: 6), session(0, weight: 80.007, reps: 1)]
+        let result = compute(values).lifts[exerciseID]
+        XCTAssertEqual(result?.best?.reps, 5)
+        XCTAssertEqual(result?.best?.weight, 80)
+        XCTAssertEqual(compute(Array(values.reversed())).lifts[exerciseID]?.best, result?.best)
     }
     func testFiveYearPerformance() {
         let exercises = (0..<8).map { AnalyticsEngine.ExerciseInput(id: UUID(), name: "Exercise \($0)", isBodyweight: false, equipment: nil, muscleGroup: "back") }

@@ -51,10 +51,10 @@ Keep the token set **small**. New roles need a Gym Test or clarity justification
 ## 3. Typography
 
 - **Hierarchy**: Weight, reps, timers, and targets dominate. Exercise names and metadata are secondary.
-- **Font**: **Geist** (sans) and **Geist Mono** (numerics / CTAs), bundled as `.ttf` in `Unit/Resources/Fonts/`. Always reach typography via **`AppFont`** variants — never `Font.custom(...)` directly in feature code.
-  - **Title / headings (Geist Sans)**: `AppFont.largeTitle`, `AppFont.title`, `AppFont.sectionHeader`, `AppFont.productHeading`. (`sectionHeader` doubles as the button label style — there is no separate `label` case.)
-  - **Body / labels (Geist Sans)**: `AppFont.body`, `AppFont.caption`, `AppFont.muted`.
-  - **Workout numerics (Geist Mono)**: `AppFont.numericDisplay` for fast fatigue-friendly reading; `AppFont.performance` and `AppFont.stepIndicator` for compact numeric rows and step counters; `AppFont.productAction` for primary CTA labels with mono digits.
+- **Font**: native **SF Pro** (sans) and **SF Mono** (numeric roles). The older bundled Geist resources are not the active UI font; compatibility helpers retain their old names. Always reach typography via **`AppFont`** variants — never `Font.custom(...)` directly in feature code.
+  - **Title / headings (SF Pro)**: `AppFont.largeTitle`, `AppFont.title`, `AppFont.sectionHeader`, `AppFont.productHeading`. (`sectionHeader` doubles as the button label style — there is no separate `label` case.)
+  - **Body / labels (SF Pro)**: `AppFont.body`, `AppFont.caption`, `AppFont.muted`.
+  - **Workout numerics (SF Mono)**: `AppFont.numericDisplay` for fast fatigue-friendly reading; `AppFont.performance` and `AppFont.stepIndicator` for compact numeric rows and step counters; `AppFont.productAction` for primary CTA labels with mono digits.
 - Prefer `AppFont` cases over inline `.font(.geist(...))` / `.font(.geistMono(...))` so typography stays consistent.
 - **Rule**: Never use regular (400) font weight anywhere in the app. The minimum weight is **medium** (500). Geist is bundled in three weights only: Medium, SemiBold, Bold.
 - **Rule**: If text doesn’t help log or understand state, remove or demote it.

@@ -22,8 +22,8 @@ final class ProgressionContractUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 20))
         tap(app.tabBars.buttons["Analytics"], "empty Profile tab")
-        XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["Progress starts with a workout"].exists)
+        XCTAssertTrue(app.staticTexts["No workouts yet"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["analytics-summary"].exists)
         XCTAssertFalse(staticText(in: app, containing: "Accepted next target").exists)
         XCTAssertFalse(button(in: app, containing: "Bench Press").exists)
         attachScreenshot(of: app, named: "profile-empty-starting-target")
@@ -207,41 +207,34 @@ final class ProgressionContractUITests: XCTestCase {
         // The same completed-session evidence must stay readable in History:
         // sentence-friendly set formatting, explicit volume units, and an
         // exact day on the chart rather than repeated month-only labels.
-        tap(app.tabBars.buttons["Analytics"], "Profile tab")
-        XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["Progressive overload"].exists)
-        attachScreenshot(of: app, named: "09-profile-summary-kg")
-        let profileExercise = button(in: app, containing: "Bench Press")
-        scrollTo(profileExercise, in: app, maximumSwipes: 4)
-        XCTAssertTrue(
-            staticText(in: app, containing: "Accepted next target · 3 × 8 at 62.5 kg").exists,
-            "Profile mixed accepted next targets with completed performance"
-        )
-        attachScreenshot(of: app, named: "09-profile-progress")
-        tap(profileExercise, "Profile exercise progress")
-        XCTAssertTrue(staticText(in: app, containing: "Best set · 60 kg × 10").waitForExistence(timeout: 10))
-        attachScreenshot(of: app, named: "09-profile-exercise-kg")
-        tap(app.navigationBars.buttons.firstMatch, "back to Profile")
+        tap(app.tabBars.buttons["Analytics"], "Analytics tab")
+        XCTAssertTrue(app.buttons["analytics-summary"].waitForExistence(timeout: 8))
+        attachScreenshot(of: app, named: "09-analytics-summary-kg")
+        var profileExercise = button(in: app, containing: "Bench Press")
+        scrollTo(profileExercise, in: app, maximumSwipes: 6)
+        tap(profileExercise, "Analytics exercise progress")
+        XCTAssertTrue(staticText(in: app, containing: "60 kg × 10").waitForExistence(timeout: 10))
+        XCTAssertTrue(staticText(in: app, containing: "62.5 kg × 8").exists)
+        attachScreenshot(of: app, named: "09-analytics-exercise-kg")
+        tap(app.navigationBars.buttons.firstMatch, "back to Analytics")
 
-        let profileSettings = button(in: app, containing: "Settings")
-        scrollTo(profileSettings, in: app)
-        tap(profileSettings, "Profile Settings")
+        tap(app.tabBars.buttons["Programs"], "Programs settings entry")
+        tap(app.buttons["Settings"], "Settings")
         tap(app.buttons["lb"].firstMatch, "pounds weight unit")
-        tap(app.navigationBars.buttons.firstMatch, "back to Profile in pounds")
+        tap(app.buttons["Close"], "Close Settings")
+        tap(app.tabBars.buttons["Analytics"], "Analytics in pounds")
+        profileExercise = button(in: app, containing: "Bench Press")
         scrollTo(profileExercise, in: app)
-        XCTAssertTrue(staticText(in: app, containing: "132.3 lb × 10").exists)
-        XCTAssertTrue(staticText(in: app, containing: "Accepted next target · 3 × 8 at 137.8 lb").exists)
-        attachScreenshot(of: app, named: "09-profile-progress-lb")
-        tap(profileExercise, "Profile exercise progress in pounds")
-        XCTAssertTrue(staticText(in: app, containing: "Best set · 132.3 lb × 10").waitForExistence(timeout: 10))
+        tap(profileExercise, "Analytics exercise in pounds")
+        XCTAssertTrue(staticText(in: app, containing: "132.3 lb × 10").waitForExistence(timeout: 10))
+        XCTAssertTrue(staticText(in: app, containing: "137.8 lb × 8").exists)
         tap(app.buttons["Volume"].firstMatch, "working-set volume metric")
-        XCTAssertTrue(staticText(in: app, containing: "3,968.3 lb·reps").exists)
-        attachScreenshot(of: app, named: "09-profile-exercise-volume-lb")
-        tap(app.navigationBars.buttons.firstMatch, "back to Profile from pounds chart")
-        scrollTo(profileSettings, in: app)
-        tap(profileSettings, "Profile Settings to restore kilograms")
+        attachScreenshot(of: app, named: "09-analytics-volume-lb")
+        tap(app.navigationBars.buttons.firstMatch, "back to Analytics")
+        tap(app.tabBars.buttons["Programs"], "Programs")
+        tap(app.buttons["Settings"], "Settings to restore kilograms")
         tap(app.buttons["kg"].firstMatch, "kilograms weight unit")
-        tap(app.navigationBars.buttons.firstMatch, "back to Profile in kilograms")
+        tap(app.buttons["Close"], "Close Settings")
         tap(app.tabBars.buttons["Today"], "Today tab")
         tap(app.buttons[AppCopy.Nav.history], "History")
         let completedSessionRow = app.buttons["history-session-row"].firstMatch
@@ -258,13 +251,13 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(exerciseProgress, in: app, maximumSwipes: 4)
         tap(exerciseProgress, "Bench Press progress")
         XCTAssertTrue(
-            staticText(in: app, containing: "Best set · 60 kg × 10")
+            staticText(in: app, containing: "60 kg × 10")
                 .waitForExistence(timeout: 10),
             "History did not explain the best set with readable units"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Total volume · 1,800 kg·reps").exists,
-            "History did not label total volume clearly"
+            app.staticTexts["Best set"].exists,
+            "History did not label its all-time best set"
         )
         let expectedChartDate = Date().formatted(
             .dateTime.month(.abbreviated).day()
@@ -702,7 +695,7 @@ final class ProgressionContractUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "-ui-testing",
-            "-ui-testing-progression-contract"
+            "-ui-testing-progression-contract", "-AppleLocale", "en_US", "-AppleLanguages", "(en)"
         ]
         if reset {
             app.launchArguments.append("-ui-testing-reset")
@@ -714,7 +707,7 @@ final class ProgressionContractUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "-ui-testing",
-            "-ui-testing-starting-target"
+            "-ui-testing-starting-target", "-AppleLocale", "en_US", "-AppleLanguages", "(en)"
         ]
         if reset {
             app.launchArguments.append("-ui-testing-reset")

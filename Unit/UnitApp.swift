@@ -40,6 +40,10 @@ struct UnitApp: App {
         self.sharedModelContainer = Self.makeSharedModelContainer()
         UnitAnalytics.shared.configure()
 #if DEBUG
+        if CommandLine.arguments.contains(Self.uiTestingArgument), CommandLine.arguments.contains("-ui-testing-analytics-r5") {
+            do { try ProgressionContractUITestSeeder.seedAnalytics(in: sharedModelContainer.mainContext) }
+            catch { Self.logger.error("Analytics UI-test fixture failed: \(String(describing: error), privacy: .public)") }
+        }
         if CommandLine.arguments.contains(Self.progressionContractUITestArgument)
             || CommandLine.arguments.contains(Self.appStoreScreenshotUITestArgument) {
             do {
@@ -803,6 +807,53 @@ enum CombatPowerSmokeTestSeeder {
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 }
+
+extension ProgressionContractUITestSeeder {
+    /// DEBUG + isolated UI-test store only. No production store is ever seeded.
+    @MainActor static func seedAnalytics(in context: ModelContext) throws {
+        guard CommandLine.arguments.contains("-ui-testing"), try context.fetchCount(FetchDescriptor<Split>()) == 0 else { return }
+        let args = CommandLine.arguments
+        UserDefaults.standard.set(args.contains("-analytics-lb") ? "lb" : "kg", forKey: "unitSystem")
+        let split = Split(name: "Analytics fixture")
+        context.insert(split)
+        let names = ["Squat", "Bench Press", "Deadlift", "Overhead Press", "Barbell Row", "Pull-Up", "Biceps Curl", "Hanging Leg Raise"]
+        let muscles: [MuscleGroup] = [.quads, .chest, .back, .shoulders, .back, .back, .biceps, .core]
+        let exercises = names.enumerated().map { index, name in
+            Exercise(displayName: name, isBodyweight: index == 5 || index == 7, muscleGroup: muscles[index], equipment: index == 5 || index == 7 ? .bodyweight : .barbell)
+        }
+        for exercise in exercises { context.insert(exercise) }
+        let templates = ["Push A", "Lower A", "Pull A"].map { DayTemplate(name: $0, splitId: split.id, orderedExerciseIds: exercises.map(\.id)) }
+        for template in templates { context.insert(template) }
+        split.orderedTemplateIds = templates.map(\.id)
+        for template in templates {
+            for (index, exercise) in exercises.prefix(3).enumerated() {
+                template.setProgressionState(ExerciseProgressionState(lowerRepBound: 3, upperRepBound: 8, weightIncrementKg: 2.5, currentAcceptedTargetWeightKg: [102.5, 82.5, 135][index], currentAcceptedTargetReps: 5, sourceWorkoutSessionID: UUID(), lastAcceptedReason: .allSetsReachedTop), for: exercise.id)
+            }
+        }
+        ActiveSplitStore.setCurrent(split.id)
+        let calendar = Calendar.current, now = Date()
+        let offsets: [Int]
+        if args.contains("-analytics-empty") { offsets = [] }
+        else if args.contains("-analytics-baseline") { offsets = [0] }
+        else if args.contains("-analytics-fewer") { offsets = [-210, -200] }
+        else { offsets = Array(stride(from: -77, through: 0, by: 7)) + [-3, -6, -9, -12, -15, -18, -21] }
+        for (index, offset) in offsets.enumerated() {
+            let session = WorkoutSession(date: calendar.date(byAdding: .day, value: offset, to: now)!, templateId: templates[index % 3].id, isCompleted: true)
+            context.insert(session)
+            for (exerciseIndex, exercise) in exercises.enumerated() {
+                if args.contains("-analytics-missing") && exerciseIndex == 2 { continue }
+                let progress = max(0, min(11, (offset + 77) / 7))
+                let weights: [Double] = [90 + Double(progress), 72.5 + Double(progress / 3) * 2.5, 120 + Double(progress), 40 + Double(progress / 2), 60 + Double(progress), 0, 16, 0]
+                for setIndex in 0..<3 {
+                    let entry = SetEntry(sessionId: session.id, exerciseId: exercise.id, weight: weights[exerciseIndex], reps: exercise.isBodyweight ? 7 + progress / 4 : 5, isCompleted: true, setIndex: setIndex)
+                    context.insert(entry); session.setEntries.append(entry)
+                }
+            }
+        }
+        try context.save()
+    }
+}
+
 #endif
 
 enum PreviewSampleData {

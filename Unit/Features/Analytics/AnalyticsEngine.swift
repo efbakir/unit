@@ -120,7 +120,9 @@ nonisolated enum AnalyticsEngine {
         let today: Date
     }
     private struct DayBucket {
-        var weighted: Performance?
+        // Retain the near-maximum frontier: epsilon equality is not transitive.
+        // Keeping only one daily winner could lose a set needed by a wider window.
+        var weightedCandidates: [Performance] = []
         var bodyweight: Performance?
     }
     private struct Accumulator {
@@ -178,6 +180,7 @@ nonisolated enum AnalyticsEngine {
         let weekStarts = (-11...0).map { calendar.date(byAdding: .weekOfYear, value: $0, to: currentWeek)! }
         var accumulators: [UUID: Accumulator] = [:]
         var sessionDays: [Date] = []
+        var lastTemplateDates: [UUID: Date] = [:]
         // Exactly one traversal of source sets; all windows derive from day buckets.
         for session in input.sessions where session.isCompleted {
             let date = calendar.startOfDay(for: session.date)
@@ -185,6 +188,7 @@ nonisolated enum AnalyticsEngine {
             let groups = Dictionary(grouping: session.sets.filter(\.isValid), by: \.exerciseID)
             guard !groups.isEmpty else { continue }
             sessionDays.append(date)
+            lastTemplateDates[session.templateID] = max(lastTemplateDates[session.templateID] ?? .distantPast, session.date)
             for (exerciseID, sets) in groups {
                 let performances = sets.map { Performance(weight: $0.weight, reps: $0.reps, date: session.date, sessionID: session.id, templateID: session.templateID, setIndex: $0.index) }
                 let loaded = performances.filter { $0.weight > 0 }
@@ -195,9 +199,20 @@ nonisolated enum AnalyticsEngine {
                 if !bodyweight { accumulators[exerciseID, default: Accumulator()].weighted = true }
                 accumulators[exerciseID, default: Accumulator()].sessions.append(result)
                 var bucket = accumulators[exerciseID]?.days[date] ?? DayBucket()
-                if !bodyweight, better(top, than: bucket.weighted, bodyweight: false) { bucket.weighted = top }
+                for value in loaded {
+                    if let index = bucket.weightedCandidates.firstIndex(where: { $0.weight == value.weight }) {
+                        if better(value, than: bucket.weightedCandidates[index], bodyweight: true) { bucket.weightedCandidates[index] = value }
+                    } else { bucket.weightedCandidates.append(value) }
+                }
                 if let candidate = best(performances, bodyweight: true), better(candidate, than: bucket.bodyweight, bodyweight: true) { bucket.bodyweight = candidate }
                 accumulators[exerciseID, default: Accumulator()].days[date] = bucket
+            }
+        }
+        for id in Array(accumulators.keys) {
+            for date in Array(accumulators[id]!.days.keys) {
+                let values = accumulators[id]!.days[date]!.weightedCandidates
+                let maximum = values.map(\.weight).max() ?? 0
+                accumulators[id]!.days[date]!.weightedCandidates = values.filter { abs($0.weight - maximum) < weightEpsilon }
             }
         }
         sessionDays.sort()
@@ -206,19 +221,20 @@ nonisolated enum AnalyticsEngine {
         let comparisonCutoff = day(-71, from: today)
         let comparisonDays = accumulators.mapValues { $0.days.filter { $0.key >= comparisonCutoff } }
         let firstWeightedDays = accumulators.mapValues { accumulator in
-            accumulator.days.compactMap { $0.value.weighted == nil ? nil : $0.key }.min()
+            accumulator.days.compactMap { $0.value.weightedCandidates.isEmpty ? nil : $0.key }.min()
         }
         func comparison(_ id: UUID, on date: Date) -> Comparison {
             let bodyweight = (firstWeightedDays[id] ?? nil).map { $0 > date } ?? true
             let aStart = day(-27, from: date), bStart = day(-55, from: date), bEnd = day(-28, from: date)
-            var a: Performance?, b: Performance?
+            var a: [Performance] = [], b: [Performance] = []
             for (dateKey, bucket) in comparisonDays[id] ?? [:] {
-                guard let value = bodyweight ? bucket.bodyweight : bucket.weighted else { continue }
-                if dateKey >= aStart && dateKey <= date && better(value, than: a, bodyweight: bodyweight) { a = value }
-                if dateKey >= bStart && dateKey <= bEnd && better(value, than: b, bodyweight: bodyweight) { b = value }
+                let values = bodyweight ? bucket.bodyweight.map { [$0] } ?? [] : bucket.weightedCandidates
+                if dateKey >= aStart && dateKey <= date { a.append(contentsOf: values) }
+                if dateKey >= bStart && dateKey <= bEnd { b.append(contentsOf: values) }
             }
-            return compare(a, b, bodyweight: bodyweight)
+            return compare(best(a, bodyweight: bodyweight), best(b, bodyweight: bodyweight), bodyweight: bodyweight)
         }
+
         typealias Counts = (n: Int, u: Int, s: Int, p: Int, ratio: Double)
         var countCache: [Date: Counts] = [:]
         func counts(on date: Date) -> Counts {
@@ -264,14 +280,13 @@ nonisolated enum AnalyticsEngine {
         if let displayed, let first = sessionDays.first, let last = sessionDays.last {
             summary = Summary(status: displayed, up: live.u, comparable: live.n, sessions: live.s, planned: live.p, firstDay: first, lastDay: last)
         } else { summary = nil }
-        let templateMap = Dictionary(uniqueKeysWithValues: input.templates.map { ($0.id, $0) })
         var lifts: [UUID: Lift] = [:]
         for exercise in input.exercises {
             guard let accumulator = accumulators[exercise.id] else { continue }
             let bodyweight = !accumulator.weighted
             // A positive added load makes even a BW-labelled movement weighted.
-            let sessions = accumulator.sessions.filter { bodyweight || $0.best.weight > 0 }.sorted { $0.best.date == $1.best.date ? $0.id.uuidString < $1.id.uuidString : $0.best.date < $1.best.date }
-            let daily = accumulator.days.values.compactMap { bodyweight ? $0.bodyweight : $0.weighted }
+            let sessions = accumulator.sessions.sorted { $0.best.date == $1.best.date ? $0.id.uuidString < $1.id.uuidString : $0.best.date < $1.best.date }
+            let daily = accumulator.days.values.flatMap { bodyweight ? $0.bodyweight.map { [$0] } ?? [] : $0.weightedCandidates }
             let grouped = Dictionary(grouping: daily.filter { $0.date >= weekStarts[0] }) { calendar.dateInterval(of: .weekOfYear, for: $0.date)!.start }
             let resultsByID = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
             let weeks = weekStarts.compactMap { week -> WeeklyPoint? in
@@ -279,7 +294,10 @@ nonisolated enum AnalyticsEngine {
                 return WeeklyPoint(week: week, best: top, maxReps: result.maxReps, volumeKg: result.volumeKg)
             }
             // Most recent containing routine, never a different routine's target.
-            let lastTemplate = accumulator.sessions.filter { templateMap[$0.best.templateID]?.exerciseIDs.contains(exercise.id) == true }.max { $0.best.date < $1.best.date }.flatMap { templateMap[$0.best.templateID] }
+            let lastTemplate = input.templates.filter { $0.exerciseIDs.contains(exercise.id) && lastTemplateDates[$0.id] != nil }.max {
+                let a = lastTemplateDates[$0.id]!, b = lastTemplateDates[$1.id]!
+                return a == b ? $0.id.uuidString > $1.id.uuidString : a < b
+            }
             lifts[exercise.id] = Lift(exercise: exercise, bodyweight: bodyweight, sessions: sessions, best: best(daily, bodyweight: bodyweight), comparison: comparison(exercise.id, on: today), weeks: weeks, target: lastTemplate?.targets[exercise.id])
         }
         var main: [Slot: UUID] = [:]
@@ -301,5 +319,53 @@ nonisolated enum AnalyticsEngine {
             return a.exercise.name.localizedStandardCompare(b.exercise.name) == .orderedAscending
         }.map(\.id)
         return Output(summary: summary, lifts: lifts, main: main, other: other, weekStarts: weekStarts, today: today)
+    }
+}
+
+extension AnalyticsEngine {
+    enum Metric: String, CaseIterable, Identifiable, Sendable {
+        case weight = "Weight", reps = "Reps", volume = "Volume"
+        var id: String { rawValue }
+    }
+    struct ChartPoint: Identifiable, Sendable {
+        var id: Date { week }
+        let week: Date
+        let value: Double
+        let best: Performance
+    }
+    struct ChartData: Sendable {
+        let points: [ChartPoint]
+        let xDomain: ClosedRange<Date>
+        let xLabels: [Date]
+        let yDomain: ClosedRange<Double>
+        let yTicks: [Double]
+    }
+    static func chart(lift: Lift?, weekStarts: [Date], metric: Metric, unit: String) -> ChartData {
+        let points = (lift?.weeks ?? []).map { week in
+            let value: Double
+            switch metric {
+            case .weight: value = week.best.weight * (unit == "lb" ? 2.20462 : 1)
+            case .reps: value = Double(week.best.reps)
+            case .volume: value = lift?.bodyweight == true ? Double(week.best.reps) : week.volumeKg * (unit == "lb" ? 2.20462 : 1)
+            }
+            return ChartPoint(week: week.week, value: value, best: week.best)
+        }
+        let lo = points.map(\.value).min() ?? 0, hi = points.map(\.value).max() ?? 1
+        let step: Double = metric == .reps ? 1 : unit == "lb" ? 0.5 : 0.25
+        let pad = hi > lo ? max((hi - lo) * 0.1, step) : max(abs(hi) * 0.1, step)
+        let lower = max(0, ((lo - pad) / step).rounded(.down) * step)
+        let upper = max(lower + step, ((hi + pad) / step).rounded(.up) * step)
+        let ticks = lo == hi ? [lower, upper] : [(lo / step).rounded(.down) * step, (hi / step).rounded(.up) * step]
+        let start = weekStarts.first ?? .distantPast, end = weekStarts.last ?? .distantFuture
+        // Keep the final label four weeks from its neighbour: its trailing
+        // anchor needs more room than an interior, centred date label.
+        let indices = [0, 4, 7, 11].filter { weekStarts.indices.contains($0) }
+        return ChartData(points: points, xDomain: start...end, xLabels: indices.map { weekStarts[$0] }, yDomain: lower...upper, yTicks: Array(Set(ticks)).sorted())
+    }
+    static func estimatedOneRM(for lift: Lift, unit: String) -> Double? {
+        guard !lift.bodyweight, let kg = lift.sessions.compactMap(\.estimatedOneRM).max(), kg >= (lift.best?.weight ?? 0) else { return nil }
+        let increment = unit == "lb" ? 0.5 : 0.25
+        let display = kg * (unit == "lb" ? 2.20462 : 1)
+        return (display / increment).rounded() * increment / (unit == "lb" ? 2.20462 : 1)
     }
 }

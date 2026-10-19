@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Charts
+import Accessibility
 import SwiftData
 import UIKit
 
@@ -177,6 +179,8 @@ enum AppFont {
     case overlineStrong
     /// 56pt bold — splash welcome title only.
     case splashTitle
+    /// Approved Analytics status heading, 34pt SF Pro bold.
+    case analyticsStatus
     /// 16pt medium — splash welcome eyebrow / tagline pair.
     case splashWelcome
     /// 36pt mono bold — workout metric hero, big numerics.
@@ -201,6 +205,7 @@ enum AppFont {
 
     var font: Font {
         switch self {
+        case .analyticsStatus: return .geist(.bold, size: 34, relativeTo: .largeTitle)
         case .largeTitle:     return .geist(.bold,     size: 22, relativeTo: .title2)
         case .title:          return .geist(.bold,     size: 20, relativeTo: .title3)
         case .sectionHeader:  return .geist(.semibold, size: 17, relativeTo: .body)
@@ -239,6 +244,7 @@ enum AppFont {
     var tracking: CGFloat {
         switch self {
         case .largeTitle, .title, .productHeading: return -0.3
+        case .analyticsStatus: return -0.8
         case .splashTitle: return -0.6
         default: return 0
         }
@@ -286,6 +292,8 @@ enum AppSpacing {
 enum AppChartMetrics {
     static let compactHeight: CGFloat = 160
     static let standardHeight: CGFloat = 180
+    static let trendHeight: CGFloat = 96
+    static let accessibleTrendHeight: CGFloat = 120
 }
 
 /// Corner radius tokens. Always paired with `RoundedRectangle(style: .continuous)`
@@ -772,6 +780,11 @@ enum AppIcon: String {
     case minusCircle = "minus.circle"
     case circle = "circle"
     case scalemass = "scalemass"
+    case info = "info.circle"
+    case squat = "figure.strengthtraining.functional"
+    case deadlift = "figure.strengthtraining.traditional"
+    case climbing = "figure.climbing"
+    case core = "figure.core.training"
 
     var systemName: String { rawValue }
 
@@ -6182,3 +6195,256 @@ struct AppComponentCatalog: View {
     }
 }
 #endif
+
+// MARK: - Analytics (approved R5 owners)
+
+/// A single combined accessible summary. Its caller owns native sheet presentation.
+struct AppStatusSummaryCard: View {
+    let word: String
+    let sentence: String
+
+    var body: some View {
+        AppCard(contentInset: AppSpacing.md, cornerRadius: AppRadius.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack {
+                    Text("LAST 4 WEEKS").appCapsLabel(.overline)
+                    Spacer(minLength: AppSpacing.sm)
+                    AppIcon.info.image(size: AppIconSize.readiness)
+                        .accessibilityHidden(true)
+                }
+                .foregroundStyle(AppColor.textSecondary)
+                Text(word).appFont(.analyticsStatus)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(sentence).appFont(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(word). \(sentence)")
+        .accessibilityHint("Shows how this works.")
+    }
+}
+
+/// One chart implementation for display-only cards and interactive exercise detail.
+/// All bucketing, metric selection and domains are supplied by AnalyticsEngine.
+struct AppTrendChart: View {
+    let data: AnalyticsEngine.ChartData
+    let caption: String
+    var interactive = false
+    var height: CGFloat = AppChartMetrics.trendHeight
+    var unit = "kg"
+    var bodyweight = false
+    @State private var selectedDate: Date?
+    @GestureState private var selectionIsActive = false
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiate
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    private var selected: AnalyticsEngine.ChartPoint? {
+        guard selectionIsActive, let selectedDate else { return nil }
+        return data.points.min { abs($0.week.timeIntervalSince(selectedDate)) < abs($1.week.timeIntervalSince(selectedDate)) }
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            if interactive {
+                Text(selected.map { "\(WorkoutTargetFormatter.analyticsPerformance($0.best, bodyweight: bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate($0.best.date, now: data.xDomain.upperBound))" } ?? " ")
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .monospacedDigit()
+                    .opacity(selected == nil ? 0 : 1)
+                    .accessibilityHidden(selected == nil)
+            }
+            Chart {
+                if data.points.isEmpty {
+                    RuleMark(y: .value("", 0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(AppColor.border)
+                }
+                ForEach(data.points) { point in
+                    if data.points.count > 1 {
+                        LineMark(x: .value("", point.week), y: .value("", point.value))
+                            .interpolationMethod(.linear)
+                            .lineStyle(StrokeStyle(lineWidth: differentiate ? 2.5 : 2))
+                            .foregroundStyle(AppColor.textPrimary)
+                    }
+                    PointMark(x: .value("", point.week), y: .value("", point.value))
+                        .symbol {
+                            Circle()
+                                .fill(point.id == data.points.last?.id ? AppColor.textPrimary : AppColor.cardBackground)
+                                .frame(width: point.id == data.points.last?.id ? 7 : 5, height: point.id == data.points.last?.id ? 7 : 5)
+                                .overlay { Circle().stroke(AppColor.textPrimary, lineWidth: 1.5) }
+                        }
+                    if selected?.id == point.id {
+                        RuleMark(x: .value("", point.week))
+                            .foregroundStyle(AppColor.chartSelection)
+                    }
+                }
+            }
+            .chartXScale(domain: data.xDomain, range: .plotDimension(startPadding: AppSpacing.sm, endPadding: AppSpacing.sm))
+            .chartYScale(domain: data.points.isEmpty ? 0...1 : data.yDomain)
+            .chartXAxis {
+                AxisMarks(values: typeSize.isAccessibilitySize ? [data.xDomain.lowerBound, data.xDomain.upperBound] : data.xLabels) { value in
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day(), centered: false, anchor: value.index == 0 ? .topLeading : value.index == (typeSize.isAccessibilitySize ? 1 : data.xLabels.count - 1) ? .topTrailing : .top, collisionResolution: .disabled)
+                        .font(AppFont.metadata.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            .chartYAxis {
+                if !data.points.isEmpty {
+                    AxisMarks(position: .trailing, values: data.yTicks) { value in
+                        AxisGridLine().foregroundStyle(contrast == .increased ? AppColor.textSecondary : AppColor.chartGrid)
+                        AxisValueLabel {
+                            if let number = value.as(Double.self) {
+                                Text(number.formatted(.number.precision(.fractionLength(0...2))))
+                                    .font(AppFont.metadata.font).foregroundStyle(AppColor.textSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                if interactive {
+                    GeometryReader { geometry in
+                        Rectangle().fill(AppColor.clear).contentShape(Rectangle())
+                            .gesture(DragGesture(minimumDistance: 0)
+                                .updating($selectionIsActive) { _, active, _ in active = true }
+                                .onChanged { gesture in
+                                    guard let frame = proxy.plotFrame else { return }
+                                    let x = gesture.location.x - geometry[frame].origin.x
+                                    selectedDate = proxy.value(atX: x, as: Date.self)
+                                }
+                                .onEnded { _ in selectedDate = nil })
+                    }
+                }
+            }
+            .frame(height: typeSize.isAccessibilitySize ? max(height, AppChartMetrics.accessibleTrendHeight) : height)
+            .accessibilityChartDescriptor(TrendDescriptor(data: data, title: bodyweight ? "Most reps per week, 12 weeks" : "Best set per week, 12 weeks"))
+            .accessibilityHidden(!interactive)
+            .accessibilityIdentifier("analytics-trend-chart")
+            .transaction { if reduceMotion { $0.animation = nil } }
+            Text(data.points.isEmpty ? "No sets in 12 weeks" : caption)
+                .font(AppFont.muted.font)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+    }
+    private struct TrendDescriptor: AXChartDescriptorRepresentable {
+        let data: AnalyticsEngine.ChartData
+        let title: String
+        func makeChartDescriptor() -> AXChartDescriptor {
+            let x = AXNumericDataAxisDescriptor(title: "", range: data.xDomain.lowerBound.timeIntervalSince1970...data.xDomain.upperBound.timeIntervalSince1970, gridlinePositions: []) { value in
+                Date(timeIntervalSince1970: value).formatted(.dateTime.month(.wide).day())
+            }
+            let y = AXNumericDataAxisDescriptor(title: "", range: data.yDomain, gridlinePositions: data.yTicks) { $0.formatted() }
+            let series = AXDataSeriesDescriptor(name: title, isContinuous: data.points.count > 1, dataPoints: data.points.map { AXDataPoint(x: $0.week.timeIntervalSince1970, y: $0.value) })
+            return AXChartDescriptor(title: title, summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [series])
+        }
+        func updateChartDescriptor(_ descriptor: AXChartDescriptor) { descriptor.title = title; descriptor.series = makeChartDescriptor().series }
+    }
+}
+
+/// R5 lift anatomy. Native NavigationLink ownership stays with the page.
+struct AppMainLiftCard: View {
+    let title: String
+    let icon: AppIcon
+    let lift: AnalyticsEngine.Lift?
+    let chart: AnalyticsEngine.ChartData
+    let unit: String
+    let now: Date
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        AppCard(contentInset: 0, cornerRadius: AppRadius.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.smd) {
+                HStack(spacing: AppSpacing.sm) {
+                    Self.iconTile(icon, side: 30)
+                    Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
+                }
+                .appNavigationDisclosure(lift?.latest != nil)
+                if let lift, let latest = lift.latest {
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                            Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
+                            change(lift)
+                        }
+                    } else {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
+                                Spacer(minLength: AppSpacing.sm)
+                                change(lift)
+                            }
+                            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                                Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
+                                change(lift)
+                            }
+                        }
+                    }
+                    Text("\(WorkoutTargetFormatter.analyticsDate(latest.date, now: now)) · vs. previous 4 weeks")
+                        .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                    AppTrendChart(data: chart, caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", unit: unit, bodyweight: lift.bodyweight)
+                } else {
+                    Text("—").font(AppFont.numericInput.font).foregroundStyle(AppColor.textSecondary)
+                    Text("No sessions yet").font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
+                    AppTrendChart(data: chart, caption: "No sets in 12 weeks")
+                }
+            }
+            .padding(AppSpacing.md)
+            if let lift, let best = lift.best {
+                AppDivider()
+                Group {
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: AppSpacing.smd) { footer(lift, best: best) }
+                    } else {
+                        HStack(alignment: .top, spacing: AppSpacing.md) { footer(lift, best: best) }
+                    }
+                }
+                .padding(AppSpacing.md)
+            }
+        }
+        .foregroundStyle(AppColor.textPrimary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spokenLabel)
+    }
+    private func change(_ lift: AnalyticsEngine.Lift) -> some View {
+        Text(WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit))
+            .font(AppFont.caption.font.weight(.semibold)).monospacedDigit()
+            .foregroundStyle(lift.comparison.isUp ? AppColor.textPrimary : AppColor.textSecondary)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+    @ViewBuilder private func footer(_ lift: AnalyticsEngine.Lift, best: AnalyticsEngine.Performance) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("BEST").appCapsLabel(.smallLabel).foregroundStyle(AppColor.textSecondary)
+            Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
+                .font(AppFont.caption.font).monospacedDigit()
+        }.frame(maxWidth: .infinity, alignment: .leading)
+        if let target = lift.target {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("NEXT").appCapsLabel(.smallLabel).foregroundStyle(AppColor.textSecondary)
+                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).monospacedDigit()
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    static func iconTile(_ icon: AppIcon, side: CGFloat) -> some View {
+        AppIconCircle(diameter: side, shape: .roundedRect(radius: AppRadius.sm), surface: .background) {
+            icon.image(size: AppIconSize.readiness).foregroundStyle(AppColor.textSecondary)
+        }.accessibilityHidden(true)
+    }
+    static func metric(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String, numberStyle: AppFont = .numericInput) -> some View {
+        let weight = WorkoutTargetFormatter.analyticsWeight(value.weight, unit: unit)
+        let number = bodyweight || value.weight == 0 ? "BW" : weight.components(separatedBy: " ").dropLast().joined(separator: " ")
+        let suffix = bodyweight || value.weight == 0 ? " × \(value.reps.formatted())" : " \(unit) × \(value.reps.formatted())"
+        return (Text(number).appFont(numberStyle) + Text(suffix).appFont(.caption))
+            .monospacedDigit().minimumScaleFactor(0.7).lineLimit(1)
+            .foregroundStyle(AppColor.textPrimary)
+    }
+    private var spokenLabel: String {
+        guard let lift, let latest = lift.latest else { return "\(title). No sessions yet" }
+        var text = "\(title). \(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit)), \(latest.date.formatted(.dateTime.month(.wide).day())). \(WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit, spoken: true)) versus previous 4 weeks."
+        if let best = lift.best { text += " Best \(WorkoutTargetFormatter.analyticsSpokenSet(best, bodyweight: lift.bodyweight, unit: unit))." }
+        if let target = lift.target { text += " Next \(WorkoutTargetFormatter.analyticsSpokenTarget(target, unit: unit))." }
+        return text
+    }
+}

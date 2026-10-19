@@ -9,7 +9,7 @@ extension WorkoutTargetFormatter {
         return "\(value.formatted(.number.locale(locale).grouping(.automatic).precision(.fractionLength(0...precision)))) \(unit)"
     }
     static func analyticsPerformance(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String) -> String {
-        "\(bodyweight ? "BW" : analyticsWeight(value.weight, unit: unit)) × \(value.reps.formatted())"
+        "\(bodyweight || value.weight == 0 ? "BW" : analyticsWeight(value.weight, unit: unit)) × \(value.reps.formatted())"
     }
     static func analyticsTarget(_ value: AnalyticsEngine.Target, unit: String) -> String {
         "\(value.weight > 0 ? analyticsWeight(value.weight, unit: unit) : "BW") × \(value.reps.formatted())"
@@ -40,7 +40,16 @@ extension WorkoutTargetFormatter {
         return value.comparable < 2 ? sessions : "\(value.up.formatted()) of \(value.comparable.formatted()) lifts up. \(sessions)"
     }
     static func analyticsSpokenSet(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String) -> String {
-        let load = bodyweight ? "Bodyweight" : analyticsWeight(value.weight, unit: unit).replacingOccurrences(of: " kg", with: " kilograms").replacingOccurrences(of: " lb", with: " pounds")
+        let load = bodyweight || value.weight == 0 ? "Bodyweight" : analyticsWeight(value.weight, unit: unit).replacingOccurrences(of: " kg", with: " kilograms").replacingOccurrences(of: " lb", with: " pounds")
         return "\(load) times \(value.reps.formatted())"
     }
+    static func analyticsSpokenTarget(_ value: AnalyticsEngine.Target, unit: String) -> String {
+        analyticsTarget(value, unit: unit).replacingOccurrences(of: "BW", with: "Bodyweight").replacingOccurrences(of: " kg", with: " kilograms").replacingOccurrences(of: " lb", with: " pounds").replacingOccurrences(of: " × ", with: " times ")
+    }
+    static func analyticsRecentSet(_ value: AnalyticsEngine.Performance, unit: String) -> String {
+        guard value.weight > 0 else { return value.reps.formatted() }
+        let number = analyticsWeight(value.weight, unit: unit).components(separatedBy: " ").dropLast().joined(separator: " ")
+        return "\(number) × \(value.reps.formatted())"
+    }
+
 }
