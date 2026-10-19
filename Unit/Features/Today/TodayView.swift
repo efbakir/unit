@@ -353,8 +353,9 @@ struct TodayView: View {
         startWorkout(template)
     }
 
-    private var launchAnimation: Animation {
-        launchSessionID != nil && AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+    private var launchAnimation: Animation? {
+        guard launchSessionID != nil else { return nil }
+        return AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
             ? AppMotion.settle : AppMotion.reveal
     }
 
