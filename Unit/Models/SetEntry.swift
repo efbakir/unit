@@ -106,3 +106,115 @@ struct SetEntrySnapshot {
         return entry
     }
 }
+
+// SwiftData on iOS 18 can leave loaded model values stale after rollback.
+// Keep the committed values in a separate read context and restore the same
+// loaded instances, so a failed save cannot look completed or half-deleted.
+extension ModelContext {
+    func rollbackRestoringLoadedModels() {
+        processPendingChanges()
+        let inserted = Set(insertedModelsArray.map(\.persistentModelID))
+        let affected = changedModelsArray + deletedModelsArray
+        let reader = ModelContext(container)
+        reader.autosaveEnabled = false
+        var seen = Set<PersistentIdentifier>()
+        var restore: [() -> Void] = []
+        for model in affected {
+            let id = model.persistentModelID
+            guard !inserted.contains(id), seen.insert(id).inserted else { continue }
+            switch model {
+            case let loaded as WorkoutSession:
+                guard let saved = reader.model(for: id) as? WorkoutSession else { continue }
+                let date = saved.date
+                let templateId = saved.templateId
+                let isCompleted = saved.isCompleted
+                let progressionRecordsByExerciseIdData = saved.progressionRecordsByExerciseIdData
+                let entryIDs = saved.setEntries.map(\.persistentModelID)
+                restore.append {
+                    loaded.date = date
+                    loaded.templateId = templateId
+                    loaded.isCompleted = isCompleted
+                    loaded.progressionRecordsByExerciseIdData = progressionRecordsByExerciseIdData
+                    loaded.setEntries = entryIDs.compactMap { self.model(for: $0) as? SetEntry }
+                }
+            case let loaded as SetEntry:
+                guard let saved = reader.model(for: id) as? SetEntry else { continue }
+                let sessionId = saved.sessionId
+                let exerciseId = saved.exerciseId
+                let weight = saved.weight
+                let reps = saved.reps
+                let rpe = saved.rpe
+                let rir = saved.rir
+                let isWarmup = saved.isWarmup
+                let isCompleted = saved.isCompleted
+                let setIndex = saved.setIndex
+                let note = saved.note
+                restore.append {
+                    loaded.sessionId = sessionId
+                    loaded.exerciseId = exerciseId
+                    loaded.weight = weight
+                    loaded.reps = reps
+                    loaded.rpe = rpe
+                    loaded.rir = rir
+                    loaded.isWarmup = isWarmup
+                    loaded.isCompleted = isCompleted
+                    loaded.setIndex = setIndex
+                    loaded.note = note
+                }
+            case let loaded as DayTemplate:
+                guard let saved = reader.model(for: id) as? DayTemplate else { continue }
+                let name = saved.name
+                let splitId = saved.splitId
+                let orderedExerciseIdsData = saved.orderedExerciseIdsData
+                let lastPerformedDate = saved.lastPerformedDate
+                let scheduledWeekday = saved.scheduledWeekday
+                let plannedSetsByExerciseIdData = saved.plannedSetsByExerciseIdData
+                let plannedRepsByExerciseIdData = saved.plannedRepsByExerciseIdData
+                let plannedWeightByExerciseIdData = saved.plannedWeightByExerciseIdData
+                let progressionStateByExerciseIdData = saved.progressionStateByExerciseIdData
+                restore.append {
+                    loaded.name = name
+                    loaded.splitId = splitId
+                    loaded.orderedExerciseIdsData = orderedExerciseIdsData
+                    loaded.lastPerformedDate = lastPerformedDate
+                    loaded.scheduledWeekday = scheduledWeekday
+                    loaded.plannedSetsByExerciseIdData = plannedSetsByExerciseIdData
+                    loaded.plannedRepsByExerciseIdData = plannedRepsByExerciseIdData
+                    loaded.plannedWeightByExerciseIdData = plannedWeightByExerciseIdData
+                    loaded.progressionStateByExerciseIdData = progressionStateByExerciseIdData
+                }
+            case let loaded as Exercise:
+                guard let saved = reader.model(for: id) as? Exercise else { continue }
+                let displayName = saved.displayName
+                let aliasesData = saved.aliasesData
+                let notes = saved.notes
+                let isBodyweight = saved.isBodyweight
+                let isArchived = saved.isArchived
+                let muscleGroupRaw = saved.muscleGroupRaw
+                let equipmentRaw = saved.equipmentRaw
+                restore.append {
+                    loaded.displayName = displayName
+                    loaded.aliasesData = aliasesData
+                    loaded.notes = notes
+                    loaded.isBodyweight = isBodyweight
+                    loaded.isArchived = isArchived
+                    loaded.muscleGroupRaw = muscleGroupRaw
+                    loaded.equipmentRaw = equipmentRaw
+                }
+            case let loaded as Split:
+                guard let saved = reader.model(for: id) as? Split else { continue }
+                let name = saved.name
+                let orderedTemplateIdsData = saved.orderedTemplateIdsData
+                let createdAt = saved.createdAt
+                restore.append {
+                    loaded.name = name
+                    loaded.orderedTemplateIdsData = orderedTemplateIdsData
+                    loaded.createdAt = createdAt
+                }
+            default: break
+            }
+        }
+        rollback()
+        restore.forEach { $0() }
+    }
+}

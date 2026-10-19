@@ -48,6 +48,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
     func testProgressionLedOnboardingSlidesAreReadable() {
         let app = makeApp(reset: true)
+        app.launchArguments += ["-AppleLocale", "en_US"]
         app.launch()
 
         XCTAssertTrue(
@@ -902,17 +903,18 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         direction: ScrollDirection = .up
     ) {
         let window = app.windows.firstMatch
-        for _ in 0..<10 {
-            if element.exists,
-               element.frame.intersects(window.frame),
-               element.frame.height > 0 {
-                return
-            }
-            switch direction {
-            case .up: app.swipeUp()
-            case .down: app.swipeDown()
+        // Accessibility-sized sections can be taller than one viewport. Use
+        // short drags and look back if a lazy row was passed during a reveal.
+        for pass in 0..<2 {
+            for _ in 0..<20 {
+                if element.exists, element.frame.intersects(window.frame), element.frame.height > 0 { return }
+                let upward = (direction == .up) == (pass == 0)
+                let start = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: upward ? 0.65 : 0.3))
+                let end = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: upward ? 0.3 : 0.65))
+                start.press(forDuration: 0.15, thenDragTo: end)
             }
         }
+        attachScreenshot(named: "unreachable-element", app: app)
         XCTFail("\(element) was not reachable by scrolling")
     }
 

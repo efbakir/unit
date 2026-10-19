@@ -470,7 +470,7 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "13-catalog-default-states")
 
         let success = app.buttons["Success message"]
-        scrollTo(success, in: app)
+        scrollTo(app.buttons["Error message"], in: app)
         tap(success, "Success toast")
         tap(app.buttons["Error message"], "Replacement error toast")
         let error = app.staticTexts["Sample failed. Try again."]

@@ -1543,10 +1543,7 @@ final class ActiveWorkoutViewModel {
             if let save { try save() } else { try context.save() }
             return true
         } catch {
-            // Finish inverse-relationship bookkeeping before restoring the
-            // committed graph, including a newly inserted working set.
-            context.processPendingChanges()
-            context.rollback()
+            context.rollbackRestoringLoadedModels()
             return false
         }
     }

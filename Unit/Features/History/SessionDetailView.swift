@@ -511,7 +511,7 @@ struct SessionDetailView: View {
             action: action,
             for: recommendation.exerciseID
         ) else {
-            modelContext.rollback()
+            modelContext.rollbackRestoringLoadedModels()
             return false
         }
 
@@ -531,7 +531,7 @@ struct SessionDetailView: View {
             toastMessage = .init(AppCopy.Workout.targetsSaved, kind: .success)
             return true
         } catch {
-            modelContext.rollback()
+            modelContext.rollbackRestoringLoadedModels()
             toastMessage = .init(AppCopy.Workout.targetsSaveFailed, kind: .error)
             AppHaptic.error.fire()
             return false

@@ -447,7 +447,7 @@ struct TodayView: View {
             return true
         } catch {
             modelContext.processPendingChanges()
-            modelContext.rollback()
+            modelContext.rollbackRestoringLoadedModels()
             AppHaptic.error.fire()
             toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
             return false

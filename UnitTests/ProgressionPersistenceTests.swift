@@ -58,6 +58,46 @@ final class ProgressionPersistenceTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<SetEntry>()), 0)
     }
 
+    func testFailedRoutineSaveRestoresLoadedStartingAndProgressionTargets() throws {
+        enum Failure: Error { case disk }
+        let container = try makeContainer(at: temporaryStoreURL(named: "failed-routine"))
+        let context = container.mainContext
+        let exerciseID = UUID()
+        let template = DayTemplate(name: "Upper", orderedExerciseIds: [exerciseID])
+        template.setPlannedReps(8, for: exerciseID)
+        template.setPlannedWeight(60, for: exerciseID)
+        template.setProgressionState(progressionState(), for: exerciseID)
+        context.insert(template)
+        try context.save()
+        let savedState = template.progressionStateByExerciseIdData
+        template.setPlannedReps(12, for: exerciseID)
+        template.setPlannedWeight(90, for: exerciseID)
+        template.setProgressionState(nil, for: exerciseID)
+        XCTAssertFalse(ActiveWorkoutViewModel().saveChanges(in: context, save: { throw Failure.disk }))
+        XCTAssertEqual(template.plannedReps(for: exerciseID), 8)
+        XCTAssertEqual(template.plannedWeight(for: exerciseID), 60)
+        XCTAssertEqual(template.progressionStateByExerciseIdData, savedState)
+    }
+
+    func testFailedSetDeletionRestoresLoadedSessionRelationship() throws {
+        enum Failure: Error { case disk }
+        let container = try makeContainer(at: temporaryStoreURL(named: "failed-delete"))
+        let context = container.mainContext
+        let session = WorkoutSession(templateId: UUID())
+        context.insert(session)
+        let entry = SetEntry(sessionId: session.id, exerciseId: UUID(), weight: 60, reps: 8, isCompleted: true)
+        entry.session = session
+        context.insert(entry)
+        try context.save()
+        XCTAssertEqual(session.setEntries.count, 1)
+        let originalID = entry.id
+        context.delete(entry)
+        XCTAssertFalse(ActiveWorkoutViewModel().saveChanges(in: context, save: { throw Failure.disk }))
+        XCTAssertEqual(session.setEntries.map(\.id), [originalID])
+        XCTAssertEqual(session.setEntries.first?.weight, 60)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SetEntry>()), 1)
+    }
+
     func testSetUndoRestoresIdentityOrderAndEveryRecordedValue() throws {
         let container = try makeContainer(at: temporaryStoreURL(named: "set-undo"))
         let context = container.mainContext

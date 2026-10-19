@@ -106,7 +106,7 @@ struct TemplateDetailView: View {
             try modelContext.save()
             return true
         } catch {
-            modelContext.rollback()
+            modelContext.rollbackRestoringLoadedModels()
             if reportsFailure { saveFailed = true }
             AppHaptic.error.fire()
             return false
