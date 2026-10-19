@@ -137,6 +137,7 @@ struct SessionDetailView: View {
                             )
                         } label: {
                             SessionExerciseSummary(exercise: exercise)
+                                .appNavigationDisclosure()
                                 .padding(.vertical, AppSpacing.sm)
                                 .contentShape(Rectangle())
                         }

@@ -162,7 +162,7 @@ struct SettingsView: View {
                 NavigationLink {
                     AppComponentCatalog()
                 } label: {
-                    AppListRow(title: "Components", subtitle: "Shared controls and feedback")
+                    AppListRow(title: "Components", subtitle: "Shared controls and feedback", showsDisclosure: true)
                 }
                 .buttonStyle(ScaleButtonStyle())
             }
@@ -261,7 +261,7 @@ struct SettingsView: View {
                     Button {
                         showingManageSubscriptions = true
                     } label: {
-                        AppListRow(title: row.rawValue)
+                        AppListRow(title: row.rawValue, showsDisclosure: true)
                     }
                     .buttonStyle(ScaleButtonStyle())
                 }
@@ -286,7 +286,7 @@ struct SettingsView: View {
             Button {
                 openFeatureRequestPortal()
             } label: {
-                AppListRow(title: AppCopy.FeatureRequest.actionTitle)
+                AppListRow(title: AppCopy.FeatureRequest.actionTitle, showsDisclosure: true)
             }
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel(AppCopy.FeatureRequest.actionTitle)
@@ -300,7 +300,7 @@ struct SettingsView: View {
             AppDividedList(LegalRow.allCases) { row in
                 if let url = row.url {
                     Link(destination: url) {
-                        AppListRow(title: row.title)
+                        AppListRow(title: row.title, showsDisclosure: true)
                     }
                 }
             }

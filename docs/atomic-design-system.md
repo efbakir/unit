@@ -74,6 +74,7 @@ SF Symbol names as `String` raw values; use `.image(size:weight:)` for consisten
 **Rules**
 
 - Set icon size explicitly at the call site (see `ProductTopBar` / `AppListRow` for defaults).
+- **Navigation rows/cards**: `appNavigationDisclosure()` is the single trailing-chevron layout owner in `DesignSystem.swift`. `AppListRow(showsDisclosure: true)` applies it inside row padding; `PreviewListRow(showsDisclosure: true)` delegates to it. Custom destination labels use the modifier inside their link/button. Native `List` navigation links retain the system disclosure to avoid doubling. Read-only, selection, inline action, and toolbar controls do not opt in.
 - **Navigation preview rows**: `PreviewListRow(showsDisclosure: true)` owns the trailing chevron. Use `showsSeparator` between recessed preview rows. Read-only previews default to neither; selection/action rows retain their own semantics.
 
 ### Divider — `AppDivider`

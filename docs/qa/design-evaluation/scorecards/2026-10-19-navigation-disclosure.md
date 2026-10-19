@@ -30,3 +30,28 @@ AppListRow supports tappable/display/cardListContent styles; AppCardList owns di
 
 ## Carry forward
 Main owns build/install. No Simulator, build, or tests run here per current stop-testing instruction. Review Today row boundaries, Programs day counts/chevrons, long titles, and VoiceOver on the next visual pass. Today exercise taps still open the routine detail (existing destination), not an individual exercise detail.
+
+
+## App-wide follow-up
+Direct user request: apply the same treatment to every card/row opening a destination. Source base: integrated build 69 checkpoint `a2e114b`. Existing baseline above is unchanged; no new rendered score.
+
+Reuse decision: extract the existing PreviewListRow disclosure layout into `View.appNavigationDisclosure` in DesignSystem.swift, and extend AppListRow with showsDisclosure. No separate View/ViewModifier type, token, or competing chevron style. This preserves Settings row insets and provides the same treatment for custom summary labels.
+
+| Surface | Disposition |
+|---|---|
+| Today / Programs / program library / program details | Existing previews retain disclosure; program header now uses the same layout owner |
+| Analytics | Exercise history, History, Settings rows opt in; static metrics remain plain |
+| History list | Real session links opt in; unavailable-session fallback remains plain |
+| Calendar summary | Completed exercise links opt in; read-only unfinished/missed summaries remain plain |
+| Session detail | Exercise progress links opt in |
+| Settings | Components, Manage subscription, feature request, legal links opt in; status, restore, unit picker, analytics toggle remain plain |
+| Routine / onboarding preview editors | Name/target navigation labels opt in; remove and inline weight controls remain separate |
+| Week overview | Sheet-opening strip opts in |
+| Exercise library | Native List NavigationLink already supplies the system chevron; no duplicate added |
+| Onboarding / purchase options | Selection tiles stay plain; advancement remains through Continue |
+| Active workout / routine picker / calendar cells | Inline selection and logging actions retain existing semantics; not destination rows |
+| Toolbar / CTA / footer text links | Existing control styles retained; not cards or rows |
+
+Visual pass and phone installation remain pending for this follow-up. No build or Simulator launched.
+
+Source verification: changed-code banned-pattern hook, Swift syntax parsing, and git diff whitespace checks passed. Full-file History hook reports a pre-existing broad AppCard/AppDividedList match; this change does not add that composition. Syntax parsing is not compilation or runtime verification.

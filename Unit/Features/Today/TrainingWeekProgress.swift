@@ -286,6 +286,7 @@ struct TrainingWeekStripView: View {
                 }
             }
             .frame(maxWidth: .infinity)
+            .appNavigationDisclosure()
         }
         .buttonStyle(ScaleButtonStyle())
         .accessibilityElement(children: .combine)

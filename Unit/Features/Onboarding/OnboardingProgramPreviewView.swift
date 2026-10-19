@@ -201,6 +201,7 @@ struct OnboardingProgramPreviewView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .appNavigationDisclosure()
                 .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())

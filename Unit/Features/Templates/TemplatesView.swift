@@ -189,11 +189,8 @@ struct TemplatesView: View {
                         AppTag(text: "Active", style: .muted, layout: .compactCapsule)
 
                         Spacer(minLength: 0)
-                        AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .accessibilityHidden(true)
                     }
-                    .frame(minHeight: 44)
+                    .appNavigationDisclosure()
                     .contentShape(Rectangle())
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(displayName), active program")

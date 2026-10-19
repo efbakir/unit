@@ -154,7 +154,8 @@ struct ContentView: View {
                                         title: exercise.displayName,
                                         subtitle: profileEvidence(for: exercise, points: points[exercise.id] ?? []),
                                         leadingIcon: .chart,
-                                        style: .cardListContent
+                                        style: .cardListContent,
+                                        showsDisclosure: true
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -171,7 +172,8 @@ struct ContentView: View {
                                     title: destination,
                                     subtitle: destination == "History" ? "All sessions and next-target decisions" : "Weight unit, subscription and data",
                                     leadingIcon: destination == "History" ? .calendarClock : .settingsOutline,
-                                    style: .cardListContent
+                                    style: .cardListContent,
+                                    showsDisclosure: true
                                 )
                             }
                             .buttonStyle(.plain)

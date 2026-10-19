@@ -949,6 +949,7 @@ struct AppListRow<Trailing: View>: View {
     let subtitle: String?
     let leadingIcon: AppIcon?
     var style: AppListRowStyle = .tappable
+    var showsDisclosure: Bool = false
     @ViewBuilder let trailing: () -> Trailing
 
     init(
@@ -956,12 +957,14 @@ struct AppListRow<Trailing: View>: View {
         subtitle: String? = nil,
         leadingIcon: AppIcon? = nil,
         style: AppListRowStyle = .tappable,
+        showsDisclosure: Bool = false,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
         self.subtitle = subtitle
         self.leadingIcon = leadingIcon
         self.style = style
+        self.showsDisclosure = showsDisclosure
         self.trailing = trailing
     }
 
@@ -999,6 +1002,7 @@ struct AppListRow<Trailing: View>: View {
 
             trailing()
         }
+        .appNavigationDisclosure(showsDisclosure)
         .padding(.horizontal, horizontalInset)
         .padding(.vertical, verticalInset)
         .frame(minHeight: minimumHeight, alignment: .leading)
@@ -1030,9 +1034,10 @@ extension AppListRow where Trailing == EmptyView {
         title: String,
         subtitle: String? = nil,
         leadingIcon: AppIcon? = nil,
-        style: AppListRowStyle = .tappable
+        style: AppListRowStyle = .tappable,
+        showsDisclosure: Bool = false
     ) {
-        self.init(title: title, subtitle: subtitle, leadingIcon: leadingIcon, style: style) {
+        self.init(title: title, subtitle: subtitle, leadingIcon: leadingIcon, style: style, showsDisclosure: showsDisclosure) {
             EmptyView()
         }
     }
@@ -1049,9 +1054,10 @@ extension AppListRow where Trailing == AppListRowValueLabel {
         value: String,
         subtitle: String? = nil,
         leadingIcon: AppIcon? = nil,
-        style: AppListRowStyle = .tappable
+        style: AppListRowStyle = .tappable,
+        showsDisclosure: Bool = false
     ) {
-        self.init(title: title, subtitle: subtitle, leadingIcon: leadingIcon, style: style) {
+        self.init(title: title, subtitle: subtitle, leadingIcon: leadingIcon, style: style, showsDisclosure: showsDisclosure) {
             AppListRowValueLabel(value)
         }
     }
@@ -2450,6 +2456,27 @@ struct RestTimerControl: View {
     }
 }
 
+extension View {
+    /// Shared trailing disclosure for a row/card label that opens a destination.
+    /// Apply inside the button/link, before outer card chrome. Native List links
+    /// already supply their own disclosure and must not receive this modifier.
+    @ViewBuilder
+    func appNavigationDisclosure(_ isPresented: Bool = true) -> some View {
+        if isPresented {
+            HStack(spacing: AppSpacing.sm) {
+                self.frame(maxWidth: .infinity, alignment: .leading)
+                AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        } else {
+            self
+        }
+    }
+}
+
 // MARK: - PreviewListRow + PreviewListContainer
 
 /// Shared row for preview lists inside cards. The default stacked layout keeps
@@ -2484,19 +2511,11 @@ struct PreviewListRow: View {
     @ScaledMetric(relativeTo: .body) private var identityFirstRowHeight: CGFloat = 80
 
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            rowContent
-            if showsDisclosure {
-                AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .accessibilityHidden(true)
+        rowContent
+            .appNavigationDisclosure(showsDisclosure)
+            .overlay(alignment: .bottom) {
+                if showsSeparator { AppDivider() }
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .overlay(alignment: .bottom) {
-            if showsSeparator { AppDivider() }
-        }
     }
 
     @ViewBuilder

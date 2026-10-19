@@ -141,10 +141,6 @@ struct TemplateDetailView: View {
                             exerciseTargetSubtitle(for: exercise)
 
                             Spacer(minLength: 0)
-
-                            AppIcon.edit.image(size: AppIconSize.compact, weight: .semibold)
-                                .foregroundStyle(AppColor.textSecondary)
-                                .accessibilityHidden(true)
                         }
                         .padding(.horizontal, AppSpacing.sm)
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -156,6 +152,7 @@ struct TemplateDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .appNavigationDisclosure()
                 .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())

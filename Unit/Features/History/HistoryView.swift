@@ -389,6 +389,7 @@ struct RecentSessionsView: View {
                                         )
                                     } label: {
                                         historySessionRow(for: snapshot)
+                                            .appNavigationDisclosure()
                                             .contentShape(Rectangle())
                                     }
                                     .accessibilityIdentifier("history-session-row")
@@ -727,6 +728,7 @@ private struct SessionSummaryCard: View {
                             )
                         } label: {
                             SessionExerciseSummary(exercise: exercise)
+                                .appNavigationDisclosure()
                                 .appCardRowChrome()
                                 .contentShape(Rectangle())
                         }

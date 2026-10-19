@@ -53,7 +53,7 @@ Cross-reference: `feedback_unit_scroll_edge_soft.md` in memory.
 - [ ] If this is a bug fix, I confirmed whether the bug is at the atom/molecule layer. **If yes, I fix only `DesignSystem.swift` — not also the feature file.** (See `CLAUDE.md` §5.)
 - [ ] If I edited a `ToolbarItem` button, I did not add `.weight(...)` unless I'm changing the convention app-wide in the same turn.
 - [ ] If I edited `.sheet { }` content, the root is a plain `VStack` (no `ScrollView` / `AppCard` wrapper). Use `presentationDetents` for height.
-- [ ] The screen is wrapped in `AppScreen`. All CTAs use `AppPrimaryButton`. Cards use `AppCard` / `appCardStyle()`. No `chevron.right`. No `Divider()` where `AppDivider` applies.
+- [ ] The screen is wrapped in `AppScreen`. All CTAs use `AppPrimaryButton`. Cards use `AppCard` / `appCardStyle()`. Navigation rows use shared disclosure; no raw glyph literals. No `Divider()` where `AppDivider` applies.
 - [ ] Touch targets ≥ 44×44pt. No regular font weight. No orange `#FF4400` (accent is `0x0A0A0A`).
 - [ ] Copy is explicit, not a `–` / `—` placeholder. Bodyweight shows "BW", not "0 kg".
 - [ ] No `ProcessInfo.processInfo.environment["UNIT_*"]` / `UNIT_START_TAB` / `UNIT_AUTO_OPEN` screenshot-scaffolding left in `ContentView.swift` or any `Features/**/*.swift`. Revert temp scaffolding before turn end.
@@ -76,7 +76,7 @@ The hook (`.claude/hooks/ui-banned-list.sh`) enforces a subset of these mechanic
 
 ### Components, not inline chrome
 
-- `chevron.right` / `chevron.forward`
+- Raw `chevron.right` / `chevron.forward` literals; use shared navigation disclosure
 - `Divider()` where `AppDivider` is required
 - Inline button styling for primary CTAs — use `AppPrimaryButton`
 - Inline card chrome — use `AppCard` / `appCardStyle()`
