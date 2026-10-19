@@ -181,8 +181,8 @@ enum AppFont {
     case splashWelcome
     /// 36pt mono bold — workout metric hero, big numerics.
     case numericDisplay
-    /// 36pt sans bold + tabular digits — numeric input fields (`AdjustResultSheet`
-    /// weight / reps). Same scale and weight as `numericDisplay`, but proportional
+    /// 30pt sans bold + tabular digits — workout targets and numeric input fields
+    /// (`AdjustResultSheet` weight / reps). Proportional
     /// glyphs so a decimal like `82.5` doesn't show a wide gap around the period
     /// (mono cells inflate punctuation). `.monospacedDigit()` keeps digits tabular
     /// so values still align if rendered in a column.
@@ -215,7 +215,7 @@ enum AppFont {
         case .splashWelcome:  return .geist(.medium,   size: 16, relativeTo: .callout)
         case .productHeading: return .geist(.bold,     size: 24, relativeTo: .title2)
         case .numericDisplay: return .geistMono(.bold,     size: 36, relativeTo: .title)
-        case .numericInput:   return .geist(.bold,         size: 36, relativeTo: .title).monospacedDigit()
+        case .numericInput:   return .geist(.bold,         size: 30, relativeTo: .title).monospacedDigit()
         case .stepIndicator:  return .geistMono(.semibold, size: 14, relativeTo: .footnote)
         case .productAction:  return .geist(.bold,         size: 17, relativeTo: .body)
         case .performance:    return .geistMono(.semibold, size: 15, relativeTo: .subheadline)
@@ -4224,8 +4224,8 @@ struct WorkoutCommandCard: View {
         Text(metricValue)
             // Keep the mixed weight/reps target compact and proportional while
             // retaining stable digit widths as sets advance.
-            .font(AppFont.productHeading.font)
-            .tracking(AppFont.productHeading.tracking)
+            .font(AppFont.numericInput.font)
+            .tracking(AppFont.numericInput.tracking)
             .monospacedDigit()
             .foregroundStyle(metricIsGhost ? AppColor.textDisabled : AppColor.textPrimary)
             .multilineTextAlignment(.center)
