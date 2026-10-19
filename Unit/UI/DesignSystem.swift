@@ -1335,7 +1335,11 @@ struct AppPrimaryButton: View {
     let label: String
     var isEnabled: Bool = true
     var isLoading: Bool = false
+    /// A saved outcome replaces the label without changing the button’s layout.
+    var isConfirmed: Bool = false
     let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.isEnabled) private var parentIsEnabled
 
     /// Bumped each time a disabled (not loading) tap is absorbed so
@@ -1345,10 +1349,11 @@ struct AppPrimaryButton: View {
     /// `PrimaryButtonConfig` to also explain *why*.
     @State private var disabledTapTrigger: Int = 0
 
-    init(_ label: String, isEnabled: Bool = true, isLoading: Bool = false, action: @escaping () -> Void) {
+    init(_ label: String, isEnabled: Bool = true, isLoading: Bool = false, isConfirmed: Bool = false, action: @escaping () -> Void) {
         self.label = label
         self.isEnabled = isEnabled
         self.isLoading = isLoading
+        self.isConfirmed = isConfirmed
         self.action = action
     }
 
@@ -1368,8 +1373,16 @@ struct AppPrimaryButton: View {
                         .minimumScaleFactor(0.7)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.sm)
-                        .opacity(isLoading ? 0 : 1)
+                        .opacity(isLoading || isConfirmed ? 0 : 1)
                         .animation(AppMotion.feedback, value: effectiveEnabled)
+                    if isConfirmed && !isLoading {
+                        AppIcon.checkmark.image(size: 24, weight: .bold)
+                            .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
+                            .transition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+                                ? .opacity.combined(with: .scale(scale: AppMotion.markPopScale))
+                                : .opacity)
+                            .accessibilityHidden(true)
+                    }
                     if isLoading {
                         ProgressView()
                             .tint(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
@@ -1377,6 +1390,7 @@ struct AppPrimaryButton: View {
                     }
                 }
                 .animation(AppMotion.feedback, value: isLoading)
+                .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.settle : AppMotion.feedback, value: isConfirmed)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
                 .background {
@@ -1388,7 +1402,7 @@ struct AppPrimaryButton: View {
             .buttonStyle(ScaleButtonStyle())
             .disabled(!isInteractive)
             .accessibilityLabel(label)
-            .accessibilityValue(isLoading ? Text("loading") : Text(""))
+            .accessibilityValue(isLoading ? Text("loading") : Text(isConfirmed ? "Saved" : ""))
 
             // Disabled-tap absorber: present only when the button is disabled
             // *and not loading*. Loading is a system-status state, not a user
@@ -2394,14 +2408,7 @@ struct RestTimerControl: View {
         .padding(.horizontal, AppSpacing.smd)
         .background {
             if showsTimerCapsule {
-                Capsule(style: .continuous).fill(AppColor.controlBackground)
-                    .transition(.opacity.animation(AppMotion.feedback))
-            }
-        }
-        .overlay {
-            if showsTimerCapsule {
-                Capsule(style: .continuous)
-                    .stroke(AppColor.border.opacity(0.55), lineWidth: 1)
+                Capsule(style: .continuous).fill(AppColor.cardRowFill)
                     .transition(.opacity.animation(AppMotion.feedback))
             }
         }
@@ -2411,7 +2418,7 @@ struct RestTimerControl: View {
         state == .ready || UIAccessibility.isReduceMotionEnabled || UIAccessibility.isVoiceOverRunning ? .opacity : .numericText(countsDown: true)
     }
 
-    /// Capsule fill + stroke for **idle / paused / disabled** so the affordance reads as
+    /// Quiet capsule fill for **idle / paused / disabled** so the affordance reads as
     /// tappable when not actively counting. Drops to plain text for **running** and **ready**:
     /// while running, the numeral is the hero of the screen (Beside-style isolation); when
     /// ready, the absence of chrome reads as a deliberate "done resting" beat.
@@ -2468,11 +2475,7 @@ struct RestTimerControl: View {
             icon.image(size: 26, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
                 .frame(width: 60, height: 60)
-                .background(AppColor.controlBackground)
-                .overlay {
-                    Circle()
-                        .stroke(AppColor.border.opacity(0.4), lineWidth: 1)
-                }
+                .background(AppColor.cardRowFill)
                 .clipShape(Circle())
                 .contentShape(Circle())
         }
@@ -4050,6 +4053,9 @@ struct WorkoutCommandCard: View {
     /// chip so the peak emotional moment of a session is held visibly long enough
     /// to register before the metric prefill cross-fades to the next set.
     @SwiftUI.State private var prBadgeVisible: Bool = false
+    @SwiftUI.State private var setConfirmationVisible = false
+    @SwiftUI.State private var setConfirmationSequence = 0
+    private static let setConfirmationDwellSeconds: Double = 1
     /// Invalidates an older auto-dismiss task when another PR lands before the
     /// current badge finishes its dwell. The newest milestone always receives
     /// the full visible duration instead of being hidden by the first task.
@@ -4079,12 +4085,17 @@ struct WorkoutCommandCard: View {
                     metricSupportingSlot
                 }
 
-                if state != .completed {
+                if state != .completed || setConfirmationVisible {
                     AppPrimaryButton(
                         primaryLabel,
-                        isEnabled: state == .active && onPrimaryAction != nil,
-                        action: { onPrimaryAction?() }
+                        isEnabled: setConfirmationVisible || (state == .active && onPrimaryAction != nil),
+                        isConfirmed: setConfirmationVisible,
+                        action: {
+                            guard state == .active else { return }
+                            onPrimaryAction?()
+                        }
                     )
+                    .allowsHitTesting(state == .active)
                     .transition(.opacity.animation(AppMotion.reveal))
                 }
             }
@@ -4112,12 +4123,29 @@ struct WorkoutCommandCard: View {
         .appWorkoutPanelChrome()
         .appAnimation(.appState, value: state, reduceMotion: reduceMotion)
         .appHaptic(.success, trigger: setLoggedSignal)
+        .onChange(of: setLoggedSignal) { _, _ in
+            // Parent increments only after persistence succeeds. The next set
+            // remains immediately tappable; this is feedback, never a log delay.
+            setConfirmationVisible = true
+            setConfirmationSequence &+= 1
+        }
+        .task(id: setConfirmationSequence) {
+            guard setConfirmationSequence > 0 else { return }
+            do {
+                try await Task.sleep(for: .seconds(Self.setConfirmationDwellSeconds))
+            } catch { return }
+            withAnimation(AppMotion.feedback) { setConfirmationVisible = false }
+        }
+        .onChange(of: exerciseName) { _, _ in
+            setConfirmationVisible = false
+        }
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
         }
         .onDisappear {
             prBadgeSequence &+= 1
             prBadgeVisible = false
+            setConfirmationVisible = false
         }
     }
 
@@ -4227,7 +4255,7 @@ struct WorkoutCommandCard: View {
             .font(AppFont.numericInput.font)
             .tracking(AppFont.numericInput.tracking)
             .monospacedDigit()
-            .foregroundStyle(metricIsGhost ? AppColor.textDisabled : AppColor.textPrimary)
+            .foregroundStyle(metricIsGhost ? AppColor.textSecondary : AppColor.textPrimary)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.55)
             .lineLimit(3)

@@ -102,6 +102,12 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 | `AppOptionTileCard` | Canonical single-choice onboarding/selection card. |
 | `AppSelectableTierCard` | StoreKit tier card with selected, disabled, accessibility, and compact-detail states. Purchase surfaces keep the selected tier expanded and may collapse supporting copy on unselected siblings. |
 
+### Saved-action feedback
+
+`AppPrimaryButton(isConfirmed:)` temporarily replaces its label with the existing checkmark symbol while retaining its measured label layout. `WorkoutCommandCard` owns the one-second dwell and starts it only after its saved-set signal changes. The next eligible set remains immediately actionable. Reduce Motion and VoiceOver use a fade; the existing success haptic remains the single tactile owner.
+
+`RestTimerControl` uses the existing `cardRowFill` for quiet secondary controls, with no outline. Geometry and typography are unchanged.
+
 ### Pressed-state rule
 
 `ScaleButtonStyle` is the single pressed treatment for every custom tappable
