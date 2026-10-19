@@ -36,6 +36,7 @@ struct ExerciseProgressView: View {
         let volumeKg: Double
         let totalReps: Int
         let templateId: UUID
+        let estimatedOneRM: Double?
     }
 
     private struct SessionRowItem: Identifiable {
@@ -65,20 +66,38 @@ struct ExerciseProgressView: View {
         _selectedMetric = State(initialValue: isBodyweight ? .reps : .weight)
     }
 
-    // Best set per completed session (highest weight, then reps)
+    // One owner for Profile, history, and the exercise library. Only valid,
+    // completed working sets in finished sessions contribute to analytics.
     private var sessionPoints: [SessionPoint] {
-        sessions
-            .filter(\.isCompleted)
-            .compactMap { session -> SessionPoint? in
-                let workingSets = session.setEntries
-                    .filter { $0.exerciseId == exerciseId && $0.isCompleted && !$0.isWarmup }
+        Self.sessionPointsByExercise(in: sessions, matching: exerciseId)[exerciseId] ?? []
+    }
+
+    static func sessionPointsByExercise(
+        in sessions: [WorkoutSession], matching exerciseID: UUID? = nil
+    ) -> [UUID: [SessionPoint]] {
+        var points: [UUID: [SessionPoint]] = [:]
+        for session in sessions.filter(\.isCompleted).sorted(by: { $0.date < $1.date }) {
+            let groups = Dictionary(
+                grouping: session.setEntries.filter {
+                    $0.isValidCompletedWorkingSet && (exerciseID == nil || $0.exerciseId == exerciseID)
+                },
+                by: \.exerciseId
+            )
+            for (exerciseID, workingSets) in groups {
                 let best = workingSets.max {
                     lhs, rhs in lhs.weight == rhs.weight
                         ? lhs.reps < rhs.reps
                         : lhs.weight < rhs.weight
                 }
-                guard let best else { return nil }
-                return SessionPoint(
+                guard let best else { continue }
+                let estimates = workingSets.compactMap { set -> Double? in
+                    guard set.weight > 0, (1...12).contains(set.reps) else { return nil }
+                    let estimate = set.reps == 1
+                        ? set.weight
+                        : set.weight * (1 + Double(set.reps) / 30)
+                    return estimate.isFinite ? estimate : nil
+                }
+                points[exerciseID, default: []].append(SessionPoint(
                     id: session.id,
                     date: session.date,
                     weight: best.weight,
@@ -88,10 +107,12 @@ struct ExerciseProgressView: View {
                         $0 + ($1.weight * Double($1.reps))
                     },
                     totalReps: workingSets.reduce(0) { $0 + $1.reps },
-                    templateId: session.templateId
-                )
+                    templateId: session.templateId,
+                    estimatedOneRM: estimates.max()
+                ))
             }
-            .sorted { $0.date < $1.date }
+        }
+        return points
     }
 
     private var allTimePR: SessionPoint? {
@@ -99,10 +120,16 @@ struct ExerciseProgressView: View {
     }
 
     private var epley1RM: Double? {
-        guard !isBodyweight else { return nil }
-        guard let pr = allTimePR else { return nil }
-        guard pr.reps > 1 else { return pr.weight }
-        return pr.weight * (1.0 + Double(pr.reps) / 30.0)
+        guard !isBodyweight,
+              let estimate = sessionPoints.compactMap(\.estimatedOneRM).max(),
+              estimate >= (allTimePR?.weight ?? 0) else { return nil }
+        return estimate
+    }
+
+    private var availableMetrics: [ProgressMetric] {
+        isBodyweight && !sessionPoints.contains(where: { $0.weight > 0 })
+            ? [.reps, .volume]
+            : ProgressMetric.allCases
     }
 
     var body: some View {
@@ -155,7 +182,7 @@ struct ExerciseProgressView: View {
                 .monospacedDigit()
 
             if !isBodyweight, let epley1RM {
-                Text("Estimated 1RM · \(WorkoutTargetFormatter.weightDisplay(epley1RM))")
+                Text("Estimated 1RM · \(WorkoutTargetFormatter.weightDisplay(epley1RM)) · Epley, 1–12 reps")
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .monospacedDigit()
@@ -209,9 +236,23 @@ struct ExerciseProgressView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             AppSegmentedControl(
                 selection: $selectedMetric,
-                items: ProgressMetric.allCases,
+                items: availableMetrics,
                 title: { $0.rawValue }
             )
+
+            Text("Completed working sets only. Volume is recorded load × reps; bodyweight volume uses total reps.")
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+
+            Text("All routines shown. Session comparisons stay within each routine.")
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+
+            if sessionPoints.count == 1 {
+                Text("One session recorded. Log another to see a trend.")
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
 
             SettingsSection(title: metricSectionTitle) {
                 if let point = chartReadoutPoint {
@@ -280,6 +321,7 @@ struct ExerciseProgressView: View {
                 )
                 .chartXSelection(value: $selectedChartDate)
                 .chartYScale(domain: chartYDomain)
+                .chartYAxisLabel(metricAxisLabel)
                 .frame(minHeight: AppChartMetrics.compactHeight)
 
                 Text("Tap or drag for exact values.")
@@ -357,9 +399,8 @@ struct ExerciseProgressView: View {
 
     private func sessionRow(point: SessionPoint, prev: SessionPoint?) -> some View {
         let templateName = templates.first(where: { $0.id == point.templateId })?.name ?? "Session"
-        let delta = prev.map { isBodyweight ? Double(point.reps - $0.reps) : point.weight - $0.weight }
 
-        return HStack {
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(templateName)
                     .font(AppFont.body.font)
@@ -367,8 +408,7 @@ struct ExerciseProgressView: View {
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
             }
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: AppSpacing.xxs) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(
                     WorkoutTargetFormatter.milestoneText(
                         weightKg: point.weight,
@@ -382,26 +422,13 @@ struct ExerciseProgressView: View {
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .monospacedDigit()
-                if let d = delta {
-                    if d > 0 {
-                        Text(isBodyweight ? "+\(Int(d)) reps" : "+\(WorkoutTargetFormatter.weightDisplay(d))")
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.success)
-                            .monospacedDigit()
-                    } else if d < 0 {
-                        Text(isBodyweight ? "-\(Int(abs(d))) reps" : "-\(WorkoutTargetFormatter.weightDisplay(abs(d)))")
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.error)
-                            .monospacedDigit()
-                    } else {
-                        Text("No change")
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
+                if let prev {
+                    Text(Self.comparisonText(for: point, previous: prev, isBodyweight: isBodyweight))
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .monospacedDigit()
                 }
             }
-            .layoutPriority(1)
-            .fixedSize(horizontal: true, vertical: false)
         }
         .accessibilityElement(children: .combine)
     }
@@ -413,14 +440,11 @@ struct ExerciseProgressView: View {
         return WorkoutTargetFormatter.volumeDisplay(
             volumeKg: point.volumeKg,
             unitSystem: unitSystem
-        ) ?? "—"
+        ) ?? "Volume unavailable"
     }
 
     private func bestSetEvidence(for point: SessionPoint) -> String {
-        if isBodyweight {
-            return "Best set · \(point.reps) reps"
-        }
-        return "Best set · \(WorkoutTargetFormatter.weightDisplay(point.weight)) × \(point.reps)"
+        return "Best set · \(Self.performanceText(for: point, isBodyweight: isBodyweight))"
     }
 
     private func totalVolumeEvidence(for point: SessionPoint) -> String {
@@ -432,7 +456,30 @@ struct ExerciseProgressView: View {
         let volume = WorkoutTargetFormatter.volumeDisplay(
             volumeKg: point.volumeKg,
             unitSystem: unitSystem
-        ) ?? "—"
+        ) ?? "Volume unavailable"
         return "Total volume · \(volume)"
+    }
+
+    static func performanceText(for point: SessionPoint, isBodyweight: Bool) -> String {
+        WorkoutTargetFormatter.milestoneText(
+            weightKg: point.weight, reps: point.reps, isBodyweight: isBodyweight
+        ) ?? "\(point.reps) reps"
+    }
+
+    /// Compare the heaviest set only within one routine. A load increase with
+    /// fewer reps is not labelled progress; show the previous evidence instead.
+    static func comparisonText(for point: SessionPoint, previous: SessionPoint?, isBodyweight: Bool) -> String {
+        guard let previous, previous.templateId == point.templateId else {
+            return "First recorded session for this routine"
+        }
+        if point.weight == previous.weight, point.reps != previous.reps {
+            let delta = point.reps - previous.reps
+            return "\(delta > 0 ? "+" : "")\(delta) reps at the same load"
+        }
+        if point.reps == previous.reps, point.weight != previous.weight {
+            let delta = point.weight - previous.weight
+            return "\(delta > 0 ? "+" : "−")\(WorkoutTargetFormatter.weightDisplay(abs(delta))) at \(point.reps) reps"
+        }
+        return "Previous · \(performanceText(for: previous, isBodyweight: isBodyweight))"
     }
 }

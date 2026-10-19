@@ -195,6 +195,20 @@ final class ProgressionContractUITests: XCTestCase {
         // The same completed-session evidence must stay readable in History:
         // sentence-friendly set formatting, explicit volume units, and an
         // exact day on the chart rather than repeated month-only labels.
+        tap(app.tabBars.buttons["Profile"], "Profile tab")
+        XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Progressive overload"].exists)
+        let profileExercise = button(in: app, containing: "Bench Press")
+        scrollTo(profileExercise, in: app, maximumSwipes: 4)
+        XCTAssertTrue(
+            staticText(in: app, containing: "Accepted next target · 3 × 8 at 62.5 kg").exists,
+            "Profile mixed accepted next targets with completed performance"
+        )
+        attachScreenshot(of: app, named: "09-profile-progress")
+        tap(profileExercise, "Profile exercise progress")
+        XCTAssertTrue(staticText(in: app, containing: "Best set · 60 kg × 10").waitForExistence(timeout: 10))
+        tap(app.navigationBars.buttons.firstMatch, "back to Profile")
+        tap(app.tabBars.buttons["Today"], "Today tab")
         tap(app.buttons[AppCopy.Nav.history], "History")
         let completedSessionRow = app.buttons["history-session-row"].firstMatch
         tap(completedSessionRow, "completed progression session")

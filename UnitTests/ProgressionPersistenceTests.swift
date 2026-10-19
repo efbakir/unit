@@ -4,6 +4,68 @@ import XCTest
 
 @MainActor
 final class ProgressionPersistenceTests: XCTestCase {
+    func testProgressAnalyticsExcludeUnfinishedWarmupAndInvalidEntries() throws {
+        let exerciseID = UUID()
+        let finished = WorkoutSession(date: Date(timeIntervalSince1970: 100), templateId: UUID(), isCompleted: true)
+        let unfinished = WorkoutSession(templateId: finished.templateId)
+        finished.setEntries = [
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: 60, reps: 8, isCompleted: true),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: 60, reps: 10, isCompleted: true),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: 100, reps: 20, isWarmup: true, isCompleted: true),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: 200, reps: 8),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: .infinity, reps: 8, isCompleted: true),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: -20, reps: 8, isCompleted: true),
+            SetEntry(sessionId: finished.id, exerciseId: exerciseID, weight: 100, reps: 0, isCompleted: true)
+        ]
+        unfinished.setEntries = [SetEntry(sessionId: unfinished.id, exerciseId: exerciseID, weight: 500, reps: 10, isCompleted: true)]
+        let points = ExerciseProgressView.sessionPointsByExercise(in: [unfinished, finished])[exerciseID] ?? []
+        XCTAssertEqual(points.count, 1)
+        let point = try XCTUnwrap(points.first)
+        XCTAssertEqual(point.weight, 60)
+        XCTAssertEqual(point.reps, 10)
+        XCTAssertEqual(point.totalReps, 18)
+        XCTAssertEqual(point.volumeKg, 1_080)
+        XCTAssertEqual(try XCTUnwrap(point.estimatedOneRM), 80, accuracy: 0.001)
+        XCTAssertTrue(ExerciseProgressView.sessionPointsByExercise(in: [unfinished]).isEmpty)
+    }
+
+    func testProgressAnalyticsKeepBodyweightAndLimitOneRMEstimate() throws {
+        let bodyweightID = UUID()
+        let loadedID = UUID()
+        let session = WorkoutSession(templateId: UUID(), isCompleted: true)
+        session.setEntries = [
+            SetEntry(sessionId: session.id, exerciseId: bodyweightID, weight: 0, reps: 12, isCompleted: true),
+            SetEntry(sessionId: session.id, exerciseId: loadedID, weight: 100, reps: 1, isCompleted: true),
+            SetEntry(sessionId: session.id, exerciseId: loadedID, weight: 90, reps: 10, isCompleted: true),
+            SetEntry(sessionId: session.id, exerciseId: loadedID, weight: 150, reps: 30, isCompleted: true)
+        ]
+        let points = ExerciseProgressView.sessionPointsByExercise(in: [session])
+        let bw = try XCTUnwrap(points[bodyweightID]?.first)
+        XCTAssertEqual(ExerciseProgressView.performanceText(for: bw, isBodyweight: true), "BW × 12")
+        XCTAssertNil(bw.estimatedOneRM)
+        let loaded = try XCTUnwrap(points[loadedID]?.first)
+        // Estimate comes from the strongest eligible set, not the heaviest
+        // high-rep set, nor only the one-rep set.
+        XCTAssertEqual(try XCTUnwrap(loaded.estimatedOneRM), 120, accuracy: 0.001)
+    }
+
+    func testProgressComparisonRequiresSameRoutineAndComparableLoadOrReps() throws {
+        let exerciseID = UUID()
+        let routineID = UUID()
+        func point(weight: Double, reps: Int, routine: UUID? = nil) throws -> ExerciseProgressView.SessionPoint {
+            let session = WorkoutSession(templateId: routine ?? routineID, isCompleted: true)
+            session.setEntries = [SetEntry(sessionId: session.id, exerciseId: exerciseID, weight: weight, reps: reps, isCompleted: true)]
+            return try XCTUnwrap(ExerciseProgressView.sessionPointsByExercise(in: [session])[exerciseID]?.first)
+        }
+        let previous = try point(weight: 60, reps: 8)
+        let extraReps = try point(weight: 60, reps: 10)
+        XCTAssertEqual(ExerciseProgressView.comparisonText(for: extraReps, previous: previous, isBodyweight: false), "+2 reps at the same load")
+        let changedBoth = try point(weight: 65, reps: 6)
+        XCTAssertTrue(ExerciseProgressView.comparisonText(for: changedBoth, previous: previous, isBodyweight: false).hasPrefix("Previous · "))
+        let differentRoutine = try point(weight: 60, reps: 10, routine: UUID())
+        XCTAssertEqual(ExerciseProgressView.comparisonText(for: differentRoutine, previous: previous, isBodyweight: false), "First recorded session for this routine")
+    }
+
     private struct PersistedTargetSnapshot {
         let state: ExerciseProgressionState?
         let plannedReps: Int?

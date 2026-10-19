@@ -499,3 +499,12 @@
 - **Decision:** Keep cross-session product, scope, design, and release decisions in this file.
 - **Why:** Current-state docs explain what is true now; this log explains what changed and why.
 - **Rule:** Keep entries short, dated, and newest-first. Mark replaced decisions as **Superseded**.
+
+
+## 2026-10-19 — Add a private Profile progress tab
+
+- **Decision:** The user requested Profile as the third native tab, alongside Today and Programs. It contains a 30-day training summary and exercise progress, with current accepted next targets labelled separately from completed performance.
+- **Ownership:** Reuse existing primitives and `ExerciseProgressView` for Profile, session history and exercise-library progress. No new components, tokens, styles or visual variants.
+- **Honesty:** Use valid completed working sets in finished workouts; compare sets within the same routine. Recorded load × reps has explicit units; BW volume uses total reps. No imputed workouts, composite strength score or claimed progress when load and reps both change.
+- **Scope:** Personal local analytics are authorized; social profiles, accounts, new progression algorithms and active-logging decisions remain excluded. No persistence-schema or training-data changes.
+- **Evidence:** `docs/research/2026-10-19-profile-progress.md`. Edits applied; builds and visual verification remain in the coordinator's queue.

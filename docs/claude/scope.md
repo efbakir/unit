@@ -17,6 +17,7 @@
 - Template-based logging with ghost values
 - Two first-run onboarding paths: text-paste and starter program library
 - Auto rest timer with Lock Screen / Dynamic Island
+- Private Profile tab with completed-working-set analytics and exercise history
 - History view (one chronological list grouped by month)
 - Exercise library (search + custom exercise creation)
 - Haptic confirmation on set logged
@@ -28,7 +29,7 @@
 
 - Legacy `ProgressionEngine` behavior (cycles, failure counters, deloads, periodisation)
 - CloudKit sync
-- Social features (feed, profiles, sharing)
+- Social features (feed, public profiles, sharing)
 - Exercise discovery / recommendation
 - Changes to the current post-onboarding access gate (`docs/pricing.md`)
 - 8-week cycles as primary container; "Week N of M" UI

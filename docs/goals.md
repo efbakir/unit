@@ -41,6 +41,7 @@
 - Two onboarding paths: text-paste import and starter program library
 - Auto rest timer with Lock Screen / Dynamic Island
 - History view (one chronological list grouped by month)
+- Private Profile tab with completed-working-set analytics and exercise history
 - Exercise library with search and custom exercise creation
 - Haptic confirmation on set logged
 - PR detection and notification
@@ -52,7 +53,7 @@
 **Does not ship:**
 - Legacy ProgressionEngine behavior (cycles, fail modes, deloads, periodisation)
 - CloudKit sync
-- Social features (feed, profiles, sharing)
+- Social features (feed, public profiles, sharing)
 - Exercise discovery / recommendation
 - Manual-builder onboarding as a first-run path
 - Redo-from-history onboarding as a first-run path

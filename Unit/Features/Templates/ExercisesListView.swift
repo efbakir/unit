@@ -5,7 +5,6 @@
 //  Exercise library with aliases and exercise-level progress review.
 //
 
-import Charts
 import SwiftUI
 import SwiftData
 
@@ -367,168 +366,22 @@ struct AddExerciseView: View {
     }
 }
 
-private struct ExerciseSessionSummary: Identifiable {
-    let id: UUID
-    let sessionDate: Date
-    let templateName: String
-    let topSetText: String
-    let bestReps: Int
-    let estimatedOneRM: Double
-    let totalVolume: Double
-}
-
+// Exercise metadata owns the live queries; progress presentation and calculations
+// belong to the same owner used by Profile and completed-session history.
 struct ExerciseDetailView: View {
     let exercise: Exercise
 
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
 
-    private var summaries: [ExerciseSessionSummary] {
-        sessions.filter(\.isCompleted).compactMap { session in
-            let entries = session.setEntries
-                .filter { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup }
-                .sorted { $0.setIndex < $1.setIndex }
-
-            guard !entries.isEmpty else { return nil }
-
-            let oneRMs = entries.map { estimateOneRM(weight: $0.weight, reps: $0.reps) }
-            let topOneRM = oneRMs.max() ?? 0
-            let totalVolume = entries.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-            guard let topSet = entries.max(by: { lhs, rhs in
-                if lhs.weight == rhs.weight {
-                    return lhs.reps < rhs.reps
-                }
-                return lhs.weight < rhs.weight
-            }) else { return nil }
-
-            return ExerciseSessionSummary(
-                id: session.id,
-                sessionDate: session.date,
-                templateName: templateName(for: session.templateId),
-                topSetText: WorkoutTargetFormatter.milestoneText(
-                    weightKg: topSet.weight,
-                    reps: topSet.reps,
-                    isBodyweight: exercise.isBodyweight
-                ) ?? "\(topSet.reps) reps",
-                bestReps: topSet.reps,
-                estimatedOneRM: topOneRM,
-                totalVolume: totalVolume
-            )
-        }
-    }
-
-    private var trendAscending: [ExerciseSessionSummary] {
-        summaries.sorted { $0.sessionDate < $1.sessionDate }
-    }
-
     var body: some View {
-        AppScreen(
-            showsNativeNavigationBar: true
-        ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(exercise.displayName)
-                        .appFont(.largeTitle)
-                    Text(exercise.isBodyweight ? "Best reps and session history" : "Brzycki 1RM and session volume")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .appCardStyle()
-
-                if summaries.isEmpty {
-                    EmptyStateCard(
-                        title: "No sessions yet",
-                        message: "Sessions for this exercise show up here once you log them."
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(exercise.isBodyweight ? "Best reps trend" : "Estimated 1RM trend")
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-                        Chart(trendAscending) { item in
-                            LineMark(
-                                x: .value("Date", item.sessionDate),
-                                y: .value(exercise.isBodyweight ? "Reps" : "1RM", trendValue(for: item))
-                            )
-                            .foregroundStyle(AppColor.textPrimary)
-                            PointMark(
-                                x: .value("Date", item.sessionDate),
-                                y: .value(exercise.isBodyweight ? "Reps" : "1RM", trendValue(for: item))
-                            )
-                            .foregroundStyle(AppColor.textPrimary)
-                        }
-                        .frame(height: AppChartMetrics.standardHeight)
-                    }
-                    .appCardStyle()
-
-                    if !exercise.isBodyweight {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("Session volume")
-                                .font(AppFont.sectionHeader.font)
-                                .foregroundStyle(AppColor.textPrimary)
-                            Chart(trendAscending) { item in
-                                BarMark(
-                                    x: .value("Date", item.sessionDate),
-                                    y: .value("Volume", item.totalVolume)
-                                )
-                                .foregroundStyle(AppColor.accentSoft)
-                            }
-                            .frame(height: AppChartMetrics.compactHeight)
-                        }
-                        .appCardStyle()
-                    }
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        AppSectionHeader("Past sessions")
-                        AppCardList(summaries) { summary in
-                            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                HStack {
-                                    Text(summary.templateName)
-                                        .font(AppFont.body.font)
-                                    Spacer(minLength: 0)
-                                    Text(summary.sessionDate, style: .date)
-                                        .font(AppFont.caption.font)
-                                        .foregroundStyle(AppColor.textSecondary)
-                                }
-                                Text("Top set: \(summary.topSetText)")
-                                    .font(AppFont.caption.font)
-                                    .foregroundStyle(AppColor.textSecondary)
-                                Text(sessionSummaryDetail(for: summary))
-                                    .font(AppFont.caption.font)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                }
-            }
-            .appScreenEnter()
-        }
-        .navigationTitle("Exercise")
-        .navigationBarTitleDisplayMode(.inline)
-        .appNavigationBarChrome()
-    }
-
-    private func templateName(for templateId: UUID) -> String {
-        templates.first { $0.id == templateId }?.name ?? "Custom"
-    }
-
-    private func estimateOneRM(weight: Double, reps: Int) -> Double {
-        guard reps > 0 else { return 0 }
-        let denominator = 1.0278 - (0.0278 * Double(reps))
-        guard denominator > 0 else { return 0 }
-        return weight / denominator
-    }
-
-    private func trendValue(for summary: ExerciseSessionSummary) -> Double {
-        exercise.isBodyweight ? Double(summary.bestReps) : summary.estimatedOneRM
-    }
-
-    private func sessionSummaryDetail(for summary: ExerciseSessionSummary) -> String {
-        if exercise.isBodyweight {
-            return "Best reps: \(summary.bestReps)"
-        }
-        return "Est. 1RM: \(WorkoutTargetFormatter.weightDisplay(summary.estimatedOneRM)) • Volume: \(Int(summary.totalVolume))"
+        ExerciseProgressView(
+            exerciseId: exercise.id,
+            exerciseName: exercise.displayName,
+            isBodyweight: exercise.isBodyweight,
+            sessions: sessions,
+            templates: templates
+        )
     }
 }
 
