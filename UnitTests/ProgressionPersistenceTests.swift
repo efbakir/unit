@@ -12,9 +12,9 @@ final class ProgressionPersistenceTests: XCTestCase {
 
     func testPrefillSkipsMalformedNewestHistoryAndIncompleteCurrentWork() {
         let exerciseID = UUID()
-        let current = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
-        let latest = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: nil, isCompleted: true)
-        let older = WorkoutSession(date: Date().addingTimeInterval(-120), templateId: nil, isCompleted: true)
+        let current = WorkoutSession(date: Date(), templateId: UUID(), isCompleted: false)
+        let latest = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: UUID(), isCompleted: true)
+        let older = WorkoutSession(date: Date().addingTimeInterval(-120), templateId: UUID(), isCompleted: true)
         current.setEntries = [SetEntry(sessionId: current.id, exerciseId: exerciseID, weight: 999, reps: 99)]
         latest.setEntries = [SetEntry(sessionId: latest.id, exerciseId: exerciseID, weight: -.infinity, reps: 8, isCompleted: true)]
         older.setEntries = [SetEntry(sessionId: older.id, exerciseId: exerciseID, weight: 60, reps: 8, isCompleted: true)]
@@ -28,8 +28,8 @@ final class ProgressionPersistenceTests: XCTestCase {
 
     func testCompletedBodyweightHistoryIsValidAndWarmupsAreExcluded() {
         let exerciseID = UUID()
-        let current = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
-        let previous = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: nil, isCompleted: true)
+        let current = WorkoutSession(date: Date(), templateId: UUID(), isCompleted: false)
+        let previous = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: UUID(), isCompleted: true)
         previous.setEntries = [
             SetEntry(sessionId: previous.id, exerciseId: exerciseID, weight: 0, reps: 8, isCompleted: true),
             SetEntry(sessionId: previous.id, exerciseId: exerciseID, weight: 20, reps: 20, isWarmup: true, isCompleted: true, setIndex: 1)
@@ -43,7 +43,7 @@ final class ProgressionPersistenceTests: XCTestCase {
         enum Failure: Error { case disk }
         let container = try makeContainer(at: temporaryStoreURL(named: "failed-save"))
         let context = container.mainContext
-        let session = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        let session = WorkoutSession(date: Date(), templateId: UUID(), isCompleted: false)
         context.insert(session)
         try context.save()
         session.isCompleted = true
@@ -59,7 +59,7 @@ final class ProgressionPersistenceTests: XCTestCase {
     func testSetUndoRestoresIdentityOrderAndEveryRecordedValue() throws {
         let container = try makeContainer(at: temporaryStoreURL(named: "set-undo"))
         let context = container.mainContext
-        let session = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        let session = WorkoutSession(date: Date(), templateId: UUID(), isCompleted: false)
         context.insert(session)
         let entry = SetEntry(sessionId: session.id, exerciseId: UUID(), weight: 61.25, reps: 9,
                              rpe: 8, rir: 2, isWarmup: false, isCompleted: true,
