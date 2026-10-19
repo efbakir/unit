@@ -1,3 +1,5 @@
+> **October 19 development checkpoint:** The connected phone started on 2.1 (65); this isolated release branch targets **2.1 (68), development-only and unreserved**. Public lookup still reports 2.0. Live App Store Connect build numbers could not be read, so do not upload or attach 68 until the highest uploaded number is checked. The August status and build-67 checklist below are historical, not current release proof. See `docs/handoffs/2026-10-19-unit-motion-release.md` for this pass and its evidence.
+
 # Final submit checklist — Unit v2.1 (build 67)
 
 > The ASC handoff package. Copy fields are paste-exact; the introductory offers require the founder actions in §4 before submission.
