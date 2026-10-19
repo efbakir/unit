@@ -2182,8 +2182,7 @@ struct SetProgressIndicator: View {
 
         var chipText: String? {
             guard let reps, let weightText, !weightText.isEmpty else { return nil }
-            let compactWeightText = weightText.replacingOccurrences(of: " ", with: "\u{202F}")
-            return "\(compactWeightText)\u{2009}×\u{2009}\(reps)"
+            return WorkoutTargetFormatter.compactMetricSpacing("\(weightText) × \(reps)")
         }
     }
 
@@ -4313,7 +4312,7 @@ struct WorkoutCommandCard: View {
 
     @ViewBuilder
     private var metricValueText: some View {
-        Text(metricValue)
+        Text(WorkoutTargetFormatter.compactMetricSpacing(metricValue))
             // Restore the original prominent workout readout through the
             // existing 36pt numeric-display role; editors keep their own size.
             .font(AppFont.numericDisplay.font)

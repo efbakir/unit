@@ -38,6 +38,17 @@ enum WorkoutTargetFormatter {
         return "\(kg.weightString) kg"
     }
 
+    /// Compact display spacing shared by the large workout readout and set chips.
+    /// Thin operator spaces avoid full monospaced cells around ×; narrow,
+    /// nonbreaking unit spaces keep the amount and its unit together.
+    /// Callers retain the original sentence for accessibility.
+    static func compactMetricSpacing(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: " × ", with: "\u{2009}×\u{2009}")
+            .replacingOccurrences(of: " kg", with: "\u{202F}kg")
+            .replacingOccurrences(of: " lb", with: "\u{202F}lb")
+    }
+
     /// Inline weight token for compact metrics (`60kg`, `132.5lb`).
     static func weightCompact(_ kg: Double) -> String {
         let unit = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
