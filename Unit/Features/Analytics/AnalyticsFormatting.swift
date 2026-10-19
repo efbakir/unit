@@ -1,0 +1,46 @@
+import Foundation
+
+extension WorkoutTargetFormatter {
+    static func analyticsWeight(_ kg: Double, unit: String, locale: Locale = .current, delta: Bool = false) -> String {
+        var value = unit == "lb" ? kg * 2.20462 : kg
+        let precision = unit == "lb" ? 1 : 2
+        let step = unit == "lb" ? 0.1 : 0.01
+        if delta && kg > 0 && (value / step).rounded() == 0 { value = step }
+        return "\(value.formatted(.number.locale(locale).grouping(.automatic).precision(.fractionLength(0...precision)))) \(unit)"
+    }
+    static func analyticsPerformance(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String) -> String {
+        "\(bodyweight ? "BW" : analyticsWeight(value.weight, unit: unit)) × \(value.reps.formatted())"
+    }
+    static func analyticsTarget(_ value: AnalyticsEngine.Target, unit: String) -> String {
+        "\(value.weight > 0 ? analyticsWeight(value.weight, unit: unit) : "BW") × \(value.reps.formatted())"
+    }
+    static func analyticsChange(_ state: AnalyticsEngine.Comparison, unit: String, spoken: Bool = false) -> String {
+        switch state {
+        case let .up(weight, reps):
+            let value = weight > 0 ? analyticsWeight(weight, unit: unit, delta: true) : "\(reps.formatted()) \(reps == 1 ? "rep" : "reps")"
+            return spoken ? "Up \(value)" : "+\(value)"
+        case .same: return "Same"
+        case .mixed: return "Mixed"
+        case .belowBest: return "Below best"
+        case .new, .notRecent: return spoken ? "No comparison yet" : "—"
+        }
+    }
+    static func analyticsDate(_ date: Date, now: Date, calendar: Calendar = .current) -> String {
+        if calendar.component(.year, from: date) == calendar.component(.year, from: now) {
+            return date.formatted(.dateTime.month(.abbreviated).day())
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day().year())
+    }
+    static func analyticsSummary(_ value: AnalyticsEngine.Summary, now: Date) -> String {
+        if value.status == .baseline { return "First session \(analyticsDate(value.firstDay, now: now))." }
+        if value.status == .fewer && value.sessions == 0 { return "Last session \(analyticsDate(value.lastDay, now: now))." }
+        let sessions = value.planned > 0
+            ? "\(value.sessions.formatted()) of \(value.planned.formatted()) sessions done."
+            : "\(value.sessions.formatted()) \(value.sessions == 1 ? "session" : "sessions") done."
+        return value.comparable < 2 ? sessions : "\(value.up.formatted()) of \(value.comparable.formatted()) lifts up. \(sessions)"
+    }
+    static func analyticsSpokenSet(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String) -> String {
+        let load = bodyweight ? "Bodyweight" : analyticsWeight(value.weight, unit: unit).replacingOccurrences(of: " kg", with: " kilograms").replacingOccurrences(of: " lb", with: " pounds")
+        return "\(load) times \(value.reps.formatted())"
+    }
+}
