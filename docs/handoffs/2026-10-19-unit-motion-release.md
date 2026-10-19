@@ -110,3 +110,8 @@ Their shared-file ownership is separated, and build access stays coordinated. Th
 - **Simulator coordination:** both release Simulators were shut down at the end of main verification. Follow-on chats may reuse them only under the shared atomic verification lock; unrelated Simulators remain untouched.
 - **Remaining proof limits:** physical haptic feel, a complete manual VoiceOver walkthrough, unusual import formats, and real Apple sandbox purchase/restore are not fully verified. No known blocking defect remains in the exercised routes; this is not a claim of exhaustive coverage.
 - **Reproducible handoff:** final documentation is committed on `codex/unit-release-20261019`; the intended source tag is `unit-dev-2.1-68-20261019`. The original dirty checkout remains untouched. The Profile and native-control branches continue separately and are not part of this installed build.
+
+
+## Subsequent delivery — 19 October, build 69
+
+The follow-on Analytics tab (renamed from Profile), native SwiftUI selections and approved navigation cues are now installed and launched as **2.1 (69)**. Training data remained row-identical. See [the final combined handoff](2026-10-19-unit-profile-native-release.md) for exact test limits, the user’s stop-testing instruction and final source checkpoint. Earlier pending follow-on statements above describe the build-68 checkpoint.

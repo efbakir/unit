@@ -36,3 +36,8 @@ All 20 findings have a disposition; this is **not 20/20 runtime-verified**. No c
 Development delivery completion requires main's exact combined build 69 checks, successful signed in-place install and launch, and data-preservation comparison. Public store submission separately requires App Store Connect build/product verification and real Apple sandbox purchase/restore. Those store prerequisites must not block an otherwise successful development install.
 
 Evidence: `docs/handoffs/2026-10-19-unit-motion-release.md` closing evidence (build 68), `docs/qa/native-controls-source-review.md` (focused native cases and interrupted aggregate status), and main release chat's current integrated build 69 report. This audit chat performed no build, Simulator operation, phone operation, or app-source edit.
+
+
+## Main delivery outcome
+
+Build **2.1 (69)** was installed and launched normally; final application source `612d3b7`. All five training tables were row-identical after the final refresh. Integrated iOS 27 logs record 204 passing unit tests and five passing UI journeys; two UI navigation assumptions were corrected but not rerun. The user stopped further testing, so final combined iOS 18 and manual VoiceOver/haptic passes remain unverified. Final naming/navigation cues compiled and launched but did not receive a new visual pass. See the [combined handoff](../handoffs/2026-10-19-unit-profile-native-release.md).
