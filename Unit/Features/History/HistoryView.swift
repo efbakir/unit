@@ -766,28 +766,17 @@ struct SessionExerciseSummary: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-                Text(exercise.name)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // PR marker lives at the exercise grain only while the
-                // uniform one-line summary hides the per-set rows; once the
-                // breakdown renders, the per-set tags below carry it instead
-                // — exactly one grain tagged at a time.
-                if exercise.hasPR, !showsPerSetBreakdown {
-                    historyPRTag()
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
+                    exerciseTitle.fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: AppSpacing.sm)
+                    headerMetric.fixedSize(horizontal: true, vertical: false)
                 }
-
-                if let headerSummary {
-                    Text(headerSummary)
-                        .font(AppFont.performance.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .monospacedDigit()
-                        .lineLimit(1)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    exerciseTitle
+                    headerMetric
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if showsPerSetBreakdown {
@@ -796,6 +785,30 @@ struct SessionExerciseSummary: View {
                         setBreakdownRow(for: set)
                     }
                 }
+            }
+        }
+    }
+
+    private var exerciseTitle: some View {
+        Text(exercise.name)
+            .font(AppFont.sectionHeader.font)
+            .foregroundStyle(AppColor.textPrimary)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var headerMetric: some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+            // Uniform summaries own one PR marker; varied sets tag their own rows.
+            if exercise.hasPR, !showsPerSetBreakdown {
+                historyPRTag()
+            }
+            if let headerSummary {
+                Text(headerSummary)
+                    .font(AppFont.performance.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
