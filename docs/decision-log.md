@@ -523,3 +523,8 @@ The user explicitly requested a more energetic Start Workout moment after trying
 ### 2026-10-19 — Native material bars and defined edges
 
 The user explicitly replaced the earlier soft-fade-only bar rule with native blurred material, defined vertical boundaries and subtle separators. Shared navigation/header/action-bar owners now use system `.bar` material; the canonical edge owner uses hard vertical edges on iOS26+ (including the connected iOS27 phone). Horizontal content clipping stays soft. System sheets keep their native background. No content-card material, sizing or typography changes. This supersedes transparent scroll-edge appearances, removed navigation separators, opaque custom bar fills and hand-drawn bar gradients.
+
+
+### 2026-10-19 — Prepare targets without logging a set
+
+The user clarified that entering initial weight/reps is preparation, not completion. The upcoming-set editor saves an unlogged, session-scoped target and routine starting values. Only the explicit Complete set action inserts a completed SetEntry, advances set progress, starts rest or emits set-success feedback. Existing completed-set chip editing remains an edit of recorded history. Preparation survives relaunch; notes transfer only when the set is actually completed. Explicit session preparation can override automatic prefill for that session, without changing accepted progression targets or labelling preparation as Last time.

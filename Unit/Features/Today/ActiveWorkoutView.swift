@@ -28,6 +28,8 @@ struct ActiveWorkoutView: View {
     @AppStorage("restDurationSeconds") private var restDurationSeconds = 120
     @State private var showLineup = false
     @State private var adjustResultPayload: AdjustResultPayload?
+    /// Unlogged targets are session-scoped drafts, never SetEntry history.
+    @AppStorage("unit.preparedSetTargets") private var preparedSetTargetsData = Data()
     @State private var selectedExerciseIndex = 0
     @State private var showsReadyState = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -115,7 +117,7 @@ struct ActiveWorkoutView: View {
         orderedExercises.map { exercise in
             let plannedSetCount = plannedSetCount(for: exercise.id)
             let entries = currentEntries(for: exercise.id).filter { !$0.isWarmup }
-            let prefill = viewModel.prefillSet(
+            let prefill = preparedTarget(for: exercise.id) ?? viewModel.prefillSet(
                 for: exercise.id,
                 currentSession: session,
                 sessions: sessions,
@@ -224,7 +226,8 @@ struct ActiveWorkoutView: View {
                 metricIsHint: metricIsPlaceholder(for: section),
                 metricIsGhost: metricIsGhost(for: section),
                 state: workoutCommandCardState(for: section),
-                primaryLabel: AppCopy.Workout.completeSet,
+                primaryLabel: metricIsPlaceholder(for: section)
+                    ? AppCopy.Workout.logMetricHint : AppCopy.Workout.completeSet,
                 onPrimaryAction: section.hasReachedPlannedSetGoal ? nil : {
                     completeSuggestedSet(
                         exercise: section.exercise,
@@ -262,6 +265,12 @@ struct ActiveWorkoutView: View {
     }
 
     private func metricValue(for section: WorkoutExerciseSectionModel) -> String {
+        if let target = preparedTarget(for: section.exercise.id) {
+            return WorkoutTargetFormatter.milestoneText(
+                weightKg: target.weight, reps: target.reps,
+                isBodyweight: section.exercise.isBodyweight
+            ) ?? emptyMetricPlaceholder()
+        }
         if let lastValues = lastLoggedValues(for: section.exercise.id) {
             return WorkoutTargetFormatter.milestoneText(
                 weightKg: lastValues.weight,
@@ -291,6 +300,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func metricIsPlaceholder(for section: WorkoutExerciseSectionModel) -> Bool {
+        if preparedTarget(for: section.exercise.id) != nil { return false }
         if lastLoggedValues(for: section.exercise.id) != nil { return false }
         if section.prefill?.source == .acceptedProgression { return false }
         if hasUsableStartingTarget(section) { return false }
@@ -299,6 +309,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func metricIsGhost(for section: WorkoutExerciseSectionModel) -> Bool {
+        if preparedTarget(for: section.exercise.id) != nil { return false }
         if lastLoggedValues(for: section.exercise.id) != nil { return false }
         if section.prefill?.source == .acceptedProgression { return false }
         if hasUsableStartingTarget(section) { return false }
@@ -319,6 +330,9 @@ struct ActiveWorkoutView: View {
     private func metricSupportingText(
         for section: WorkoutExerciseSectionModel
     ) -> String? {
+        if preparedTarget(for: section.exercise.id) != nil {
+            return section.entries.isEmpty ? AppCopy.Workout.startingTargetLabel : "Next set"
+        }
         if section.entries.isEmpty, hasUsableStartingTarget(section) {
             return AppCopy.Workout.startingTargetLabel
         }
@@ -458,14 +472,11 @@ struct ActiveWorkoutView: View {
             AdjustResultSheet(
                 exerciseName: payload.exercise.displayName,
                 isBodyweight: payload.exercise.isBodyweight,
-                mode: .log(prefill: payload.prefill),
+                mode: .prepare(prefill: payload.prefill),
                 onSave: { weight, reps, note in
-                    completeSet(
-                        exercise: payload.exercise,
-                        weight: weight,
-                        reps: reps,
-                        note: note,
-                        reportsFailure: false
+                    savePreparedTarget(
+                        exercise: payload.exercise, weight: weight,
+                        reps: reps, note: note
                     )
                 }
             )
@@ -892,7 +903,7 @@ struct ActiveWorkoutView: View {
 
         if let prefill,
            prefill.source != .planned || exercise.isBodyweight || prefill.weight > 0 {
-            if completeSet(exercise: exercise, weight: prefill.weight, reps: prefill.reps) {
+            if completeSet(exercise: exercise, weight: prefill.weight, reps: prefill.reps, note: prefill.note) {
                 noKeyboardSetCount += 1
             }
             return
@@ -902,6 +913,45 @@ struct ActiveWorkoutView: View {
             exercise: exercise,
             prefill: prefill
         )
+    }
+
+    private var preparedTargets: [String: [String: SetPrefill]] {
+        (try? JSONDecoder().decode([String: [String: SetPrefill]].self, from: preparedSetTargetsData)) ?? [:]
+    }
+
+    private func preparedTarget(for exerciseID: UUID) -> SetPrefill? {
+        preparedTargets[session.id.uuidString]?[exerciseID.uuidString]
+    }
+
+    private func savePreparedTarget(exercise: Exercise, weight: Double, reps: Int, note: String) -> Bool {
+        guard let template, weight.isFinite, weight >= 0, reps > 0 else { return false }
+        var targets = preparedTargets
+        var sessionTargets = targets[session.id.uuidString] ?? [:]
+        sessionTargets[exercise.id.uuidString] = SetPrefill(
+            weight: weight, reps: reps, source: .prepared, note: note
+        )
+        targets[session.id.uuidString] = sessionTargets
+        guard let encoded = try? JSONEncoder().encode(targets) else { return false }
+        // Save the starting values without manufacturing a completed history row.
+        // Explicit per-workout preparation overrides prefill only in this session.
+        template.setPlannedWeight(weight, for: exercise.id)
+        template.setPlannedReps(reps, for: exercise.id)
+        if weight == 0 { exercise.isBodyweight = true }
+        guard saveWorkoutChanges(reportsFailure: false) else { return false }
+        preparedSetTargetsData = encoded
+        return true
+    }
+
+    private func clearPreparedTarget(for exerciseID: UUID? = nil) {
+        var targets = preparedTargets
+        let key = session.id.uuidString
+        if let exerciseID {
+            targets[key]?.removeValue(forKey: exerciseID.uuidString)
+            if targets[key]?.isEmpty == true { targets.removeValue(forKey: key) }
+        } else {
+            targets.removeValue(forKey: key)
+        }
+        if let encoded = try? JSONEncoder().encode(targets) { preparedSetTargetsData = encoded }
     }
 
     @discardableResult
@@ -943,6 +993,7 @@ struct ActiveWorkoutView: View {
         // Do not animate a pending insert that may immediately roll back.
         modelContext.insert(entry)
         guard saveWorkoutChanges(reportsFailure: reportsFailure) else { return false }
+        clearPreparedTarget(for: exercise.id)
         showsReadyState = false
 
         // Trigger the success haptic on `WorkoutCommandCard` via the bound
@@ -1076,6 +1127,7 @@ struct ActiveWorkoutView: View {
             )
         }
         guard saveWorkoutChanges() else { return }
+        clearPreparedTarget()
         restTimer.stop()
         let completedSetCount = session.setEntries.filter {
             $0.isCompleted && !$0.isWarmup
@@ -1109,6 +1161,7 @@ struct ActiveWorkoutView: View {
     private func cancelWorkout() {
         modelContext.delete(session)
         guard saveWorkoutChanges() else { return }
+        clearPreparedTarget()
         restTimer.stop()
     }
 
@@ -1197,10 +1250,10 @@ private struct AdjustResultSheet: View {
     }
 
     /// Drives the sheet's seed values, primary CTA, and trailing destructive action.
-    /// `.log` is the original new-set flow (prefill from prior session). `.edit` is
+    /// `.prepare` saves an unlogged target. `.edit` is
     /// the new chip-tap flow (seed from the existing entry, expose Delete set).
     enum Mode {
-        case log(prefill: SetPrefill?)
+        case prepare(prefill: SetPrefill?)
         case edit(weight: Double, reps: Int, note: String, setNumber: Int)
     }
 
@@ -1209,7 +1262,7 @@ private struct AdjustResultSheet: View {
     let mode: Mode
     let onSave: (_ weight: Double, _ reps: Int, _ note: String) -> Bool
     /// Edit mode only — when non-nil, a native trash action appears in the
-    /// top-right toolbar. Log mode passes nil.
+    /// top-right toolbar. Prepare mode passes nil.
     var onDelete: (() -> Bool)? = nil
 
     @Environment(\.dismiss) private var dismiss
@@ -1294,7 +1347,7 @@ private struct AdjustResultSheet: View {
     /// A complete starting target is immediately usable. Only genuinely empty
     /// first-session weight input receives focus.
     private var shouldAutofocusWeight: Bool {
-        guard case .log(let prefill) = mode else { return false }
+        guard case .prepare(let prefill) = mode else { return false }
         guard let prefill else { return true }
         return prefill.source == .planned
             && prefill.weight <= 0
@@ -1302,7 +1355,7 @@ private struct AdjustResultSheet: View {
     }
 
     private var primaryLabel: String {
-        isEditMode ? AppCopy.Workout.saveChanges : AppCopy.Workout.completeSet
+        isEditMode ? AppCopy.Workout.saveChanges : AppCopy.Workout.saveTarget
     }
 
     private var navigationTitle: String {
@@ -1404,7 +1457,7 @@ private struct AdjustResultSheet: View {
         // forwards the gesture into a no-op; the explicit Cancel button stays
         // available and feeds the same discard-confirmation alert below.
         .interactiveDismissDisabled(isDirty)
-        .alert("Couldn't save set", isPresented: $showsSaveFailure) {
+        .alert(isEditMode ? "Couldn't save set" : "Couldn't save target", isPresented: $showsSaveFailure) {
             Button(AppCopy.Nav.close, role: .cancel) { }
         } message: {
             Text("Your entries are still here. Try saving again.")
@@ -1424,8 +1477,9 @@ private struct AdjustResultSheet: View {
             guard !seeded else { return }
             seeded = true
             switch mode {
-            case .log(let prefill):
+            case .prepare(let prefill):
                 if let prefill {
+                    noteText = prefill.note
                     if prefill.source != .planned || prefill.weight > 0 {
                         weightText = seedWeightText(prefill.weight)
                     }
@@ -1438,7 +1492,7 @@ private struct AdjustResultSheet: View {
             }
             // Snapshot the post-seed values so `isDirty` only flips true on a
             // real user edit. Setting these *after* the switch covers both
-            // `.log` (which only writes weight/reps) and `.edit` (which writes
+            // `.prepare` (which seeds the upcoming target) and `.edit` (which writes
             // all three) without duplicating the assignment per case.
             seededWeightText = weightText
             seededRepsText = repsText
@@ -1535,8 +1589,9 @@ private struct SetCountPickerSheet: View {
     }
 }
 
-struct SetPrefill {
-    enum Source: Equatable {
+struct SetPrefill: Codable {
+    enum Source: String, Equatable, Codable {
+        case prepared
         case currentSession
         case acceptedProgression
         case priorSession
@@ -1546,6 +1601,7 @@ struct SetPrefill {
     let weight: Double
     let reps: Int
     let source: Source
+    var note: String = ""
 }
 
 @MainActor

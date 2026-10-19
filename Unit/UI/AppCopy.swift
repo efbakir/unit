@@ -20,7 +20,8 @@ enum AppCopy {
         /// — tap opens manual entry. Reads as the starting-point on session 1 (first
         /// set ever) and stays accurate when an established user adds a brand-new
         /// exercise mid-session (first set for *this* exercise).
-        static let logMetricHint = "Log first set"
+        static let logMetricHint = "Set weight and reps"
+        static let saveTarget = "Save target"
         /// Adjust-result sheet — label above the optional note field (same row as weight/reps captions).
         static let adjustSetNoteLabel = "Note"
         /// Grey placeholder hinting how the note is used (supersets, equipment, etc.).

@@ -74,3 +74,7 @@ owned by the coordinating release chat.
 ## Native chrome override — October 19
 
 Native navigation material and separators stay intact. Pinned headers/action areas use the shared `.bar` background and full-width boundaries. The existing canonical edge modifier owns hard vertical/soft horizontal clipping; feature-local gradient fades must not return. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.
+
+## Preparation is not completion — October 19
+
+Saving an upcoming target never creates a completed set, advances set progress, starts rest or emits completion feedback. `AdjustResultSheet.prepare` saves the target; `Complete set` alone records performance. Prepared targets persist separately by session/exercise, survive relaunch and clear only after successful logging/finish/cancellation. Recorded-set chip editing remains distinct. Preserve entered notes and canonical kg/BW values. No fabricated history rows.
