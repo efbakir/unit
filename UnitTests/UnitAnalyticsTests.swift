@@ -52,7 +52,8 @@ final class UnitAnalyticsTests: XCTestCase {
         XCTAssertEqual(UnitAnalyticsEvent.allowedNames, [
             "onboarding_started", "onboarding_slide_viewed", "weight_unit_selected",
             "program_source_selected", "program_match_selected", "program_setup_completed", "paywall_viewed",
-            "trial_started", "purchase_completed", "workout_started", "workout_completed",
+            "trial_reminder_preference_changed", "trial_reminder_authorization",
+            "purchase_started", "trial_started", "purchase_completed", "workout_started", "workout_completed",
             "progression_recommendation_shown", "progression_decision", "feedback_action"
         ])
     }
@@ -78,6 +79,9 @@ final class UnitAnalyticsTests: XCTestCase {
                 rank: 1
             ),
             .paywallViewed(trialEligibility: "eligible"),
+            .trialReminderPreferenceChanged(isEnabled: true),
+            .trialReminderAuthorization(outcome: .scheduled),
+            .purchaseStarted(tier: "annual", hasTrial: true, reminderRequested: true),
             .purchaseCompleted(
                 tier: "annual",
                 context: ProgramSetupContext(
@@ -137,6 +141,25 @@ final class UnitAnalyticsTests: XCTestCase {
             "experience": "intermediate",
             "days": "4"
         ])
+    }
+
+    func testPurchaseAndReminderPayloadsStayControlled() {
+        XCTAssertEqual(
+            UnitAnalyticsEvent.purchaseStarted(
+                tier: "unexpected",
+                hasTrial: true,
+                reminderRequested: false
+            ).payload.parameters,
+            ["tier": "unknown", "has_trial": "true", "reminder_requested": "false"]
+        )
+        XCTAssertEqual(
+            UnitAnalyticsEvent.trialReminderPreferenceChanged(isEnabled: true).payload.parameters,
+            ["is_enabled": "true"]
+        )
+        XCTAssertEqual(
+            UnitAnalyticsEvent.trialReminderAuthorization(outcome: .denied).payload.parameters,
+            ["outcome": "denied"]
+        )
     }
 
     private func makeFixture(

@@ -23,7 +23,21 @@ enum ProgramCatalog {
         arnoldSplit,
         nSuns531,
         phul,
-        combatPower
+        combatPower,
+        upperLower2Day,
+        barbellFoundation,
+        heavyLightMedium,
+        volumeRecoveryIntensity,
+        goldenSix,
+        balancedFullBody,
+        fourFourEight,
+        tenByTen,
+        classicUpperLower,
+        machineDumbbellUpperLower,
+        classicBroSplit,
+        dailyStrengthPractice,
+        highVolumePowerbuilding,
+        classicPushPullLegs
     ]
 
     static var supportedDays: [Int] {
@@ -654,4 +668,540 @@ enum ProgramCatalog {
             ])
         ]
     )
+
+    // MARK: - Expanded weekly template catalog
+
+    /// These are independent Unit representations of widely documented training
+    /// methods. They include only the prescription facts Unit needs—days,
+    /// exercises, sets and reps—and do not copy Liftosaur descriptions, scripts,
+    /// progression engines or multi-week blocks.
+    private static let upperLower2Day = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000013")!,
+        name: "Upper / Lower 2-Day",
+        level: .beginner,
+        goal: .mixed,
+        daysPerWeek: 2,
+        summary: "One upper-body day and one lower-body day for a compact training week.",
+        description: "A balanced two-day split for lifters who want focused sessions without training more than twice a week. Each major movement pattern is covered with straightforward working sets.",
+        days: [
+            catalogDay("Upper", weekday: 3, items: [
+                ("Bench Press", 3, 8),
+                ("Lat Pulldown", 3, 10),
+                ("OHP (BB)", 3, 8),
+                ("Seated Cable Row", 3, 10),
+                ("DB Curl", 2, 12),
+                ("Triceps Pushdown", 2, 12)
+            ]),
+            catalogDay("Lower", weekday: 6, items: [
+                ("Back Squat (BB)", 3, 8),
+                ("Romanian DL", 3, 8),
+                ("Leg Press", 3, 10),
+                ("Hamstring Curl", 3, 10),
+                ("Standing Calf Raise", 3, 12),
+                ("Plank", 3, 45)
+            ])
+        ]
+    )
+
+    private static let barbellFoundation = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000014")!,
+        name: "Barbell Foundation",
+        level: .beginner,
+        goal: .strength,
+        daysPerWeek: 3,
+        summary: "Two alternating full-body sessions built around six barbell movements.",
+        description: "A simple three-day strength routine. Alternate the two sessions, practice the main lifts often and begin with loads that leave clean reps in reserve.",
+        days: [
+            catalogDay("Foundation A", weekday: 2, items: [
+                ("Back Squat (BB)", 3, 5),
+                ("Bench Press", 3, 5),
+                ("Bent Over Row (BB)", 3, 5)
+            ]),
+            catalogDay("Foundation B", weekday: 4, items: [
+                ("Back Squat (BB)", 3, 5),
+                ("OHP (BB)", 3, 5),
+                ("Deadlift (Conv)", 1, 5)
+            ]),
+            catalogDay("Foundation A (repeat)", weekday: 6, items: [
+                ("Back Squat (BB)", 3, 5),
+                ("Bench Press", 3, 5),
+                ("Bent Over Row (BB)", 3, 5)
+            ])
+        ]
+    )
+
+    private static let heavyLightMedium = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000015")!,
+        name: "Heavy / Light / Medium 5×5",
+        level: .intermediate,
+        goal: .strength,
+        daysPerWeek: 3,
+        summary: "Three full-body days with heavy, lighter and medium-volume exposures.",
+        description: "A weekly 5×5 structure for lifters moving beyond session-to-session progression. The same core lifts repeat at different workloads across the week.",
+        days: [
+            catalogDay("Heavy", weekday: 2, items: [
+                ("Back Squat (BB)", 5, 5),
+                ("Bench Press", 5, 5),
+                ("Bent Over Row (BB)", 5, 5)
+            ]),
+            catalogDay("Light", weekday: 4, items: [
+                ("Back Squat (BB)", 4, 5),
+                ("OHP (BB)", 4, 5),
+                ("Deadlift (Conv)", 3, 5)
+            ]),
+            catalogDay("Medium", weekday: 6, items: [
+                ("Back Squat (BB)", 4, 5),
+                ("Bench Press", 4, 5),
+                ("Bent Over Row (BB)", 4, 5),
+                ("Barbell Curl", 3, 10),
+                ("Triceps Extension", 3, 10)
+            ])
+        ]
+    )
+
+    private static let volumeRecoveryIntensity = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000016")!,
+        name: "Volume / Recovery / Intensity",
+        level: .intermediate,
+        goal: .strength,
+        daysPerWeek: 3,
+        summary: "A three-day strength week that moves from volume to recovery to intensity.",
+        description: "Accumulate work early in the week, recover with a lighter middle session and finish with a low-volume heavy day. This creates a clear weekly rhythm without adding a cycle screen.",
+        days: [
+            catalogDay("Volume", weekday: 2, items: [
+                ("Back Squat (BB)", 5, 5),
+                ("Bench Press", 5, 5),
+                ("Deadlift (Conv)", 1, 5)
+            ]),
+            catalogDay("Recovery", weekday: 4, items: [
+                ("Front Squat", 2, 5),
+                ("OHP (BB)", 3, 5),
+                ("Chin-Up", 3, 8),
+                ("Plank", 3, 45)
+            ]),
+            catalogDay("Intensity", weekday: 6, items: [
+                ("Back Squat (BB)", 1, 5),
+                ("Bench Press", 1, 5),
+                ("Deadlift (Conv)", 1, 5),
+                ("Pull-Up", 3, 8)
+            ])
+        ]
+    )
+
+    private static let goldenSix = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000017")!,
+        name: "Golden Six",
+        level: .beginner,
+        goal: .hypertrophy,
+        daysPerWeek: 3,
+        summary: "Six classic movements repeated three times per week for full-body muscle gain.",
+        description: "A concise full-body bodybuilding routine. Repeating the same six movements keeps setup simple while each session covers legs, chest, back, shoulders, arms and trunk.",
+        days: [
+            goldenSixDay("Golden Six A", weekday: 2),
+            goldenSixDay("Golden Six B", weekday: 4),
+            goldenSixDay("Golden Six C", weekday: 6)
+        ]
+    )
+
+    private static let balancedFullBody = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000018")!,
+        name: "Balanced Full Body",
+        level: .beginner,
+        goal: .mixed,
+        daysPerWeek: 3,
+        summary: "Alternating full-body sessions with compounds and balanced accessory work.",
+        description: "A beginner-friendly three-day routine that balances strength practice with enough accessory work for even development. Alternate A and B across the week.",
+        days: [
+            catalogDay("Balanced A", weekday: 2, items: [
+                ("Back Squat (BB)", 3, 5),
+                ("Bench Press", 3, 5),
+                ("Bent Over Row (BB)", 3, 8),
+                ("Hamstring Curl", 3, 10),
+                ("Face Pull", 3, 12),
+                ("Standing Calf Raise", 2, 15)
+            ]),
+            catalogDay("Balanced B", weekday: 4, items: [
+                ("Deadlift (Conv)", 3, 5),
+                ("OHP (BB)", 3, 5),
+                ("Lat Pulldown", 3, 8),
+                ("Bulgarian Split Squat", 3, 10),
+                ("Triceps Pushdown", 3, 12),
+                ("Plank", 3, 45)
+            ]),
+            catalogDay("Balanced A (repeat)", weekday: 6, items: [
+                ("Back Squat (BB)", 3, 5),
+                ("Bench Press", 3, 5),
+                ("Bent Over Row (BB)", 3, 8),
+                ("Hamstring Curl", 3, 10),
+                ("Face Pull", 3, 12),
+                ("Standing Calf Raise", 2, 15)
+            ])
+        ]
+    )
+
+    private static let fourFourEight = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000019")!,
+        name: "4 / 4 / 8 Barbell",
+        level: .beginner,
+        goal: .strength,
+        daysPerWeek: 3,
+        summary: "A three-day barbell routine pairing heavy sets of four with volume sets of eight.",
+        description: "Bench and overhead press alternate between heavier and lighter roles while squats, deadlifts and pulling movements round out each session.",
+        days: [
+            catalogDay("4 / 4 / 8 A", weekday: 2, items: [
+                ("Bench Press", 4, 4),
+                ("OHP (BB)", 4, 8),
+                ("Bent Over Row (BB)", 4, 8),
+                ("Back Squat (BB)", 4, 4)
+            ]),
+            catalogDay("4 / 4 / 8 B", weekday: 4, items: [
+                ("OHP (BB)", 4, 4),
+                ("Bench Press", 4, 8),
+                ("Chin-Up", 4, 8),
+                ("Deadlift (Conv)", 4, 4)
+            ]),
+            catalogDay("4 / 4 / 8 A (repeat)", weekday: 6, items: [
+                ("Bench Press", 4, 4),
+                ("OHP (BB)", 4, 8),
+                ("Bent Over Row (BB)", 4, 8),
+                ("Back Squat (BB)", 4, 4)
+            ])
+        ]
+    )
+
+    private static let tenByTen = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000020")!,
+        name: "10×10 Hypertrophy",
+        level: .intermediate,
+        goal: .hypertrophy,
+        daysPerWeek: 3,
+        summary: "High-volume 10×10 work organized across three focused sessions.",
+        description: "A simple high-volume template built around one or two primary 10×10 movements per session, followed by smaller accessory work.",
+        days: [
+            catalogDay("Chest + Back", weekday: 2, items: [
+                ("Bench Press", 10, 10),
+                ("Seated Cable Row", 10, 10),
+                ("Incline DB Press", 3, 10),
+                ("Lat Pulldown", 3, 10)
+            ]),
+            catalogDay("Legs + Core", weekday: 4, items: [
+                ("Back Squat (BB)", 10, 10),
+                ("Hamstring Curl", 10, 10),
+                ("Standing Calf Raise", 3, 12),
+                ("Plank", 3, 45)
+            ]),
+            catalogDay("Shoulders + Arms", weekday: 6, items: [
+                ("OHP (BB)", 10, 10),
+                ("Barbell Curl", 10, 10),
+                ("Triceps Pushdown", 10, 10),
+                ("Lateral Raise (DB)", 3, 12)
+            ])
+        ]
+    )
+
+    private static let classicUpperLower = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
+        name: "Classic Upper / Lower",
+        level: .intermediate,
+        goal: .hypertrophy,
+        daysPerWeek: 4,
+        summary: "Four moderate-volume sessions training each muscle group twice per week.",
+        description: "Two upper and two lower sessions with stable exercise selection and practical hypertrophy rep ranges. The second pair changes angles without changing the weekly structure.",
+        days: [
+            catalogDay("Upper A", weekday: 2, items: [
+                ("Bench Press", 4, 8),
+                ("Bent Over Row (BB)", 4, 8),
+                ("Incline DB Press", 3, 10),
+                ("Lat Pulldown", 3, 10),
+                ("DB Curl", 3, 12),
+                ("Triceps Pushdown", 3, 12)
+            ]),
+            catalogDay("Lower A", weekday: 3, items: [
+                ("Back Squat (BB)", 4, 8),
+                ("Romanian DL", 4, 8),
+                ("Leg Press", 3, 12),
+                ("Hamstring Curl", 3, 12),
+                ("Standing Calf Raise", 4, 12)
+            ]),
+            catalogDay("Upper B", weekday: 5, items: [
+                ("OHP (BB)", 4, 8),
+                ("Pull-Up", 4, 8),
+                ("DB Bench Press", 3, 10),
+                ("Seated Cable Row", 3, 10),
+                ("Hammer Curl", 3, 12),
+                ("Skullcrusher", 3, 12)
+            ]),
+            catalogDay("Lower B", weekday: 6, items: [
+                ("Deadlift (Conv)", 3, 6),
+                ("Front Squat", 4, 8),
+                ("Bulgarian Split Squat", 3, 10),
+                ("Hamstring Curl", 3, 12),
+                ("Seated Calf Raise", 4, 12)
+            ])
+        ]
+    )
+
+    private static let machineDumbbellUpperLower = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
+        name: "Machine + Dumbbell Upper / Lower",
+        level: .beginner,
+        goal: .hypertrophy,
+        daysPerWeek: 4,
+        summary: "A four-day upper/lower plan using machines, cables and dumbbells.",
+        description: "A barbell-free hypertrophy option for gyms built around machines and dumbbells. Each muscle group is trained twice per week with familiar equipment.",
+        days: [
+            catalogDay("Upper A", weekday: 2, items: [
+                ("Chest Press Machine", 4, 10),
+                ("Seated Cable Row", 4, 10),
+                ("DB Shoulder Press", 3, 10),
+                ("Lat Pulldown", 3, 10),
+                ("DB Curl", 3, 12),
+                ("Triceps Pushdown", 3, 12)
+            ]),
+            catalogDay("Lower A", weekday: 3, items: [
+                ("Leg Press", 4, 10),
+                ("DB Romanian DL", 4, 10),
+                ("Leg Extension", 3, 12),
+                ("Hamstring Curl", 3, 12),
+                ("Standing Calf Raise", 4, 12)
+            ]),
+            catalogDay("Upper B", weekday: 5, items: [
+                ("DB Bench Press", 4, 10),
+                ("Chest-Supported Row", 4, 10),
+                ("Cable Lateral Raise", 3, 12),
+                ("Lat Pulldown", 3, 10),
+                ("Hammer Curl", 3, 12),
+                ("Triceps Extension", 3, 12)
+            ]),
+            catalogDay("Lower B", weekday: 6, items: [
+                ("Goblet Squat", 4, 10),
+                ("DB Romanian DL", 4, 10),
+                ("Bulgarian Split Squat", 3, 10),
+                ("Hamstring Curl", 3, 12),
+                ("Seated Calf Raise", 4, 12)
+            ])
+        ]
+    )
+
+    private static let classicBroSplit = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000023")!,
+        name: "Classic Body-Part Split",
+        level: .intermediate,
+        goal: .hypertrophy,
+        daysPerWeek: 5,
+        summary: "Five focused sessions with one primary body area trained each day.",
+        description: "A traditional bodybuilding week for lifters who prefer focused sessions and higher local volume. Each day has one clear training emphasis.",
+        days: [
+            catalogDay("Chest", weekday: 2, items: [
+                ("Bench Press", 4, 8),
+                ("Incline DB Press", 4, 10),
+                ("Chest Press Machine", 3, 10),
+                ("Cable Crossover", 3, 12),
+                ("Push-Up", 3, 15)
+            ]),
+            catalogDay("Back", weekday: 3, items: [
+                ("Deadlift (Conv)", 3, 5),
+                ("Pull-Up", 4, 8),
+                ("Bent Over Row (BB)", 4, 8),
+                ("Seated Cable Row", 3, 10),
+                ("Face Pull", 3, 12)
+            ]),
+            catalogDay("Legs", weekday: 4, items: [
+                ("Back Squat (BB)", 4, 8),
+                ("Romanian DL", 4, 8),
+                ("Leg Press", 4, 10),
+                ("Hamstring Curl", 3, 12),
+                ("Standing Calf Raise", 4, 12)
+            ]),
+            catalogDay("Shoulders", weekday: 5, items: [
+                ("OHP (BB)", 4, 8),
+                ("DB Shoulder Press", 3, 10),
+                ("Lateral Raise (DB)", 4, 12),
+                ("Rear Delt Fly", 4, 12),
+                ("Shrug (DB)", 3, 10)
+            ]),
+            catalogDay("Arms", weekday: 6, items: [
+                ("Barbell Curl", 4, 10),
+                ("Close-Grip Bench", 4, 8),
+                ("Hammer Curl", 3, 12),
+                ("Triceps Pushdown", 3, 12),
+                ("Preacher Curl", 3, 12),
+                ("Skullcrusher", 3, 12)
+            ])
+        ]
+    )
+
+    private static let dailyStrengthPractice = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000024")!,
+        name: "Daily Strength Practice",
+        level: .intermediate,
+        goal: .strength,
+        daysPerWeek: 5,
+        summary: "Five short submaximal sessions built around frequent, clean practice.",
+        description: "A low-fatigue weekday plan. Each session uses a squat, push, pull, hinge and trunk movement for two crisp working sets instead of one large weekly session.",
+        days: [
+            dailyPracticeDay("Practice A", weekday: 2, alternate: false),
+            dailyPracticeDay("Practice B", weekday: 3, alternate: true),
+            dailyPracticeDay("Practice A", weekday: 4, alternate: false),
+            dailyPracticeDay("Practice B", weekday: 5, alternate: true),
+            dailyPracticeDay("Practice A", weekday: 6, alternate: false)
+        ]
+    )
+
+    private static let highVolumePowerbuilding = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000025")!,
+        name: "High-Volume Powerbuilding",
+        level: .advanced,
+        goal: .mixed,
+        daysPerWeek: 5,
+        summary: "Two strength days followed by three higher-volume muscle-building days.",
+        description: "A demanding five-day split combining low-rep compound practice with separate back, lower-body and chest-and-arm volume sessions.",
+        days: [
+            catalogDay("Upper Power", weekday: 2, items: [
+                ("Bench Press", 4, 5),
+                ("Bent Over Row (BB)", 4, 5),
+                ("OHP (BB)", 3, 6),
+                ("Weighted Pull-Up", 3, 6),
+                ("Barbell Curl", 3, 8),
+                ("Close-Grip Bench", 3, 8)
+            ]),
+            catalogDay("Lower Power", weekday: 3, items: [
+                ("Back Squat (BB)", 4, 5),
+                ("Deadlift (Conv)", 3, 5),
+                ("Leg Press", 3, 8),
+                ("Hamstring Curl", 3, 10),
+                ("Standing Calf Raise", 4, 10)
+            ]),
+            catalogDay("Back + Shoulders", weekday: 4, items: [
+                ("Pull-Up", 4, 10),
+                ("Seated Cable Row", 4, 12),
+                ("DB Shoulder Press", 4, 10),
+                ("Lateral Raise (DB)", 4, 15),
+                ("Face Pull", 4, 15)
+            ]),
+            catalogDay("Lower Volume", weekday: 5, items: [
+                ("Front Squat", 4, 10),
+                ("Romanian DL", 4, 10),
+                ("Leg Press", 4, 15),
+                ("Hamstring Curl", 4, 15),
+                ("Seated Calf Raise", 4, 15)
+            ]),
+            catalogDay("Chest + Arms", weekday: 6, items: [
+                ("Incline DB Press", 4, 10),
+                ("DB Bench Press", 4, 12),
+                ("Cable Crossover", 3, 15),
+                ("DB Curl", 4, 12),
+                ("Triceps Pushdown", 4, 12),
+                ("Hammer Curl", 3, 15)
+            ])
+        ]
+    )
+
+    private static let classicPushPullLegs = ProgramTemplate(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000026")!,
+        name: "Classic Push Pull Legs",
+        level: .advanced,
+        goal: .hypertrophy,
+        daysPerWeek: 6,
+        summary: "A six-day push, pull and legs rotation with two weekly exposures.",
+        description: "A high-frequency hypertrophy split for experienced lifters. The second rotation changes angles while preserving the same push, pull and legs structure.",
+        days: [
+            catalogDay("Push A", weekday: 2, items: [
+                ("Bench Press", 4, 8),
+                ("OHP (BB)", 3, 8),
+                ("Incline DB Press", 3, 10),
+                ("Lateral Raise (DB)", 4, 12),
+                ("Triceps Pushdown", 3, 12)
+            ]),
+            catalogDay("Pull A", weekday: 3, items: [
+                ("Deadlift (Conv)", 3, 5),
+                ("Pull-Up", 4, 8),
+                ("Bent Over Row (BB)", 4, 8),
+                ("Face Pull", 3, 12),
+                ("Barbell Curl", 3, 10)
+            ]),
+            catalogDay("Legs A", weekday: 4, items: [
+                ("Back Squat (BB)", 4, 8),
+                ("Romanian DL", 4, 8),
+                ("Leg Press", 3, 12),
+                ("Hamstring Curl", 3, 12),
+                ("Standing Calf Raise", 4, 15)
+            ]),
+            catalogDay("Push B", weekday: 5, items: [
+                ("OHP (BB)", 4, 8),
+                ("DB Bench Press", 4, 10),
+                ("Cable Crossover", 3, 12),
+                ("Cable Lateral Raise", 4, 12),
+                ("Skullcrusher", 3, 12)
+            ]),
+            catalogDay("Pull B", weekday: 6, items: [
+                ("Weighted Pull-Up", 4, 6),
+                ("Seated Cable Row", 4, 10),
+                ("Single-Arm DB Row", 3, 10),
+                ("Rear Delt Fly", 3, 12),
+                ("Hammer Curl", 3, 12)
+            ]),
+            catalogDay("Legs B", weekday: 7, items: [
+                ("Front Squat", 4, 8),
+                ("DB Romanian DL", 4, 10),
+                ("Bulgarian Split Squat", 3, 10),
+                ("Leg Extension", 3, 12),
+                ("Seated Calf Raise", 4, 15)
+            ])
+        ]
+    )
+
+    private static func catalogDay(
+        _ name: String,
+        weekday: Int?,
+        items: [(exercise: String, sets: Int, reps: Int)]
+    ) -> ProgramDay {
+        ProgramDay(
+            id: UUID(),
+            name: name,
+            weekday: weekday,
+            items: items.map { item in
+                ProgramItem(
+                    exerciseName: item.exercise,
+                    setCount: item.sets,
+                    repTarget: item.reps
+                )
+            }
+        )
+    }
+
+    private static func goldenSixDay(_ name: String, weekday: Int) -> ProgramDay {
+        catalogDay(name, weekday: weekday, items: [
+            ("Back Squat (BB)", 4, 10),
+            ("Bench Press", 3, 10),
+            ("Chin-Up", 3, 8),
+            ("OHP (BB)", 4, 10),
+            ("Barbell Curl", 3, 10),
+            ("Plank", 3, 45)
+        ])
+    }
+
+    private static func dailyPracticeDay(
+        _ name: String,
+        weekday: Int,
+        alternate: Bool
+    ) -> ProgramDay {
+        if alternate {
+            return catalogDay(name, weekday: weekday, items: [
+                ("Front Squat", 2, 5),
+                ("OHP (BB)", 2, 5),
+                ("Seated Cable Row", 2, 5),
+                ("Romanian DL", 2, 5),
+                ("Plank", 2, 30)
+            ])
+        }
+
+        return catalogDay(name, weekday: weekday, items: [
+            ("Goblet Squat", 2, 5),
+            ("Bench Press", 2, 5),
+            ("Pull-Up", 2, 5),
+            ("Kettlebell Swing", 2, 10),
+            ("Plank", 2, 30)
+        ])
+    }
 }

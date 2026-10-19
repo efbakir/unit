@@ -25,7 +25,7 @@ Other source-of-truth docs:
 - **Gym Test**: one-handed, sweaty, ≤ 3 seconds to log a set.
 - **Last time** values (pre-fill from last session; formerly "ghost values", still `metricIsGhost` in code) are the primary logging mechanism.
 - **Templates** are the program unit — not cycles, not weeks, not engines.
-- **Local-first, light-first, quiet UI.** No social or feeds. Progression guidance is opt-in, transparent, post-workout, and never mutates a routine without acceptance.
+- **Local-first, light-only, quiet UI.** The recorded two-second black onboarding opener is a transition, not dark mode. No social or feeds. Progression guidance is opt-in, transparent, post-workout, and never mutates a routine without acceptance.
 
 ---
 
@@ -82,7 +82,7 @@ Files deleted from repo (don't recreate): see [`docs/claude/scope.md`](docs/clau
 
 1. **Keep it simple.** Default to removing. Fewer tokens, variants, words, screens.
 2. **Reuse components.** Grep `Unit/UI/DesignSystem.swift` first. ~80% fit → use or extend. *New primitives require explicit user okay.*
-3. **Light mode only.** No `.preferredColorScheme(.dark)`, no dark-first decisions.
+3. **Light mode only.** No dark-first decisions. The only recorded appearance exception is the two-second black opener in `OnboardingSplashView`; it must return to light as soon as the opener unmounts and must not spread into the product UI.
 4. **Portrait only.** No landscape support.
 5. **Gatekeeper every UI change.** Run the inline checklist below. Fail-closed.
 
@@ -122,7 +122,7 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 - `chevron.right` / `chevron.forward`; `Divider()` where `AppDivider` applies
 - Inline button/card chrome instead of `AppPrimaryButton` / `AppCard` / `AppScreen`
 - `regular` font weight; orange `#FF4400`
-- `.preferredColorScheme(.dark)`; landscape assumptions
+- `.preferredColorScheme(.dark)` outside the recorded two-second `OnboardingSplashView` opener; landscape assumptions
 - `.scrollEdgeEffectStyle(.automatic, ...)` or `.hard` — always `.soft` via `appScrollEdgeSoft(top:bottom:)`
 - `LinearGradient` / `.mask` fade under fixed bars in `Features/**/*.swift`
 - `.weight(.semibold/.bold/.heavy)` on `ToolbarItem` buttons

@@ -12,6 +12,10 @@ import SwiftUI
 struct OnboardingLibraryPickerView: View {
     @Environment(OnboardingViewModel.self) private var vm
     @State private var displayedStage: Stage?
+    @State private var showsAllPrograms = false
+
+    private static let defaultDaysPerWeek = 3
+    private static let recommendationShortlistLimit = 3
 
     var progressStep: Int
     var progressTotal: Int
@@ -46,9 +50,20 @@ struct OnboardingLibraryPickerView: View {
         ProgramCatalog.supportedDays.map { DayCountOption(value: $0) }
     }
 
-    private var recommendedPrograms: [ProgramTemplate] {
+    private var matchingPrograms: [ProgramTemplate] {
         guard let profile = vm.programMatchProfile else { return [] }
-        return ProgramCatalog.recommendations(for: profile)
+        return ProgramCatalog.recommendations(
+            for: profile,
+            limit: ProgramCatalog.all.count
+        )
+    }
+
+    private var recommendedPrograms: [ProgramTemplate] {
+        Array(matchingPrograms.prefix(Self.recommendationShortlistLimit))
+    }
+
+    private var additionalPrograms: [ProgramTemplate] {
+        Array(matchingPrograms.dropFirst(Self.recommendationShortlistLimit))
     }
 
     var body: some View {
@@ -73,6 +88,9 @@ struct OnboardingLibraryPickerView: View {
             if displayedStage == nil {
                 displayedStage = inferredStage
             }
+            if stage == .days {
+                preselectDefaultDaysIfNeeded()
+            }
         }
     }
 
@@ -89,36 +107,25 @@ struct OnboardingLibraryPickerView: View {
         }
     }
 
-    private var progressDetail: OnboardingProgressBar.Detail {
+    private var progressDetail: OnboardingProgressBar.Detail? {
         switch stage {
         case .goal:
             OnboardingProgressBar.Detail(
                 label: "Q 01 / 03",
-                accessibilityLabel: "question 1 of 3",
-                value: 1,
-                total: 3
+                accessibilityLabel: "question 1 of 3"
             )
         case .level:
             OnboardingProgressBar.Detail(
                 label: "Q 02 / 03",
-                accessibilityLabel: "question 2 of 3",
-                value: 2,
-                total: 3
+                accessibilityLabel: "question 2 of 3"
             )
         case .days:
             OnboardingProgressBar.Detail(
                 label: "Q 03 / 03",
-                accessibilityLabel: "question 3 of 3",
-                value: 3,
-                total: 3
+                accessibilityLabel: "question 3 of 3"
             )
         case .results:
-            OnboardingProgressBar.Detail(
-                label: "MATCH READY",
-                accessibilityLabel: "questions complete",
-                value: 3,
-                total: 3
-            )
+            nil
         }
     }
 
@@ -171,8 +178,7 @@ struct OnboardingLibraryPickerView: View {
             AppSegmentedControl(
                 selection: dayCountBinding,
                 items: dayCountOptions,
-                size: .tall,
-                selectionStyle: .dark,
+                size: .weekday,
                 title: { "\($0.value)" },
                 accessibilityLabel: { AppCopy.Onboarding.trainingDays($0.value) }
             )
@@ -183,20 +189,27 @@ struct OnboardingLibraryPickerView: View {
             } else {
                 VStack(spacing: AppSpacing.sm) {
                     ForEach(Array(recommendedPrograms.enumerated()), id: \.element.id) { index, program in
-                        AppOptionTileCard(
-                            title: program.name,
-                            subtitle: recommendationSubtitle(for: program),
-                            badge: index == 0 ? AppCopy.Onboarding.libraryBestMatch : nil,
-                            isSelected: vm.pickedProgram?.id == program.id
-                        ) {
-                            vm.applyPickedProgram(program)
-                            if let profile = vm.programMatchProfile {
-                                UnitAnalytics.shared.track(
-                                    .programMatchSelected(profile: profile, rank: index + 1)
+                        programOption(program, rank: index + 1)
+                    }
+
+                    if !additionalPrograms.isEmpty {
+                        if showsAllPrograms {
+                            ForEach(Array(additionalPrograms.enumerated()), id: \.element.id) { index, program in
+                                programOption(
+                                    program,
+                                    rank: Self.recommendationShortlistLimit + index + 1
                                 )
                             }
-                            onUpdate()
                         }
+
+                        AppGhostButton(
+                            showsAllPrograms
+                                ? AppCopy.Onboarding.libraryShowFewerPrograms
+                                : AppCopy.Onboarding.libraryShowMorePrograms(additionalPrograms.count)
+                        ) {
+                            toggleAdditionalPrograms()
+                        }
+                        .accessibilityIdentifier("show-all-matching-programs")
                     }
                 }
             }
@@ -246,6 +259,7 @@ struct OnboardingLibraryPickerView: View {
             set: {
                 vm.preferredGoal = $0
                 vm.pickedProgram = nil
+                showsAllPrograms = false
                 onUpdate()
             }
         )
@@ -257,6 +271,7 @@ struct OnboardingLibraryPickerView: View {
             set: {
                 vm.preferredLevel = $0
                 vm.pickedProgram = nil
+                showsAllPrograms = false
                 onUpdate()
             }
         )
@@ -268,6 +283,7 @@ struct OnboardingLibraryPickerView: View {
             set: {
                 vm.preferredDaysPerWeek = $0
                 vm.pickedProgram = nil
+                showsAllPrograms = false
                 onUpdate()
             }
         )
@@ -303,6 +319,33 @@ struct OnboardingLibraryPickerView: View {
         return "\(metadata)\n\(reason)"
     }
 
+    private func programOption(_ program: ProgramTemplate, rank: Int) -> some View {
+        AppOptionTileCard(
+            title: program.name,
+            subtitle: recommendationSubtitle(for: program),
+            badge: rank == 1 ? AppCopy.Onboarding.libraryBestMatch : nil,
+            isSelected: vm.pickedProgram?.id == program.id
+        ) {
+            vm.applyPickedProgram(program)
+            if let profile = vm.programMatchProfile {
+                UnitAnalytics.shared.track(
+                    .programMatchSelected(profile: profile, rank: rank)
+                )
+            }
+            onUpdate()
+        }
+    }
+
+    private func toggleAdditionalPrograms() {
+        if showsAllPrograms,
+           let pickedProgramID = vm.pickedProgram?.id,
+           additionalPrograms.contains(where: { $0.id == pickedProgramID }) {
+            vm.pickedProgram = nil
+            onUpdate()
+        }
+        showsAllPrograms.toggle()
+    }
+
     private func handleBack() {
         switch stage {
         case .results:
@@ -321,6 +364,7 @@ struct OnboardingLibraryPickerView: View {
         case .goal where vm.preferredGoal != nil:
             displayedStage = .level
         case .level where vm.preferredLevel != nil:
+            preselectDefaultDaysIfNeeded()
             displayedStage = .days
         case .days where vm.preferredDaysPerWeek != nil:
             displayedStage = .results
@@ -336,6 +380,7 @@ struct OnboardingLibraryPickerView: View {
         if vm.preferredGoal != goal {
             vm.preferredGoal = goal
             vm.pickedProgram = nil
+            showsAllPrograms = false
             onUpdate()
         }
         if wasUnanswered {
@@ -348,11 +393,21 @@ struct OnboardingLibraryPickerView: View {
         if vm.preferredLevel != level {
             vm.preferredLevel = level
             vm.pickedProgram = nil
+            showsAllPrograms = false
             onUpdate()
         }
         if wasUnanswered {
+            preselectDefaultDaysIfNeeded()
             displayedStage = .days
         }
+    }
+
+    private func preselectDefaultDaysIfNeeded() {
+        guard vm.preferredDaysPerWeek == nil,
+              ProgramCatalog.supportedDays.contains(Self.defaultDaysPerWeek) else { return }
+        vm.preferredDaysPerWeek = Self.defaultDaysPerWeek
+        vm.pickedProgram = nil
+        onUpdate()
     }
 
     private func selectDays(_ days: Int) {
@@ -360,6 +415,7 @@ struct OnboardingLibraryPickerView: View {
         if vm.preferredDaysPerWeek != days {
             vm.preferredDaysPerWeek = days
             vm.pickedProgram = nil
+            showsAllPrograms = false
             onUpdate()
         }
         if wasUnanswered {

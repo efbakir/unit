@@ -43,9 +43,9 @@ struct ProgramTemplate: Identifiable, Hashable {
 
         var matcherDisplayName: String {
             switch self {
-            case .strength: return "Strength"
-            case .hypertrophy: return "Muscle"
-            case .mixed: return "Both"
+            case .strength: return "Get stronger"
+            case .hypertrophy: return "Build muscle"
+            case .mixed: return "Strength + muscle"
             }
         }
     }

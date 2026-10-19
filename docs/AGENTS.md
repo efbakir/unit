@@ -1,6 +1,6 @@
 # AGENTS.md — Rules for AI agents working on Unit
 
-> Read `product-compass.md` before every task. If a compass decision contradicts something in this file, the compass wins.
+> Read `docs/product-compass.md` before every task. Use `docs/goals.md` and `docs/claude/scope.md` for the release boundary, `docs/pricing.md` for access, `PRODUCT.md` for product and voice, and `DESIGN.md` for the visual system. If active sources conflict, stop and name the conflict.
 
 ---
 
@@ -19,7 +19,7 @@ Unit is a **zero-friction, progression-guided gym logging tool** for beginner-to
 | **Language** | Swift 6, strict concurrency |
 | **UI** | SwiftUI only. Every view uses the atomic design system (`DesignSystem.swift`). No raw values in view files. |
 | **Data** | SwiftData, local-first. No network calls required for core functionality. |
-| **Design system** | Read `DESIGN_SYSTEM.md` before creating or modifying any view. No exceptions. |
+| **Design system** | Read `DESIGN.md`, `docs/atomic-design-system.md`, and `Unit/UI/DesignSystem.swift` before creating or modifying any view. No exceptions. |
 | **Screen wrapper** | Every screen uses `AppScreen`. No custom nav bars. |
 | **No chevrons** | `chevron.right` and `chevron.forward` are banned everywhere except the system back button. |
 
@@ -37,6 +37,7 @@ Unit is a **zero-friction, progression-guided gym logging tool** for beginner-to
 | **Rest timer** | Auto-starts on "Done" tap. Visible on Lock Screen and Dynamic Island. | Not optional / hidden. |
 | **Cycles** | Retired legacy container; out of scope for v2.1. | Templates are the program unit. Do not restore week/cycle UI. |
 | **DoubleProgressionEngine** | One pure, deterministic v2.1 calculator. It evaluates completed working sets and proposes the smallest next target after a workout. | Not the old cycle/failure/deload engine. It never mutates a routine before acceptance. |
+| **Schedule** | Optional weekday assignment or flexible rotation that helps Today choose the next template. Editable after onboarding. | Not a cycle, mandatory calendar, or rigid program container. History remains list-only. |
 
 ---
 
@@ -60,6 +61,9 @@ Two first-run paths ship in v2.1:
 
 Manual template editing remains available after onboarding. Redo-from-history
 and manual-builder onboarding are not first-run paths in v2.1.
+
+The schedule step supports weekday assignment or flexible rotation. Scheduling
+guides Today; it does not create cycle/week structure or a History calendar.
 
 ---
 

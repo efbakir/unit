@@ -28,7 +28,9 @@ The local `Unit.storekit` configuration contains the two seven-day offers for de
 - **Hard paywall** (resolved 2026-06-16, see `docs/decision-log.md`). All app functionality is gated behind a paid purchase. Onboarding completes free so the user sees their program built; the paywall appears immediately after setup is saved, no dismissal.
 - **Seven-day introductory trial, not a free tier.** Eligible new customers may try all of Unit through Monthly or Yearly. After the offer, the selected subscription renews at its displayed StoreKit price unless cancelled. Ineligible customers see no trial claims. The hard paywall remains and there is no permanent free access.
 - **Eligibility controls the default.** An eligible new customer defaults to Monthly so the trial is immediately understandable. An ineligible customer retains the existing Weekly default. Once the customer chooses a plan, later asynchronous eligibility results must not replace that choice.
-- **Timing stays visible.** The selected plan's Day 0-to-renewal timeline appears on the paywall itself, makes the cancellation window explicit, and repeats the StoreKit-derived renewal price. The purchase decision does not ask for notification permission or add a reminder preference.
+- **Timing stays with the decision.** One scrolling paywall keeps the personalized program payoff, grouped plans, StoreKit-derived Day 0 → Day 5 → Day 7 timeline, included features, renewal disclosure, Restore, Terms, Privacy, and sticky purchase action together. The selected plan expands; unselected plans remain compact. Configured Lifetime stays in the same group without a separate heading.
+- **The reminder is explicit and optional.** `Remind me 2 days before` defaults off and appears only for a selected, eligible introductory trial. Toggling it does not request notification permission. After StoreKit verifies the purchase, Unit requests permission and schedules one local reminder 48 hours before the verified expiration only when the customer opted in. Denial never blocks access. Reconciliation restores only an opted-in, already-authorized reminder without prompting; stale reminders are cancelled after expiration, revocation, upgrade, or a non-trial replacement purchase.
+- **The CTA mirrors the selected StoreKit offer.** Eligible trials show `Try for [localized zero]`, non-trial subscriptions show `Subscribe for [full billed price]`, and Lifetime shows `Buy for [price]`. Tapping it purchases the selected product through Apple's native StoreKit confirmation sheet.
 - **All subscription plans stay visible.** Weekly, Monthly, and Yearly cards render even while StoreKit is loading. Missing products show loading/unavailable copy, never fake prices.
 - **Lifetime is optional.** If the existing non-consumable is configured and StoreKit returns it, Unit shows it as a one-time purchase. If ASC does not return it, the card is hidden.
 
@@ -45,7 +47,7 @@ The onboarding flow (splash → unit picker → import method → program build 
 **Paid post-paywall surfaces:**
 - Today tab (start workout, log sets, rest timer)
 - Programs tab (view / edit / reorder templates)
-- History (browse past sessions, PR chart, calendar)
+- History (browse the chronological session list and PR chart)
 - Settings (manage subscription, export, theming, etc.)
 
 ## App Review metadata checklist
@@ -62,9 +64,9 @@ Apple's subscription review surface is not just the in-app paywall. Before every
 Run this on the exact archive/build submitted for review, using products attached to the App Store Connect version and a sandbox Apple ID:
 
 1. Use a fresh sandbox customer who has never redeemed an introductory offer in Unit's subscription group. Fresh install → complete onboarding → confirm the app lands on `PaywallView`, not `TodayView`.
-2. Confirm eligible Monthly is selected by default, Monthly and Yearly each show Apple's seven-day free period, and Weekly and Lifetime show no trial language.
+2. Confirm eligible Monthly is selected by default and the same paywall shows all available plans, Day 0, Day 5, Day 7, the reminder switch defaulted off, full renewal context, and `Try for $0.00` in the US storefront. Monthly and Yearly each show Apple's seven-day free period; Weekly and Lifetime show no trial or reminder language.
 3. Start the Monthly trial, cancel the Apple purchase sheet, and confirm the user remains on `PaywallView`.
-4. Complete the Monthly trial purchase and confirm the app immediately enters Today. Relaunch offline and confirm the last verified entitlement still unlocks the app.
+4. Turn on the reminder, complete the Monthly trial purchase, and confirm the app immediately enters Today before notification permission is resolved. Accept permission and confirm one `unit.trial-reminder` request is scheduled two days before expiration. Repeat with the reminder off and confirm no permission prompt or pending reminder. Relaunch offline and confirm the last verified entitlement still unlocks the app without another permission prompt.
 5. Delete and reinstall the app, tap `Restore Purchases`, and confirm entitlement restores access to the main tab UI.
 6. Test an ineligible sandbox customer: Weekly is selected by default, no trial text appears anywhere, and a normal subscription purchase unlocks Today.
 7. Cancel the sandbox subscription from App Store subscription management, relaunch after StoreKit reflects the cancellation, and confirm inactive entitlement returns to `PaywallView`.

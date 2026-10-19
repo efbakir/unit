@@ -37,6 +37,235 @@ final class EntitlementRefreshStateTests: XCTestCase {
 }
 
 @MainActor
+final class TrialReminderSchedulerTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 2_000_000_000)
+
+    func testAuthorizedTrialSchedulesExactlyFortyEightHoursBeforeExpiration() async {
+        var replacement: (String, TimeInterval)?
+        let scheduler = makeScheduler(status: .authorized) { identifier, interval in
+            replacement = (identifier, interval)
+        }
+
+        let result = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(7 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: true
+        )
+
+        XCTAssertEqual(result, .scheduled)
+        guard let replacement else {
+            XCTFail("authorized trial did not schedule")
+            return
+        }
+        XCTAssertEqual(replacement.0, TrialReminderScheduler.identifier)
+        XCTAssertEqual(replacement.1, 5 * 24 * 60 * 60)
+    }
+
+    func testNotDeterminedRequestsAuthorizationOnlyForNewPurchase() async {
+        var requestCount = 0
+        var replacementCount = 0
+        let client = TrialReminderNotificationClient(
+            authorizationStatus: { .notDetermined },
+            requestAuthorization: {
+                requestCount += 1
+                return true
+            },
+            replacePendingRequest: { _, _, _, _ in replacementCount += 1 },
+            cancelPendingRequest: { _ in }
+        )
+        let scheduler = TrialReminderScheduler(client: client, now: { self.now })
+
+        let reconciliationResult = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(7 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: false
+        )
+        let purchaseResult = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(7 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: true
+        )
+
+        XCTAssertEqual(reconciliationResult, .notAuthorized)
+        XCTAssertEqual(purchaseResult, .scheduled)
+        XCTAssertEqual(requestCount, 1)
+        XCTAssertEqual(replacementCount, 1)
+    }
+
+    func testDeniedPermissionDoesNotSchedule() async {
+        var replacementCount = 0
+        var cancellationCount = 0
+        let scheduler = makeScheduler(
+            status: .denied,
+            onReplace: { _, _ in replacementCount += 1 },
+            onCancel: { cancellationCount += 1 }
+        )
+
+        let result = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(7 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: true
+        )
+
+        XCTAssertEqual(result, .denied)
+        XCTAssertEqual(replacementCount, 0)
+        XCTAssertEqual(cancellationCount, 1)
+    }
+
+    func testInvalidExpirationCancelsStaleReminder() async {
+        var cancellationCount = 0
+        let scheduler = makeScheduler(
+            status: .authorized,
+            onReplace: { _, _ in XCTFail("invalid date must not schedule") },
+            onCancel: { cancellationCount += 1 }
+        )
+
+        let result = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(TrialReminderScheduler.leadTime),
+            requestAuthorizationIfNeeded: true
+        )
+
+        XCTAssertEqual(result, .invalidExpiration)
+        XCTAssertEqual(cancellationCount, 1)
+    }
+
+    func testRepeatedSchedulingReplacesTheStableIdentifier() async {
+        var identifiers: [String] = []
+        let scheduler = makeScheduler(status: .authorized) { identifier, _ in
+            identifiers.append(identifier)
+        }
+
+        _ = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(7 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: true
+        )
+        _ = await scheduler.scheduleReminder(
+            expirationDate: now.addingTimeInterval(8 * 24 * 60 * 60),
+            requestAuthorizationIfNeeded: true
+        )
+
+        XCTAssertEqual(identifiers, [
+            TrialReminderScheduler.identifier,
+            TrialReminderScheduler.identifier
+        ])
+    }
+
+    func testPolicySchedulesOnlyActiveIntroductoryTrials() {
+        let expiration = now.addingTimeInterval(7 * 24 * 60 * 60)
+
+        XCTAssertEqual(
+            TrialReminderPolicy.action(
+                isIntroductoryTrial: true,
+                expirationDate: expiration,
+                isActive: true,
+                isReminderEnabled: true
+            ),
+            .schedule(expiration)
+        )
+        XCTAssertEqual(
+            TrialReminderPolicy.action(
+                isIntroductoryTrial: false,
+                expirationDate: expiration,
+                isActive: true,
+                isReminderEnabled: true
+            ),
+            .cancel
+        )
+        XCTAssertEqual(
+            TrialReminderPolicy.action(
+                isIntroductoryTrial: true,
+                expirationDate: expiration,
+                isActive: false,
+                isReminderEnabled: true
+            ),
+            .cancel
+        )
+        XCTAssertEqual(
+            TrialReminderPolicy.action(
+                isIntroductoryTrial: true,
+                expirationDate: nil,
+                isActive: true,
+                isReminderEnabled: true
+            ),
+            .cancel
+        )
+        XCTAssertEqual(
+            TrialReminderPolicy.action(
+                isIntroductoryTrial: true,
+                expirationDate: expiration,
+                isActive: true,
+                isReminderEnabled: false
+            ),
+            .cancel
+        )
+    }
+
+    private func makeScheduler(
+        status: TrialReminderAuthorizationStatus,
+        onReplace: @escaping (String, TimeInterval) -> Void,
+        onCancel: @escaping () -> Void = { }
+    ) -> TrialReminderScheduler {
+        TrialReminderScheduler(
+            client: TrialReminderNotificationClient(
+                authorizationStatus: { status },
+                requestAuthorization: { true },
+                replacePendingRequest: { identifier, _, _, interval in
+                    onReplace(identifier, interval)
+                },
+                cancelPendingRequest: { _ in onCancel() }
+            ),
+            now: { self.now }
+        )
+    }
+}
+
+@MainActor
+final class TrialReminderPreferenceStoreTests: XCTestCase {
+    private var suiteName: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "TrialReminderPreferenceStoreTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        suiteName = nil
+        super.tearDown()
+    }
+
+    func testPreferenceDefaultsOff() {
+        let store = TrialReminderPreferenceStore(defaults: defaults)
+
+        XCTAssertFalse(store.isEnabled)
+        XCTAssertNil(store.stagedPreference)
+    }
+
+    func testStagedPreferenceBecomesActiveOnlyAfterVerification() {
+        let store = TrialReminderPreferenceStore(defaults: defaults)
+
+        store.stage(true)
+        XCTAssertFalse(store.isEnabled)
+        XCTAssertEqual(store.stagedPreference, true)
+
+        store.commitStagedPreference()
+        XCTAssertTrue(store.isEnabled)
+        XCTAssertNil(store.stagedPreference)
+    }
+
+    func testDisableClearsActiveAndPendingPreference() {
+        let store = TrialReminderPreferenceStore(defaults: defaults)
+        store.stage(true)
+        store.commitStagedPreference()
+        store.stage(true)
+
+        store.disable()
+
+        XCTAssertFalse(store.isEnabled)
+        XCTAssertNil(store.stagedPreference)
+    }
+}
+
+@MainActor
 final class StorePlanPresentationTests: XCTestCase {
     func testEligibleMonthlyShowsConfiguredFreeTrial() {
         let presentation = resolve(

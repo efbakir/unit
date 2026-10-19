@@ -9,6 +9,213 @@
 
 import StoreKit
 import OSLog
+import UserNotifications
+
+enum TrialReminderSchedulingResult: Equatable, Sendable {
+    case scheduled
+    case denied
+    case notAuthorized
+    case invalidExpiration
+    case failed
+}
+
+@MainActor
+protocol TrialReminderScheduling: AnyObject {
+    func scheduleReminder(
+        expirationDate: Date,
+        requestAuthorizationIfNeeded: Bool
+    ) async -> TrialReminderSchedulingResult
+    func cancelReminder() async
+}
+
+enum TrialReminderAuthorizationStatus: Equatable, Sendable {
+    case notDetermined
+    case denied
+    case authorized
+}
+
+@MainActor
+struct TrialReminderNotificationClient {
+    var authorizationStatus: () async -> TrialReminderAuthorizationStatus
+    var requestAuthorization: () async throws -> Bool
+    var replacePendingRequest: (
+        _ identifier: String,
+        _ title: String,
+        _ body: String,
+        _ timeInterval: TimeInterval
+    ) async throws -> Void
+    var cancelPendingRequest: (_ identifier: String) -> Void
+
+    static let live = TrialReminderNotificationClient(
+        authorizationStatus: {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            switch settings.authorizationStatus {
+            case .notDetermined: return TrialReminderAuthorizationStatus.notDetermined
+            case .denied: return TrialReminderAuthorizationStatus.denied
+            case .authorized, .provisional, .ephemeral:
+                return TrialReminderAuthorizationStatus.authorized
+            @unknown default: return TrialReminderAuthorizationStatus.denied
+            }
+        },
+        requestAuthorization: {
+            try await UNUserNotificationCenter.current().requestAuthorization(
+                options: [.alert, .sound]
+            )
+        },
+        replacePendingRequest: { identifier, title, body, timeInterval in
+            let center = UNUserNotificationCenter.current()
+            center.removePendingNotificationRequests(withIdentifiers: [identifier])
+
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(
+                timeInterval: timeInterval,
+                repeats: false
+            )
+            try await center.add(
+                UNNotificationRequest(
+                    identifier: identifier,
+                    content: content,
+                    trigger: trigger
+                )
+            )
+        },
+        cancelPendingRequest: { identifier in
+            UNUserNotificationCenter.current()
+                .removePendingNotificationRequests(withIdentifiers: [identifier])
+        }
+    )
+}
+
+@MainActor
+final class TrialReminderScheduler: TrialReminderScheduling {
+    nonisolated static let identifier = "unit.trial-reminder"
+    nonisolated static let notificationTitle = "Your Unit trial ends in 2 days"
+    nonisolated static let notificationBody =
+        "Manage your subscription anytime in App Store settings."
+    nonisolated static let leadTime: TimeInterval = 48 * 60 * 60
+
+    private let client: TrialReminderNotificationClient
+    private let now: () -> Date
+
+    init(
+        client: TrialReminderNotificationClient = .live,
+        now: @escaping () -> Date = Date.init
+    ) {
+        self.client = client
+        self.now = now
+    }
+
+    func scheduleReminder(
+        expirationDate: Date,
+        requestAuthorizationIfNeeded: Bool
+    ) async -> TrialReminderSchedulingResult {
+        let fireDate = expirationDate.addingTimeInterval(-Self.leadTime)
+        let interval = fireDate.timeIntervalSince(now())
+        guard interval > 0, interval.isFinite else {
+            await cancelReminder()
+            return .invalidExpiration
+        }
+
+        let status = await client.authorizationStatus()
+        switch status {
+        case .denied:
+            await cancelReminder()
+            return .denied
+        case .notDetermined:
+            guard requestAuthorizationIfNeeded else { return .notAuthorized }
+            do {
+                guard try await client.requestAuthorization() else {
+                    await cancelReminder()
+                    return .denied
+                }
+            } catch {
+                return .failed
+            }
+        case .authorized:
+            break
+        }
+
+        do {
+            try await client.replacePendingRequest(
+                Self.identifier,
+                Self.notificationTitle,
+                Self.notificationBody,
+                interval
+            )
+            return .scheduled
+        } catch {
+            return .failed
+        }
+    }
+
+    func cancelReminder() async {
+        client.cancelPendingRequest(Self.identifier)
+    }
+}
+
+enum TrialReminderTransactionAction: Equatable, Sendable {
+    case schedule(Date)
+    case cancel
+}
+
+enum TrialReminderPolicy {
+    nonisolated static func action(
+        isIntroductoryTrial: Bool,
+        expirationDate: Date?,
+        isActive: Bool,
+        isReminderEnabled: Bool
+    ) -> TrialReminderTransactionAction {
+        guard isActive, isIntroductoryTrial, isReminderEnabled, let expirationDate else {
+            return .cancel
+        }
+        return .schedule(expirationDate)
+    }
+}
+
+/// Persists the user's explicit reminder choice separately from notification
+/// authorization. A staged value survives a pending StoreKit transaction; it
+/// becomes active only after StoreKit verifies an introductory trial.
+@MainActor
+struct TrialReminderPreferenceStore {
+    nonisolated static let enabledKey = "unit.trial-reminder.enabled"
+    nonisolated static let stagedKey = "unit.trial-reminder.staged"
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    var isEnabled: Bool {
+        defaults.bool(forKey: Self.enabledKey)
+    }
+
+    var stagedPreference: Bool? {
+        defaults.object(forKey: Self.stagedKey) as? Bool
+    }
+
+    func stage(_ isEnabled: Bool) {
+        defaults.set(isEnabled, forKey: Self.stagedKey)
+    }
+
+    func commitStagedPreference() {
+        guard let stagedPreference else { return }
+        defaults.set(stagedPreference, forKey: Self.enabledKey)
+        defaults.removeObject(forKey: Self.stagedKey)
+    }
+
+    func clearStagedPreference() {
+        defaults.removeObject(forKey: Self.stagedKey)
+    }
+
+    func disable() {
+        defaults.set(false, forKey: Self.enabledKey)
+        defaults.removeObject(forKey: Self.stagedKey)
+    }
+}
 
 /// Prevents an entitlement refresh that started before a purchase completed
 /// from overwriting that newer, authoritative transaction with a stale
@@ -385,10 +592,17 @@ final class StoreManager {
     @ObservationIgnored nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
     @ObservationIgnored private var entitlementRefreshState = EntitlementRefreshState()
     @ObservationIgnored private var productLoadAttemptCount = 0
+    @ObservationIgnored private let trialReminderScheduler: any TrialReminderScheduling
+    @ObservationIgnored private let trialReminderPreferences: TrialReminderPreferenceStore
 
     // MARK: - Init
 
-    init() {
+    init(
+        trialReminderScheduler: any TrialReminderScheduling = TrialReminderScheduler(),
+        trialReminderPreferences: TrialReminderPreferenceStore = TrialReminderPreferenceStore()
+    ) {
+        self.trialReminderScheduler = trialReminderScheduler
+        self.trialReminderPreferences = trialReminderPreferences
 #if DEBUG
         if CommandLine.arguments.contains(Self.lifetimeOwnerUITestArgument) {
             activeTier = .lifetime
@@ -536,14 +750,30 @@ final class StoreManager {
     // MARK: - Purchase
 
     @MainActor
-    func purchase() async {
-        await purchase(tier: selectedTier)
+    func purchase(remindBeforeTrialEnds: Bool = false) async {
+        await purchase(
+            tier: selectedTier,
+            remindBeforeTrialEnds: remindBeforeTrialEnds
+        )
     }
 
     @MainActor
-    func purchase(tier: Tier) async {
+    func purchase(
+        tier: Tier,
+        remindBeforeTrialEnds: Bool = false
+    ) async {
         guard let product = product(for: tier) else { return }
         guard !isLoading, purchaseAttempt.begin() else { return }
+        let hasEligibleTrial = presentation(for: tier)?.trial != nil
+        let reminderRequested = hasEligibleTrial && remindBeforeTrialEnds
+        trialReminderPreferences.stage(reminderRequested)
+        UnitAnalytics.shared.track(
+            .purchaseStarted(
+                tier: tier.analyticsValue,
+                hasTrial: hasEligibleTrial,
+                reminderRequested: reminderRequested
+            )
+        )
         defer {
             if purchaseAttempt.isPurchasing {
                 purchaseAttempt.finish()
@@ -556,10 +786,12 @@ final class StoreManager {
         // gate deterministic while still requiring the live local product and
         // exercising the paywall CTA → entitlement → root-unlock path.
         if CommandLine.arguments.contains(Self.purchaseSuccessUITestArgument) {
+            trialReminderPreferences.clearStagedPreference()
             confirmEntitlement(tier)
             return
         }
         if CommandLine.arguments.contains(Self.purchaseCancelledUITestArgument) {
+            trialReminderPreferences.clearStagedPreference()
             return
         }
         if CommandLine.arguments.contains(Self.purchasePendingUITestArgument) {
@@ -567,6 +799,7 @@ final class StoreManager {
             return
         }
         if CommandLine.arguments.contains(Self.purchaseUnverifiedUITestArgument) {
+            trialReminderPreferences.clearStagedPreference()
             purchaseError = "Purchase couldn't be verified. No access was granted."
             return
         }
@@ -579,13 +812,18 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 if let tier = Tier(rawValue: transaction.productID) {
                     confirmEntitlement(tier)
-                    if presentation(for: tier)?.trial != nil {
+                    let isIntroductoryTrial = transaction.offer?.type == .introductory
+                        && transaction.offer?.paymentMode == .freeTrial
+                    if isIntroductoryTrial {
+                        trialReminderPreferences.commitStagedPreference()
                         UnitAnalytics.shared.track(
                             .trialStarted(
                                 tier: tier.analyticsValue,
                                 context: ProgramSetupContextStore.load()
                             )
                         )
+                    } else {
+                        trialReminderPreferences.disable()
                     }
                     UnitAnalytics.shared.track(
                         .purchaseCompleted(
@@ -593,9 +831,16 @@ final class StoreManager {
                             context: ProgramSetupContextStore.load()
                         )
                     )
+                    Task {
+                        await reconcileTrialReminder(
+                            for: transaction,
+                            requestAuthorizationIfNeeded: true
+                        )
+                    }
                 }
                 await transaction.finish()
             case .userCancelled:
+                trialReminderPreferences.clearStagedPreference()
                 break
             case .pending:
                 purchaseAttempt.markPending()
@@ -603,6 +848,7 @@ final class StoreManager {
                 break
             }
         } catch {
+            trialReminderPreferences.clearStagedPreference()
             logger.error("Purchase failed: \(error.localizedDescription)")
             purchaseError = "Purchase failed. Try again in a moment."
         }
@@ -653,6 +899,7 @@ final class StoreManager {
     func checkEntitlement() async {
         let refreshRevision = entitlementRefreshState.beginRefresh()
         var entitlementTier: Tier?
+        var entitlementTransaction: Transaction?
         var sawAny = false
         for await result in Transaction.currentEntitlements {
             sawAny = true
@@ -660,6 +907,7 @@ final class StoreManager {
                 let transaction = try checkVerified(result)
                 if let tier = Tier(rawValue: transaction.productID) {
                     entitlementTier = tier
+                    entitlementTransaction = transaction
                 }
             } catch {
                 let productID = result.unsafePayloadValue.productID
@@ -670,10 +918,15 @@ final class StoreManager {
         if entitlementTier == nil {
             logger.info("Entitlement check: none active (any results: \(sawAny, privacy: .public))")
         }
-        if let entitlementTier {
+        if let entitlementTier, let entitlementTransaction {
             confirmEntitlement(entitlementTier)
+            await reconcileTrialReminder(
+                for: entitlementTransaction,
+                requestAuthorizationIfNeeded: false
+            )
         } else if entitlementRefreshState.canApplyEmptyResult(from: refreshRevision) {
             clearEntitlement()
+            await trialReminderScheduler.cancelReminder()
         } else {
             logger.info("Ignoring stale empty entitlement result because a newer transaction changed access.")
         }
@@ -716,6 +969,17 @@ final class StoreManager {
                             // StoreKit race where currentEntitlements briefly
                             // returns empty after an Xcode/device purchase.
                             await self.confirmEntitlement(tier)
+                            var shouldRequestReminderAuthorization = false
+                            if transaction.offer?.type == .introductory,
+                               transaction.offer?.paymentMode == .freeTrial {
+                                shouldRequestReminderAuthorization =
+                                    await self.commitStagedTrialReminderPreference()
+                            }
+                            await self.reconcileTrialReminder(
+                                for: transaction,
+                                requestAuthorizationIfNeeded:
+                                    shouldRequestReminderAuthorization
+                            )
                         }
                     }
                 } catch {
@@ -748,6 +1012,60 @@ final class StoreManager {
 
     private func recordAuthoritativeEntitlementChange() {
         entitlementRefreshState.recordAuthoritativeChange()
+    }
+
+    private func commitStagedTrialReminderPreference() -> Bool {
+        let shouldRequestAuthorization =
+            trialReminderPreferences.stagedPreference == true
+        trialReminderPreferences.commitStagedPreference()
+        return shouldRequestAuthorization
+    }
+
+    private func reconcileTrialReminder(
+        for transaction: Transaction,
+        requestAuthorizationIfNeeded: Bool
+    ) async {
+        let isActive = transaction.revocationDate == nil
+            && !transaction.isUpgraded
+            && transaction.expirationDate.map { $0 > Date() } != false
+        let isIntroductoryTrial = transaction.offer?.type == .introductory
+            && transaction.offer?.paymentMode == .freeTrial
+        let isReminderEnabled = trialReminderPreferences.isEnabled
+        if !isActive || !isIntroductoryTrial {
+            trialReminderPreferences.disable()
+        }
+        let action = TrialReminderPolicy.action(
+            isIntroductoryTrial: isIntroductoryTrial,
+            expirationDate: transaction.expirationDate,
+            isActive: isActive,
+            isReminderEnabled: isReminderEnabled
+        )
+
+        switch action {
+        case .schedule(let expirationDate):
+            let result = await trialReminderScheduler.scheduleReminder(
+                expirationDate: expirationDate,
+                requestAuthorizationIfNeeded: requestAuthorizationIfNeeded
+            )
+            UnitAnalytics.shared.track(
+                .trialReminderAuthorization(outcome: analyticsOutcome(for: result))
+            )
+        case .cancel:
+            await trialReminderScheduler.cancelReminder()
+            UnitAnalytics.shared.track(.trialReminderAuthorization(outcome: .cancelled))
+        }
+    }
+
+    private func analyticsOutcome(
+        for result: TrialReminderSchedulingResult
+    ) -> AnalyticsTrialReminderOutcome {
+        switch result {
+        case .scheduled: .scheduled
+        case .denied: .denied
+        case .notAuthorized: .notAuthorized
+        case .invalidExpiration: .invalidExpiration
+        case .failed: .failed
+        }
     }
 
     private func checkVerified(_ result: VerificationResult<Transaction>) throws -> Transaction {

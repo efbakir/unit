@@ -7,6 +7,75 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-08-13 — Put the trial decision on one complete purchase surface
+
+- **Decision:** Replace the two-page paywall with one scrolling `AppScreen`. Keep the personalized program payoff, grouped Weekly/Monthly/Yearly/Lifetime choices, selected-offer timeline, optional reminder, included features, renewal disclosure, legal actions, and sticky purchase CTA together.
+- **Purchase action:** An eligible introductory trial uses StoreKit-localized `Try for 0.00`; subscriptions without a trial use `Subscribe for [full billed price]`; Lifetime uses `Buy for [price]`. Every action purchases the currently selected StoreKit product through Apple's native confirmation sheet.
+- **Reminder:** `Remind me 2 days before` defaults off and appears only for a verified eligible trial presentation. Toggling it never requests permission. After a verified trial purchase, Unit requests permission and schedules at expiration minus 48 hours only when the customer opted in. The persisted choice supports delayed transactions and reconciliation without unexpected prompts.
+- **Offer hierarchy:** All available plans share one group. The selected plan expands to show complete billing detail; unselected plans remain compact. Lifetime has no separate `Or pay once` heading.
+- **Why:** The local Opal benchmark and the supplied Headspace/Napper-style references keep timing, confidence copy, and purchase together. Unit adopts that lower-friction structure while preserving localized StoreKit truth, a visible full renewal amount, and an optional—not assumed—notification choice.
+- **Supersedes:** The two-page flow, separate Lifetime grouping, automatic reminder, and paywall page-view split in the two 2026-08-13 decisions below. The hard gate, plan defaults, StoreKit eligibility rules, and direct plan comparison remain.
+
+## 2026-08-13 — Make purchase options directly comparable
+
+- **Decision:** Show Weekly, Monthly, and Yearly directly on page two as the three primary recurring choices. If StoreKit returns Lifetime, show it below a separate `Or pay once` label instead of making four equal offers compete.
+- **Hierarchy:** Increase the included-feature heading, labels, checks, spacing, and card inset. Reduce Restore, Terms, and Privacy to the muted text token while preserving 44pt tap targets.
+- **Why:** Apple's purchase examples keep available durations visible, while Superwall's large-sample guidance favors multiple offers but recommends limiting the primary comparison to one-to-three choices with a clear winner. Direct comparison removes a hidden interaction; separating Lifetime keeps the decision legible.
+- **Supersedes:** The 2026-08-12 collapsed-alternatives rule and the `Change` sheet portion of the two-page decision below. The two-page flow, StoreKit-derived prices, defaults, and trial eligibility rules remain.
+
+## 2026-08-13 — Separate trial reassurance from the purchase decision
+
+- **Decision:** Use two native hard-paywall pages. Page one shows the goal-personalized headline, centered completed-program card, and StoreKit-derived access timeline. `Continue` opens page two with the selected plan, `Change` sheet, included features, renewal disclosure, legal actions, and dynamic purchase CTA.
+- **Trial reminder:** A verified introductory-trial purchase unlocks Unit before notification permission is requested. If allowed, schedule `unit.trial-reminder` for the verified expiration date minus 48 hours. Denial never blocks access, reconciliation never prompts unexpectedly, and stale reminders are cancelled.
+- **Measurement:** Record each paywall page view and controlled reminder authorization outcomes without program names or workout content.
+- **Why:** Separating reassurance from checkout reduces information density while keeping the billed amount and purchase disclosure together. The Day 5 promise is now backed by real local-notification behavior.
+- **Supersedes:** The 2026-08-12 one-page/no-reminder decision. The hard gate, StoreKit-derived truthfulness, and no-reminder-toggle rule remain.
+
+## 2026-08-13 — Expand the weekly starter-program catalog without copying Liftosaur
+
+- **Decision:** Grow Unit's catalog from 13 to 27 complete programs. Keep the current top three schedule-compatible matches visible and place remaining same-schedule programs behind the existing `Show all` action.
+- **Source boundary:** Use Liftosaur only as a market inventory. Independently write Unit's program names, summaries, descriptions, day structures and prescriptions. Do not copy Liftosaur text, scripts, progression logic or repository data.
+- **Product boundary:** Add repeatable two-to-six-day weekly templates only. Do not flatten multi-week peaking blocks or periodized cycles into misleading one-week programs.
+- **Ranking:** Continue ranking by the answers Unit can honor—training days as a hard constraint, then goal and experience. Do not claim popularity without usage data.
+- **Why:** Lifters get a materially broader local library while Unit keeps honest content, deterministic matching and the existing template model.
+
+## 2026-08-13 — Expand the existing exercise picker with public-domain data
+
+- **Decision:** Keep Unit's current searchable Add Exercise sheet and seed it with a broad offline exercise catalog. Preserve Unit's curated names and aliases when entries overlap, and never replace, rename, or unarchive a lifter's existing exercises.
+- **Source:** Use exercise names and basic classification from `yuhonas/free-exercise-db`, released under the Unlicense. Do not copy Liftosaur's AGPL-3.0 exercise files into Unit.
+- **Scope:** This is a selection library only. Do not add exercise recommendations, instructions, imagery, or a discovery feed.
+- **Why:** Lifters can find the movement they already intend to log without licensing risk or extra setup, while Unit stays local-first and inside the current product boundary.
+
+## 2026-08-13 — Treat the paywall as the payoff of program setup
+
+- **Decision:** Lead the hard paywall with `Your program is ready`, a prominent completion mark, and the saved program name and context. Do not describe this state as merely `Matched to your answers`.
+- **Personalization:** Keep the trial headline stable, but connect the supporting promise to the controlled onboarding goal: build strength, build muscle, or build both. Pasted programs use a neutral steady-progress promise.
+- **Hierarchy:** Use 32pt between the hero and completed program, then 48pt between major purchase sections. Keep price, renewal, StoreKit behavior, and the sticky purchase action unchanged.
+- **Benefits:** Keep the secondary feature matrix concise; use `Ready-made programs` so every benefit remains one line at standard text sizes.
+- **Why:** The screen should celebrate completed setup and the user's intended outcome before asking for payment, rather than reading as a dense list of product mechanics.
+
+## 2026-08-13 — Keep three program recommendations visible and disclose the rest
+
+- **Decision:** Show the three highest-ranked schedule-compatible programs as the default onboarding shortlist.
+- **Disclosure:** When more schedule-compatible catalog programs exist, add one quiet `Show all N matching programs` action below the shortlist. Expanding keeps the same ranking and full program cards; `Show top 3` restores the shortlist.
+- **Scope:** Do not mix programs from other schedules into this disclosure. The selected training-day count remains a hard constraint while goal and experience determine rank.
+- **Why:** Three choices keep the decision focused, while the disclosure makes the included catalog discoverable without adding a new page or overwhelming the initial results.
+
+## 2026-08-13 — Default the ready-made schedule to three days
+
+- **Decision:** Preselect three training days when the user first reaches ready-made-program question three. Do not skip the question.
+- **Action:** Keep `Continue` enabled from the start and use it to advance to program matches. Preserve a different saved choice when the user returns.
+- **Component:** Use the same `.weekday` `AppSegmentedControl` treatment as the schedule assignment page shown after program selection.
+- **Control height:** Keep both the training-day count and weekday assignment uses on the shared 48pt `.weekday` size (`AppSpacing.xxl`) so neither selector feels compressed.
+- **Why:** Three days is a useful default, removes an unnecessary required tap, and keeps the two day-selection surfaces visually consistent.
+
+## 2026-08-13 — Keep onboarding progress counter-only
+
+- **Decision:** Keep the existing `STEP NN / 05` counter without a progress bar on every onboarding page.
+- **Nested questions:** Ready-made-program questions add only `Q 01 / 03`, `Q 02 / 03`, or `Q 03 / 03` at the top right. The results page has no nested status label.
+- **Why:** A linear bar introduced a second progress language that Steps 1–2 do not use. The question counter communicates the nested sequence without adding new chrome.
+- **System:** Remove the unused onboarding progress-fill token; do not replace the bar with another indicator.
+
 ## 2026-08-12 — Use an editorial marketing rhythm and preserve the native core
 
 - **Marketing:** Replace repeated equal-weight feature cards with divided editorial rows, reserve uppercase mono labels for real metadata, and use 16px as the narrative-text floor.

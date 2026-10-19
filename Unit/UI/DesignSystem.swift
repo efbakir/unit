@@ -48,7 +48,6 @@ enum AppColor {
     static let border = Color(uiColor: uicolor(0xE5E5E5))
 
     /// Filled segment in multi-step progress (e.g. onboarding) — softer than `textPrimary` but reads clearly against `border` for inactive steps.
-    static let progressSegmentFill = Color(uiColor: uicolor(0x3A3A3A))
 
     // Interactive
     static let accent = Color(uiColor: uicolor(0x0A0A0A))
@@ -585,6 +584,13 @@ enum AppIcon: String {
         return Image(systemName: systemName)
             .font(.system(size: scaled, weight: weight))
     }
+}
+
+/// Semantic icon sizes for standalone symbols that carry hierarchy rather
+/// than sitting inside a control or icon circle.
+enum AppIconSize {
+    static let readiness: CGFloat = 16
+    static let reward: CGFloat = 20
 }
 
 extension Double {
@@ -1905,7 +1911,8 @@ struct SetProgressIndicator: View {
 
         var chipText: String? {
             guard let reps, let weightText, !weightText.isEmpty else { return nil }
-            return "\(weightText) × \(reps)"
+            let compactWeightText = weightText.replacingOccurrences(of: " ", with: "\u{202F}")
+            return "\(compactWeightText)\u{2009}×\u{2009}\(reps)"
         }
     }
 
@@ -2396,7 +2403,7 @@ struct PreviewListContainer<Content: View>: View {
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.sm)
             .padding(.vertical, AppSpacing.sm)
         }
         .scrollDisabled(!canScroll)
@@ -2584,6 +2591,7 @@ struct AppTimelineItem: Identifiable, Equatable {
     let subtitle: String
     let icon: AppIcon
     var isCurrent: Bool = false
+    var isReward: Bool = false
 }
 
 /// Canonical connected milestone rail for short, read-only sequences such as
@@ -2596,40 +2604,48 @@ struct AppTimeline: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                let isHighlighted = item.isCurrent || item.isReward
+
                 HStack(alignment: .top, spacing: AppSpacing.smd) {
                     AppIconCircle(
-                        diameter: AppSpacing.xl,
-                        surface: item.isCurrent
+                        diameter: item.isReward ? AppSpacing.xxl : AppSpacing.xl,
+                        surface: isHighlighted
                             ? .tinted(AppColor.accent, opacity: 1)
                             : .control
                     ) {
                         item.icon
-                            .image(size: 14, weight: .semibold)
+                            .image(
+                                size: item.isReward ? AppIconSize.reward : 14,
+                                weight: .semibold
+                            )
                             .foregroundStyle(
-                                item.isCurrent
+                                isHighlighted
                                     ? AppColor.accentForeground
                                     : AppColor.textSecondary
                             )
                     }
+                    .frame(width: AppSpacing.xxl)
                     .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text(item.title)
-                            .font(AppFont.sectionHeader.font)
+                            .font(item.isReward ? AppFont.title.font : AppFont.sectionHeader.font)
                             .foregroundStyle(AppColor.textPrimary)
 
                         Text(item.subtitle)
-                            .font(AppFont.muted.font)
+                            .font(item.isReward ? AppFont.caption.font : AppFont.muted.font)
                             .foregroundStyle(AppColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.bottom, index < items.count - 1 ? AppSpacing.md : 0)
+                .padding(.bottom, index < items.count - 1 ? AppSpacing.xl : 0)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(item.title). \(item.subtitle)")
-                .accessibilityValue(item.isCurrent ? "Current" : "")
+                .accessibilityValue(
+                    item.isCurrent ? "Current" : (item.isReward ? "Ongoing benefit" : "")
+                )
             }
         }
         .background(alignment: .leading) {
@@ -2638,7 +2654,7 @@ struct AppTimeline: View {
                     .fill(AppColor.controlBackground)
                     .frame(width: AppSpacing.xxs)
                     .padding(.vertical, AppSpacing.md)
-                    .offset(x: (AppSpacing.xl - AppSpacing.xxs) / 2)
+                    .offset(x: (AppSpacing.xxl - AppSpacing.xxs) / 2)
                     .accessibilityHidden(true)
             }
         }
@@ -2664,6 +2680,7 @@ struct AppSelectableTierCard: View {
     let sublabel: String
     var badge: String? = nil
     let isSelected: Bool
+    var showsDetails: Bool = true
     var isEnabled: Bool = true
     var accessibilityHint: String = "Select this plan"
     let action: () -> Void
@@ -2737,12 +2754,15 @@ struct AppSelectableTierCard: View {
                 }
             }
 
-            Text(sublabel)
-                .font(AppFont.muted.font)
-                .foregroundStyle(isEnabled ? AppColor.textSecondary : AppColor.textDisabled)
-                .multilineTextAlignment(.leading)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-                .minimumScaleFactor(0.8)
+            if showsDetails {
+                Text(sublabel)
+                    .font(AppFont.muted.font)
+                    .foregroundStyle(isEnabled ? AppColor.textSecondary : AppColor.textDisabled)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -2870,17 +2890,17 @@ struct AppSessionHighlightCard<Trailing: View, BelowContent: View>: View {
     }
 }
 
-/// Compact two-column feature matrix used by purchase surfaces that unlock one
-/// complete product rather than a permanent free tier. The label column is
-/// allowed to wrap at Dynamic Type sizes; the fixed status column preserves
-/// scan alignment without shrinking feature identity.
+/// Comfortable two-column feature matrix used by purchase surfaces that unlock
+/// one complete product rather than a permanent free tier. The label column is
+/// allowed to wrap at Dynamic Type sizes; Accessibility sizes collapse to one
+/// column so feature identity never competes with density.
 struct AppFeatureAccessTable: View {
     let rows: [String]
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        AppCard(contentInset: AppSpacing.smd, verticalInset: AppSpacing.smd) {
-            LazyVGrid(columns: columns, alignment: .leading, spacing: AppSpacing.sm) {
+        AppCard(contentInset: AppSpacing.md, verticalInset: AppSpacing.md) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: AppSpacing.smd) {
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, label in
                     featureRow(label)
                         .accessibilityIdentifier("paywall-feature-row-\(index)")
@@ -2900,13 +2920,13 @@ struct AppFeatureAccessTable: View {
     }
 
     private func featureRow(_ label: String) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.xs) {
-            AppIcon.checkmarkFilled.image(size: 13, weight: .semibold)
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            AppIcon.checkmarkFilled.image(size: AppIconSize.readiness, weight: .semibold)
                 .foregroundStyle(AppColor.accent)
                 .accessibilityHidden(true)
 
             Text(label)
-                .font(AppFont.metadata.font)
+                .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -4607,6 +4627,12 @@ struct AppExercisePickerSheet: View {
             }
             .appNavigationBarChrome()
             .tint(AppColor.accent)
+            .task {
+                ExerciseCatalog.ensurePersisted(
+                    in: modelContext,
+                    existingExercises: exercises
+                )
+            }
         }
         .presentationDetents([.large])
         .appBottomSheetChrome()
@@ -5328,14 +5354,12 @@ enum AppIconCircleSize {
 
 // MARK: - Onboarding progress
 
-/// Numeric onboarding counter with an optional nested progress track for a
-/// short question sequence contained inside one outer step.
+/// Numeric onboarding counter with an optional nested question label aligned
+/// to the trailing edge. The outer onboarding flow intentionally has no bar.
 struct OnboardingProgressBar: View {
     struct Detail: Equatable {
         let label: String
         let accessibilityLabel: String
-        let value: Int
-        let total: Int
     }
 
     let step: Int
@@ -5349,40 +5373,28 @@ struct OnboardingProgressBar: View {
     private var totalText: String { String(format: "%02d", max(total, 1)) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                HStack(spacing: 0) {
-                    Text("STEP ")
-                        .foregroundStyle(AppColor.textSecondary)
-                    Text(stepText)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .contentTransition(.numericText())
-                        .appAnimation(.appReveal, value: clampedStep, reduceMotion: reduceMotion)
-                    Text(" / \(totalText)")
-                        .foregroundStyle(AppColor.textDisabled)
-                }
-
-                Spacer(minLength: AppSpacing.sm)
-
-                if let detail {
-                    Text(detail.label)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .contentTransition(.numericText())
-                        .appAnimation(.appReveal, value: detail.label, reduceMotion: reduceMotion)
-                }
+        HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: 0) {
+                Text("STEP ")
+                    .foregroundStyle(AppColor.textSecondary)
+                Text(stepText)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .contentTransition(.numericText())
+                    .appAnimation(.appReveal, value: clampedStep, reduceMotion: reduceMotion)
+                Text(" / \(totalText)")
+                    .foregroundStyle(AppColor.textDisabled)
             }
-            .font(AppFont.stepIndicator.font)
+
+            Spacer(minLength: AppSpacing.sm)
 
             if let detail {
-                ProgressView(
-                    value: Double(max(0, min(detail.value, max(detail.total, 1)))),
-                    total: Double(max(detail.total, 1))
-                )
-                .progressViewStyle(.linear)
-                .tint(AppColor.progressSegmentFill)
-                .appAnimation(.appState, value: detail.value, reduceMotion: reduceMotion)
+                Text(detail.label)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .contentTransition(.numericText())
+                    .appAnimation(.appReveal, value: detail.label, reduceMotion: reduceMotion)
             }
         }
+        .font(AppFont.stepIndicator.font)
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("onboarding-progress")
         .accessibilityLabel(accessibilityLabel)
@@ -5405,8 +5417,9 @@ struct OnboardingProgressBar: View {
 struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     enum Size {
         case compact
-        /// Dense seven-item weekday picker: 40pt visible track with the
-        /// canonical 44pt interaction area preserved around it.
+        /// Shared training-day / weekday picker. Uses the 48pt spacing-grid
+        /// token so both onboarding selectors have a comfortable control
+        /// height without introducing a screen-specific measurement.
         case weekday
         case tall
 
@@ -5418,11 +5431,16 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
             }
         }
 
-        var minHeight: CGFloat { 44 }
+        var minHeight: CGFloat {
+            switch self {
+            case .weekday: return AppSpacing.xxl
+            case .compact, .tall: return 44
+            }
+        }
 
         var trackHeight: CGFloat? {
             switch self {
-            case .weekday: return 40
+            case .weekday: return AppSpacing.xxl
             case .compact, .tall: return nil
             }
         }

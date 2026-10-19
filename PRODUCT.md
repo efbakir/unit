@@ -59,5 +59,5 @@ Strategic principles that should guide every product and design decision. Visual
 - **Dynamic Type respected.** All copy uses `AppFont` tokens that scale with iOS Dynamic Type. Numerics use monospaced digits so columns stay aligned at every size. Layouts must not break or clip at the largest accessibility sizes.
 - **Reduced Motion respected.** Honor `accessibilityReduceMotion`. No parallax, no elastic, no decorative motion when the system preference is on — only state-change feedback that survives reduction (cross-fades, opacity).
 - **Touch targets ≥ 44×44pt** everywhere. The Gym Test (one-handed, sweaty, fatigued) is the floor, not the ceiling.
-- **Light-only.** Unit intentionally renders its established light appearance regardless of the system trait for this release.
+- **Light-only.** After the recorded two-second black onboarding brand opener, Unit intentionally renders its established light appearance regardless of the system trait for this release. The opener is a transition, not dark mode, and must not spread into the product UI.
 - **No color alone for state.** Success / warning / error always pair with an icon or label (HIG). Color-blind users get the same information.

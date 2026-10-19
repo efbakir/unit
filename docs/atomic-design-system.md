@@ -32,7 +32,6 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 - **Surfaces**: `background` = `#F5F5F5`, `cardBackground` = `#FFFFFF`, `cardRowFill` = `#F5F5F5` (nested-in-card recipe), `sheetBackground` = `#FFFFFF`, `controlBackground` = `#E8E8E8` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5`
 - **Text**: `textPrimary` = `#0A0A0A`, `textSecondary` = `#595959`, `textDisabled` = `#949494`
-- **Progress**: `progressSegmentFill` = `#3A3A3A` (filled segment in onboarding's multi-step progress)
 - **Interactive**: `accent` = `#0A0A0A`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EBEBEB`. `accent` doubles as the `.tint(...)` on every NavigationStack — there is no separate `systemTint`.
 - **Status**: `success` = `#34C759`, `warning` = `#FF9500`, `error` = `#FF3B30`. Plus accessible chip pairs `successSoft`/`successOnSoft`, `warningSoft`/`warningOnSoft`, `errorSoft`/`errorOnSoft`.
 
@@ -99,7 +98,7 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 | `RestTimerControl` | Rest countdown control with `-15`, central timer pill, and `+15` |
 | `PreviewListRow` | Shared preview row; use `identityFirst` when long identity must wrap above target/evidence. |
 | `AppOptionTileCard` | Canonical single-choice onboarding/selection card. |
-| `AppSelectableTierCard` | StoreKit tier card with selected, disabled, and accessibility states. |
+| `AppSelectableTierCard` | StoreKit tier card with selected, disabled, accessibility, and compact-detail states. Purchase surfaces keep the selected tier expanded and may collapse supporting copy on unselected siblings. |
 
 ### Pressed-state rule
 

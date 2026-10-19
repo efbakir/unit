@@ -2,7 +2,7 @@
 
 **Date**: 2026-08-12
 **Mode**: contextual
-**Status**: provisional
+**Status**: superseded on 2026-08-13 by the [single-page trial paywall scorecard](2026-08-13-paywall-program-payoff.md)
 **Evidence**: existing iPhone SE paywall render at `docs/qa/trial-paywall/final-verified-20260804/AA43DDC5-EC79-4DD5-BE31-88F7B73EC405.png`, current SwiftUI implementation, and five local benchmark paywalls in `/Users/efbakir/Desktop/Projects/unit/benchmark/paywalls`
 **Anchor**: Headspace and Vocabulary for an on-page, price-adjacent trial timeline; Opal for keeping plan selection and timeline in one purchase surface. Unit borrows the information hierarchy and connected milestones, not their color, illustration, urgency, or reminder claims.
 

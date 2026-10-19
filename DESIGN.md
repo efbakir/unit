@@ -198,7 +198,7 @@ The aesthetic is *iron and paper*: solid Ink (#0A0A0A) accents on Bond (#FFFFFF)
 This system explicitly rejects the visual category of "fitness tracker" software. It is not a Strong/Hevy/Jefit spreadsheet, not a Strava feed, not a Whoop dashboard. There are no neon data viz arcs, no gradient hero metrics, no recovery rings, no badge animations, no stock-photo athletes. If a pixel doesn't help log faster or read state more clearly under fatigue, it does not belong.
 
 **Key Characteristics:**
-- Light-first, system-honoring (light mode is the design baseline; dark adapts via system trait, never drives decisions)
+- Light-only for this release (after the recorded two-second black onboarding brand opener, the established light appearance is rendered regardless of the system trait)
 - Flat by doctrine — separation through fill contrast, never shadows
 - Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)
 - One Ink-black primary CTA per stress screen, full-width, 60pt tall

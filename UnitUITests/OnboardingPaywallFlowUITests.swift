@@ -201,10 +201,16 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             descendant(in: app, identifier: "onboarding-progress").label,
             "Step 3 of 5, question 3 of 3"
         )
+        XCTAssertTrue(
+            button(in: app, containing: AppCopy.Onboarding.trainingDays(3)).isSelected,
+            "three training days should be preselected"
+        )
+        XCTAssertTrue(app.buttons["Continue"].isEnabled)
         tap(
             button(in: app, containing: AppCopy.Onboarding.trainingDays(2)),
             "schedule — 2 days/week"
         )
+        tap(app.buttons["Continue"], "continue with selected schedule")
 
         XCTAssertTrue(
             app.staticTexts[AppCopy.Onboarding.libraryResultsTitle].waitForExistence(timeout: 8)
@@ -341,6 +347,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
                 || standardHeadline.waitForExistence(timeout: 5),
             "no valid paywall headline appeared"
         )
+        openPurchasePage(in: app)
         XCTAssertTrue(
             staticText(in: app, containing: "$2.99/").waitForExistence(timeout: 20),
             "weekly price did not load from StoreKitTest"
@@ -380,8 +387,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // tests. After an onboarding persistence relaunch, StoreKitTest can
         // legitimately return either configured local presentation; both must
         // preserve the hard gate and verified purchase path.
-        let trialCTA = button(in: app, containing: AppCopy.Paywall.startFreeTrial("7-day"))
-        let weeklyCTA = button(in: app, containing: AppCopy.Paywall.subscribeWeekly)
+        let trialCTA = button(in: app, containing: "Try for $0.00")
+        let weeklyCTA = button(in: app, containing: "Subscribe for $2.99/week")
         let purchaseCTA = trialCTA.exists ? trialCTA : weeklyCTA
         tap(purchaseCTA, "purchase CTA")
 
@@ -471,7 +478,34 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
                 .waitForExistence(timeout: 20),
             "eligible Monthly did not become the default"
         )
-        let monthlyCTA = button(in: app, containing: "Start 7-day free trial")
+        XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.monthly").exists)
+        let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
+        scrollTo(trialTimeline, in: app)
+        XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")
+        XCTAssertTrue(staticText(in: app, containing: "Day 0").exists)
+        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
+        XCTAssertTrue(staticText(in: app, containing: "Day 7").exists)
+        XCTAssertTrue(staticText(in: app, containing: "Keep making progress").exists)
+        XCTAssertTrue(
+            app.switches[AppCopy.Paywall.trialReminderLabel].exists,
+            "eligible trial did not expose the optional reminder"
+        )
+        XCTAssertEqual(
+            app.switches[AppCopy.Paywall.trialReminderLabel].value as? String,
+            "0",
+            "trial reminder must default off"
+        )
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOffMessage).exists
+        )
+        attachScreenshot(named: "01-eligible-monthly-single-page", app: app)
+
+        XCTAssertFalse(app.buttons["paywall-plan-picker-toggle"].exists)
+        XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.weekly").exists)
+        XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.monthly").exists)
+        XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.annual").exists)
+        XCTAssertFalse(staticText(in: app, containing: "Or pay once").exists)
+        let monthlyCTA = button(in: app, containing: "Try for $0.00")
         XCTAssertTrue(monthlyCTA.exists)
         XCTAssertTrue(staticText(in: app, containing: "$4.99/month").exists)
         XCTAssertGreaterThanOrEqual(monthlyCTA.frame.height, 44)
@@ -480,20 +514,20 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.windows.firstMatch.frame.maxY + 1,
             "Monthly CTA extended below the visible screen"
         )
-        attachScreenshot(named: "01-eligible-monthly-trial-paywall", app: app)
+        attachScreenshot(named: "02-eligible-monthly-purchase", app: app)
 
-        let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
-        scrollTo(trialTimeline, in: app)
-        XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")
-        XCTAssertTrue(staticText(in: app, containing: "Day 0").exists)
-        XCTAssertTrue(staticText(in: app, containing: "Before Day 7").exists)
-        XCTAssertTrue(staticText(in: app, containing: "Day 7").exists)
+        let reminder = app.switches[AppCopy.Paywall.trialReminderLabel]
+        scrollTo(reminder, in: app)
+        tap(reminder, "trial reminder preference")
+        XCTAssertEqual(reminder.value as? String, "1")
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOnMessage).exists
+        )
 
-        tap(app.buttons["paywall-plan-picker-toggle"], "Change plan")
         let yearly = descendant(in: app, identifier: "paywall-plan-com.unit.annual")
         scrollTo(yearly, in: app)
         tap(yearly, "Yearly plan")
-        let yearlyCTA = button(in: app, containing: "Start 7-day free trial")
+        let yearlyCTA = button(in: app, containing: "Try for $0.00")
         XCTAssertTrue(yearlyCTA.waitForExistence(timeout: 5))
         XCTAssertTrue(staticText(in: app, containing: "$29.99/year").exists)
         XCTAssertGreaterThanOrEqual(yearlyCTA.frame.height, 44)
@@ -502,12 +536,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.windows.firstMatch.frame.maxY + 1,
             "Yearly CTA extended below the visible screen"
         )
-        attachScreenshot(named: "02-eligible-yearly-trial-paywall", app: app)
+        attachScreenshot(named: "03-eligible-yearly-purchase", app: app)
 
-        tap(app.buttons["paywall-plan-picker-toggle"], "Change plan")
+        XCTAssertTrue(staticText(in: app, containing: "$29.99/year").waitForExistence(timeout: 5))
+        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
+
         XCTAssertTrue(
             staticText(in: app, containing: "Save").exists,
-            "Yearly savings badge became unreadable in the plan picker"
+            "Yearly savings badge became unreadable in the visible plan list"
         )
         let weekly = descendant(in: app, identifier: "paywall-plan-com.unit.weekly")
         scrollTo(weekly, in: app)
@@ -516,7 +552,11 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.staticTexts[AppCopy.Paywall.standardHeadline].waitForExistence(timeout: 5),
             "Weekly selection retained trial framing"
         )
-        let standardCTA = button(in: app, containing: AppCopy.Paywall.subscribeWeekly)
+        XCTAssertFalse(
+            app.switches[AppCopy.Paywall.trialReminderLabel].exists,
+            "non-trial Weekly plan retained the reminder preference"
+        )
+        let standardCTA = button(in: app, containing: "Subscribe for $2.99/week")
         XCTAssertTrue(standardCTA.exists)
         XCTAssertGreaterThanOrEqual(standardCTA.frame.height, 44)
         XCTAssertLessThanOrEqual(
@@ -528,14 +568,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             staticText(in: app, containing: "free trial").exists,
             "Weekly selection must not show free-trial copy"
         )
-        let weeklyCTA = button(in: app, containing: AppCopy.Paywall.subscribeWeekly)
+        let weeklyCTA = button(in: app, containing: "Subscribe for $2.99/week")
         XCTAssertGreaterThanOrEqual(weeklyCTA.frame.height, 44)
         XCTAssertLessThanOrEqual(
             weeklyCTA.frame.maxY,
             app.windows.firstMatch.frame.maxY + 1,
             "Weekly CTA extended below the visible screen"
         )
-        attachScreenshot(named: "03-weekly-selected-no-trial", app: app)
+        attachScreenshot(named: "04-weekly-selected-no-trial", app: app)
     }
 
     func testIneligibleCustomerGetsStandardWeeklyPaywall() throws {
@@ -553,7 +593,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
                 .waitForExistence(timeout: 20),
             "ineligible paywall headline missing"
         )
-        XCTAssertTrue(button(in: app, containing: AppCopy.Paywall.subscribeWeekly).exists)
+        openPurchasePage(in: app)
+        XCTAssertTrue(button(in: app, containing: "Subscribe for $2.99/week").exists)
         XCTAssertFalse(
             staticText(in: app, containing: "free trial").exists,
             "ineligible customer saw trial copy"
@@ -571,13 +612,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-purchase-cancelled"]
         )
         app.launch()
-        let trialCTA = button(in: app, containing: "Start 7-day free trial")
+        openPurchasePage(in: app)
+        let trialCTA = button(in: app, containing: "Try for $0.00")
         tap(trialCTA, "trial CTA", timeout: 20)
-        XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")]
-                .waitForExistence(timeout: 5),
-            "cancelled purchase escaped the hard paywall"
-        )
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].exists)
         XCTAssertTrue(trialCTA.isEnabled, "cancelled purchase did not reset the CTA")
 
         app.terminate()
@@ -587,7 +625,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-purchase-unverified"]
         )
         app.launch()
-        tap(button(in: app, containing: "Start 7-day free trial"), "unverified trial CTA", timeout: 20)
+        openPurchasePage(in: app)
+        tap(button(in: app, containing: "Try for $0.00"), "unverified trial CTA", timeout: 20)
         XCTAssertTrue(app.alerts["Something went wrong"].waitForExistence(timeout: 5))
         tap(app.alerts["Something went wrong"].buttons["OK"], "dismiss verification error")
         XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].exists)
@@ -604,7 +643,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-purchase-pending"]
         )
         app.launch()
-        let trialCTA = button(in: app, containing: "Start 7-day free trial")
+        openPurchasePage(in: app)
+        let trialCTA = button(in: app, containing: "Try for $0.00")
         tap(trialCTA, "pending trial CTA", timeout: 20)
 
         XCTAssertTrue(
@@ -629,6 +669,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             ]
         )
         app.launch()
+
+        openPurchasePage(in: app)
 
         let restore = app.buttons["Restore Purchases"]
         scrollTo(restore, in: app)
@@ -682,7 +724,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-purchase-success"]
         )
         app.launch()
-        tap(button(in: app, containing: "Start 7-day free trial"), "successful trial CTA", timeout: 20)
+        openPurchasePage(in: app)
+        tap(button(in: app, containing: "Try for $0.00"), "successful trial CTA", timeout: 20)
         XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 15))
 
         app.terminate()
@@ -720,6 +763,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         app.launch()
         XCTAssertTrue(app.staticTexts["Couldn't load subscriptions"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.buttons["Subscribe to continue"].isEnabled)
         tap(app.buttons["Try again"], "product-load retry")
         XCTAssertTrue(
             app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")]
@@ -734,8 +778,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-partial-products"]
         )
         app.launch()
+        openPurchasePage(in: app)
         XCTAssertTrue(app.staticTexts["Some plans couldn't load."].waitForExistence(timeout: 20))
-        tap(app.buttons["paywall-plan-picker-toggle"], "Change plan")
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
         scrollTo(monthly, in: app)
         XCTAssertTrue(monthly.exists, "missing Monthly card was hidden instead of disabled")
@@ -753,6 +797,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         app.launch()
         XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].waitForExistence(timeout: 20))
+        openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         XCTAssertLessThanOrEqual(
             app.windows.firstMatch.frame.width,
@@ -773,6 +818,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         app.launch()
         XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].waitForExistence(timeout: 20))
+        openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         positionFeatureTableForScreenshot(in: app, requiresLastRow: false)
         attachScreenshot(named: "06-feature-table-accessibility-medium", app: app)
@@ -831,6 +877,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.launchArguments.append("-ui-testing-reset")
         }
         return app
+    }
+
+    private func openPurchasePage(in app: XCUIApplication) {
+        XCTAssertTrue(
+            descendant(in: app, identifier: "paywall-plan-com.unit.weekly")
+                .waitForExistence(timeout: 20),
+            "single-page plan selector did not load"
+        )
     }
 
     private func descendant(

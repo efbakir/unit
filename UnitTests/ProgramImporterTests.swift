@@ -336,6 +336,25 @@ final class ProgramImporterTests: XCTestCase {
         }
     }
 
+    func testProgramMatcherCanReturnTheFullScheduleMatchedCatalog() {
+        let profile = ProgramMatchProfile(
+            goal: .mixed,
+            level: .intermediate,
+            daysPerWeek: 4
+        )
+
+        let shortlist = ProgramCatalog.recommendations(for: profile)
+        let fullMatches = ProgramCatalog.recommendations(
+            for: profile,
+            limit: ProgramCatalog.all.count
+        )
+
+        XCTAssertEqual(shortlist.count, 3)
+        XCTAssertGreaterThan(fullMatches.count, shortlist.count)
+        XCTAssertTrue(fullMatches.allSatisfy { $0.daysPerWeek == profile.daysPerWeek })
+        XCTAssertEqual(Array(fullMatches.prefix(shortlist.count)), shortlist)
+    }
+
     func testProgramMatcherRanksExactGoalAndExperienceFirst() throws {
         let profile = ProgramMatchProfile(
             goal: .mixed,
@@ -349,19 +368,44 @@ final class ProgramImporterTests: XCTestCase {
         XCTAssertEqual(first.level, profile.level)
     }
 
-    func testTwoAndFiveDayProgramsResolveEveryExercise() throws {
-        for days in [2, 5] {
-            let program = try XCTUnwrap(
-                ProgramCatalog.all.first { $0.daysPerWeek == days }
-            )
-            XCTAssertEqual(program.days.count, days)
+    func testEveryCatalogProgramIsCompleteAndResolvesEveryExercise() {
+        XCTAssertGreaterThanOrEqual(ProgramCatalog.all.count, 27)
+
+        for program in ProgramCatalog.all {
+            XCTAssertEqual(program.days.count, program.daysPerWeek, program.name)
+            XCTAssertFalse(program.days.isEmpty, program.name)
+
             for item in program.days.flatMap(\.items) {
+                XCTAssertGreaterThan(item.setCount, 0, "\(program.name) / \(item.exerciseName)")
+                XCTAssertGreaterThan(item.repTarget, 0, "\(program.name) / \(item.exerciseName)")
                 XCTAssertNotNil(
                     ExerciseCatalog.lookup(item.exerciseName),
                     "Missing catalog metadata for \(program.name) / \(item.exerciseName)"
                 )
             }
         }
+    }
+
+    func testExerciseCatalogIncludesPublicDomainLibrary() throws {
+        XCTAssertGreaterThanOrEqual(ExerciseCatalog.all.count, 850)
+
+        let dumbbellCurl = try XCTUnwrap(
+            ExerciseCatalog.lookup("Alternate Incline Dumbbell Curl")
+        )
+        XCTAssertEqual(dumbbellCurl.muscleGroup, .biceps)
+        XCTAssertEqual(dumbbellCurl.equipment, .dumbbell)
+        XCTAssertFalse(dumbbellCurl.isBodyweight)
+
+        let airBike = try XCTUnwrap(ExerciseCatalog.lookup("Air Bike"))
+        XCTAssertEqual(airBike.muscleGroup, .core)
+        XCTAssertEqual(airBike.equipment, .bodyweight)
+        XCTAssertTrue(airBike.isBodyweight)
+    }
+
+    func testExerciseCatalogHasUniqueNamesAndKeepsCuratedAliases() {
+        let names = ExerciseCatalog.all.map { $0.displayName.lowercased() }
+        XCTAssertEqual(Set(names).count, names.count)
+        XCTAssertEqual(ExerciseCatalog.lookup("Dumbbell Bench Press")?.displayName, "DB Bench Press")
     }
 
     func testProgramSetupContextRoundTripsWithoutWorkoutContent() throws {

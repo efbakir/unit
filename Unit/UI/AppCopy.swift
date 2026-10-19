@@ -299,17 +299,21 @@ enum AppCopy {
         static let methodPasteSubtitle = "Paste it from Notes, WhatsApp or anywhere else."
         static let methodLibraryOption = "I need a program"
         static let methodLibrarySubtitle = "Answer three questions to match ready-made programs."
-        static let libraryGoalTitle = "What is your goal?"
-        static let libraryGoalSubtitle = "Choose the result you want most."
+        static let libraryGoalTitle = "What’s your training goal?"
+        static let libraryGoalSubtitle = "Choose what you want to focus on."
         static let libraryLevelTitle = "How experienced are you?"
         static let libraryLevelSubtitle = "Pick the option closest to your current training."
         static let libraryDaysTitle = "How many training days?"
         static let libraryDaysSubtitle = "Only schedules supported by the ready-made catalog are shown."
         static let libraryResultsTitle = "Programs for you"
-        static let libraryResultsSubtitle = "Ready-made programs matched to your answers."
+        static let libraryResultsSubtitle = "Based on your goal, experience, and schedule."
         static let libraryCTA = "Review program"
         static let libraryBestMatch = "Best match"
         static let libraryNoResults = "No ready-made program matches these answers yet."
+        static func libraryShowMorePrograms(_ count: Int) -> String {
+            count == 1 ? "See 1 more program" : "See \(count) more programs"
+        }
+        static let libraryShowFewerPrograms = "Show fewer programs"
         static let libraryGoalChip = "Goal"
         static let libraryLevelChip = "Experience"
         static let libraryDaysChip = "Days/week"
@@ -341,23 +345,33 @@ enum AppCopy {
         static func trialHeadline(_ duration: String) -> String {
             "Try all of Unit free for \(duration)"
         }
-        static let trialSupportingCopy = "Log workouts, follow your next target, and see whether Unit fits your training."
         static let standardHeadline = "Unlock Unit"
-        static let standardSupportingCopy = "Fast workout logging with one clear target for next time."
-        static let programReady = "Program ready"
-        static let programMatched = "Matched to your answers"
+        static func supportingCopy(for goal: String?) -> String {
+            switch goal {
+            case "strength":
+                return "Build strength with a program chosen for your goal and schedule."
+            case "hypertrophy":
+                return "Build muscle with a program chosen for your goal and schedule."
+            case "mixed":
+                return "Build strength and muscle with a program chosen for your goal and schedule."
+            default:
+                return "Turn your program into steady progress, one workout at a time."
+            }
+        }
+        static let programReady = "Your program is ready"
         static let programFallbackTitle = "Your program"
         static func programDayCount(_ count: Int) -> String {
             count == 1 ? "1-day program" : "\(count)-day program"
         }
-        static let choosePlan = "Choose a plan"
-        static let yourPlan = "Your plan"
-        static let subscribeWeekly = "Subscribe weekly"
-        static let subscribeMonthly = "Subscribe monthly"
-        static let subscribeYearly = "Subscribe yearly"
-        static let buyLifetime = "Buy Lifetime"
-        static func startFreeTrial(_ adjectiveDuration: String) -> String {
-            "Start \(adjectiveDuration) free trial"
+        static let choosePlan = "Choose your plan"
+        static func tryFor(_ localizedZeroPrice: String) -> String {
+            "Try for \(localizedZeroPrice)"
+        }
+        static func subscribeFor(_ billedPrice: String) -> String {
+            "Subscribe for \(billedPrice)"
+        }
+        static func buyFor(_ price: String) -> String {
+            "Buy for \(price)"
         }
         static func trialPurchaseContext(
             duration: String,
@@ -377,13 +391,13 @@ enum AppCopy {
             "Next-workout targets",
             "One-tap set logging",
             "Last-time values",
-            "Ready-made or pasted programs",
+            "Ready-made programs",
             "Progress history",
             "Lock Screen rest timer"
         ]
 
-        // On-page renewal transparency. The timeline explains the cancellation
-        // window directly without adding a notification decision to purchase.
+        // The selected offer, timing, reminder preference, and purchase action
+        // stay on one surface so every promise is visible at the decision.
         static let timelineTitle = "What happens next"
         static let timelineTodayTitle = "Today"
         static let timelineTodayMessage = "Full Unit access starts immediately."
@@ -405,16 +419,33 @@ enum AppCopy {
         static let trialTimelineTitle = "How your free trial works"
         static let trialTimelineDayZeroTitle = "Day 0"
         static let trialTimelineDayZeroMessage = "Full Unit access starts immediately."
-        static func trialTimelineBeforeRenewalTitle(dayCount: Int?) -> String {
-            guard let dayCount else { return "Before the trial ends" }
-            return "Before Day \(dayCount)"
+        static func trialTimelineReminderTitle(dayCount: Int?) -> String {
+            guard let dayCount else { return "Two days before" }
+            return "Day \(max(0, dayCount - 2))"
         }
+        static let trialTimelineReminderOffMessage =
+            "Turn on a reminder for two days before your trial ends."
+        static let trialTimelineReminderOnMessage =
+            "Unit reminds you two days before your trial ends."
+        static let trialReminderLabel = "Remind me 2 days before"
+        static let trialReminderCaption =
+            "Optional. Notification permission is requested after purchase."
         static func trialTimelineEndTitle(dayCount: Int?) -> String {
             dayCount.map { "Day \($0)" } ?? "After the trial"
         }
         static func trialTimelineEndMessage(_ billedPrice: String) -> String {
             "Renews at \(billedPrice) unless cancelled."
         }
+        static func trialTimelineRewardTitle(for goal: String?) -> String {
+            switch goal {
+            case "strength": return "Keep getting stronger"
+            case "hypertrophy": return "Keep building muscle"
+            case "mixed": return "Keep building strength and muscle"
+            default: return "Keep making progress"
+            }
+        }
+        static let trialTimelineRewardMessage =
+            "Your program, history, and next targets stay ready."
         // Social proof — a real, published five-star App Store review
         // (Türkiye storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym
         // tracker app"). The user-facing quote is its English translation.

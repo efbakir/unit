@@ -104,6 +104,15 @@ enum AnalyticsOnboardingSlide: String, CaseIterable, Hashable {
     case oneTapLogging = "one_tap_logging"
 }
 
+enum AnalyticsTrialReminderOutcome: String, CaseIterable, Hashable {
+    case scheduled
+    case denied
+    case notAuthorized = "not_authorized"
+    case invalidExpiration = "invalid_expiration"
+    case failed
+    case cancelled
+}
+
 enum UnitAnalyticsEvent {
     case onboardingStarted
     case onboardingSlideViewed(id: AnalyticsOnboardingSlide)
@@ -112,6 +121,9 @@ enum UnitAnalyticsEvent {
     case programMatchSelected(profile: ProgramMatchProfile, rank: Int)
     case programSetupCompleted(source: String)
     case paywallViewed(trialEligibility: String)
+    case trialReminderPreferenceChanged(isEnabled: Bool)
+    case trialReminderAuthorization(outcome: AnalyticsTrialReminderOutcome)
+    case purchaseStarted(tier: String, hasTrial: Bool, reminderRequested: Bool)
     case trialStarted(tier: String, context: ProgramSetupContext?)
     case purchaseCompleted(tier: String, context: ProgramSetupContext?)
     case workoutStarted
@@ -128,6 +140,9 @@ enum UnitAnalyticsEvent {
         "program_match_selected",
         "program_setup_completed",
         "paywall_viewed",
+        "trial_reminder_preference_changed",
+        "trial_reminder_authorization",
+        "purchase_started",
         "trial_started",
         "purchase_completed",
         "workout_started",
@@ -161,6 +176,22 @@ enum UnitAnalyticsEvent {
             ("program_setup_completed", ["source": source == "paste" ? "paste" : "library"])
         case .paywallViewed(let trialEligibility):
             ("paywall_viewed", ["trial_eligibility": Self.validTrialEligibility(trialEligibility)])
+        case .trialReminderPreferenceChanged(let isEnabled):
+            (
+                "trial_reminder_preference_changed",
+                ["is_enabled": isEnabled ? "true" : "false"]
+            )
+        case .trialReminderAuthorization(let outcome):
+            ("trial_reminder_authorization", ["outcome": outcome.rawValue])
+        case .purchaseStarted(let tier, let hasTrial, let reminderRequested):
+            (
+                "purchase_started",
+                [
+                    "tier": Self.validTier(tier),
+                    "has_trial": hasTrial ? "true" : "false",
+                    "reminder_requested": reminderRequested ? "true" : "false"
+                ]
+            )
         case .trialStarted(let tier, let context):
             ("trial_started", Self.purchaseParameters(tier: tier, context: context))
         case .purchaseCompleted(let tier, let context):

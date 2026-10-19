@@ -6,26 +6,6 @@
       "sourceType": "github",
       "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
     },
-    "swift_combine": {
-      "source": "swiftzilla/skills",
-      "sourceType": "github",
-      "computedHash": "1957fc9e5054ac64116ffcab9aac1962a4ba958d4c77a28c0fcb76489865eb08"
-    },
-    "swift_concurrency": {
-      "source": "swiftzilla/skills",
-      "sourceType": "github",
-      "computedHash": "e2febe640e58fa857dc650927ad1da0b610c385d84e45a3b08249583b807f59f"
-    },
-    "swift_style": {
-      "source": "swiftzilla/skills",
-      "sourceType": "github",
-      "computedHash": "4fc27123c27fffeb1738645c974c894dc6a7ac1d046e9776608d36bc4a198c2d"
-    },
-    "swift_swiftui": {
-      "source": "swiftzilla/skills",
-      "sourceType": "github",
-      "computedHash": "6b8c995b98624c06a86c511eaa8929b7b38336be66cb75df17478e7ed7dc99ae"
-    },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
       "sourceType": "github",

@@ -22,20 +22,15 @@ struct PaywallView: View {
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @State private var showingManageSubscriptions = false
     @State private var didTrackView = false
-    @State private var isPlanPickerExpanded = false
+    @State private var reminderRequested = false
     var onDismiss: () -> Void
 
     var body: some View {
-        // Hard paywall with no secondary escape. `onDismiss` is invoked only
-        // by a verified purchase below.
         AppScreen(
-            primaryButton: primaryButtonConfig,
+            primaryButton: store.isPurchased ? nil : purchaseButtonConfig,
             hidesNavigationBar: true,
             showsTopScrollFade: false
         ) {
-            // No .appScreenEnter() here: the root gate owns the transition.
-            // Adding a second opacity-0→1 entrance risks the content staying
-            // invisible if onAppear misfires on iOS 26's re-present cycle.
             if store.isPurchased {
                 activeSubscriptionContent
             } else {
@@ -43,17 +38,14 @@ struct PaywallView: View {
             }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
-        .sheet(isPresented: $isPlanPickerExpanded) {
-            planPickerSheet
-        }
         .task {
             await store.loadProducts()
-            guard !didTrackView else { return }
-            didTrackView = true
-            let eligibility = selectedTrial == nil
-                ? (store.hasCheckedIntroOfferEligibility ? "ineligible" : "unknown")
-                : "eligible"
-            UnitAnalytics.shared.track(.paywallViewed(trialEligibility: eligibility))
+            trackPaywallViewIfNeeded()
+        }
+        .onChange(of: store.selectedTier) { _, _ in
+            if selectedTrial == nil {
+                reminderRequested = false
+            }
         }
         .onChange(of: store.isPurchased) { _, purchased in
             if purchased { onDismiss() }
@@ -98,19 +90,17 @@ struct PaywallView: View {
 
     // MARK: - Content
 
+    @ViewBuilder
     private var purchaseContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            purchaseHeader
+        if selectedPresentation != nil {
+            VStack(alignment: .leading, spacing: 0) {
+                purchaseHeader
 
-            programSummaryCard
-                .padding(.top, AppSpacing.lg)
-
-            if hasNoLoadedProducts {
-                loadFailureBanner
-                    .padding(.top, AppSpacing.lg)
-            } else {
-                planSelectionSection
+                programSummaryCard
                     .padding(.top, AppSpacing.xl)
+
+                planSelectionSection
+                    .padding(.top, AppSpacing.xxl)
 
                 if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
                     partialLoadBanner
@@ -118,26 +108,44 @@ struct PaywallView: View {
                 }
 
                 purchaseTimelineSection
+                    .padding(.top, AppSpacing.xxl)
+
+                if selectedTrial != nil {
+                    reminderPreferenceCard
+                        .padding(.top, AppSpacing.xl)
+                }
+
+                includedFeaturesSection
+                    .padding(.top, AppSpacing.xxl)
+
+                subscriptionDisclosure
+                    .padding(.top, AppSpacing.md)
+
+                footer
+                    .padding(.top, AppSpacing.xl)
+                    .padding(.bottom, AppSpacing.xl)
+            }
+        } else if hasNoLoadedProducts {
+            VStack(alignment: .leading, spacing: 0) {
+                loadFailureBanner
                     .padding(.top, AppSpacing.xl)
             }
+        } else {
+            ProgressView()
+                .tint(AppColor.accent)
+                .frame(maxWidth: .infinity, minHeight: AppSpacing.xxl)
+                .padding(.top, AppSpacing.xxl)
+                .accessibilityLabel("Loading subscription details")
+        }
+    }
 
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("Everything included")
-                    .font(AppFont.muted.font)
-                    .foregroundStyle(AppColor.textSecondary)
+    private var includedFeaturesSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Everything included")
+                .font(AppFont.sectionHeader.font)
+                .foregroundStyle(AppColor.textPrimary)
 
-                AppFeatureAccessTable(rows: AppCopy.Paywall.includedFeatures)
-            }
-            .padding(.top, AppSpacing.xl)
-
-            if !hasNoLoadedProducts {
-                subscriptionDisclosure
-                    .padding(.top, AppSpacing.sm)
-            }
-
-            footer
-                .padding(.top, AppSpacing.lg)
-                .padding(.bottom, AppSpacing.lg)
+            AppFeatureAccessTable(rows: AppCopy.Paywall.includedFeatures)
         }
     }
 
@@ -172,7 +180,7 @@ struct PaywallView: View {
     }
 
     private var purchaseHeader: some View {
-        VStack(alignment: .center, spacing: AppSpacing.xs) {
+        VStack(alignment: .center, spacing: AppSpacing.sm) {
             Text(paywallHeadline)
                 .appFont(.title)
                 .foregroundStyle(AppColor.textPrimary)
@@ -188,7 +196,7 @@ struct PaywallView: View {
                 .accessibilityIdentifier("paywall-supporting-copy")
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.top, AppSpacing.sm)
+        .padding(.top, AppSpacing.md)
     }
 
     private var selectedPresentation: StorePlanPresentation? {
@@ -236,12 +244,14 @@ struct PaywallView: View {
                     isCurrent: true
                 ),
                 AppTimelineItem(
-                    id: "trial-before-end",
-                    title: AppCopy.Paywall.trialTimelineBeforeRenewalTitle(
+                    id: "trial-reminder",
+                    title: AppCopy.Paywall.trialTimelineReminderTitle(
                         dayCount: trial.dayCount
                     ),
-                    subtitle: AppCopy.Paywall.timelineBeforeRenewalMessage,
-                    icon: .settingsOutline
+                    subtitle: reminderRequested
+                        ? AppCopy.Paywall.trialTimelineReminderOnMessage
+                        : AppCopy.Paywall.trialTimelineReminderOffMessage,
+                    icon: .bell
                 ),
                 AppTimelineItem(
                     id: "trial-end",
@@ -252,6 +262,15 @@ struct PaywallView: View {
                         presentation.billedPriceText
                     ),
                     icon: .calendarClock
+                ),
+                AppTimelineItem(
+                    id: "trial-reward",
+                    title: AppCopy.Paywall.trialTimelineRewardTitle(
+                        for: setupContext?.matchProfile?.goal.rawValue
+                    ),
+                    subtitle: AppCopy.Paywall.trialTimelineRewardMessage,
+                    icon: .starFilled,
+                    isReward: true
                 )
             ]
         }
@@ -303,48 +322,89 @@ struct PaywallView: View {
         ]
     }
 
+    private var reminderPreferenceCard: some View {
+        AppCard(contentInset: AppSpacing.md, verticalInset: AppSpacing.smd) {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(AppCopy.Paywall.trialReminderLabel)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+
+                    Text(AppCopy.Paywall.trialReminderCaption)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Toggle("", isOn: reminderPreferenceBinding)
+                    .labelsHidden()
+                    .tint(AppColor.accent)
+                    .frame(minWidth: AppSpacing.xxl, minHeight: AppSpacing.xxl)
+                    .accessibilityLabel(AppCopy.Paywall.trialReminderLabel)
+                    .accessibilityHint(AppCopy.Paywall.trialReminderCaption)
+            }
+        }
+        .accessibilityIdentifier("paywall-trial-reminder-preference")
+    }
+
+    private var reminderPreferenceBinding: Binding<Bool> {
+        Binding(
+            get: { reminderRequested },
+            set: { newValue in
+                reminderRequested = newValue
+                UnitAnalytics.shared.track(
+                    .trialReminderPreferenceChanged(isEnabled: newValue)
+                )
+            }
+        )
+    }
+
     private var paywallHeadline: String {
         guard let selectedTrial else { return AppCopy.Paywall.standardHeadline }
         return AppCopy.Paywall.trialHeadline(selectedTrial.durationText)
     }
 
     private var paywallSupportingCopy: String {
-        selectedTrial == nil
-            ? AppCopy.Paywall.standardSupportingCopy
-            : AppCopy.Paywall.trialSupportingCopy
+        AppCopy.Paywall.supportingCopy(for: setupContext?.matchProfile?.goal.rawValue)
     }
 
     private var programSummaryCard: some View {
-        AppCard(contentInset: AppSpacing.md, verticalInset: AppSpacing.smd) {
-            VStack(alignment: .center, spacing: AppSpacing.xs) {
-                HStack(spacing: AppSpacing.xs) {
-                    AppIcon.checkmarkFilled.image(size: 16)
+        AppCard(contentInset: AppSpacing.lg, verticalInset: AppSpacing.md) {
+            VStack(alignment: .center, spacing: AppSpacing.md) {
+                HStack(spacing: AppSpacing.sm) {
+                    AppIcon.checkmarkFilled.image(size: AppIconSize.readiness)
                         .foregroundStyle(AppColor.accent)
+                        .accessibilityHidden(true)
 
-                    Text(programStatusLabel)
-                        .appCapsLabel(.smallLabel)
-                        .foregroundStyle(AppColor.textSecondary)
+                    Text(AppCopy.Paywall.programReady)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
                 }
 
-                Text(programTitle)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let programContextLine {
-                    Text(programContextLine)
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
+                VStack(alignment: .center, spacing: AppSpacing.xs) {
+                    Text(programTitle)
+                        .font(AppFont.title.font)
+                        .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .allowsTightening(true)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let programContextLine {
+                        Text(programContextLine)
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .allowsTightening(true)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall-program-summary")
     }
 
     private var activeSubscriptionHeader: some View {
@@ -359,12 +419,6 @@ struct PaywallView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, AppSpacing.xl)
-    }
-
-    private var programStatusLabel: String {
-        setupContext?.matchProfile == nil
-            ? AppCopy.Paywall.programReady
-            : AppCopy.Paywall.programMatched
     }
 
     private var programContextLine: String? {
@@ -418,7 +472,7 @@ struct PaywallView: View {
 
     // MARK: - CTA
 
-    private var primaryButtonConfig: PrimaryButtonConfig? {
+    private var purchaseButtonConfig: PrimaryButtonConfig? {
         guard !store.isPurchased else { return nil }
         return PrimaryButtonConfig(
             label: ctaTitle,
@@ -426,8 +480,23 @@ struct PaywallView: View {
             isLoading: store.isLoading || store.isPurchasing,
             disabledReason: ctaDisabledReason,
             contextLabel: selectedPurchaseContext,
-            action: { Task { await store.purchase() } }
+            action: {
+                Task {
+                    await store.purchase(
+                        remindBeforeTrialEnds: reminderRequested
+                    )
+                }
+            }
         )
+    }
+
+    private func trackPaywallViewIfNeeded() {
+        guard !didTrackView else { return }
+        didTrackView = true
+        let eligibility = selectedTrial == nil
+            ? (store.hasCheckedIntroOfferEligibility ? "ineligible" : "unknown")
+            : "eligible"
+        UnitAnalytics.shared.track(.paywallViewed(trialEligibility: eligibility))
     }
 
     private var ctaTitle: String {
@@ -435,15 +504,20 @@ struct PaywallView: View {
             return "Subscribe to continue"
         }
 
-        if let selectedTrial {
-            return AppCopy.Paywall.startFreeTrial(selectedTrial.adjectiveText)
+        if selectedTrial != nil,
+           let product = store.selectedProduct {
+            let localizedZero = Decimal.zero.formatted(product.priceFormatStyle)
+            return AppCopy.Paywall.tryFor(localizedZero)
         }
 
+        guard let presentation = selectedPresentation else {
+            return "Subscribe to continue"
+        }
         switch store.selectedTier {
-        case .weekly: return AppCopy.Paywall.subscribeWeekly
-        case .monthly: return AppCopy.Paywall.subscribeMonthly
-        case .annual: return AppCopy.Paywall.subscribeYearly
-        case .lifetime: return AppCopy.Paywall.buyLifetime
+        case .weekly, .monthly, .annual:
+            return AppCopy.Paywall.subscribeFor(presentation.billedPriceText)
+        case .lifetime:
+            return AppCopy.Paywall.buyFor(presentation.displayPrice)
         }
     }
 
@@ -477,82 +551,16 @@ struct PaywallView: View {
     // MARK: - Tier Selector
 
     private var planSelectionSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(AppCopy.Paywall.yourPlan)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.textPrimary)
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text(AppCopy.Paywall.choosePlan)
+                .font(AppFont.sectionHeader.font)
+                .foregroundStyle(AppColor.textPrimary)
 
-                Spacer(minLength: AppSpacing.sm)
-
-                Button("Change") {
-                    isPlanPickerExpanded = true
-                }
-                .font(AppFont.muted.font)
-                .foregroundStyle(AppColor.accent)
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("paywall-plan-picker-toggle")
-            }
-
-            selectedTierCard
-        }
-    }
-
-    private var planPickerSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.xs) {
-                    tierCards
-                }
-                .padding(AppSpacing.md)
-            }
-            .background(AppColor.background.ignoresSafeArea())
-            .navigationTitle(AppCopy.Paywall.choosePlan)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        isPlanPickerExpanded = false
-                    }
+            VStack(spacing: AppSpacing.sm) {
+                ForEach(visibleTiers) { tier in
+                    tierCard(for: tier)
                 }
             }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private var selectedTierCard: some View {
-        AppSelectableTierCard(
-            label: label(for: store.selectedTier),
-            price: priceText(for: store.selectedTier),
-            sublabel: sublabel(for: store.selectedTier),
-            badge: badgeText(for: store.selectedTier),
-            isSelected: true,
-            isEnabled: store.product(for: store.selectedTier) != nil,
-            accessibilityHint: "Show all plans",
-            action: {
-                isPlanPickerExpanded = true
-            }
-        )
-        .accessibilityIdentifier("paywall-plan-\(store.selectedTier.rawValue)")
-    }
-
-    @ViewBuilder
-    private var tierCards: some View {
-        ForEach(visibleTiers) { tier in
-            AppSelectableTierCard(
-                label: label(for: tier),
-                price: priceText(for: tier),
-                sublabel: sublabel(for: tier),
-                badge: badgeText(for: tier),
-                isSelected: store.selectedTier == tier,
-                isEnabled: store.product(for: tier) != nil,
-                action: {
-                    store.selectTier(tier)
-                    isPlanPickerExpanded = false
-                }
-            )
-            .accessibilityIdentifier("paywall-plan-\(tier.rawValue)")
         }
     }
 
@@ -562,6 +570,22 @@ struct PaywallView: View {
             tiers.append(.lifetime)
         }
         return tiers
+    }
+
+    private func tierCard(for tier: StoreManager.Tier) -> some View {
+        AppSelectableTierCard(
+            label: label(for: tier),
+            price: priceText(for: tier),
+            sublabel: sublabel(for: tier),
+            badge: badgeText(for: tier),
+            isSelected: store.selectedTier == tier,
+            showsDetails: store.selectedTier == tier,
+            isEnabled: store.product(for: tier) != nil,
+            action: {
+                store.selectTier(tier)
+            }
+        )
+        .accessibilityIdentifier("paywall-plan-\(tier.rawValue)")
     }
 
     private var hasMissingRequiredProducts: Bool {
@@ -736,9 +760,9 @@ struct PaywallView: View {
 
     private var footer: some View {
         VStack(spacing: AppSpacing.sm) {
-            // ViewThatFits(in: .horizontal) — same axis rationale as
-            // tierSelector above. Decorative "·" separators are dropped in
-            // the vertical fallback since they only frame horizontal layout.
+            // Keep the low-emphasis legal actions on one line when they fit.
+            // Decorative "·" separators are dropped in the vertical fallback
+            // since they only frame horizontal layout.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: AppSpacing.md) {
                     restoreButton
@@ -754,7 +778,7 @@ struct PaywallView: View {
                 }
             }
         }
-        .font(AppFont.caption.font)
+        .font(AppFont.metadata.font)
         .foregroundStyle(AppColor.textSecondary)
         .frame(maxWidth: .infinity)
     }

@@ -40,7 +40,7 @@
 - Template-based logging with Last time pre-fill
 - Two onboarding paths: text-paste import and starter program library
 - Auto rest timer with Lock Screen / Dynamic Island
-- History view (list + calendar)
+- History view (one chronological list grouped by month)
 - Exercise library with search and custom exercise creation
 - Haptic confirmation on set logged
 - PR detection and notification
@@ -65,5 +65,5 @@
 - Atomic design system (`DESIGN.md`, `docs/claude/design-system.md`, `Unit/UI/DesignSystem.swift`) — no raw values in view files
 - Light-only visual system
 - 44×44 pt minimum touch targets
-- No navigation chevrons for routine rows; calendar/back-forward controls must use `AppIcon.back` / `AppIcon.forward`.
+- No navigation chevrons for routine rows
 - Every screen uses `AppScreen` wrapper

@@ -17,7 +17,7 @@
 - Template-based logging with ghost values
 - Two first-run onboarding paths: text-paste and starter program library
 - Auto rest timer with Lock Screen / Dynamic Island
-- History view (list + calendar)
+- History view (one chronological list grouped by month)
 - Exercise library (search + custom exercise creation)
 - Haptic confirmation on set logged
 - PR detection + notification
