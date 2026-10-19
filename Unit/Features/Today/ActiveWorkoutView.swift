@@ -645,7 +645,6 @@ struct ActiveWorkoutView: View {
         AppSheetScreen(
             title: AppCopy.Nav.exercises,
             dismissLabel: AppCopy.Nav.done,
-            dismissActionPlacement: .confirmation,
             onDismissAction: { showLineup = false }
         ) {
             AppCardList(data: exerciseLineupRows, id: \.id) { item in
@@ -706,7 +705,7 @@ struct ActiveWorkoutView: View {
                 AppTag(text: AppCopy.Workout.exerciseCurrentTag, style: .accent)
             } else if isDone {
                 AppIconCircle(diameter: 24, surface: .tinted(AppColor.success, opacity: 0.1)) {
-                    AppIcon.checkmark.image(size: 12, weight: .bold)
+                    AppIcon.checkmark.image(size: AppIconSize.indicator, weight: .bold)
                         .foregroundStyle(AppColor.success)
                 }
             }
@@ -1332,7 +1331,6 @@ private struct AdjustResultSheet: View {
                 }
             ),
             dismissLabel: AppCopy.Nav.cancel,
-            dismissActionPlacement: .cancellation,
             // Cancel button routes through the confirmation alert when the
             // lifter has typed something — matches the swipe-down guard
             // (`interactiveDismissDisabled` below) so there is exactly one
@@ -1387,7 +1385,7 @@ private struct AdjustResultSheet: View {
                         if onDelete() { dismiss() }
                         else { showsSaveFailure = true }
                     } label: {
-                        AppIcon.trash.image(size: 16, weight: .medium)
+                        AppIcon.trash.image(size: AppIconSize.readiness, weight: .medium)
                             .foregroundStyle(AppColor.error)
                     }
                     .accessibilityLabel(AppCopy.Workout.deleteSet)

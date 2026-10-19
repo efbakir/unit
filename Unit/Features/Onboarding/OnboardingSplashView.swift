@@ -77,7 +77,7 @@ struct OnboardingSplashView: View {
                 Button {
                     onDismiss?()
                 } label: {
-                    AppIcon.close.image(size: 16, weight: .semibold)
+                    AppIcon.close.image(size: AppIconSize.readiness, weight: .semibold)
                         .foregroundStyle(
                             openerVisible
                                 ? AppColor.accentForeground
@@ -463,7 +463,7 @@ private struct MarketingSlideArtwork: View {
                     AppDivider()
 
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                        AppIcon.forward.image(size: 16, weight: .semibold)
+                        AppIcon.forward.image(size: AppIconSize.readiness, weight: .semibold)
                         Text("All sets reached the top of your range.")
                             .font(AppFont.caption.font)
                     }
@@ -479,7 +479,7 @@ private struct MarketingSlideArtwork: View {
                     previewStep(label: "NEXT", value: "\(metrics.nextWeight) · 8, 8, 8", primary: true)
 
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                        AppIcon.forward.image(size: 16, weight: .semibold)
+                        AppIcon.forward.image(size: AppIconSize.readiness, weight: .semibold)
                         Text("Top of the range on every set · +\(metrics.increment)")
                             .font(AppFont.caption.font)
                     }

@@ -187,6 +187,8 @@ components:
 
 # Design System: Unit
 
+Runtime owners and the DEBUG catalog: [design-system index](docs/design-system-index.md).
+
 ## 1. Overview
 
 **Creative North Star: "The Lab Notebook"**

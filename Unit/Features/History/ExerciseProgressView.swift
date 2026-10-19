@@ -249,13 +249,13 @@ struct ExerciseProgressView: View {
 
                     if let selectedChartPoint, selectedChartPoint.id == point.id {
                         RuleMark(x: .value("Selected date", selectedChartPoint.date))
-                            .foregroundStyle(AppColor.textSecondary.opacity(0.5))
+                            .foregroundStyle(AppColor.chartSelection)
                     }
                 }
                 .chartXAxis {
                     AxisMarks(values: chartXAxisDates) { _ in
                         AxisGridLine()
-                            .foregroundStyle(AppColor.border.opacity(0.4))
+                            .foregroundStyle(AppColor.chartGrid)
                         AxisTick()
                             .foregroundStyle(AppColor.border)
                         AxisValueLabel(format: .dateTime.month(.abbreviated).day())
@@ -269,7 +269,7 @@ struct ExerciseProgressView: View {
                             .font(AppFont.caption.font)
                             .foregroundStyle(AppColor.textSecondary)
                         AxisGridLine()
-                            .foregroundStyle(AppColor.border.opacity(0.4))
+                            .foregroundStyle(AppColor.chartGrid)
                     }
                 }
                 .chartXScale(
@@ -280,7 +280,7 @@ struct ExerciseProgressView: View {
                 )
                 .chartXSelection(value: $selectedChartDate)
                 .chartYScale(domain: chartYDomain)
-                .frame(minHeight: 160)
+                .frame(minHeight: AppChartMetrics.compactHeight)
 
                 Text("Tap or drag for exact values.")
                     .font(AppFont.caption.font)

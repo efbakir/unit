@@ -126,7 +126,7 @@ struct TemplateDetailView: View {
                 targetEditPayload = targetEditPayload(for: exercise)
             } label: {
                 HStack(spacing: AppSpacing.md) {
-                    AppIcon.reorder.image(size: 16, weight: .semibold)
+                    AppIcon.reorder.image(size: AppIconSize.readiness, weight: .semibold)
                         .foregroundStyle(AppColor.textSecondary)
                         .frame(minWidth: 44, minHeight: 44, alignment: .leading)
                         .accessibilityHidden(true)
@@ -142,7 +142,7 @@ struct TemplateDetailView: View {
 
                             Spacer(minLength: 0)
 
-                            AppIcon.edit.image(size: 14, weight: .semibold)
+                            AppIcon.edit.image(size: AppIconSize.compact, weight: .semibold)
                                 .foregroundStyle(AppColor.textSecondary)
                                 .accessibilityHidden(true)
                         }
@@ -166,7 +166,7 @@ struct TemplateDetailView: View {
             Button {
                 removeExerciseWithUndo(exercise)
             } label: {
-                AppIcon.close.image(size: 17, weight: .semibold)
+                AppIcon.close.image(weight: .semibold)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
                     .contentShape(Rectangle())

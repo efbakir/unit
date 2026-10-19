@@ -181,6 +181,24 @@ Allowed in `*View.swift`:
 
 ---
 
+## Review surface and sheet behavior
+
+Debug builds expose Settings → Design system → Components (`AppComponentCatalog`
+in `DesignSystem.swift`). Samples use production components with local state only.
+The catalog covers pressed, disabled, loading, large text, fade-only feedback,
+and a failed-save editor. See [the short owner index](design-system-index.md).
+
+`AppDropdownChip` and `AppFilterChip` retain native Menu/Button semantics while
+private `AppFilterChipSurface` owns their shared capsule chrome and disabled fill.
+`AppSheetScreen` renders a native leading X and preserves its caller's dismiss
+handler; Save/Done is reserved for a committing action. `AppSetRepEditorSheet`
+accepts a Bool save result: failure retains the input and presents a native alert.
+
+`AppIconSize.compact`/`indicator` supplement `readiness`/`reward` for feature
+symbols. `AppChartMetrics.compactHeight`/`standardHeight` own the existing chart
+viewports; `AppColor.chartGrid`/`chartSelection` own their subdued colors.
+Touch-target floors stay explicit at 44pt. Native widget metrics are unchanged.
+
 ## Related docs
 
 - `visual-language.md` — tone, hierarchy, Gym Test, light-first surfaces

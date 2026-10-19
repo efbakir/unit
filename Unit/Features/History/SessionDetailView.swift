@@ -346,7 +346,6 @@ struct SessionDetailView: View {
                 action: saveEditedRecommendation
             ),
             dismissLabel: AppCopy.Nav.cancel,
-            dismissActionPlacement: .cancellation,
             onDismissAction: { editingRecommendationID = nil }
         ) {
             VStack(alignment: .center, spacing: AppSpacing.xl) {

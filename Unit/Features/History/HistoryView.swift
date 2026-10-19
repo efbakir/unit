@@ -673,7 +673,6 @@ struct SessionSummarySheet: View {
         AppSheetScreen(
             title: headerTitle,
             dismissLabel: AppCopy.Nav.done,
-            dismissActionPlacement: .confirmation,
             onDismissAction: { dismiss() }
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -886,7 +885,7 @@ private struct CalendarMonthHeader: View {
             AppIconCircle {
                 icon
                     .image(size: AppIconCircleSize.icon, weight: AppIconCircleSize.weight)
-                    .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textSecondary.opacity(0.45))
+                    .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textDisabled)
             }
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())

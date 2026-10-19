@@ -311,10 +311,10 @@ struct TrainingWeekStripView: View {
                 Group {
                     switch glyph {
                     case .check:
-                        AppIcon.checkmark.image(size: 15, weight: .semibold)
+                        AppIcon.checkmark.image(size: AppIconSize.readiness, weight: .semibold)
                             .foregroundStyle(AppColor.success)
                     case .minus:
-                        AppIcon.remove.image(size: 16, weight: .semibold)
+                        AppIcon.remove.image(size: AppIconSize.readiness, weight: .semibold)
                             .foregroundStyle(AppColor.textSecondary)
                     case .weekNumber(let n):
                         Text("\(n)")
@@ -425,13 +425,13 @@ struct TodayWeekOverviewSheet: View {
     private func dayStatusIcon(_ state: TodayWeekOverviewDay.DayState) -> some View {
         switch state {
         case .completed:
-            AppIcon.checkmarkFilled.image(size: 20, weight: .semibold)
+            AppIcon.checkmarkFilled.image(size: AppIconSize.reward, weight: .semibold)
                 .foregroundStyle(AppColor.success)
         case .missed:
-            AppIcon.minusCircle.image(size: 20, weight: .semibold)
+            AppIcon.minusCircle.image(size: AppIconSize.reward, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
         case .upcoming:
-            AppIcon.circle.image(size: 20, weight: .semibold)
+            AppIcon.circle.image(size: AppIconSize.reward, weight: .semibold)
                 .foregroundStyle(AppColor.textDisabled)
         }
     }

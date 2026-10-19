@@ -279,7 +279,6 @@ struct AddExerciseView: View {
                 action: save
             ),
             dismissLabel: AppCopy.Nav.cancel,
-            dismissActionPlacement: .cancellation,
             onDismissAction: { dismiss() }
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -458,7 +457,7 @@ struct ExerciseDetailView: View {
                             )
                             .foregroundStyle(AppColor.textPrimary)
                         }
-                        .frame(height: 180)
+                        .frame(height: AppChartMetrics.standardHeight)
                     }
                     .appCardStyle()
 
@@ -474,7 +473,7 @@ struct ExerciseDetailView: View {
                                 )
                                 .foregroundStyle(AppColor.accentSoft)
                             }
-                            .frame(height: 160)
+                            .frame(height: AppChartMetrics.compactHeight)
                         }
                         .appCardStyle()
                     }

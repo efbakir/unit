@@ -71,7 +71,6 @@ struct OnboardingProgramPreviewView: View {
             AppSheetScreen(
                 title: "Edit exercise",
                 dismissLabel: AppCopy.Nav.done,
-                dismissActionPlacement: .confirmation,
                 onDismissAction: { editingExercise = nil },
                 usesOuterScroll: false
             ) {

@@ -27,6 +27,7 @@
 
 | Path | What it is | Use when |
 |---|---|---|
+| `docs/design-system-index.md` | Short owner map and DEBUG catalog route | Finding the shared owner or inspecting its states |
 | `docs/atomic-design-system.md` | Tokens in `DesignSystem.swift` — atoms, molecules, organisms, templates | Adding a view or checking token names |
 | `docs/visual-language.md` | Light-only theme, color roles, typography, design constraints | Reviewing UI specs or color/font decisions |
 | `docs/design-principles.md` | 6 principles: minimalism, clarity, speed, consistency, accessibility, atoms | Justifying a UI change or resolving conflicts |

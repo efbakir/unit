@@ -450,7 +450,7 @@ struct EditProgramView: View {
 
     private func draggableRoutineRow(_ template: DayTemplate) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            AppIcon.reorder.image(size: 15, weight: .semibold)
+            AppIcon.reorder.image(size: AppIconSize.readiness, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
                 .frame(minWidth: 44, minHeight: 44, alignment: .leading)
                 .accessibilityHidden(true)

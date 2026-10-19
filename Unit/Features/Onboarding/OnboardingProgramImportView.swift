@@ -169,7 +169,6 @@ private struct ProgramFormatGuideSheet: View {
         AppSheetScreen(
             title: "Format examples",
             dismissLabel: AppCopy.Nav.done,
-            dismissActionPlacement: .confirmation,
             onDismissAction: { dismiss() },
             usesOuterScroll: false
         ) {

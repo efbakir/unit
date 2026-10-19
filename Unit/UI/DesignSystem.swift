@@ -46,6 +46,8 @@ enum AppColor {
     /// — single canonical placeholder gray across every input surface.
     static let textPlaceholder = Color(uiColor: .placeholderText)
     static let border = Color(uiColor: uicolor(0xE5E5E5))
+    static let chartGrid = border.opacity(0.4)
+    static let chartSelection = textSecondary.opacity(0.5)
 
     /// Filled segment in multi-step progress (e.g. onboarding) — softer than `textPrimary` but reads clearly against `border` for inactive steps.
 
@@ -298,6 +300,12 @@ enum AppSpacing {
 
     static let smd: CGFloat = 12
     static let xxl: CGFloat = 48
+}
+
+/// Shared chart viewports; unrelated touch-target floors stay explicit at 44pt.
+enum AppChartMetrics {
+    static let compactHeight: CGFloat = 160
+    static let standardHeight: CGFloat = 180
 }
 
 /// Corner radius tokens. Always paired with `RoundedRectangle(style: .continuous)`
@@ -798,6 +806,8 @@ enum AppIcon: String {
 /// Semantic icon sizes for standalone symbols that carry hierarchy rather
 /// than sitting inside a control or icon circle.
 enum AppIconSize {
+    static let compact: CGFloat = 14
+    static let indicator: CGFloat = 12
     static let readiness: CGFloat = 16
     static let reward: CGFloat = 20
 }
@@ -1334,6 +1344,7 @@ struct AppPrimaryButton: View {
     var isEnabled: Bool = true
     var isLoading: Bool = false
     let action: () -> Void
+    @Environment(\.isEnabled) private var parentIsEnabled
 
     /// Bumped each time a disabled (not loading) tap is absorbed so
     /// `AppHaptic.error` fires. A silently-rejected primary CTA is the
@@ -1349,7 +1360,8 @@ struct AppPrimaryButton: View {
         self.action = action
     }
 
-    private var isInteractive: Bool { isEnabled && !isLoading }
+    private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
+    private var isInteractive: Bool { effectiveEnabled && !isLoading }
 
     var body: some View {
         ZStack {
@@ -1357,7 +1369,7 @@ struct AppPrimaryButton: View {
                 ZStack {
                     Text(label)
                         .font(AppFont.productAction.font)
-                        .foregroundStyle(isEnabled ? AppColor.accentForeground : AppColor.textDisabled)
+                        .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
                         .multilineTextAlignment(.center)
                         .truncationMode(.tail)
                         .minimumScaleFactor(0.7)
@@ -1367,14 +1379,14 @@ struct AppPrimaryButton: View {
                         .animation(AppMotion.feedback, value: isLoading)
                     if isLoading {
                         ProgressView()
-                            .tint(AppColor.accentForeground)
+                            .tint(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
                             .transition(.opacity)
                     }
                 }
                 .animation(AppMotion.feedback, value: isLoading)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
-                .background(isEnabled ? AppColor.accent : AppColor.controlBackground)
+                .background(effectiveEnabled ? AppColor.accent : AppColor.controlBackground)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(ScaleButtonStyle())
@@ -1386,7 +1398,7 @@ struct AppPrimaryButton: View {
             // *and not loading*. Loading is a system-status state, not a user
             // gate, so we don't fire an error haptic for it. AccessibilityHidden
             // so VoiceOver still hears the underlying disabled button.
-            if !isEnabled && !isLoading {
+            if !effectiveEnabled && !isLoading {
                 Color.clear
                     .frame(maxWidth: .infinity)
                     .frame(height: 60)
@@ -1399,10 +1411,8 @@ struct AppPrimaryButton: View {
     }
 }
 
-/// Filled secondary action used **only** by active-workout organisms — the
-/// `metricHero` "Log" pill in `WorkoutCommandCard` and the inline "Next exercise"
-/// row in `SessionStateBar`. `fileprivate` so feature code cannot compose it:
-/// page files use `AppPrimaryButton` (sticky CTA) or `AppGhostButton` (quiet action).
+/// Filled secondary action with optional icon/detail. Shared by workout organisms
+/// and supporting feature actions; primary commits use `AppPrimaryButton`.
 struct AppSecondaryButton: View {
     enum Tone {
         case `default`
@@ -1422,6 +1432,8 @@ struct AppSecondaryButton: View {
 
     let label: String
     var isEnabled: Bool = true
+    @Environment(\.isEnabled) private var parentIsEnabled
+    private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
     var icon: AppIcon? = nil
     var detail: String? = nil
     var detailAlignment: DetailAlignment = .leading
@@ -1477,7 +1489,7 @@ struct AppSecondaryButton: View {
                                     .foregroundStyle(foregroundColor)
                                 Text(trimmedDetail)
                                     .font(AppFont.caption.font)
-                                    .foregroundStyle(isEnabled ? AppColor.textSecondary : AppColor.textDisabled)
+                                    .foregroundStyle(effectiveEnabled ? AppColor.textSecondary : AppColor.textDisabled)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.85)
                                     .multilineTextAlignment(.center)
@@ -1496,7 +1508,7 @@ struct AppSecondaryButton: View {
                                     .foregroundStyle(foregroundColor)
                                 Text(trimmedDetail)
                                     .font(AppFont.caption.font)
-                                    .foregroundStyle(isEnabled ? AppColor.textSecondary : AppColor.textDisabled)
+                                    .foregroundStyle(effectiveEnabled ? AppColor.textSecondary : AppColor.textDisabled)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.85)
                             }
@@ -1536,7 +1548,7 @@ struct AppSecondaryButton: View {
 
     @ViewBuilder
     private func inlineDetailRow(trimmedDetail: String) -> some View {
-        let detailColor = isEnabled ? AppColor.textSecondary : AppColor.textDisabled
+        let detailColor = effectiveEnabled ? AppColor.textSecondary : AppColor.textDisabled
         let row = HStack(alignment: .center, spacing: AppSpacing.smd) {
             if let icon {
                 icon.image(size: 16, weight: .semibold)
@@ -1565,7 +1577,7 @@ struct AppSecondaryButton: View {
     }
 
     private var foregroundColor: Color {
-        guard isEnabled else { return AppColor.textDisabled }
+        guard effectiveEnabled else { return AppColor.textDisabled }
         switch tone {
         case .default: return AppColor.textPrimary
         case .accentSoft: return AppColor.accent
@@ -1574,8 +1586,8 @@ struct AppSecondaryButton: View {
     }
 
     private var backgroundColor: Color {
-        guard isEnabled else {
-            return tone == .destructive ? Color.clear : AppColor.controlBackground.opacity(0.5)
+        guard effectiveEnabled else {
+            return tone == .destructive ? Color.clear : AppColor.controlBackground
         }
         switch tone {
         case .default: return AppColor.controlBackground
@@ -1590,11 +1602,13 @@ struct AppSecondaryButton: View {
 struct AppGhostButtonLabel: View {
     let title: String
     var isEnabled: Bool = true
+    @Environment(\.isEnabled) private var parentIsEnabled
+    private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
 
     var body: some View {
         Text(title)
             .font(AppFont.productAction.font)
-            .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textDisabled)
+            .foregroundStyle(effectiveEnabled ? AppColor.textPrimary : AppColor.textDisabled)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 44)
@@ -1857,17 +1871,7 @@ struct AppDropdownChip<Content: View>: View {
                     .appCapsLabel(isActive ? .overlineStrong : .overline)
                 AppIcon.chevronDown.image(size: 10, weight: .bold)
             }
-            .foregroundStyle(isActive ? AppColor.background : AppColor.textPrimary)
-            .padding(.horizontal, AppSpacing.smd)
-            .padding(.vertical, AppSpacing.xs)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(isActive ? AppColor.textPrimary : AppColor.accentSoft)
-            )
-            // Visible capsule stays compact; hit zone extends to 44pt floor
-            // so the chip rhythm reads the same as `AppFilterChip` next to it.
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            .modifier(AppFilterChipSurface(isSelected: isActive))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isActive ? .isSelected : [])
@@ -1910,24 +1914,38 @@ struct AppFilterChip: View {
                         .frame(width: 6, height: 6)
                 }
             }
-            .foregroundStyle(isSelected ? AppColor.background : AppColor.textPrimary)
-            .padding(.leading, AppSpacing.smd)
-            .padding(.trailing, isSelected && showsClearGlyphWhenSelected ? AppSpacing.sm : AppSpacing.smd)
-            .padding(.vertical, AppSpacing.xs)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(isSelected ? AppColor.textPrimary : AppColor.accentSoft)
-            )
-            // Visible capsule stays compact; hit zone extends to 44pt floor
-            // for one-handed reachability without changing the chip's rhythm.
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            .modifier(AppFilterChipSurface(
+                isSelected: isSelected,
+                hasClearGlyph: isSelected && showsClearGlyphWhenSelected
+            ))
         }
         .buttonStyle(ScaleButtonStyle())
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityHint(
             showsClearGlyphWhenSelected && isSelected ? "Tap to clear filter" : "Tap to filter"
         )
+    }
+}
+
+/// Private chrome shared by menu and toggle chips; interaction stays with each owner.
+private struct AppFilterChipSurface: ViewModifier {
+    let isSelected: Bool
+    var hasClearGlyph = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(isEnabled
+                ? (isSelected ? AppColor.background : AppColor.textPrimary)
+                : AppColor.textDisabled)
+            .padding(.leading, AppSpacing.smd)
+            .padding(.trailing, hasClearGlyph ? AppSpacing.sm : AppSpacing.smd)
+            .padding(.vertical, AppSpacing.xs)
+            .background(Capsule(style: .continuous).fill(
+                isEnabled && isSelected ? AppColor.textPrimary : AppColor.accentSoft
+            ))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
     }
 }
 
@@ -3245,6 +3263,9 @@ private struct AppToastPill: View {
     let event: AppToastEvent
     let dismiss: () -> Void
     let performAction: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @State private var markVisible = false
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: AppSpacing.sm) {
@@ -3269,12 +3290,28 @@ private struct AppToastPill: View {
         .appFloatingShadow()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("toast")
+        .task(id: event.id) {
+            withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+                ? AppMotion.confirmSpring : AppMotion.feedback) {
+                markVisible = true
+            }
+        }
     }
 
     private var message: some View {
-        Text(event.text)
-            .font(AppFont.body.font)
-            .foregroundStyle(AppColor.textPrimary)
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+            if event.kind == .success {
+                AppIcon.checkmark.image(size: AppIconSize.readiness, weight: .bold)
+                    .foregroundStyle(AppColor.accent)
+                    .opacity(markVisible ? 1 : 0)
+                    .scaleEffect(markVisible || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+                        ? 1 : AppMotion.markPopScale)
+                    .accessibilityHidden(true)
+            }
+            Text(event.text)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+        }
     }
 
     @ViewBuilder private var actionButton: some View {
@@ -4397,34 +4434,14 @@ struct SecondaryButtonConfig {
     let action: () -> Void
 }
 
-/// Native bottom-sheet shell: centered `NavigationStack` title, top-right native
-/// text action, and `AppScreen` content/CTA layout. Matches sheets like
+/// Native bottom-sheet shell: centered title, leading close X, and
+/// `AppScreen` content/commit CTA layout. Matches sheets like
 /// Today's routine; reserve `ProductTopBar` for product/root surfaces.
 struct AppSheetScreen<Content: View>: View {
-    enum DismissActionPlacement {
-        case cancellation
-        case confirmation
-
-        var toolbarPlacement: ToolbarItemPlacement {
-            switch self {
-            case .cancellation: return .cancellationAction
-            case .confirmation: return .confirmationAction
-            }
-        }
-
-        var role: ButtonRole? {
-            switch self {
-            case .cancellation: return .cancel
-            case .confirmation: return nil
-            }
-        }
-    }
-
     let title: String
     let primaryButton: PrimaryButtonConfig?
     let secondaryButton: SecondaryButtonConfig?
     let dismissLabel: String
-    let dismissActionPlacement: DismissActionPlacement
     let onDismissAction: (() -> Void)?
     var usesOuterScroll: Bool
     var showsKeyboardDismissToolbar: Bool
@@ -4435,7 +4452,6 @@ struct AppSheetScreen<Content: View>: View {
         primaryButton: PrimaryButtonConfig? = nil,
         secondaryButton: SecondaryButtonConfig? = nil,
         dismissLabel: String = AppCopy.Nav.cancel,
-        dismissActionPlacement: DismissActionPlacement = .confirmation,
         onDismissAction: (() -> Void)? = nil,
         usesOuterScroll: Bool = true,
         showsKeyboardDismissToolbar: Bool = false,
@@ -4445,7 +4461,6 @@ struct AppSheetScreen<Content: View>: View {
         self.primaryButton = primaryButton
         self.secondaryButton = secondaryButton
         self.dismissLabel = dismissLabel
-        self.dismissActionPlacement = dismissActionPlacement
         self.onDismissAction = onDismissAction
         self.usesOuterScroll = usesOuterScroll
         self.showsKeyboardDismissToolbar = showsKeyboardDismissToolbar
@@ -4467,11 +4482,11 @@ struct AppSheetScreen<Content: View>: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let onDismissAction {
-                    ToolbarItem(placement: dismissActionPlacement.toolbarPlacement) {
-                        Button(role: dismissActionPlacement.role, action: onDismissAction) {
-                            Text(dismissLabel)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(action: onDismissAction) {
+                            Label(dismissLabel == AppCopy.Nav.done ? AppCopy.Nav.close : dismissLabel, systemImage: AppIcon.close.systemName)
+                                .labelStyle(.iconOnly)
                         }
-                        .appToolbarTextStyle()
                     }
                 }
             }
@@ -4497,10 +4512,11 @@ struct AppSetRepEditorSheet: View {
     var subject: String? = nil
     let setRange: ClosedRange<Int>
     let repRange: ClosedRange<Int>
-    let onSave: (_ sets: Int, _ reps: Int, _ progression: DoubleProgressionConfiguration?) -> Void
+    let onSave: (_ sets: Int, _ reps: Int, _ progression: DoubleProgressionConfiguration?) -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("unitSystem") private var unitSystem = "kg"
+    @State private var saveFailed = false
     @State private var sets: Int
     @State private var reps: Int
     @State private var progressionEnabled: Bool
@@ -4520,7 +4536,7 @@ struct AppSetRepEditorSheet: View {
             _ sets: Int,
             _ reps: Int,
             _ progression: DoubleProgressionConfiguration?
-        ) -> Void
+        ) -> Bool
     ) {
         self.title = title
         self.subject = subject
@@ -4555,7 +4571,6 @@ struct AppSetRepEditorSheet: View {
                 action: commit
             ),
             dismissLabel: AppCopy.Nav.cancel,
-            dismissActionPlacement: .cancellation,
             onDismissAction: { dismiss() }
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -4633,6 +4648,11 @@ struct AppSetRepEditorSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .alert("Couldn't save target", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your changes are still here. Try saving again.")
+        }
         .presentationDetents([.medium, .large])
         .appBottomSheetChrome()
     }
@@ -4673,8 +4693,11 @@ struct AppSetRepEditorSheet: View {
         let savedReps = progressionEnabled
             ? min(max(reps, lowerReps), upperReps)
             : reps
-        onSave(sets, savedReps, progressionConfiguration)
-        dismiss()
+        if onSave(sets, savedReps, progressionConfiguration) {
+            dismiss()
+        } else {
+            saveFailed = true
+        }
     }
 
     private var canSave: Bool {
@@ -5932,3 +5955,147 @@ extension String {
         return String(self[..<end]).trimmingCharacters(in: .whitespaces) + "…"
     }
 }
+
+#if DEBUG
+/// Read-only production-component fixtures. All actions change this page's local state;
+/// no workout/template data is written and no purchase actions are invoked.
+struct AppComponentCatalog: View {
+    @Environment(\.dynamicTypeSize) private var systemTypeSize
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var systemVoiceOver
+    @State private var largeText = false
+    @State private var fadesOnly = false
+    @State private var selected = false
+    @State private var stepCount = 3
+    @State private var field = ""
+    @State private var toast: AppToastEvent?
+    @State private var celebration: AppCelebrationMoment?
+    @State private var showsEditor = false
+    @State private var failSave = true
+
+    var body: some View {
+        AppScreen(showsNativeNavigationBar: true) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                SettingsSection(title: "Preview policy", contentInset: AppSpacing.md) {
+                    Toggle("Large text preview", isOn: $largeText)
+                        .font(AppFont.body.font)
+                    AppDivider()
+                    Toggle("Fade-only preview", isOn: $fadesOnly)
+                        .font(AppFont.body.font)
+                    Text("System accessibility settings always apply. Press and hold an enabled control to inspect its pressed state. Samples never save workout data.")
+                        .appFont(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                samples
+                    .environment(\.dynamicTypeSize, largeText ? .accessibility3 : systemTypeSize)
+                    .environment(\.accessibilityReduceMotion, fadesOnly || systemReduceMotion)
+                    .environment(\.accessibilityVoiceOverEnabled, fadesOnly || systemVoiceOver)
+            }
+        }
+        .navigationTitle("Components")
+        .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(.light)
+        .tint(AppColor.accent)
+        .appToast(event: $toast)
+        .overlay { AppCelebration(moment: celebration) }
+        .environment(\.dynamicTypeSize, largeText ? .accessibility3 : systemTypeSize)
+        .environment(\.accessibilityReduceMotion, fadesOnly || systemReduceMotion)
+        .environment(\.accessibilityVoiceOverEnabled, fadesOnly || systemVoiceOver)
+        .sheet(isPresented: $showsEditor) {
+            VStack(spacing: 0) {
+                AppSetRepEditorSheet(subject: "Sample exercise") { _, _, _ in
+                    if failSave {
+                        failSave = false
+                        return false
+                    }
+                    return true
+                }
+            }
+            .preferredColorScheme(.light)
+        }
+    }
+
+    private var samples: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            buttonSamples
+            chipSamples
+            fieldSamples
+            surfaceSamples
+            feedbackSamples
+        }
+    }
+
+    private var buttonSamples: some View {
+        SettingsSection(title: "Buttons", contentInset: AppSpacing.md) {
+            AppPrimaryButton("Default · press and hold") { }
+            AppPrimaryButton("Disabled", isEnabled: false) { }
+            AppPrimaryButton("Loading", isLoading: true) { }
+            AppPrimaryButton("Disabled and loading", isEnabled: false, isLoading: true) { }
+            AppPrimaryButton("Inherited disabled") { }.disabled(true)
+            AppSecondaryButton("Secondary") { }
+            AppSecondaryButton("Secondary disabled", isEnabled: false) { }
+            AppSecondaryButton("Destructive", tone: .destructive) { }
+            AppGhostButton("Add exercise") { }
+            AppGhostButton("Add exercise disabled", isEnabled: false) { }
+        }
+    }
+
+    private var chipSamples: some View {
+        SettingsSection(title: "Chips", contentInset: AppSpacing.md) {
+            AppFilterChipBar {
+                AppFilterChip(label: "Toggle", isSelected: selected) { selected.toggle() }
+                AppFilterChip(label: "Clear", isSelected: true, showsClearGlyphWhenSelected: true) { }
+                AppFilterChip(label: "Disabled", isSelected: true) { }.disabled(true)
+                AppDropdownChip(label: selected ? "Selected" : "Menu", isActive: selected) {
+                    Button("All") { selected = false }
+                    Button("Selected") { selected = true }
+                }
+                AppDropdownChip(label: "Disabled", isActive: true) { Button("Option") { } }
+                    .disabled(true)
+            }
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                AppTag(text: "Saved", style: .success)
+                AppTag(text: "Needs review", style: .warning)
+            }
+        }
+    }
+
+    private var fieldSamples: some View {
+        SettingsSection(title: "Inputs", contentInset: AppSpacing.md) {
+            TextField("Sample name", text: $field)
+                .appInputFieldStyle()
+                .accessibilityLabel("Sample name")
+            AppStepper(value: "\(stepCount)", isDecrementEnabled: stepCount > 1,
+                       isIncrementEnabled: stepCount < 10,
+                       onDecrement: { stepCount -= 1 }, onIncrement: { stepCount += 1 })
+            AppStepper(value: "3", isDecrementEnabled: false, isIncrementEnabled: false,
+                       onDecrement: { }, onIncrement: { })
+        }
+    }
+
+    private var surfaceSamples: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            AppSectionHeader("Surfaces")
+            AppCardList(data: ["First row", "A longer row title that wraps at larger text sizes"], id: \.self) { title in
+                AppListRow(title: title, subtitle: "Supporting text", style: .cardListContent)
+            }
+            EmptyStateCard(title: "No sessions yet", message: "Completed workouts appear here.")
+        }
+    }
+
+    private var feedbackSamples: some View {
+        SettingsSection(title: "Feedback and sheets", contentInset: AppSpacing.md) {
+            AppSecondaryButton("Success message") { toast = AppToastEvent("Sample saved", kind: .success) }
+            AppSecondaryButton("Error message") { toast = AppToastEvent("Sample failed. Try again.", kind: .error) }
+            AppSecondaryButton("Undo message") {
+                toast = AppToastEvent("Sample removed", action: AppToastAction(label: "Undo") {
+                    toast = AppToastEvent("Sample restored", kind: .success)
+                })
+            }
+            AppSecondaryButton("Celebration") { celebration = AppCelebrationMoment(style: .shower) }
+            Toggle("Fail the next sample save", isOn: $failSave).font(AppFont.body.font)
+            AppSecondaryButton("Target editor") { showsEditor = true }
+        }
+    }
+}
+#endif

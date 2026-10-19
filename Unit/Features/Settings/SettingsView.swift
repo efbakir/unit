@@ -157,6 +157,17 @@ struct SettingsView: View {
             feedbackSection
             legalSection
 
+            #if DEBUG
+            SettingsSection(title: "Design system", contentInset: AppSpacing.sm) {
+                NavigationLink {
+                    AppComponentCatalog()
+                } label: {
+                    AppListRow(title: "Components", subtitle: "Shared controls and feedback")
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
+            #endif
+
             settingsFooter
         }
     }
