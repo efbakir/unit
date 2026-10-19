@@ -478,7 +478,6 @@ private struct AppScreenEnter: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(visible ? 1 : 0)
-            .scaleEffect(visible || !scales || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? 1 : AppMotion.leaveScale)
             .blur(radius: visible || !spatial ? 0 : AppMotion.revealBlur)
             .offset(y: visible || !spatial || isSelected != nil ? 0 : AppMotion.revealTravel)
             .onGeometryChange(for: Bool.self) { geometry in

@@ -365,7 +365,7 @@ struct TodayView: View {
         let hasLoggedSets = session.setEntries.contains(where: { $0.isCompleted })
         if !hasLoggedSets {
             modelContext.delete(session)
-            try? modelContext.save()
+            guard persistSessionChange() else { return }
             toastMessage = .init(AppCopy.Session.staleEmptyDiscardedToast)
             return
         }
@@ -382,10 +382,9 @@ struct TodayView: View {
                 exercises: exercises
             )
         }
-        try? modelContext.save()
+        guard persistSessionChange() else { return }
         EngagementPromptTracker().recordCompletedWorkout(sessionID: session.id)
-        // Land on SessionDetailView via the existing completedSessionDetail path.
-        presentCompletedSession(session)
+        presentCompletedSession(session, celebrates: true)
     }
 
     private func presentCompletedSession(_ session: WorkoutSession, celebrates: Bool = false) {
@@ -439,7 +438,20 @@ struct TodayView: View {
 
     private func discardStaleSession(_ session: WorkoutSession) {
         modelContext.delete(session)
-        try? modelContext.save()
+        _ = persistSessionChange()
+    }
+
+    private func persistSessionChange() -> Bool {
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            modelContext.processPendingChanges()
+            modelContext.rollback()
+            AppHaptic.error.fire()
+            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            return false
+        }
     }
 
 }
