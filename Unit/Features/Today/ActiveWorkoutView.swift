@@ -1363,18 +1363,18 @@ private struct AdjustResultSheet: View {
                 }
                 .padding(.top, AppSpacing.md)
             }
-        }
-        .toolbar {
-            if isEditMode, let onDelete {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .destructive) {
-                        if onDelete() { dismiss() }
-                        else { showsSaveFailure = true }
-                    } label: {
-                        AppIcon.trash.image(size: AppIconSize.readiness, weight: .medium)
-                            .foregroundStyle(AppColor.error)
+            .toolbar {
+                if isEditMode, let onDelete {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(role: .destructive) {
+                            if onDelete() { dismiss() }
+                            else { showsSaveFailure = true }
+                        } label: {
+                            AppIcon.trash.image(size: AppIconSize.readiness, weight: .medium)
+                                .foregroundStyle(AppColor.error)
+                        }
+                        .accessibilityLabel(AppCopy.Workout.deleteSet)
                     }
-                    .accessibilityLabel(AppCopy.Workout.deleteSet)
                 }
             }
         }
