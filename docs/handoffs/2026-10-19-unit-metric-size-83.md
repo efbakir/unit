@@ -1,0 +1,5 @@
+# Unit workout readout — 2.1 (83)
+
+WorkoutCommandCard’s weight/reps text now uses the existing AppFont.numericDisplay role (36pt native SF Mono/tabular numerics), replacing the30pt numericInput role. This restores the original prominent readout size without changing the30pt editor fields, timer, button sizes, padding, motion or persistence behavior. No new token/component/variant. Native numeral styling matches the existing display role.
+
+Static source guards/diff checks passed. No tests or Simulator runs, per instruction. Signed compilation succeeded. Build83 installed in place and launched normally. Before/after table hashes/checked preferences differ, prepared-target data matches, integrity ok, 221 recorded sets retained; visual review of the larger readout remains pending. Evidence `/private/tmp/unit-metric-83/`; build log `/private/tmp/unit-metric-83-build.log`. Development-only, no public submission. Local checkpoint tag `unit-dev-2.1-83-20261019`.

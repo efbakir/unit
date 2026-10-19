@@ -4314,10 +4314,10 @@ struct WorkoutCommandCard: View {
     @ViewBuilder
     private var metricValueText: some View {
         Text(metricValue)
-            // Keep the mixed weight/reps target compact and proportional while
-            // retaining stable digit widths as sets advance.
-            .font(AppFont.numericInput.font)
-            .tracking(AppFont.numericInput.tracking)
+            // Restore the original prominent workout readout through the
+            // existing 36pt numeric-display role; editors keep their own size.
+            .font(AppFont.numericDisplay.font)
+            .tracking(AppFont.numericDisplay.tracking)
             .monospacedDigit()
             .foregroundStyle(metricIsGhost ? AppColor.textSecondary : AppColor.textPrimary)
             .multilineTextAlignment(.center)
