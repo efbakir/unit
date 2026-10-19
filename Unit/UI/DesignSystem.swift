@@ -451,6 +451,10 @@ extension View {
 /// Owned by the scroll surface, so recycled intro/media views remember their arrival.
 @MainActor
 final class AppRevealSession {
+    // Avoid the isolated-deinit back-deployment crash on iOS 18.
+    // This state owns no resources requiring main-actor teardown.
+    nonisolated deinit {}
+
     private var revealed: Set<String> = []
     func contains(_ id: String) -> Bool { revealed.contains(id) }
     func record(_ id: String) { revealed.insert(id) }
@@ -868,6 +872,10 @@ enum AppHaptic: CaseIterable, Equatable, Sendable {
 /// Scene-local admission, shared by all control and outcome delivery paths.
 @MainActor
 final class AppFeedbackState {
+    // Avoid the isolated-deinit back-deployment crash on iOS 18.
+    // This state owns no resources requiring main-actor teardown.
+    nonisolated deinit {}
+
     static weak var activeScene: AppFeedbackState?
     static let repeatWindow: Duration = .milliseconds(80)
     private(set) var isActive = false
