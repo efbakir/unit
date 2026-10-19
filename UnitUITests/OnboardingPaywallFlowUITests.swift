@@ -315,14 +315,16 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(sheetTitle.waitForExistence(timeout: 8), "format sheet did not open")
         tap(app.buttons["Done"], "dismiss format sheet")
 
-        // ── Launch 2: snapshot restore lands on the paste step, clean editor ──
+        // ── Launch 2: snapshot restore preserves the unfinished paste draft ──
         app.terminate()
         app = makeApp()
         app.launch()
 
         let editor2 = app.textViews.firstMatch
         XCTAssertTrue(editor2.waitForExistence(timeout: 15), "paste editor missing after relaunch")
+        XCTAssertEqual(editor2.value as? String, "123456", "unfinished paste draft was lost")
         editor2.tap()
+        editor2.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6))
         editor2.typeText(Self.demoProgram)
         tap(app.buttons["Read program"], "Read program (valid)")
 

@@ -46,6 +46,8 @@ final class ProgressionPersistenceTests: XCTestCase {
         let session = WorkoutSession(date: Date(), templateId: UUID(), isCompleted: false)
         context.insert(session)
         try context.save()
+        // ActiveWorkout reads the relationship before any user mutation.
+        XCTAssertTrue(session.setEntries.isEmpty)
         session.isCompleted = true
         let entry = SetEntry(sessionId: session.id, exerciseId: UUID(), weight: 60, reps: 8, isCompleted: true)
         entry.session = session
