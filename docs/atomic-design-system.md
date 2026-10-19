@@ -43,14 +43,14 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 ### Typography — `AppFont`
 
-Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` (font + tracking together) or `.font(AppFont.X.font)` elsewhere. Sans is **Geist**; numeric/CTA cases (`numericDisplay`, `stepIndicator`, `productAction`, `performance`) use **Geist Mono** for fixed-width digits under fatigue. Both ship as `.ttf` in `Unit/Resources/Fonts/` (registered via `UIAppFonts` in `Info.plist`).
+Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` or `.font(AppFont.X.font)` elsewhere. Native **SF Pro** is the default; `numericDisplay`, `stepIndicator`, and `performance` use native **SF Mono**. Compatibility helpers retain their `geist` names but resolve system fonts. Caps labels use SF Pro with neutral tracking; headings have restrained negative tracking. Point sizes and native Dynamic Type scaling are preserved. The October 19 user instruction supersedes the earlier Geist family decision.
 
 Body hierarchy: `largeTitle`, `title`, `sectionHeader`, `body`, `caption`, `muted`, `metadata`.
 Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`, `numericDisplay`, `stepIndicator`, `productHeading`, `productAction`, `performance`.
 
 **Rules**
 
-- **Never use regular (400) font weight.** The minimum weight across the entire app is **medium** (500). Geist is bundled in Medium, SemiBold, Bold only.
+- **Never use regular (400) font weight.** The minimum weight across the entire app is **medium** (500). Native system fonts use the existing Medium, SemiBold, and Bold roles.
 - Avoid inline `.font(.geist(...))` / `.font(.geistMono(...))` in page files for standard hierarchy; use `AppFont` cases. Inline `.font(.system(...))` is reserved for SF Symbol weight on `AppIcon` only.
 - Tracking is **bundled with each case** — never load a loose `*Tracking` constant; either use `.appFont(.X)` (Text) or `.tracking(AppFont.X.tracking)`.
 - For 17pt bold section headings AND button labels, use `sectionHeader` (or `productAction` if the label needs monospaced digits). There is no separate `label` case.
@@ -173,7 +173,7 @@ Allowed in `*View.swift`:
 | Custom root-tab chrome | Native `TabView` / `UITabBar` behavior |
 | `AppTabHeader` large-title root chrome on Today / Program | `ProductTopBar` |
 | `chevron.right` on `AppListRow`-style content | Context + row tap; no decorative chevron |
-| `.regular` weight anywhere; calling `Font.custom("Geist*"/"GeistMono*")` directly | `AppFont` cases (Medium minimum); never bypass `AppFont` for Geist |
+| `.regular` weight anywhere; calling `Font.custom("Geist*"/"GeistMono*")` directly | `AppFont` cases (Medium minimum); never bypass `AppFont` for typography |
 | New hex colours in Features | `AppColor` extension or asset + wrapper |
 | Page-specific workout timer cards / custom command panels | `WorkoutCommandCard` + `SessionStateBar` |
 | Floating text-only header actions without visible tap area | `ProductTopBarAction` |

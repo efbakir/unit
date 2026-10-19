@@ -12,7 +12,7 @@ when fixing or simplifying UI. Runtime acceptance remains in [release QA](releas
 | One-tap prefilled logging, no keyboard on the happy path, no delay for feedback | `ActiveWorkoutView`, `WorkoutCommandCard` | Gym Test: log a set in ≤3 seconds; rapid taps cannot duplicate a set |
 | Save succeeds before success feedback, navigation, progression acceptance, or an Undo result | Active workout and routine persistence methods; failed writes roll back | Force a save failure: draft survives, no success moment, history remains intact |
 | Target editor retains edits on failure and owns its failure alert | `AppSetRepEditorSheet`; `TemplateDetailView.saveTarget` suppresses the parent alert | Failed Save shows one alert; dismiss it, correct/retry, then close only after success |
-| All color, curve, and tactile definitions have one owner | `AppColor`, `AppMotion`, `AppHaptic` in `Unit/UI/DesignSystem.swift` | Existing palette and fonts remain; no feature-specific styling forks |
+| All color, curve, and tactile definitions have one owner | `AppColor`, `AppMotion`, `AppHaptic` in `Unit/UI/DesignSystem.swift` | Existing palette remains; native SF Pro/SF Mono with restrained tracking; no feature-specific styling forks |
 | Reduce Motion OR VoiceOver disables travel, blur, bounce, scale feedback, and confetti; haptics remain enabled | `AppMotion.allowsSpatialMotion`, shared transitions, `ScaleButtonStyle`, `AppNumericValue`, `AppCelebration` | Test each setting separately and together; fade-only feedback, usable controls, no confetti |
 | Introductions remember their arrival within their surface; ordinary lists and logging controls never wait for staging | `AppRevealSession`, `AppScreenEnter`; native tab arrival is a cross-fade | Scroll away/back, switch tabs, background/foreground: no replayed stagger or hidden controls |
 | Completed/failed set chips with actions remain accessible buttons; read-only chips remain text | `SetProgressIndicator.renderStep` | VoiceOver announces Button and activates the exact set editor; UI test finds the chip as a Button |
@@ -52,6 +52,16 @@ colors, raw animation curves/default transactions, and direct haptic APIs outsid
 their owners. It is not a Swift type checker and cannot prove event ordering,
 accessibility, persistence, or arbitrary aliases. Mutation fixtures prove its
 covered cases; XCTest and the runtime matrix above cover behavior.
+
+## Typography override — October 19
+
+The user selected native SF Pro with low letter spacing. `Font.geist` and
+`UIFont.geist` are compatibility names backed by native system fonts; numeric
+roles use native SF Mono. Caps labels use SF Pro with zero extra tracking.
+Existing point sizes remain; headings tighten by 0.3pt and the splash by 0.6pt.
+Native Dynamic Type scaling remains, without expanding the scope into a large-text
+layout redesign. Bundled font assets/project registration are left for separate
+cleanup; runtime typography no longer requests Geist.
 
 ## Review surface
 

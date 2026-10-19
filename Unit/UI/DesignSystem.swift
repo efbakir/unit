@@ -85,56 +85,36 @@ enum AppColor {
     }
 }
 
-/// Bundled custom font helpers. PostScript names match the .ttf filenames in
-/// `Unit/Resources/Fonts/`. Use these only via `AppFont`; do not call from
-/// feature code.
+/// Compatibility names retained for callers; faces now come from native SF Pro/SF Mono.
+/// AppFont remains the single typography owner.
 extension Font {
-    /// Weight subset we ship — Geist is bundled as Medium / SemiBold / Bold only.
     enum AppWeight {
         case medium, semibold, bold
-        var suffix: String {
-            switch self {
-            case .medium:   return "Medium"
-            case .semibold: return "SemiBold"
-            case .bold:     return "Bold"
-            }
-        }
     }
 
-    /// `relativeTo:` anchors the bundled custom face to a system text style so it
-    /// scales with Dynamic Type — without this, `Font.custom(_:size:)` returns a
-    /// fixed-size font that ignores the user's text-size preference. Default
-    /// `.body` keeps callers that don't care unaffected; the `AppFont` switch
-    /// below picks a tighter style per token (largeTitle for splash, title2 for
-    /// product heading, caption2 for tiny caps, etc.) so the type scale grows
-    /// proportionally at AX sizes instead of all flattening to body.
+    /// Resolve the native face through UIKit's public font factory, then preserve
+    /// the existing point size and SwiftUI's environment-driven Dynamic Type scaling.
+    /// No bundled font or hardcoded private PostScript name is requested.
     static func geist(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        .custom("Geist-\(weight.suffix)", size: size, relativeTo: textStyle)
+        let native = UIFont.systemFont(ofSize: size, weight: weight.uiKitWeight)
+        return .custom(native.fontName, size: size, relativeTo: textStyle)
     }
 
     static func geistMono(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        .custom("GeistMono-\(weight.suffix)", size: size, relativeTo: textStyle)
+        let native = UIFont.monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
+        return .custom(native.fontName, size: size, relativeTo: textStyle)
     }
 }
 
-/// UIKit mirrors of `Font.geist` / `Font.geistMono` for surfaces that have to
-/// reach for a `UIFont` directly — `UINavigationBarAppearance`, `UITabBarItem`,
-/// `UISegmentedControl`. Keeps the chrome on the same atom as the SwiftUI body
-/// type so the app never paints SF Pro by accident. Falls back to `systemFont`
-/// only if PostScript registration fails (defensive — not expected in shipping).
+/// Native UIKit chrome uses the same weights and size roles as SwiftUI.
 extension UIFont {
-    /// `relativeTo:` wraps the unscaled `UIFont` in `UIFontMetrics` so nav-bar
-    /// titles, segmented-control labels, and tab-bar labels respond to Dynamic
-    /// Type. Default `.body`; pass a tighter style (`.largeTitle`, `.headline`,
-    /// `.caption2`) at the call site so each chrome surface grows at the rate
-    /// its text style expects.
     static func geist(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
-        let base = UIFont(name: "Geist-\(weight.suffix)", size: size) ?? systemFont(ofSize: size, weight: weight.uiKitWeight)
+        let base = systemFont(ofSize: size, weight: weight.uiKitWeight)
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 
     static func geistMono(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
-        let base = UIFont(name: "GeistMono-\(weight.suffix)", size: size) ?? .monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
+        let base = monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 }
@@ -154,17 +134,9 @@ extension Font.AppWeight {
 /// `.appFont(.X)` (Text) or `.font(AppFont.X.font)` + `.tracking(AppFont.X.tracking)`
 /// (other views).
 ///
-/// **Mono doctrine.** Sans is **Geist**. **Geist Mono is reserved for two roles
-/// only**: (1) numerics under fatigue (hero counts, set results, step counters)
-/// — weight per role; (2) caps micro-labels (`overline`, `smallLabel`,
-/// `overlineStrong`) for footers, footnotes, very-small text, card eyebrows, and
-/// chips. Caps tokens render via `Text.appCapsLabel(_:)` which bakes
-/// `.textCase(.uppercase)`. **Buttons and CTAs are always sans, never mono.**
-///
-/// **Weight floor.** Geist is bundled as Medium / SemiBold / Bold only — no
-/// Regular .ttf. So `.medium` IS the design-system "regular" baseline for caps
-/// tokens; selected/emphasized state escalates to `.bold` (see `overlineStrong`).
-/// PostScript names match the bundled .ttf filenames.
+/// Native SF Pro is the default for body, headings, buttons, and small labels.
+/// SF Mono is reserved for workout numerics. Existing sizes stay stable;
+/// tracking is neutral, with restrained tightening on headings.
 enum AppFont {
     // Body hierarchy
     case largeTitle
@@ -177,14 +149,14 @@ enum AppFont {
     case metadata
 
     // Display / specialized — previously loose `static let`s, now first-class cases
-    /// 13pt mono medium UPPERCASE (+0.6 tracking) — card eyebrow, status/filter
+    /// 13pt sans medium UPPERCASE (neutral tracking) — card eyebrow, status/filter
     /// chip default state, footer/footnote micro-label. Apply via
     /// `Text.appCapsLabel(.overline)` so uppercase is baked.
     case overline
-    /// 11pt mono medium UPPERCASE (+1.0 tracking) — tiny "WAS" / "MOST POPULAR"
+    /// 11pt sans medium UPPERCASE (neutral tracking) — tiny "WAS" / "MOST POPULAR"
     /// style caps. Apply via `Text.appCapsLabel(.smallLabel)`.
     case smallLabel
-    /// 13pt mono BOLD UPPERCASE (+0.6 tracking) — selected/active chip state
+    /// 13pt sans BOLD UPPERCASE (neutral tracking) — selected/active chip state
     /// (filled background) and emphasized eyebrows. Sibling of `overline`.
     /// Apply via `Text.appCapsLabel(.overlineStrong)`.
     case overlineStrong
@@ -205,13 +177,11 @@ enum AppFont {
     /// 24pt bold — product-screen heading on `ProductTopBar`, hero copy on empty states.
     case productHeading
     /// 17pt sans bold — primary CTA labels, top-bar text actions. **Never mono**
-    /// (mono is reserved for numerics and caps micro-labels).
+    /// (mono is reserved for numerics).
     case productAction
     /// 15pt mono semibold — set-result / PR rows in History (numeric).
     case performance
-    /// 15pt system — emoji glyphs concatenated inside `.caption` text. Geist has
-    /// no emoji coverage, so an inline emoji needs the system font to fall back
-    /// to Apple Color Emoji at the same visual size as `.caption`.
+    /// 15pt system — emoji glyphs use native Apple Color Emoji fallback.
     case emojiCaption
 
     var font: Font {
@@ -223,9 +193,9 @@ enum AppFont {
         case .caption:        return .geist(.medium,   size: 15, relativeTo: .subheadline)
         case .muted:          return .geist(.medium,   size: 13, relativeTo: .footnote)
         case .metadata:       return .geist(.medium,   size: 11, relativeTo: .caption2)
-        case .overline:       return .geistMono(.medium,   size: 13, relativeTo: .footnote)
-        case .smallLabel:     return .geistMono(.medium,   size: 11, relativeTo: .caption2)
-        case .overlineStrong: return .geistMono(.bold,     size: 13, relativeTo: .footnote)
+        case .overline:       return .geist(.medium,   size: 13, relativeTo: .footnote)
+        case .smallLabel:     return .geist(.medium,   size: 11, relativeTo: .caption2)
+        case .overlineStrong: return .geist(.bold,     size: 13, relativeTo: .footnote)
         case .splashTitle:    return .geist(.bold,     size: 56, relativeTo: .largeTitle)
         case .splashWelcome:  return .geist(.medium,   size: 16, relativeTo: .callout)
         case .productHeading: return .geist(.bold,     size: 24, relativeTo: .title2)
@@ -253,15 +223,9 @@ enum AppFont {
     /// Call sites should never pull a loose tracking constant from elsewhere.
     var tracking: CGFloat {
         switch self {
-        case .largeTitle:     return -0.4
-        case .splashTitle:    return -1.2
-        case .productHeading: return -0.4
-        case .numericDisplay: return -0.6
-        case .numericInput:   return -0.6   // mirrors numericDisplay so the bumped value reads at the same spacing weight
-        case .overline:       return 0.6    // mono caps spacing
-        case .overlineStrong: return 0.6    // mono caps spacing (sibling of .overline)
-        case .smallLabel:     return 1.0    // tighter, smaller caps need wider tracking
-        default:              return 0
+        case .largeTitle, .title, .productHeading: return -0.3
+        case .splashTitle: return -0.6
+        default: return 0
         }
     }
 }
@@ -274,11 +238,11 @@ extension Text {
 
     /// Applies a caps `AppFont` style (overline, smallLabel, overlineStrong) with
     /// its tracking AND `.textCase(.uppercase)`. Single canonical recipe for any
-    /// mono-caps micro-label — card eyebrow, footer/footnote, status chip,
+    /// caps micro-label — card eyebrow, footer/footnote, status chip,
     /// filter chip, dropdown chip. Returns `some View` because `.textCase` is
     /// environment-scoped, not Text-only — so chain non-Text modifiers after it.
     /// Use this instead of `Text.appFont(.overline)` for the caps tokens; using
-    /// `appFont` on a caps token produces the right mono weight but skips the
+    /// `appFont` on a caps token produces the right weight but skips the
     /// uppercase rendering, which would silently violate the doctrine.
     func appCapsLabel(_ style: AppFont) -> some View {
         self.font(style.font)

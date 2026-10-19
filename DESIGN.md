@@ -16,47 +16,47 @@ colors:
   signal: "#FF3B30"
 typography:
   display:
-    fontFamily: "Geist, -apple-system, system-ui, sans-serif"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "56px"
     fontWeight: 700
     lineHeight: 1.05
-    letterSpacing: "-1.2px"
+    letterSpacing: "-0.6px"
   headline:
-    fontFamily: "Geist, -apple-system, system-ui, sans-serif"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "22px"
     fontWeight: 700
     lineHeight: 1.15
-    letterSpacing: "-0.4px"
+    letterSpacing: "-0.3px"
   title:
-    fontFamily: "Geist, -apple-system, system-ui, sans-serif"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "24px"
     fontWeight: 700
     lineHeight: 1.2
-    letterSpacing: "-0.4px"
+    letterSpacing: "-0.3px"
   body:
-    fontFamily: "Geist, -apple-system, system-ui, sans-serif"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 500
     lineHeight: 1.35
     letterSpacing: "normal"
   label:
-    fontFamily: "GeistMono, ui-monospace, SFMono-Regular, monospace"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "normal"
   caption:
-    fontFamily: "Geist, -apple-system, system-ui, sans-serif"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 500
     lineHeight: 1.3
     letterSpacing: "normal"
   numeric:
-    fontFamily: "GeistMono, ui-monospace, SFMono-Regular, monospace"
+    fontFamily: "ui-monospace, SFMono-Regular, monospace"
     fontSize: "36px"
     fontWeight: 700
     lineHeight: 1
-    letterSpacing: "-0.6px"
+    letterSpacing: "normal"
     fontFeature: "tnum"
   marketingHeroMobile:
     fontFamily: "Geist, -apple-system, system-ui, sans-serif"
@@ -204,7 +204,7 @@ This system explicitly rejects the visual category of "fitness tracker" software
 - Flat by doctrine — separation through fill contrast, never shadows
 - Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)
 - One Ink-black primary CTA per stress screen, full-width, 60pt tall
-- Surface area kept small: 12 colors, ~14 `AppFont` cases (Geist sans + Geist Mono), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
+- Surface area kept small: 12 colors, ~14 `AppFont` cases (native SF Pro + SF Mono), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
 
 ## 2. Colors: The Material-Shop Palette
 
@@ -242,29 +242,24 @@ The palette is named like materials in a workshop, not like UI states. There is 
 
 ## 3. Typography
 
-**Sans Font:** Geist (bundled `.ttf` in `Unit/Resources/Fonts/`, weights Medium / SemiBold / Bold)
-**Mono Font:** Geist Mono (numerics, primary CTAs, set-result rows — fixed-width digits under fatigue)
+**October 19 user override:** native SF Pro, restrained letter spacing, standard-size layout priority. Existing point sizes and native Dynamic Type scaling remain. This supersedes the bundled Geist decision for the iOS app; website typography is a separate surface.
 
-Both ship as bundled `.ttf` and are registered via `UIAppFonts` in `Info.plist`. Always reach typography via the `AppFont` enum — never `Font.custom("Geist*")` or `Font.custom("GeistMono*")` in feature code.
+**Sans:** SF Pro for body, headings, buttons, and caps labels.
+**Mono:** SF Mono for workout numerics and set-result rows.
 
-**Character:** Geist is a humanist neo-grotesque — quiet, neutral, with just enough warmth to keep the page from reading as clinical. Numerics, primary CTAs, and the workout-signature rows pivot to Geist Mono so weight and rep columns stay aligned at every Dynamic Type size — the lifter scans down a column, not across a row.
+Use `AppFont`. The existing `Font.geist` / `UIFont.geist` names are compatibility helpers backed by system font factories; they no longer request bundled Geist. Bundled asset removal is separate cleanup.
 
 ### Hierarchy
 
-- **Splash title** (Geist Bold 56, line-height 1.05, tracking -1.2): Splash welcome only.
-- **Headline / large title** (Geist Bold 22, tracking -0.4): Screen-level titles. One per screen.
-- **Product heading** (Geist Bold 24, tracking -0.4): `ProductTopBar` headings, hero copy on empty states.
-- **Title** (Geist Bold 20): Section titles, exercise names on workout cards.
-- **Section header** (Geist SemiBold 17): 17pt semibold section headings, list-row titles (program / template / routine names), and the canonical button-label style for sans buttons (no separate `label` case). Semibold (not bold) so row titles don't out-shout numerics on workout-adjacent lists and density reads closer to iOS-native.
-- **Body** (Geist Medium 17, line-height 1.35): Default reading copy. List rows, descriptions, paragraph text.
-- **Caption** (Geist Medium 15): Secondary metadata, helper text, timer subtitles.
-- **Muted** (Geist Medium 13): Footnotes and very secondary copy.
-- **Overline** (Geist SemiBold 10): Top-of-card overline labels.
-- **Small label** (Geist Medium 11, tracking +1.0): Tiny uppercase "WAS" / "MOST POPULAR" style chips.
-- **Numeric display** (Geist Mono Bold 36, tracking -0.6): Weights, reps, rest-timer countdown. The workout signature.
-- **Product action** (Geist Mono Bold 17): Primary CTA labels and top-bar text actions.
-- **Performance** (Geist Mono SemiBold 15): Set-result / PR rows in History.
-- **Step indicator** (Geist Mono SemiBold 14): Set step counters in `SetProgressIndicator`.
+- **Splash title:** SF Pro Bold 56, tracking -0.6.
+- **Large title / title / product heading:** SF Pro Bold 22 / 20 / 24, tracking -0.3.
+- **Section header / body:** SF Pro SemiBold / Medium 17, native spacing.
+- **Caption / muted / metadata:** SF Pro Medium 15 / 13 / 11, native spacing.
+- **Overline / small label:** SF Pro Medium 13 / 11, uppercase with zero extra tracking; emphasized overline is Bold.
+- **Numeric display:** SF Mono Bold 36, neutral tracking.
+- **Numeric input:** SF Pro Bold 36 with tabular digits.
+- **Product action:** SF Pro Bold 17.
+- **Performance / step indicator:** SF Mono SemiBold 15 / 14.
 
 ### Marketing type ramp
 
