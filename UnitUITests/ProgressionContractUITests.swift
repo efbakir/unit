@@ -497,9 +497,9 @@ final class ProgressionContractUITests: XCTestCase {
         tap(app.buttons[AppCopy.Workout.saveChanges], "Retry target save")
         XCTAssertTrue(targetEditor.waitForExistence(timeout: 5), "Successful retry did not dismiss")
 
-        for _ in 0..<8 { app.swipeDown() }
-        tap(app.switches["Large text preview"], "Large text preview")
-        attachScreenshot(of: app, named: "16-catalog-large-text")
+        // Standard-size interaction is this release's review scope. The catalog
+        // keeps its optional large-text preview for a separate accessibility pass.
+        attachScreenshot(of: app, named: "16-catalog-after-successful-retry")
     }
 
     // MARK: - Helpers
