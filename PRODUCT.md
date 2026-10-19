@@ -26,7 +26,7 @@ The product wins by removing friction, repeated decisions, words, screens, and s
 
 **Three words:** calm, expert, honest.
 
-**Voice:** utility-first, direct, no hype. No motivational copy ("crush your goals"), no competitor framing ("unlike other apps"), no marketing superlatives. Talk to the lifter as a peer who already knows the work. *"Faster than paper. Smarter than Notes. Your gym notebook, upgraded."*
+**Voice:** plain, factual and minimal. State what happened and what to do next. No personality, motivational language, jokes, metaphors or marketing slogans in app copy. For example: "Rest finished" and "Start your next set."
 
 **First-person singular — never "we".** Unit is a solo project (Efe Bakir, `DEVELOPER_NAME` in `lib/contact.ts`). All user-facing copy uses "I / me / my" — never "we / us / our / our team". Corporate "we" is dishonest for a one-person product and conflicts with the calm-expert-honest voice; the solo-founder identity is a positioning asset, not something to hide behind a fake-team pronoun. Applies to: marketing site, legal pages (privacy/terms define the entity as `{DEVELOPER_NAME} ("I," "me," or "my")`), in-app copy, App Store descriptions, support/contact ("Contact me", "I typically respond"), social posts. When the *product itself* is the actor, **Unit** is the subject ("Unit shows the next target"), not "we". The rule bans the fake corporate "we" — it does **not** require "I / my" in UI labels; neutral labels ("Weight unit", "Add program") are preferred inside the app, and pronouns appear only where a human is genuinely speaking (support, legal, founder copy). Pre-ship grep on any user-facing surface: `\bwe\b|\bwe'|\bour\b|\b us \b`.
 

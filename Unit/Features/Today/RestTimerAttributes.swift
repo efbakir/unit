@@ -27,8 +27,8 @@ public nonisolated struct RestTimerAttributes: ActivityAttributes {
         public var startDate: Date
         /// When the rest period ends.
         public var endDate: Date
-        /// Pre-formatted "what's coming next" hint: next exercise name, or `nil` for the
-        /// last set of the workout. The host (`ActiveWorkoutView`) decides phrasing.
+        /// Next exercise and set (including remaining sets of the current exercise).
+        /// The host supplies plain text, or nil when no set remains.
         public var upNext: String?
 
         public init(startDate: Date, endDate: Date, upNext: String? = nil) {
