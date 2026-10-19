@@ -599,6 +599,7 @@ final class ProgressionContractUITests: XCTestCase {
         XCTAssertTrue(unansweredList.isSelected)
         XCTAssertFalse(unansweredCalendar.isSelected)
         attachScreenshot(of: app, named: "native-04-answered")
+        scrollTo(app.buttons["Clear answer"], in: app)
         tap(app.buttons["Clear answer"], "Clear answer")
         XCTAssertFalse(unansweredList.isSelected)
         XCTAssertFalse(unansweredCalendar.isSelected)
@@ -659,6 +660,9 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(add, in: app)
         tap(add, "Add exercise")
         let search = app.searchFields.firstMatch
+        if !search.waitForExistence(timeout: 2) {
+            tap(button(in: app, containing: "Search"), "Open exercise search")
+        }
         tap(search, "Find exercise")
         search.typeText("Barbell Curl")
         tap(button(in: app, containing: "Barbell Curl"), "Barbell Curl")
