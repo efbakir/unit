@@ -247,3 +247,9 @@ SetProgressIndicator reserves its existing44pt interactive height in every state
 ## Automatic next exercise — October 19
 
 WorkoutCommandCard’s optional `onSetConfirmationFinished` event fires after its existing2.5s saved-set confirmation; it does not own navigation or create another timer. ActiveWorkoutView rechecks exercise identity, completed working-set goal and open editors/confirmations before advancing. The same blur/fade and prefill owners prepare the next exercise. Moving from a completed exercise preserves its running/paused rest timer and scheduled alert; explicitly skipping an unfinished exercise still stops rest. The final exercise retains explicit Finish workout. No automatic set logging or guessed weights.
+
+## Logging crossfades — October 19 audit
+
+AppPrimaryButton keeps saved-icon/text layers mounted and animates their opacity directly with AppMotion.transition. It reuses AppIcon.checkmarkFilled in monochrome (filled circular shape, tick cut out), not a new icon/component. Saved indication still holds2.5s. An automatic exercise handoff owns its outgoing saved card; it does not first flash the old label. SetProgressIndicator keeps one horizontal scroll hierarchy at every width and animates chip-value layout changes. Mixed workout metric sentences crossfade; actual numeric counters keep numeric transitions. Native weight inputs stay immediate, with only their unit suffix fading.
+
+Keep stateful presentation layers mounted when they crossfade. Bind animation after the changing opacity/style at that layer; an ancestor animation or transition duration alone does not prove that a disappearing label will fade. The completed metric keeps its control hierarchy (disabled with a metric-only accessibility label) so Adjust can fade rather than disappear through reparenting.

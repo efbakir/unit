@@ -13,6 +13,7 @@ always-loaded brief. Per-screen details stay in dated scorecards under
 
 | Date | General rule | Promoted to | Evidence | Replaces |
 |---|---|---|---|---|
+| 2026-10-19 | Stateful swaps keep stable layers/identity and animate the changed opacity/style locally; ancestor animation is not visual proof | atomic-design-system.md: Logging crossfades | logging-instant-changes scorecard; repeated physical feedback on CTA/metric swaps | Parent-only transition assumptions |
 
 ## Maintenance
 

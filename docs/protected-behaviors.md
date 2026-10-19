@@ -86,3 +86,7 @@ Logging the first set must not change the set strip’s hit-area height or colla
 ## Automatic handoff — October 19
 
 After a successfully saved final set and the existing confirmation dwell, open the next exercise without another tap. Recheck identity/completion before moving; user navigation, Undo, editors and confirmations must not receive a stale automatic jump. Preserve the rest deadline/pause state and notification across a completed-exercise handoff. Do not auto-finish the workout or log the next set.
+
+## Explicit logging crossfades — October 19
+
+The saved CTA uses the existing monochrome circular filled checkmark with a cut-out tick. Icon and text remain mounted and crossfade with locally bound motion; no quarter-size pop or instant label restoration. Keep the outgoing mark during automatic exercise navigation. Do not replace the set strip’s view hierarchy when it overflows, or reparent the metric when its action becomes unavailable. Native inputs remain immediate; whole mixed performance strings use content fades, not counter rolls.

@@ -904,16 +904,17 @@ struct ActiveWorkoutView: View {
         selectedExerciseIndex += 1
     }
 
-    private func advanceAfterCompletedSet(for exerciseID: UUID) {
+    private func advanceAfterCompletedSet(for exerciseID: UUID) -> Bool {
         guard !session.isCompleted,
               currentSection?.exercise.id == exerciseID,
               currentSection?.hasReachedPlannedSetGoal == true,
               nextSection != nil,
               !showLineup, adjustResultPayload == nil, editingSetPayload == nil,
               !showsCancelConfirmation, !showsFinishConfirmation,
-              !showsSkipExerciseConfirmation else { return }
+              !showsSkipExerciseConfirmation else { return false }
         // Prefill and the stable blur/fade handoff belong to existing owners.
         goToNextExercise()
+        return true
     }
 
     private func completeSuggestedSet(
@@ -1560,6 +1561,8 @@ private struct AdjustResultSheet: View {
                 if let suffix {
                     Text(suffix)
                         .appFont(.caption)
+                        .contentTransition(.opacity)
+                        .animation(AppMotion.feedback, value: suffix)
                         .foregroundStyle(AppColor.textSecondary)
                 }
             }

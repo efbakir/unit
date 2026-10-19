@@ -1365,7 +1365,8 @@ struct AppPrimaryButton: View {
             Button(action: action) {
                 ZStack {
                     Text(label)
-                        .appNumericValue(value: label)
+                        .contentTransition(.opacity)
+                        .animation(AppMotion.transition, value: label)
                         .font(AppFont.productAction.font)
                         .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
                         .multilineTextAlignment(.center)
@@ -1374,28 +1375,33 @@ struct AppPrimaryButton: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.sm)
                         .opacity(isLoading || isConfirmed ? 0 : 1)
-                        .animation(AppMotion.feedback, value: effectiveEnabled)
-                    if isConfirmed && !isLoading {
-                        AppIcon.checkmark.image(size: 24, weight: .bold)
-                            .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
-                            .transition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
-                                ? .opacity.combined(with: .scale(scale: AppMotion.markPopScale))
-                                : .opacity)
-                            .accessibilityHidden(true)
-                    }
+                        // Bind the fade at the layer itself. Conditional
+                        // insertion/ancestor transactions cannot cut it short.
+                        .animation(AppMotion.transition, value: isConfirmed)
+                        .animation(AppMotion.transition, value: isLoading)
+                        .animation(AppMotion.transition, value: effectiveEnabled)
+                    AppIcon.checkmarkFilled.image(size: 24, weight: .semibold)
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
+                        // Native monochrome circle fill leaves the tick cut out,
+                        // revealing the button fill through its negative space.
+                        .opacity(isConfirmed && !isLoading ? 1 : 0)
+                        .scaleEffect(isConfirmed || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? 1 : AppMotion.leaveScale)
+                        .animation(AppMotion.transition, value: isConfirmed)
+                        .animation(AppMotion.transition, value: isLoading)
+                        .accessibilityHidden(true)
                     if isLoading {
                         ProgressView()
                             .tint(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
-                            .transition(.opacity)
+                            .transition(.opacity.animation(AppMotion.transition))
                     }
                 }
-                .animation(AppMotion.feedback, value: isLoading)
-                .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) && isConfirmed ? AppMotion.settle : AppMotion.transition, value: isConfirmed)
+                .animation(AppMotion.transition, value: isLoading)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
                 .background {
                     (effectiveEnabled ? AppColor.accent : AppColor.controlBackground)
-                        .animation(AppMotion.feedback, value: effectiveEnabled)
+                        .animation(AppMotion.transition, value: effectiveEnabled)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
@@ -2185,16 +2191,22 @@ struct SetProgressIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // Most workouts (3-5 sets) fit the card width — render as a plain centered
-        // HStack so the strip lines up with the exercise name and metric hero. Long
-        // programs (6+ sets) overflow, so fall back to a horizontal scroll that
-        // keeps the leading edge anchored.
-        ViewThatFits(in: .horizontal) {
-            chipRow
+        // One hierarchy at every width: adding a logged-value chip must not
+        // replace a fitted row with a different ScrollView mid-animation.
+        ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 chipRow
             }
-            .scrollClipDisabled()
+            .defaultScrollAnchor(.center, for: .alignment)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(height: 44)
+            .onChange(of: steps.map(\.state)) { _, _ in
+                guard let nextID = steps.first(where: { $0.state == .current })?.id
+                    ?? steps.last(where: { $0.state == .completed || $0.state == .failed })?.id else { return }
+                withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? AppMotion.collectionChange : nil) {
+                    proxy.scrollTo(nextID, anchor: .center)
+                }
+            }
         }
     }
 
@@ -2207,9 +2219,11 @@ struct SetProgressIndicator: View {
                         insertion: AppBlurTransition(),
                         removal: AppBlurTransition(scales: true)
                     ).animation(AppMotion.collectionChange))
+                    .id(step.id)
             }
         }
         .appAnimation(AppMotion.collectionChange, value: steps.map(\.state), reduceMotion: reduceMotion)
+        .appAnimation(AppMotion.collectionChange, value: steps.map(\.chipText), reduceMotion: reduceMotion)
     }
 
     /// Tap-edit on a logged chip is the only interaction in the strip — wrap it in a
@@ -2401,7 +2415,8 @@ struct RestTimerControl: View {
             if let indicatorIcon {
                 indicatorIcon.image(size: 18, weight: .semibold)
                     .foregroundStyle(AppColor.textSecondary)
-                    .transition(.opacity.animation(AppMotion.feedback))
+                    .contentTransition(AppMotion.allowsSpatialMotion(reduceMotion: UIAccessibility.isReduceMotionEnabled, voiceOver: UIAccessibility.isVoiceOverRunning) ? .symbolEffect(.replace) : .opacity)
+                    .transition(.opacity.animation(AppMotion.transition))
             }
         }
         .frame(minHeight: 60)
@@ -2409,7 +2424,7 @@ struct RestTimerControl: View {
         .background {
             if showsTimerCapsule {
                 Capsule(style: .continuous).fill(AppColor.cardRowFill)
-                    .transition(.opacity.animation(AppMotion.feedback))
+                    .transition(.opacity.animation(AppMotion.transition))
             }
         }
     }
@@ -4028,8 +4043,9 @@ struct WorkoutCommandCard: View {
     var primaryLabel: String = AppCopy.Workout.completeSet
     var onPrimaryAction: (() -> Void)? = nil
     /// Called after this saved set’s existing confirmation dwell; the caller
-    /// rechecks completion/selection before advancing. No second timer owner.
-    var onSetConfirmationFinished: (() -> Void)? = nil
+    /// rechecks completion/selection and returns true if it advanced, letting
+    /// the card handoff own the exit. No second timer owner.
+    var onSetConfirmationFinished: (() -> Bool)? = nil
     var onSecondaryAction: (() -> Void)? = nil
     /// Bumped by the parent each time a set is logged. Drives `AppHaptic.success`
     /// on this card so the feedback lives at the atom layer instead of being
@@ -4144,12 +4160,16 @@ struct WorkoutCommandCard: View {
             setConfirmationSequence &+= 1
         }
         .task(id: setConfirmationSequence) {
-            guard setConfirmationSequence > 0 else { return }
+            guard setConfirmationSequence > 0, setConfirmationVisible else { return }
             do {
                 try await Task.sleep(for: .seconds(Self.setConfirmationDwellSeconds))
             } catch { return }
-            withAnimation(AppMotion.transition) { setConfirmationVisible = false }
-            onSetConfirmationFinished?()
+            guard setConfirmationVisible else { return }
+            // An exercise handoff owns the whole outgoing card. Keep its saved
+            // mark intact instead of flashing its old label before the blur.
+            if onSetConfirmationFinished?() != true {
+                withAnimation(AppMotion.transition) { setConfirmationVisible = false }
+            }
         }
         .onChange(of: exerciseTransitionID) { _, _ in
             setConfirmationVisible = false
@@ -4238,37 +4258,44 @@ struct WorkoutCommandCard: View {
             } else {
                 Text(metricSupportingText ?? " ")
                     .contentTransition(.opacity)
-                    .animation(AppMotion.transition, value: metricSupportingText)
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .opacity(metricSupportingText == nil ? 0 : 1)
+                    .animation(AppMotion.transition, value: metricSupportingText)
                     .accessibilityHidden(metricSupportingText == nil)
                     .transition(.opacity)
             }
         }
     }
 
-    @ViewBuilder
     private var metricHero: some View {
-        if metricIsHint {
-            AppSecondaryButton(
-                AppCopy.Workout.logMetricHint,
-                isEnabled: state == .active,
-                fillsAvailableWidth: false,
-                action: { onSecondaryAction?() }
-            )
-        } else if onSecondaryAction != nil {
-            Button(action: { onSecondaryAction?() }) {
-                metricValueLabel
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
+        ZStack {
+            Group {
+                if metricIsHint {
+                    AppSecondaryButton(
+                        AppCopy.Workout.logMetricHint,
+                        isEnabled: state == .active,
+                        fillsAvailableWidth: false,
+                        action: { onSecondaryAction?() }
+                    )
+                } else {
+                    Button(action: { onSecondaryAction?() }) {
+                        metricValueLabel
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .disabled(onSecondaryAction == nil || state != .active)
+                    .accessibilityLabel(onSecondaryAction == nil
+                        ? Self.voiceOverLabel(forMetric: metricValue)
+                        : "Adjust weight and reps, \(Self.voiceOverLabel(forMetric: metricValue))")
+                    .accessibilityRemoveTraits(onSecondaryAction == nil ? .isButton : [])
+                }
             }
-            .buttonStyle(ScaleButtonStyle())
-            .accessibilityLabel("Adjust weight and reps, \(Self.voiceOverLabel(forMetric: metricValue))")
-        } else {
-            metricValueLabel
+            .id(metricIsHint)
+            .transition(AppBlurTransition().animation(AppMotion.transition))
         }
     }
 
@@ -4279,6 +4306,7 @@ struct WorkoutCommandCard: View {
                 .appCapsLabel(.smallLabel)
                 .foregroundStyle(AppColor.textSecondary)
                 .opacity(onSecondaryAction == nil ? 0 : 1)
+                .animation(AppMotion.transition, value: onSecondaryAction != nil)
                 .accessibilityHidden(onSecondaryAction == nil)
         }
     }
@@ -4295,11 +4323,11 @@ struct WorkoutCommandCard: View {
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.55)
             .lineLimit(3)
-            // Numeric cross-fade between sets — when prefill updates after a
-            // logged set, the weight × reps swap reads as a soft handoff
-            // instead of a flicker. SwiftUI selects per-glyph fade for the
-            // changed digits and leaves the rest static.
-            .appNumericValue(value: metricValue)
+            // "Last …" becoming an actual target/performance is a whole
+            // content swap. A fast numeric roll made that mixed text look abrupt.
+            .contentTransition(.opacity)
+            .animation(AppMotion.transition, value: metricValue)
+            .animation(AppMotion.transition, value: metricIsGhost)
             .accessibilityLabel(Self.voiceOverLabel(forMetric: metricValue))
     }
 
