@@ -23,6 +23,7 @@ struct TemplateDetailView: View {
     /// `appToast(message:action:)` modifier on the screen root; auto-dismiss is
     /// owned by `AppToast` (3s) so this view only sets it.
     @State private var toastMessage: String?
+    @State private var saveFailed = false
     /// Snapshot of the most recently removed exercise so Undo can restore it
     /// at its original index, with its prior planned sets/reps. Nil after a
     /// successful undo or after a fresh removal supersedes it.
@@ -95,14 +96,31 @@ struct TemplateDetailView: View {
                 ? nil
                 : AppToastAction(label: AppCopy.Toast.undo, handler: undoRemove)
         )
+        .alert("Couldn't save routine", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your saved routine is unchanged. Try saving again.")
+        }
         .tint(AppColor.accent)
+    }
+
+    private func persistRoutine() -> Bool {
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            modelContext.rollback()
+            saveFailed = true
+            AppHaptic.error.fire()
+            return false
+        }
     }
 
     private func addExercise(_ exercise: Exercise) {
         var ids = template.orderedExerciseIds
         ids.append(exercise.id)
         template.orderedExerciseIds = ids
-        try? modelContext.save()
+        _ = persistRoutine()
     }
 
     private func exerciseRow(_ exercise: Exercise) -> some View {
@@ -254,22 +272,9 @@ struct TemplateDetailView: View {
     }
 
     private func historyTargetDisplay(for exercise: Exercise) -> PlannedTargetDisplay? {
-        // Ghost value: last completed set for this exercise across all sessions
-        if let lastSession = sessions.first(where: {
-            $0.isCompleted &&
-            $0.setEntries.contains(where: { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup })
-        }) {
-            let sets = lastSession.setEntries
-                .filter { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup }
-                .sorted { $0.setIndex < $1.setIndex }
-
-            if let lastSet = sets.last, lastSet.reps > 0,
-               exercise.isBodyweight || lastSet.weight > 0 {
-                return PlannedTargetDisplay(setCount: max(sets.count, 1), reps: lastSet.reps)
-            }
-        }
-
-        return nil
+        let sets = SetEntry.latestValidWorkingSets(for: exercise.id, in: sessions)
+        guard let last = sets.last else { return nil }
+        return PlannedTargetDisplay(setCount: sets.count, reps: last.reps)
     }
 
     private func targetEditPayload(for exercise: Exercise) -> TargetEditPayload {
@@ -304,12 +309,13 @@ struct TemplateDetailView: View {
         return "\(planned.setCount) sets, \(planned.reps) reps"
     }
 
+    @discardableResult
     private func saveTarget(
         setCount: Int,
         reps: Int,
         progression: DoubleProgressionConfiguration?,
         for exerciseID: UUID
-    ) {
+    ) -> Bool {
         let previousSetCount = template.plannedSets(for: exerciseID)
         template.setPlannedSets(setCount, for: exerciseID)
 
@@ -348,7 +354,7 @@ struct TemplateDetailView: View {
             template.setProgressionState(nil, for: exerciseID)
             template.setPlannedReps(reps, for: exerciseID)
         }
-        try? modelContext.save()
+        return persistRoutine()
     }
 
     private func progressionSummary(for exercise: Exercise) -> String? {
@@ -413,16 +419,15 @@ struct TemplateDetailView: View {
             exerciseName: exercise.displayName,
             templateState: templateState
         )
+        guard persistRoutine() else { return }
         lastRemoved = snapshot
-        try? modelContext.save()
-
         toastMessage = AppCopy.Toast.removedExercise(exercise.displayName)
     }
 
     private func undoRemove() {
         guard let snapshot = lastRemoved else { return }
         template.restoreExerciseState(snapshot.templateState)
-        try? modelContext.save()
+        guard persistRoutine() else { return }
         lastRemoved = nil
     }
 

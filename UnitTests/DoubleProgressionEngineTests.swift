@@ -44,6 +44,13 @@ final class DoubleProgressionEngineTests: XCTestCase {
         XCTAssertEqual(result?.reason, .repeatTarget)
     }
 
+    func testExtraBelowCeilingSetDoesNotPromiseAnUnchangedRepIncrease() {
+        let result = recommendation(reps: [10, 10, 10, 9], currentTargetReps: 10)
+        XCTAssertEqual(result?.target.weightKg, 60)
+        XCTAssertEqual(result?.target.reps, 10)
+        XCTAssertEqual(result?.reason, .repeatTarget)
+    }
+
     func testPartialCompletionProducesNoRecommendation() {
         let input = input(reps: [10, 10])
 

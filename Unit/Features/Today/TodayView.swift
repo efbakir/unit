@@ -693,20 +693,8 @@ final class TodayDashboardViewModel {
             }
 
             // Cold-start: planned target if onboarding set one, else explicit empty copy.
-            guard let ghostSession = sessions.first(where: { session in
-                session.isCompleted &&
-                session.setEntries.contains(where: {
-                    $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup
-                })
-            }) else {
-                return emptyTarget(for: exercise)
-            }
-
-            let lastSets = ghostSession.setEntries
-                .filter { $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup }
-                .sorted { $0.setIndex < $1.setIndex }
-
-            guard let representative = lastSets.last, representative.reps > 0 else {
+            let lastSets = SetEntry.latestValidWorkingSets(for: exerciseID, in: sessions)
+            guard let representative = lastSets.last else {
                 return emptyTarget(for: exercise)
             }
 

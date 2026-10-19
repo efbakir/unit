@@ -10,6 +10,83 @@ final class ProgressionPersistenceTests: XCTestCase {
         let plannedWeightKg: Double?
     }
 
+    func testPrefillSkipsMalformedNewestHistoryAndIncompleteCurrentWork() {
+        let exerciseID = UUID()
+        let current = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        let latest = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: nil, isCompleted: true)
+        let older = WorkoutSession(date: Date().addingTimeInterval(-120), templateId: nil, isCompleted: true)
+        current.setEntries = [SetEntry(sessionId: current.id, exerciseId: exerciseID, weight: 999, reps: 99)]
+        latest.setEntries = [SetEntry(sessionId: latest.id, exerciseId: exerciseID, weight: -.infinity, reps: 8, isCompleted: true)]
+        older.setEntries = [SetEntry(sessionId: older.id, exerciseId: exerciseID, weight: 60, reps: 8, isCompleted: true)]
+        let value = ActiveWorkoutViewModel().prefillSet(
+            for: exerciseID, currentSession: current, sessions: [older, current, latest]
+        )
+        XCTAssertEqual(value?.source, .priorSession)
+        XCTAssertEqual(value?.weight, 60)
+        XCTAssertEqual(value?.reps, 8)
+    }
+
+    func testCompletedBodyweightHistoryIsValidAndWarmupsAreExcluded() {
+        let exerciseID = UUID()
+        let current = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        let previous = WorkoutSession(date: Date().addingTimeInterval(-60), templateId: nil, isCompleted: true)
+        previous.setEntries = [
+            SetEntry(sessionId: previous.id, exerciseId: exerciseID, weight: 0, reps: 8, isCompleted: true),
+            SetEntry(sessionId: previous.id, exerciseId: exerciseID, weight: 20, reps: 20, isWarmup: true, isCompleted: true, setIndex: 1)
+        ]
+        let value = ActiveWorkoutViewModel().prefillSet(for: exerciseID, currentSession: current, sessions: [previous])
+        XCTAssertEqual(value?.weight, 0)
+        XCTAssertEqual(value?.reps, 8)
+    }
+
+    func testFailedWorkoutSaveRollsBackCompletionAndNewSets() throws {
+        enum Failure: Error { case disk }
+        let container = try makeContainer(at: temporaryStoreURL(named: "failed-save"))
+        let context = container.mainContext
+        let session = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        context.insert(session)
+        try context.save()
+        session.isCompleted = true
+        let entry = SetEntry(sessionId: session.id, exerciseId: UUID(), weight: 60, reps: 8, isCompleted: true)
+        entry.session = session
+        context.insert(entry)
+        XCTAssertFalse(ActiveWorkoutViewModel().saveChanges(in: context, save: { throw Failure.disk }))
+        XCTAssertFalse(session.isCompleted)
+        XCTAssertTrue(session.setEntries.isEmpty)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SetEntry>()), 0)
+    }
+
+    func testSetUndoRestoresIdentityOrderAndEveryRecordedValue() throws {
+        let container = try makeContainer(at: temporaryStoreURL(named: "set-undo"))
+        let context = container.mainContext
+        let session = WorkoutSession(date: Date(), templateId: nil, isCompleted: false)
+        context.insert(session)
+        let entry = SetEntry(sessionId: session.id, exerciseId: UUID(), weight: 61.25, reps: 9,
+                             rpe: 8, rir: 2, isWarmup: false, isCompleted: true,
+                             setIndex: 3, note: "Controlled tempo")
+        entry.session = session
+        context.insert(entry)
+        try context.save()
+        let snapshot = SetEntrySnapshot(entry)
+        context.delete(entry)
+        try context.save()
+        let restored = snapshot.restore(in: session)
+        context.insert(restored)
+        try context.save()
+        XCTAssertEqual(restored.id, snapshot.id)
+        XCTAssertEqual(restored.sessionId, session.id)
+        XCTAssertEqual(restored.exerciseId, snapshot.exerciseID)
+        XCTAssertEqual(restored.weight, 61.25)
+        XCTAssertEqual(restored.reps, 9)
+        XCTAssertEqual(restored.rpe, 8)
+        XCTAssertEqual(restored.rir, 2)
+        XCTAssertEqual(restored.setIndex, 3)
+        XCTAssertEqual(restored.note, "Controlled tempo")
+        XCTAssertTrue(restored.isCompleted)
+        XCTAssertFalse(restored.isWarmup)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SetEntry>()), 1)
+    }
+
     func testMissingAndCorruptProgressionDataDecodeAsEmpty() {
         let template = DayTemplate(name: "Push")
         XCTAssertTrue(template.progressionStateByExerciseId.isEmpty)

@@ -436,13 +436,13 @@ struct SessionDetailView: View {
             weightKg: weightKg,
             reps: editingTargetReps
         )
-        persistTarget(
+        let saved = persistTarget(
             target,
             for: recommendation,
             action: .edited,
             reason: recommendation.record.recommendationReason ?? .repeatTarget
         )
-        editingRecommendationID = nil
+        if saved { editingRecommendationID = nil }
     }
 
     private func useSuggestedTarget(_ recommendation: ProgressionRecommendationRow) {
@@ -468,19 +468,20 @@ struct SessionDetailView: View {
         )
     }
 
+    @discardableResult
     private func persistTarget(
         _ target: DoubleProgressionTarget,
         for recommendation: ProgressionRecommendationRow,
         action: ProgressionDecisionAction,
         reason: DoubleProgressionReason
-    ) {
+    ) -> Bool {
         guard isActionable(recommendation),
               let template = progressionTemplate,
               target.weightKg.isFinite,
               target.weightKg > 0,
               target.reps >= recommendation.record.lowerRepBound,
               target.reps <= recommendation.record.upperRepBound else {
-            return
+            return false
         }
         let absoluteRecommendation = DoubleProgressionRecommendation(
             target: target,
@@ -491,7 +492,7 @@ struct SessionDetailView: View {
             absoluteRecommendation,
             for: recommendation.exerciseID
         ) else {
-            return
+            return false
         }
 
         guard session.recordProgressionDecision(
@@ -499,7 +500,8 @@ struct SessionDetailView: View {
             action: action,
             for: recommendation.exerciseID
         ) else {
-            return
+            modelContext.rollback()
+            return false
         }
 
         do {
@@ -511,9 +513,12 @@ struct SessionDetailView: View {
                 )
             )
             toastMessage = AppCopy.Workout.targetsSaved
+            return true
         } catch {
             modelContext.rollback()
             toastMessage = AppCopy.Workout.targetsSaveFailed
+            AppHaptic.error.fire()
+            return false
         }
     }
 

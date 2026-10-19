@@ -83,6 +83,10 @@ struct ActiveWorkoutView: View {
     /// Bound to `appToast(message:)` on the screen root; the watcher on
     /// `editingSetPayload` sets it to the hint copy and clears the AppStorage flag.
     @State private var setEditHintToast: String? = nil
+    @State private var saveFailed = false
+    @State private var removedSet: SetEntrySnapshot?
+    @State private var removedSetWasPR = false
+    @State private var showsSetUndo = false
     @State private var didTrackWorkoutStart = false
     @State private var noKeyboardSetCount = 0
     /// Plus / minus on the rest timer adjust by this many seconds (minimum rest stays 30s).
@@ -458,7 +462,8 @@ struct ActiveWorkoutView: View {
                         exercise: payload.exercise,
                         weight: weight,
                         reps: reps,
-                        note: note
+                        note: note,
+                        reportsFailure: false
                     )
                 }
             )
@@ -497,10 +502,19 @@ struct ActiveWorkoutView: View {
         // copy reads as reinforcement ("you can do that on any set anytime").
         .onChange(of: editingSetPayload != nil) { wasShowing, isShowing in
             guard wasShowing, !isShowing, !hasSeenSetEditHint else { return }
+            guard !showsSetUndo else { return }
             hasSeenSetEditHint = true
             setEditHintToast = AppCopy.Workout.setEditHint
         }
-        .appToast(message: $setEditHintToast)
+        .appToast(
+            message: $setEditHintToast,
+            action: showsSetUndo ? AppToastAction(label: AppCopy.Toast.undo, handler: undoRemovedSet) : nil
+        )
+        .alert("Couldn't save workout", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your saved workout is unchanged. Try again before leaving this workout.")
+        }
         .sheet(isPresented: $showsAddExercise) {
             AppExercisePickerSheet(
                 existingIds: Set(template?.orderedExerciseIds ?? [])
@@ -553,9 +567,7 @@ struct ActiveWorkoutView: View {
                 let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
                 if let template, !trimmed.isEmpty {
                     template.name = trimmed
-                    try? modelContext.save()
                 }
-                renameDraft = ""
                 finishWorkout()
             }
             Button(AppCopy.Session.skipNaming, role: .cancel) {
@@ -805,17 +817,10 @@ struct ActiveWorkoutView: View {
     }
 
     private func lastActualText(for exercise: Exercise) -> String? {
-        guard let lastSession = sessions.first(where: {
-            $0.id != session.id &&
-            $0.isCompleted &&
-            $0.setEntries.contains(where: { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup })
-        }) else {
-            return nil
-        }
-
-        let sets = lastSession.setEntries
-            .filter { $0.exerciseId == exercise.id && $0.isCompleted && !$0.isWarmup }
-            .sorted { $0.setIndex < $1.setIndex }
+        let sets = SetEntry.latestValidWorkingSets(
+            for: exercise.id, in: sessions, excluding: session.id
+        )
+        guard !sets.isEmpty else { return nil }
 
         return WorkoutTargetFormatter.completedPerformanceText(
             weightsKg: sets.map(\.weight),
@@ -870,12 +875,9 @@ struct ActiveWorkoutView: View {
 
         if let prefill,
            prefill.source != .planned || exercise.isBodyweight || prefill.weight > 0 {
-            noKeyboardSetCount += 1
-            completeSet(
-                exercise: exercise,
-                weight: prefill.weight,
-                reps: prefill.reps
-            )
+            if completeSet(exercise: exercise, weight: prefill.weight, reps: prefill.reps) {
+                noKeyboardSetCount += 1
+            }
             return
         }
 
@@ -885,13 +887,15 @@ struct ActiveWorkoutView: View {
         )
     }
 
+    @discardableResult
     private func completeSet(
         exercise: Exercise,
         weight: Double,
         reps: Int,
-        note: String = ""
-    ) {
-        guard !isLoggingSet else { return }
+        note: String = "",
+        reportsFailure: Bool = true
+    ) -> Bool {
+        guard !isLoggingSet, weight.isFinite, weight >= 0, reps > 0 else { return false }
         isLoggingSet = true
         DispatchQueue.main.async { isLoggingSet = false }
 
@@ -927,9 +931,9 @@ struct ActiveWorkoutView: View {
         // mutation but skips the cross-fade.
         withAnimation(reduceMotion ? nil : .appReveal) {
             modelContext.insert(entry)
-            try? modelContext.save()
-            showsReadyState = false
         }
+        guard saveWorkoutChanges(reportsFailure: reportsFailure) else { return false }
+        showsReadyState = false
 
         // Trigger the success haptic on `WorkoutCommandCard` via the bound
         // `setLoggedSignal` (replaces the previous raw UIKit impact). The
@@ -969,6 +973,7 @@ struct ActiveWorkoutView: View {
         } else {
             startRestTimer(seconds: restDurationSeconds)
         }
+        return true
     }
 
     /// Tap a logged chip → edit sheet → save: replace weight/reps/note in place.
@@ -982,11 +987,11 @@ struct ActiveWorkoutView: View {
         weight: Double,
         reps: Int,
         note: String
-    ) {
+    ) -> Bool {
         guard reps > 0 else {
-            deleteSet(entry, exercise: exercise)
-            return
+            return deleteSet(entry, exercise: exercise)
         }
+        guard weight.isFinite, weight >= 0 else { return false }
         if weight == 0 {
             exercise.isBodyweight = true
         }
@@ -994,24 +999,49 @@ struct ActiveWorkoutView: View {
             entry.weight = weight
             entry.reps = reps
             entry.note = note
-            try? modelContext.save()
         }
+        guard saveWorkoutChanges(reportsFailure: false) else { return false }
         reevaluatePRFlag(for: entry, exerciseID: exercise.id)
+        return true
     }
 
-    /// Tap a logged chip → edit sheet → delete (or save with reps == 0). Removes
-    /// the entry, drops any stale PR flag for it, and lets the rest timer keep
-    /// running — the user is mid-rest correcting a typo, not finishing the set
-    /// over again. Set indices are intentionally not renumbered: `currentEntries`
-    /// sorts by `setIndex`, gaps are harmless, and the next `completeSet` writes
-    /// a fresh trailing index via `currentEntries.count`.
-    private func deleteSet(_ entry: SetEntry, exercise: Exercise) {
+    /// Preserve identity and index so Undo restores exactly the removed set.
+    private func deleteSet(_ entry: SetEntry, exercise: Exercise) -> Bool {
+        let snapshot = SetEntrySnapshot(entry)
+        let wasPR = prSetEntryIDs.contains(entry.id)
         withAnimation(reduceMotion ? nil : .appExit) {
             modelContext.delete(entry)
-            try? modelContext.save()
         }
-        prSetEntryIDs.remove(entry.id)
+        guard saveWorkoutChanges(reportsFailure: false) else { return false }
+        prSetEntryIDs.remove(snapshot.id)
+        removedSet = snapshot
+        removedSetWasPR = wasPR
+        showsSetUndo = true
+        setEditHintToast = "Set removed"
         AppHaptic.warning.fire()
+        return true
+    }
+
+    private func undoRemovedSet() {
+        guard let snapshot = removedSet,
+              !session.setEntries.contains(where: { $0.id == snapshot.id }) else { return }
+        withAnimation(reduceMotion ? nil : .appReveal) {
+            modelContext.insert(snapshot.restore(in: session))
+        }
+        guard saveWorkoutChanges() else { return }
+        if removedSetWasPR { prSetEntryIDs.insert(snapshot.id) }
+        removedSet = nil
+        showsSetUndo = false
+        AppHaptic.tap.fire()
+    }
+
+    private func saveWorkoutChanges(reportsFailure: Bool = true) -> Bool {
+        guard viewModel.saveChanges(in: modelContext) else {
+            if reportsFailure { saveFailed = true }
+            AppHaptic.error.fire()
+            return false
+        }
+        return true
     }
 
     /// Re-evaluate just the edited entry's PR flag against the current baseline.
@@ -1034,7 +1064,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func finishWorkout() {
-        restTimer.stop()
+        guard !session.isCompleted else { return }
         session.isCompleted = true
         if let template {
             session.captureProgressionRecords(
@@ -1042,7 +1072,8 @@ struct ActiveWorkoutView: View {
                 exercises: exercises
             )
         }
-        try? modelContext.save()
+        guard saveWorkoutChanges() else { return }
+        restTimer.stop()
         let completedSetCount = session.setEntries.filter {
             $0.isCompleted && !$0.isWarmup
         }.count
@@ -1067,15 +1098,15 @@ struct ActiveWorkoutView: View {
         guard !ids.contains(exercise.id) else { return }
         ids.append(exercise.id)
         template.orderedExerciseIds = ids
-        try? modelContext.save()
+        guard saveWorkoutChanges() else { return }
         selectedExerciseIndex = ids.count - 1
         pendingExerciseForSetup = exercise
     }
 
     private func cancelWorkout() {
-        restTimer.stop()
         modelContext.delete(session)
-        try? modelContext.save()
+        guard saveWorkoutChanges() else { return }
+        restTimer.stop()
     }
 
     private func plannedSetCount(for exerciseID: UUID) -> Int {
@@ -1173,10 +1204,10 @@ private struct AdjustResultSheet: View {
     let exerciseName: String
     let isBodyweight: Bool
     let mode: Mode
-    let onSave: (_ weight: Double, _ reps: Int, _ note: String) -> Void
+    let onSave: (_ weight: Double, _ reps: Int, _ note: String) -> Bool
     /// Edit mode only — when non-nil, a native trash action appears in the
     /// top-right toolbar. Log mode passes nil.
-    var onDelete: (() -> Void)? = nil
+    var onDelete: (() -> Bool)? = nil
 
     @Environment(\.dismiss) private var dismiss
     /// Lifter's chosen weight unit, surfaced here so the Weight field caption
@@ -1188,6 +1219,7 @@ private struct AdjustResultSheet: View {
     @State private var repsText = ""
     @State private var noteText = ""
     @State private var seeded = false
+    @State private var showsSaveFailure = false
     /// Snapshot of the seeded values after `onAppear` runs. `isDirty` compares
     /// current text against these so the warn-before-discard alert only fires
     /// when the lifter actually edited a field — opening the sheet, glancing
@@ -1296,8 +1328,11 @@ private struct AdjustResultSheet: View {
                 label: primaryLabel,
                 isEnabled: canSave,
                 action: {
-                    onSave(parsedWeightKg, parsedReps, noteText)
-                    dismiss()
+                    if onSave(parsedWeightKg, parsedReps, noteText) {
+                        dismiss()
+                    } else {
+                        showsSaveFailure = true
+                    }
                 }
             ),
             dismissLabel: AppCopy.Nav.cancel,
@@ -1353,8 +1388,8 @@ private struct AdjustResultSheet: View {
             if isEditMode, let onDelete {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .destructive) {
-                        onDelete()
-                        dismiss()
+                        if onDelete() { dismiss() }
+                        else { showsSaveFailure = true }
                     } label: {
                         AppIcon.trash.image(size: 16, weight: .medium)
                             .foregroundStyle(AppColor.error)
@@ -1367,6 +1402,11 @@ private struct AdjustResultSheet: View {
         // forwards the gesture into a no-op; the explicit Cancel button stays
         // available and feeds the same discard-confirmation alert below.
         .interactiveDismissDisabled(isDirty)
+        .alert("Couldn't save set", isPresented: $showsSaveFailure) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your entries are still here. Try saving again.")
+        }
         .alert(
             AppCopy.Workout.discardSetEntryTitle,
             isPresented: $showsDiscardConfirmation
@@ -1516,6 +1556,18 @@ final class ActiveWorkoutViewModel {
     /// Empty body — releasing stored refs needs no isolation.
     nonisolated deinit {}
 
+    /// All workout outcomes depend on a successful durable save. The closure
+    /// is injectable for failure regression tests; production uses SwiftData.
+    func saveChanges(in context: ModelContext, save: (() throws -> Void)? = nil) -> Bool {
+        do {
+            if let save { try save() } else { try context.save() }
+            return true
+        } catch {
+            context.rollback()
+            return false
+        }
+    }
+
     func prefillSet(
         for exerciseID: UUID,
         currentSession: WorkoutSession,
@@ -1525,7 +1577,7 @@ final class ActiveWorkoutViewModel {
         plannedWeightKg: Double? = nil
     ) -> SetPrefill? {
         let currentEntries = currentSession.setEntries
-            .filter { $0.exerciseId == exerciseID }
+            .filter { $0.exerciseId == exerciseID && $0.isValidCompletedWorkingSet }
             .sorted { $0.setIndex < $1.setIndex }
 
         if let currentLast = currentEntries.last {
@@ -1564,7 +1616,9 @@ final class ActiveWorkoutViewModel {
             // otherwise retain the editable reps-only empty-weight state.
             // Values remain canonical kilograms through persistence and logging;
             // conversion happens only at formatter and input boundaries.
-            let seededKg = plannedWeightKg ?? 0
+            let seededKg = plannedWeightKg.flatMap {
+                $0.isFinite && $0 >= 0 ? $0 : nil
+            } ?? 0
             return SetPrefill(weight: seededKg, reps: plannedReps, source: .planned)
         }
 
@@ -1576,31 +1630,11 @@ final class ActiveWorkoutViewModel {
         currentSession: WorkoutSession,
         sessions: [WorkoutSession]
     ) -> SetEntry? {
-        guard let session = latestSession(
-            for: exerciseID,
-            currentSession: currentSession,
-            sessions: sessions
-        ) else {
-            return nil
-        }
-
-        return session.setEntries
-            .filter { $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup }
-            .sorted { $0.setIndex < $1.setIndex }
-            .last
+        SetEntry.latestValidWorkingSets(
+            for: exerciseID, in: sessions, excluding: currentSession.id
+        ).last
     }
 
-    private func latestSession(
-        for exerciseID: UUID,
-        currentSession: WorkoutSession,
-        sessions: [WorkoutSession]
-    ) -> WorkoutSession? {
-        sessions.first { session in
-            session.id != currentSession.id &&
-            session.isCompleted &&
-            session.setEntries.contains(where: { $0.exerciseId == exerciseID && $0.isCompleted && !$0.isWarmup })
-        }
-    }
 }
 
 @MainActor

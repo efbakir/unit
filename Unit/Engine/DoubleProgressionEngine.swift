@@ -210,7 +210,9 @@ enum DoubleProgressionEngine {
                         ? input.currentTargetReps + 1
                         : configuration.upperRepBound
                 ),
-                reason: .addARep,
+                reason: input.currentTargetReps < configuration.upperRepBound
+                    ? .addARep
+                    : .repeatTarget,
                 sourceWorkoutSessionID: input.sourceWorkoutSessionID
             )
         )

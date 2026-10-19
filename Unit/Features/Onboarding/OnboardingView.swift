@@ -278,6 +278,7 @@ enum OnboardingStep: String, Hashable {
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
 
     var onCompletion: () -> Void = { }
@@ -326,6 +327,20 @@ struct OnboardingView: View {
             history = navigation.history
             didLoadPreferences = true
         }
+        .onChange(of: vm.pastedProgramText) { _, _ in persistDraft() }
+        .onChange(of: vm.dayExercises) { _, _ in persistDraft() }
+        .onChange(of: vm.dayNames) { _, _ in persistDraft() }
+        .onChange(of: vm.dayWeekdays) { _, _ in persistDraft() }
+        .onChange(of: vm.useFlexibleSchedule) { _, _ in persistDraft() }
+        .onChange(of: vm.customDate) { _, _ in persistDraft() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { persistDraft() }
+        }
+    }
+
+    private func persistDraft() {
+        guard didLoadPreferences, !isCommitting else { return }
+        persistProgress()
     }
 
     // MARK: - Step → View
