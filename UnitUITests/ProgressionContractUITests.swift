@@ -49,6 +49,7 @@ final class ProgressionContractUITests: XCTestCase {
             staticText(in: app, containing: "Every set reached the top of your 8–10 range").exists,
             "Increase-weight explanation is missing"
         )
+        attachScreenshot(of: app, named: "01b-completed-workout-summary")
         let useFirstSuggestion = button(
             in: app,
             containing: AppCopy.Workout.useThisTarget
