@@ -235,6 +235,9 @@ struct ActiveWorkoutView: View {
                         prefill: section.prefill
                     )
                 },
+                onSetConfirmationFinished: {
+                    advanceAfterCompletedSet(for: section.exercise.id)
+                },
                 onSecondaryAction: section.hasReachedPlannedSetGoal ? nil : {
                     guard currentSection?.exercise.id == section.exercise.id else { return }
                     adjustResultPayload = AdjustResultPayload(
@@ -890,11 +893,27 @@ struct ActiveWorkoutView: View {
 
     private func goToNextExercise() {
         guard selectedExerciseIndex < sectionModels.count - 1 else { return }
-        showsReadyState = false
-        restTimer.stop()
+        // A completed exercise already started rest for the next one. Moving
+        // the card must not cancel that countdown or its scheduled alert.
+        if currentSection?.hasReachedPlannedSetGoal != true {
+            showsReadyState = false
+            restTimer.stop()
+        }
         // The shared card owns the exercise blur/fade handoff. Do not animate
         // the whole screen's geometry, rest controls, sheets and draft fields.
         selectedExerciseIndex += 1
+    }
+
+    private func advanceAfterCompletedSet(for exerciseID: UUID) {
+        guard !session.isCompleted,
+              currentSection?.exercise.id == exerciseID,
+              currentSection?.hasReachedPlannedSetGoal == true,
+              nextSection != nil,
+              !showLineup, adjustResultPayload == nil, editingSetPayload == nil,
+              !showsCancelConfirmation, !showsFinishConfirmation,
+              !showsSkipExerciseConfirmation else { return }
+        // Prefill and the stable blur/fade handoff belong to existing owners.
+        goToNextExercise()
     }
 
     private func completeSuggestedSet(

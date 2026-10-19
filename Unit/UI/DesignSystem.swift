@@ -4027,6 +4027,9 @@ struct WorkoutCommandCard: View {
     var state: State = .active
     var primaryLabel: String = AppCopy.Workout.completeSet
     var onPrimaryAction: (() -> Void)? = nil
+    /// Called after this saved set’s existing confirmation dwell; the caller
+    /// rechecks completion/selection before advancing. No second timer owner.
+    var onSetConfirmationFinished: (() -> Void)? = nil
     var onSecondaryAction: (() -> Void)? = nil
     /// Bumped by the parent each time a set is logged. Drives `AppHaptic.success`
     /// on this card so the feedback lives at the atom layer instead of being
@@ -4146,6 +4149,7 @@ struct WorkoutCommandCard: View {
                 try await Task.sleep(for: .seconds(Self.setConfirmationDwellSeconds))
             } catch { return }
             withAnimation(AppMotion.transition) { setConfirmationVisible = false }
+            onSetConfirmationFinished?()
         }
         .onChange(of: exerciseTransitionID) { _, _ in
             setConfirmationVisible = false

@@ -533,3 +533,8 @@ The user clarified that entering initial weight/reps is preparation, not complet
 ### 2026-10-19 — Native bar visibility follows scrolling
 
 The user corrected the always-visible material strips: the unscrolled header must blend into the page. SwiftUI `.automatic` owns navigation background visibility; UIKit standard/scroll-edge background overrides and forced `.bar`/`.visible` preferences are removed. Native hard edge styling remains for actual scrolling overlap. AppScreen’s nonoverlapping pinned sections use the page surface without always-visible separators. This supersedes the always-visible material parts of the earlier native-bars decision; no sizes, content-card surfaces or list separators change.
+
+
+### 2026-10-19 — Advance automatically after the final set
+
+The user requested automatic preparation of the next exercise after completing the current exercise’s planned sets. Reuse the existing2.5s saved confirmation before the shared blur/fade handoff. Rest continues across both automatic and manual completed-exercise advancement. Undo/manual navigation/open editors invalidate or suppress stale advancement. Only actual successfully saved sets trigger this path; preparing a target does not. The final workout still requires Finish workout.

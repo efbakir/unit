@@ -243,3 +243,7 @@ Pinned header/action sections in AppScreen occupy separate layout space, so cont
 ## Stable workout motion — October 19
 
 SetProgressIndicator reserves its existing44pt interactive height in every state; completing the first set cannot enlarge the row. State replacements reuse AppBlurTransition (normal arrival,0.92 shrink/blur removal) and collectionChange. WorkoutCommandCard holds metric/supporting/CTA layout slots across saved-set feedback; visible font/icon/button sizes are unchanged. PR evidence fits inline where possible and stacks on narrow widths. RestTimerControl has one persistent label hierarchy and a flexible centre column, keeping adjust buttons anchored through idle/running/paused/ready states. Exercise identity changes only the card’s upper content through a PlateSteps-style blur/fade; the timer keeps its identity. Existing Reduce Motion/VoiceOver gates keep fades.
+
+## Automatic next exercise — October 19
+
+WorkoutCommandCard’s optional `onSetConfirmationFinished` event fires after its existing2.5s saved-set confirmation; it does not own navigation or create another timer. ActiveWorkoutView rechecks exercise identity, completed working-set goal and open editors/confirmations before advancing. The same blur/fade and prefill owners prepare the next exercise. Moving from a completed exercise preserves its running/paused rest timer and scheduled alert; explicitly skipping an unfinished exercise still stops rest. The final exercise retains explicit Finish workout. No automatic set logging or guessed weights.

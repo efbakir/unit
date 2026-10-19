@@ -82,3 +82,7 @@ Saving an upcoming target never creates a completed set, advances set progress, 
 ## Workout geometry — October 19
 
 Logging the first set must not change the set strip’s hit-area height or collapse the metric/supporting/CTA slots. Timer adjust controls retain their positions through state changes. Exercise handoffs replace only exercise content; no whole-screen animation may morph the timer/sheet/input layout. Set chip state changes use the canonical arrival/removal transitions; Undo restores the exact saved values and identity. Revisit long exercise names and compact PR evidence when visually checking these owners.
+
+## Automatic handoff — October 19
+
+After a successfully saved final set and the existing confirmation dwell, open the next exercise without another tap. Recheck identity/completion before moving; user navigation, Undo, editors and confirmations must not receive a stale automatic jump. Preserve the rest deadline/pause state and notification across a completed-exercise handoff. Do not auto-finish the workout or log the next set.
