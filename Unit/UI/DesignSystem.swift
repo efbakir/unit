@@ -5184,8 +5184,7 @@ struct AppScreen<Content: View>: View {
                 .padding(.bottom, AppSpacing.sm)
                 .frame(maxWidth: maxContentWidth)
                 .frame(maxWidth: .infinity)
-                .background(AppScreenChromeBackground())
-                .overlay(alignment: .bottom) { AppDivider() }
+                .background(AppScreenChromeBackground(surface: surface ?? AppColor.background))
         }
     }
 
@@ -5255,8 +5254,7 @@ struct AppScreen<Content: View>: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: maxContentWidth)
             .frame(maxWidth: .infinity)
-            .background(AppScreenChromeBackground())
-            .overlay(alignment: .top) { AppDivider() }
+            .background(AppScreenChromeBackground(surface: surface ?? AppColor.background))
         }
     }
 
@@ -5316,8 +5314,7 @@ struct AppScreen<Content: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background((surface ?? AppColor.clear).ignoresSafeArea())
         .toolbar(showsNativeNavigationBar ? .automatic : .hidden, for: .navigationBar)
-        .toolbarBackground(.bar, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackgroundVisibility(.automatic, for: .navigationBar)
         .toolbar {
             if showsKeyboardDismissToolbar {
                 ToolbarItemGroup(placement: .keyboard) {
@@ -5338,10 +5335,14 @@ struct AppScreen<Content: View>: View {
     }
 }
 
-/// Native material for pinned headers/actions. Content cards retain their flat fills.
+/// Pinned sections occupy their own layout space; no content passes behind
+/// them. Match the page surface. Actual navigation bars own native scroll-driven
+/// material and separators rather than imitating a bar on a nonoverlapping view.
 private struct AppScreenChromeBackground: View {
+    let surface: Color
+
     var body: some View {
-        Rectangle().fill(.bar)
+        Rectangle().fill(surface)
     }
 }
 
@@ -5476,9 +5477,9 @@ extension View {
 
     func appNavigationBarChrome() -> some View {
         self
-            // System material and separator; no opaque colour or transparent-edge override.
-            .toolbarBackground(.bar, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            // Native scroll-edge visibility: transparent at rest, material only
+            // when scrolling content passes underneath. Do not force a style.
+            .toolbarBackgroundVisibility(.automatic, for: .navigationBar)
             .appScrollEdgeSoft()
             // Keep nav title + toolbar buttons (e.g. "Add Exercise" / "Done") visible when
             // a `.searchable` field becomes focused. Default behavior collapses them to make

@@ -528,3 +528,8 @@ The user explicitly replaced the earlier soft-fade-only bar rule with native blu
 ### 2026-10-19 — Prepare targets without logging a set
 
 The user clarified that entering initial weight/reps is preparation, not completion. The upcoming-set editor saves an unlogged, session-scoped target and routine starting values. Only the explicit Complete set action inserts a completed SetEntry, advances set progress, starts rest or emits set-success feedback. Existing completed-set chip editing remains an edit of recorded history. Preparation survives relaunch; notes transfer only when the set is actually completed. Explicit session preparation can override automatic prefill for that session, without changing accepted progression targets or labelling preparation as Last time.
+
+
+### 2026-10-19 — Native bar visibility follows scrolling
+
+The user corrected the always-visible material strips: the unscrolled header must blend into the page. SwiftUI `.automatic` owns navigation background visibility; UIKit standard/scroll-edge background overrides and forced `.bar`/`.visible` preferences are removed. Native hard edge styling remains for actual scrolling overlap. AppScreen’s nonoverlapping pinned sections use the page surface without always-visible separators. This supersedes the always-visible material parts of the earlier native-bars decision; no sizes, content-card surfaces or list separators change.

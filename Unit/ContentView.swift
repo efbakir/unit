@@ -236,22 +236,12 @@ struct ContentView: View {
         let titleFont = UIFont.geist(.bold, size: 17, relativeTo: .headline)
         let largeTitleFont = UIFont.geist(.bold, size: 34, relativeTo: .largeTitle)
 
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
-        appearance.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
-
-        let scrollEdgeAppearance = UINavigationBarAppearance()
-        scrollEdgeAppearance.configureWithDefaultBackground()
-        scrollEdgeAppearance.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
-        scrollEdgeAppearance.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
-
+        // Preserve Unit's typography/tint; leave every bar background and
+        // scroll-edge appearance to UIKit/SwiftUI's native defaults.
         let navBar = UINavigationBar.appearance()
         navBar.tintColor = titleColor
-        navBar.standardAppearance = appearance
-        navBar.compactAppearance = appearance
-        navBar.scrollEdgeAppearance = scrollEdgeAppearance
-        navBar.compactScrollEdgeAppearance = scrollEdgeAppearance
+        navBar.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
+        navBar.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
     }
 
     private func configureSegmentedControlAppearance() {

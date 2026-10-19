@@ -12,7 +12,7 @@
 **Light only** per CLAUDE.md §4 rule 3 — no dark-mode variants are maintained.
 
 ### Surfaces (role-based)
-- **Page background** (`AppColor.background`): `#F5F5F5` — calm, neutral, softer than pure white. Navigation and pinned action bars use native `.bar` material and sharp boundaries; there is no separate `barBackground` token.
+- **Page background** (`AppColor.background`): `#F5F5F5` — calm, neutral, softer than pure white. Navigation bars use native automatic scroll-driven backgrounds; nonoverlapping pinned sections match the page. There is no separate `barBackground` token.
 - **Card surface** (`AppColor.cardBackground`): White `#FFFFFF` — cards separate from the Milk page through **fill contrast** alone (a 6.25% lightness step), **not shadows and not borders**. See `DESIGN.md` §4 "The Flat-By-Default Rule".
 - **Row-on-card fill** (`AppColor.cardRowFill`): `#F5F5F5` — for elements nested inside `AppCard` (use with `AppRadius.sm` and `AppSpacing.sm`, per the Figma source of truth).
 

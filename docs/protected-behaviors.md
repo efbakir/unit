@@ -73,7 +73,7 @@ owned by the coordinating release chat.
 
 ## Native chrome override — October 19
 
-Native navigation material and separators stay intact. Pinned headers/action areas use the shared `.bar` background and full-width boundaries. The existing canonical edge modifier owns hard vertical/soft horizontal clipping; feature-local gradient fades must not return. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.
+Native navigation backgrounds/separators stay scroll-driven via `.automatic`; never force them visible at rest. Nonoverlapping pinned headers/action areas match the page surface without a permanent tint or separator. The existing canonical edge modifier owns hard vertical/soft horizontal clipping; feature-local gradient fades must not return. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.
 
 ## Preparation is not completion — October 19
 
