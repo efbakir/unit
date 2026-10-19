@@ -49,3 +49,8 @@ Chats 1, 2, 4, 5 and 6 supplied the audit/foundation/moments/design/guard work a
 ## Release boundaries
 
 Build 69 is development-only and unreserved until App Store Connect confirms the uploaded build list. No public upload or submission is authorized here. Local StoreKit tests are not Apple sandbox confirmation. Full physical haptic feel and a complete manual VoiceOver walkthrough remain separate review items.
+
+
+## Subsequent screenshot correction — build 70
+
+The user’s Today/Programs feedback is now applied and installed as **2.1 (70)**: symmetric shared preview padding, full-width preview/divided-list separators, taller 64pt grouped day targets and lighter existing-token chevrons. Source `62fef5c`; signed build/install/normal launch passed, training tables remained row-identical. No further tests or Simulator pass was started. See [the row-spacing handoff](2026-10-19-unit-row-spacing.md).

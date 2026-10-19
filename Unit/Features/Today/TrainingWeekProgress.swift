@@ -381,10 +381,7 @@ struct TodayWeekOverviewSheet: View {
                 }
 
                 ScrollView {
-                    AppDividedList(
-                        selectedDays,
-                        dividerLeading: AppSpacing.md
-                    ) { day in
+                    AppDividedList(selectedDays) { day in
                         HStack(alignment: .center) {
                             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                 Text(day.title)

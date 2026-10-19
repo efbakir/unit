@@ -673,9 +673,8 @@ struct AppCelebration: View {
 /// Canonical row separator. 1pt hairline at `AppColor.border.opacity(0.55)` —
 /// the same value the active-workout lineup hand-rolled before consolidation.
 /// Used by `AppDividedList` (and a handful of card-row contexts that compose
-/// rows by hand). Spans the full width of its container; constrain via
-/// surrounding `.padding(.leading/.trailing, ...)` if a non-full-width inset is
-/// needed.
+/// rows by hand). Spans the full width of its container. Row content owns
+/// its padding; separator owners must remain outside those content insets.
 struct AppDivider: View {
     var body: some View {
         Rectangle()
@@ -2466,7 +2465,7 @@ extension View {
             HStack(spacing: AppSpacing.sm) {
                 self.frame(maxWidth: .infinity, alignment: .leading)
                 AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(AppColor.textTertiary)
                     .accessibilityHidden(true)
             }
             .frame(minHeight: 44)
@@ -2482,7 +2481,7 @@ extension View {
 /// Shared row for preview lists inside cards. The default stacked layout keeps
 /// the established title/subtitle hierarchy used by library and detail lists.
 /// `compactInline` is reserved for recessed, capped previews: body-size title on
-/// the left, body-size metadata on the right, and a 44pt interaction floor.
+/// the left, body-size metadata on the right, and a comfortable 64pt row.
 /// `identityFirst` gives the title the full row width, then places the complete
 /// target and optional evidence beneath it. Use it when truncating the subject
 /// would make a compact metric meaningless (Today exercise previews).
@@ -2506,13 +2505,15 @@ struct PreviewListRow: View {
     var showsDisclosure: Bool = false
     var showsSeparator: Bool = false
 
-    @ScaledMetric(relativeTo: .body) private var compactRowHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .body) private var compactTwoLineRowHeight: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var identityFirstRowHeight: CGFloat = 80
 
     var body: some View {
         rowContent
             .appNavigationDisclosure(showsDisclosure)
+            .padding(.horizontal, layout == .stacked ? 0 : AppSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .overlay(alignment: .bottom) {
                 if showsSeparator { AppDivider() }
             }
@@ -2569,7 +2570,8 @@ struct PreviewListRow: View {
                 .layoutPriority(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: supportingText == nil ? compactRowHeight : compactTwoLineRowHeight)
+            .padding(.vertical, AppSpacing.md)
+            .frame(minHeight: compactTwoLineRowHeight)
             .contentShape(Rectangle())
             .accessibilityElement(children: .combine)
             .accessibilityLabel(accessibilityLabel)
@@ -2602,7 +2604,8 @@ struct PreviewListRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: identityFirstRowHeight, alignment: .topLeading)
+            .padding(.vertical, AppSpacing.smd)
+            .frame(minHeight: identityFirstRowHeight, alignment: .leading)
             .contentShape(Rectangle())
             .accessibilityElement(children: .combine)
             .accessibilityLabel(accessibilityLabel)
@@ -2631,7 +2634,7 @@ struct PreviewListContainer<Content: View>: View {
     var usesTwoLineRows: Bool = false
     @ViewBuilder let content: () -> Content
 
-    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var twoLineRowHeight: CGFloat = 80
 
     private var overflows: Bool {
@@ -2651,13 +2654,15 @@ struct PreviewListContainer<Content: View>: View {
         let fullRowsHeight = CGFloat(visibleRows) * resolvedRowHeight
         let overflowPeekHeight: CGFloat
         if overflows {
+            // Keep the next row's title visible after centering its content;
+            // a smaller peek would expose only blank inset or clipped glyphs.
             overflowPeekHeight = usesTwoLineRows
-                ? resolvedRowHeight / 4
-                : resolvedRowHeight / 2
+                ? resolvedRowHeight / 2
+                : resolvedRowHeight / 2 + AppSpacing.smd
         } else {
             overflowPeekHeight = 0
         }
-        return (AppSpacing.sm * 2) + fullRowsHeight + overflowPeekHeight
+        return fullRowsHeight + overflowPeekHeight
     }
 
     var body: some View {
@@ -2666,8 +2671,6 @@ struct PreviewListContainer<Content: View>: View {
                 content()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, AppSpacing.sm)
         }
         .scrollDisabled(!canScroll)
         .scrollIndicators(canScroll ? .visible : .hidden)
@@ -3587,16 +3590,13 @@ struct AppEmptyHint: View {
 /// Canonical row-list primitive. Renders rows separated by a 1pt `AppDivider`
 /// hairline. Use inside a shared `AppCard` (or `SettingsSection`) when rows
 /// share a subject; for a list that owns its own card chrome, use the
-/// `AppCardList` molecule instead. Dividers default to full container width
-/// (leading/trailing 0); pass `dividerLeading:` / `dividerTrailing:` only when
-/// a non-full-width inset is genuinely required.
+/// `AppCardList` molecule instead. Dividers always span the full container
+/// width; padding belongs to each row, never the separator.
 struct AppDividedList<Data, ID, RowContent>: View
     where Data: RandomAccessCollection, ID: Hashable, RowContent: View
 {
     let data: Data
     let id: KeyPath<Data.Element, ID>
-    var dividerLeading: CGFloat = 0
-    var dividerTrailing: CGFloat = 0
     @ViewBuilder let content: (Data.Element) -> RowContent
 
     var body: some View {
@@ -3605,8 +3605,6 @@ struct AppDividedList<Data, ID, RowContent>: View
             ForEach(items.indices, id: \.self) { index in
                 if index > 0 {
                     AppDivider()
-                        .padding(.leading, dividerLeading)
-                        .padding(.trailing, dividerTrailing)
                 }
                 content(items[index])
             }
@@ -3617,14 +3615,10 @@ struct AppDividedList<Data, ID, RowContent>: View
 extension AppDividedList where Data.Element: Identifiable, ID == Data.Element.ID {
     init(
         _ data: Data,
-        dividerLeading: CGFloat = 0,
-        dividerTrailing: CGFloat = 0,
         @ViewBuilder content: @escaping (Data.Element) -> RowContent
     ) {
         self.data = data
         self.id = \.id
-        self.dividerLeading = dividerLeading
-        self.dividerTrailing = dividerTrailing
         self.content = content
     }
 }
