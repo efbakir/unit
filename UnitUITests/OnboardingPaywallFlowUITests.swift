@@ -207,6 +207,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             "three training days should be preselected"
         )
         XCTAssertTrue(app.buttons["Continue"].isEnabled)
+        attachScreenshot(named: "native-12-preserved-three-day-default", app: app)
         tap(
             button(in: app, containing: AppCopy.Onboarding.trainingDays(2)),
             "schedule — 2 days/week"
@@ -268,6 +269,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.staticTexts[AppCopy.Onboarding.scheduleTitle].waitForExistence(timeout: 8),
             "matched program did not continue into its schedule review"
         )
+        attachScreenshot(named: "native-13-weekday-defaults", app: app)
+        let wednesday = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Wednesday"))
+        tap(wednesday.firstMatch, "First routine on Wednesday")
+        XCTAssertTrue(wednesday.firstMatch.isSelected)
+        XCTAssertEqual(wednesday.matching(NSPredicate(format: "enabled == false")).count, 1,
+                       "The other routine must disable the occupied Wednesday")
+        attachScreenshot(named: "native-14-weekday-disabled", app: app)
     }
 
     func testPasteEditorFocusIsStableOnCompactScreen() {

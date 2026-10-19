@@ -551,6 +551,147 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "16-catalog-after-successful-retry")
     }
 
+    func testNativeSegmentedSelectionContracts() throws {
+        var app = makeStartingTargetApp(reset: true)
+        app.launch()
+        tap(app.tabBars.buttons["Programs"], "Programs", timeout: 20)
+        tap(app.buttons["Settings"], "Settings")
+        let pounds = app.buttons["lb"].firstMatch
+        tap(pounds, "Weight unit pounds")
+        XCTAssertTrue(pounds.isSelected)
+        XCTAssertGreaterThanOrEqual(pounds.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(pounds.frame.width, 44)
+        attachScreenshot(of: app, named: "native-01-settings-pounds")
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-ui-testing-lifetime-owner"]
+        app.launch()
+        tap(app.tabBars.buttons["Programs"], "Programs after relaunch", timeout: 20)
+        tap(app.buttons["Settings"], "Settings after relaunch")
+        XCTAssertTrue(app.buttons["lb"].firstMatch.isSelected, "Weight unit did not persist")
+        tap(app.buttons["kg"].firstMatch, "Restore kilograms")
+
+        let components = button(in: app, containing: "Components")
+        scrollTo(components, in: app)
+        tap(components, "Components")
+        scrollTo(app.staticTexts["Native · existing selection"], in: app, maximumSwipes: 16)
+        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26 {
+            let native = app.segmentedControls["Native history view"]
+            XCTAssertTrue(native.waitForExistence(timeout: 5), "Expected native segmented Picker")
+            tap(native.buttons["Calendar"], "Native calendar")
+            XCTAssertTrue(native.buttons["Calendar"].isSelected)
+            XCTAssertGreaterThanOrEqual(native.buttons["Calendar"].frame.height, 44)
+            tap(native.buttons["List"], "Native list")
+            XCTAssertTrue(native.buttons["List"].isSelected)
+        } else {
+            XCTAssertEqual(app.segmentedControls.count, 0, "iOS 18 should retain touch-sized buttons")
+        }
+        attachScreenshot(of: app, named: "native-02-native-and-retained")
+        let unansweredList = app.buttons["Unanswered List"]
+        let unansweredCalendar = app.buttons["Unanswered Calendar"]
+        scrollTo(unansweredCalendar, in: app)
+        XCTAssertFalse(unansweredList.isSelected)
+        XCTAssertFalse(unansweredCalendar.isSelected)
+        attachScreenshot(of: app, named: "native-03-unanswered")
+        tap(unansweredCalendar, "Answer calendar")
+        XCTAssertTrue(unansweredCalendar.isSelected)
+        tap(unansweredList, "Switch answer to list")
+        XCTAssertTrue(unansweredList.isSelected)
+        XCTAssertFalse(unansweredCalendar.isSelected)
+        attachScreenshot(of: app, named: "native-04-answered")
+        tap(app.buttons["Clear answer"], "Clear answer")
+        XCTAssertFalse(unansweredList.isSelected)
+        XCTAssertFalse(unansweredCalendar.isSelected)
+        scrollTo(app.buttons["Restricted Calendar"], in: app)
+        XCTAssertFalse(app.buttons["Restricted Calendar"].isEnabled)
+        XCTAssertTrue(app.buttons["Restricted List"].isEnabled)
+        XCTAssertTrue(app.buttons["Restricted List"].isSelected)
+        XCTAssertGreaterThanOrEqual(app.buttons["Restricted Calendar"].frame.height, 44)
+        attachScreenshot(of: app, named: "native-05-disabled")
+        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26 {
+            let inherited = app.segmentedControls["Disabled history view"]
+            scrollTo(inherited, in: app)
+            XCTAssertFalse(inherited.buttons["Calendar"].isEnabled)
+            let idPicker = app.segmentedControls["ID history view"]
+            scrollTo(idPicker, in: app)
+            tap(idPicker.buttons["Calendar"], "ID selection calendar")
+            XCTAssertTrue(idPicker.buttons["Calendar"].isSelected)
+        }
+        attachScreenshot(of: app, named: "native-06-id-selection")
+    }
+
+    func testNativeHistoryAndProgressConsumers() throws {
+        var app = makeApp(reset: true)
+        app.launch()
+        tap(app.buttons[AppCopy.Workout.finishWorkout].firstMatch, "Finish seeded workout", timeout: 20)
+        tap(app.alerts.firstMatch.buttons[AppCopy.Workout.finishWorkout], "Confirm finish")
+        XCTAssertTrue(app.staticTexts[AppCopy.Workout.nextTimeTitle].waitForExistence(timeout: 15))
+        app.terminate()
+        app = makeApp()
+        app.launch()
+        tap(app.buttons[AppCopy.Nav.history], "History", timeout: 20)
+        tap(app.buttons["Calendar"], "History calendar")
+        XCTAssertTrue(app.buttons["Calendar"].isSelected)
+        attachScreenshot(of: app, named: "native-07-history-calendar")
+        tap(app.buttons["List"], "History list")
+        XCTAssertTrue(app.buttons["List"].isSelected)
+        attachScreenshot(of: app, named: "native-08-history-list")
+        tap(app.buttons["history-session-row"].firstMatch, "Completed session")
+        let exercise = button(in: app, containing: "Bench Press")
+        scrollTo(exercise, in: app)
+        tap(exercise, "Exercise progress")
+        tap(app.buttons["Reps"], "Progress reps")
+        XCTAssertTrue(app.buttons["Reps"].isSelected)
+        attachScreenshot(of: app, named: "native-09-progress-reps")
+        tap(app.buttons["Volume"], "Progress volume")
+        XCTAssertTrue(app.buttons["Volume"].isSelected)
+        attachScreenshot(of: app, named: "native-10-progress-volume")
+        tap(app.buttons["Weight"], "Progress weight")
+        XCTAssertTrue(app.buttons["Weight"].isSelected)
+    }
+
+    func testNativeSetCountConsumer() throws {
+        let app = makeStartingTargetApp(reset: true)
+        app.launch()
+        tap(app.tabBars.buttons["Programs"], "Programs", timeout: 20)
+        tap(button(in: app, containing: "Freestyle session"), "Start freestyle")
+        let add = app.buttons[AppCopy.Workout.addExercise]
+        scrollTo(add, in: app)
+        tap(add, "Add exercise")
+        let search = app.searchFields.firstMatch
+        tap(search, "Find exercise")
+        search.typeText("Barbell Curl")
+        tap(button(in: app, containing: "Barbell Curl"), "Barbell Curl")
+        XCTAssertTrue(app.staticTexts[AppCopy.Workout.setCountQuestion].waitForExistence(timeout: 8))
+        tap(app.buttons["5"], "Five sets")
+        XCTAssertTrue(app.buttons["5"].isSelected)
+        XCTAssertGreaterThanOrEqual(app.buttons["5"].frame.height, 44)
+        attachScreenshot(of: app, named: "native-11-set-count")
+        tap(app.buttons[AppCopy.Nav.done].firstMatch, "Commit set count")
+        XCTAssertTrue(app.staticTexts[AppCopy.Workout.setCountQuestion].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Barbell Curl"].exists)
+    }
+
+    func testNativeSelectionsAtLargeText() throws {
+        let app = makeStartingTargetApp(reset: true)
+        app.launch()
+        tap(app.tabBars.buttons["Programs"], "Programs", timeout: 20)
+        tap(app.buttons["Settings"], "Settings")
+        let components = button(in: app, containing: "Components")
+        scrollTo(components, in: app)
+        tap(components, "Components")
+        tap(app.switches["Large text preview"], "Accessibility text size")
+        scrollTo(app.staticTexts["Native · existing selection"], in: app, maximumSwipes: 24)
+        attachScreenshot(of: app, named: "native-15-large-text-native")
+        let retained = app.buttons["Retained Calendar"]
+        scrollTo(retained, in: app, maximumSwipes: 8)
+        tap(retained, "Retained calendar at large text")
+        XCTAssertTrue(retained.isSelected)
+        XCTAssertGreaterThanOrEqual(retained.frame.height, 44)
+        XCTAssertLessThanOrEqual(retained.frame.maxX, app.frame.maxX)
+        attachScreenshot(of: app, named: "native-16-large-text-retained")
+    }
+
     // MARK: - Helpers
 
     private func makeApp(reset: Bool = false) -> XCUIApplication {

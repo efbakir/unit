@@ -5812,6 +5812,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         }
     }
 
+    @ViewBuilder
     private var buttonSegments: some View {
         let trackShape = RoundedRectangle(cornerRadius: trackRadius, style: .continuous)
         let selectedItem = selection.wrappedValue
@@ -6069,17 +6070,20 @@ struct AppComponentCatalog: View {
             Text("Retained buttons · same content")
                 .appFont(.caption)
             AppSegmentedControl(selection: $retainedMode, items: SessionHistoryMode.allCases,
-                                label: "Retained history view", title: { $0.rawValue })
+                                label: "Retained history view", title: { $0.rawValue },
+                                accessibilityLabel: { "Retained \($0.rawValue)" })
             Text("Unanswered · select, switch, then clear")
                 .appFont(.caption)
             AppSegmentedControl(selection: $unansweredMode, items: SessionHistoryMode.allCases,
-                                size: .weekday, label: "Unanswered choice", title: { $0.rawValue })
+                                size: .weekday, label: "Unanswered choice", title: { $0.rawValue },
+                                accessibilityLabel: { "Unanswered \($0.rawValue)" })
             Button("Clear answer") { unansweredMode = nil }
             Text("Calendar unavailable · List remains selected")
                 .appFont(.caption)
             AppSegmentedControl(selection: $disabledMode,
                                 items: SessionHistoryMode.allCases, size: .weekday,
                                 label: "Per-item disabled choice", title: { $0.rawValue },
+                                accessibilityLabel: { "Restricted \($0.rawValue)" },
                                 isDisabled: { $0 == .calendar })
             Text("Inherited disabled · native control")
                 .appFont(.caption)
