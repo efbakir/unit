@@ -1360,6 +1360,7 @@ struct AppPrimaryButton: View {
             Button(action: action) {
                 ZStack {
                     Text(label)
+                        .appNumericValue(value: label)
                         .font(AppFont.productAction.font)
                         .foregroundStyle(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
                         .multilineTextAlignment(.center)
@@ -1368,7 +1369,7 @@ struct AppPrimaryButton: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.sm)
                         .opacity(isLoading ? 0 : 1)
-                        .animation(AppMotion.feedback, value: isLoading)
+                        .animation(AppMotion.feedback, value: effectiveEnabled)
                     if isLoading {
                         ProgressView()
                             .tint(effectiveEnabled ? AppColor.accentForeground : AppColor.textDisabled)
@@ -1378,7 +1379,10 @@ struct AppPrimaryButton: View {
                 .animation(AppMotion.feedback, value: isLoading)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 60)
-                .background(effectiveEnabled ? AppColor.accent : AppColor.controlBackground)
+                .background {
+                    (effectiveEnabled ? AppColor.accent : AppColor.controlBackground)
+                        .animation(AppMotion.feedback, value: effectiveEnabled)
+                }
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(ScaleButtonStyle())
@@ -1474,12 +1478,16 @@ struct AppSecondaryButton: View {
                             if let icon {
                                 icon.image(size: 16, weight: .semibold)
                                     .foregroundStyle(foregroundColor)
+                                    .animation(AppMotion.feedback, value: effectiveEnabled)
                             }
                             VStack(alignment: .center, spacing: AppSpacing.xxs) {
                                 Text(label)
+                                    .appNumericValue(value: label)
                                     .font(AppFont.productAction.font)
                                     .foregroundStyle(foregroundColor)
+                                    .animation(AppMotion.feedback, value: effectiveEnabled)
                                 Text(trimmedDetail)
+                                    .appNumericValue(value: trimmedDetail)
                                     .font(AppFont.caption.font)
                                     .foregroundStyle(effectiveEnabled ? AppColor.textSecondary : AppColor.textDisabled)
                                     .lineLimit(1)
@@ -1493,12 +1501,16 @@ struct AppSecondaryButton: View {
                             if let icon {
                                 icon.image(size: 16, weight: .semibold)
                                     .foregroundStyle(foregroundColor)
+                                    .animation(AppMotion.feedback, value: effectiveEnabled)
                             }
                             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                                 Text(label)
+                                    .appNumericValue(value: label)
                                     .font(AppFont.productAction.font)
                                     .foregroundStyle(foregroundColor)
+                                    .animation(AppMotion.feedback, value: effectiveEnabled)
                                 Text(trimmedDetail)
+                                    .appNumericValue(value: trimmedDetail)
                                     .font(AppFont.caption.font)
                                     .foregroundStyle(effectiveEnabled ? AppColor.textSecondary : AppColor.textDisabled)
                                     .lineLimit(1)
@@ -1512,10 +1524,13 @@ struct AppSecondaryButton: View {
                         if let icon {
                             icon.image(size: 16, weight: .semibold)
                                 .foregroundStyle(foregroundColor)
+                                .animation(AppMotion.feedback, value: effectiveEnabled)
                         }
                         Text(label)
+                            .appNumericValue(value: label)
                             .font(AppFont.productAction.font)
                             .foregroundStyle(foregroundColor)
+                            .animation(AppMotion.feedback, value: effectiveEnabled)
                     }
                 }
             }
@@ -1523,7 +1538,7 @@ struct AppSecondaryButton: View {
             .padding(.vertical, AppSpacing.sm)
             .frame(maxWidth: fillsAvailableWidth ? .infinity : nil)
             .frame(minHeight: 60)
-            .background(backgroundColor)
+            .background(backgroundColor.animation(AppMotion.feedback, value: effectiveEnabled))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             .contentShape(Rectangle())
         }
@@ -1545,12 +1560,16 @@ struct AppSecondaryButton: View {
             if let icon {
                 icon.image(size: 16, weight: .semibold)
                     .foregroundStyle(foregroundColor)
+                    .animation(AppMotion.feedback, value: effectiveEnabled)
             }
             Text(label)
+                .appNumericValue(value: label)
                 .font(AppFont.productAction.font)
                 .foregroundStyle(foregroundColor)
+                .animation(AppMotion.feedback, value: effectiveEnabled)
                 .lineLimit(1)
             Text(trimmedDetail)
+                .appNumericValue(value: trimmedDetail)
                 .font(AppFont.productAction.font)
                 .foregroundStyle(detailColor)
                 .lineLimit(1)
@@ -1861,6 +1880,7 @@ struct AppDropdownChip<Content: View>: View {
             HStack(spacing: AppSpacing.xs) {
                 Text(label)
                     .appCapsLabel(isActive ? .overlineStrong : .overline)
+                    .appNumericValue(value: label)
                 AppIcon.chevronDown.image(size: 10, weight: .bold)
             }
             .modifier(AppFilterChipSurface(isSelected: isActive))
@@ -1891,6 +1911,7 @@ struct AppFilterChip: View {
     /// Used by the onboarding day picker to flag days with no exercises yet.
     var showsTrailingDot: Bool = false
     let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -1899,6 +1920,7 @@ struct AppFilterChip: View {
                     .appCapsLabel(isSelected ? .overlineStrong : .overline)
                 if isSelected && showsClearGlyphWhenSelected {
                     AppIcon.close.image(size: 10, weight: .bold)
+                        .transition(.opacity.animation(AppMotion.feedback))
                 }
                 if showsTrailingDot {
                     Circle()
@@ -1906,6 +1928,7 @@ struct AppFilterChip: View {
                         .frame(width: 6, height: 6)
                 }
             }
+            .appAnimation(.appPress, value: isSelected, reduceMotion: reduceMotion)
             .modifier(AppFilterChipSurface(
                 isSelected: isSelected,
                 hasClearGlyph: isSelected && showsClearGlyphWhenSelected
@@ -1927,15 +1950,20 @@ private struct AppFilterChipSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .foregroundStyle(isEnabled
-                ? (isSelected ? AppColor.background : AppColor.textPrimary)
-                : AppColor.textDisabled)
+            .animation(AppMotion.feedback) { label in
+                label.foregroundStyle(isEnabled
+                    ? (isSelected ? AppColor.background : AppColor.textPrimary)
+                    : AppColor.textDisabled)
+            }
             .padding(.leading, AppSpacing.smd)
             .padding(.trailing, hasClearGlyph ? AppSpacing.sm : AppSpacing.smd)
             .padding(.vertical, AppSpacing.xs)
-            .background(Capsule(style: .continuous).fill(
-                isEnabled && isSelected ? AppColor.textPrimary : AppColor.accentSoft
-            ))
+            .background {
+                Capsule(style: .continuous)
+                    .fill(isEnabled && isSelected ? AppColor.textPrimary : AppColor.accentSoft)
+                    .animation(AppMotion.feedback, value: isSelected)
+                    .animation(AppMotion.feedback, value: isEnabled)
+            }
             .frame(minHeight: 44)
             .contentShape(Rectangle())
     }
@@ -2101,7 +2129,7 @@ struct ProductTopBar: View {
 /// upcoming sets as numbered circles. Used only in active workout flows.
 struct SetProgressIndicator: View {
     struct Step: Identifiable {
-        enum State {
+        enum State: Hashable {
             case upcoming
             case current
             case completed
@@ -2140,11 +2168,6 @@ struct SetProgressIndicator: View {
     }
 
     let steps: [Step]
-    /// Bumped by the parent each time a set is logged. Drives a one-shot SF Symbols
-    /// bounce on every already-mounted ✓ chip so newly-landed sets give the
-    /// previously-logged checkmarks a quiet sympathy nod. Newest chip arrives via
-    /// the parent's `withAnimation(.appReveal)` and doesn't need its own bounce.
-    var setLoggedSignal: Int? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -2165,8 +2188,11 @@ struct SetProgressIndicator: View {
         HStack(spacing: AppSpacing.sm) {
             ForEach(steps) { step in
                 renderStep(step)
+                    .id(step.state)
+                    .transition(AppBlurTransition().animation(.appReveal))
             }
         }
+        .appAnimation(AppMotion.collectionChange, value: steps.map(\.state), reduceMotion: reduceMotion)
     }
 
     /// Tap-edit on a logged chip is the only interaction in the strip — wrap it in a
@@ -2208,8 +2234,6 @@ struct SetProgressIndicator: View {
             HStack(spacing: AppSpacing.xxs) {
                 if step.state == .completed {
                     AppIcon.checkmark.image(size: 10, weight: .bold)
-                        .symbolEffect(.bounce, options: .nonRepeating, value: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? (setLoggedSignal ?? 0) : 0)
-                        .symbolEffectsRemoved(!AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning))
                 } else {
                     AppIcon.remove.image(size: 10, weight: .bold)
                 }
@@ -2222,7 +2246,8 @@ struct SetProgressIndicator: View {
             .padding(.horizontal, AppSpacing.sm)
             .frame(height: 24)
             .background(Capsule(style: .continuous).fill(chipFill(for: step)))
-            .appAnimation(.appState, value: step.isPR, reduceMotion: reduceMotion)
+            .animation(AppMotion.feedback, value: step.isPR)
+            .animation(AppMotion.feedback, value: step.isEditing)
         } else {
             ZStack {
                 Circle()
@@ -2362,6 +2387,7 @@ struct RestTimerControl: View {
             if let indicatorIcon {
                 indicatorIcon.image(size: 18, weight: .semibold)
                     .foregroundStyle(AppColor.textSecondary)
+                    .transition(.opacity.animation(AppMotion.feedback))
             }
         }
         .frame(minHeight: 60)
@@ -2369,12 +2395,14 @@ struct RestTimerControl: View {
         .background {
             if showsTimerCapsule {
                 Capsule(style: .continuous).fill(AppColor.controlBackground)
+                    .transition(.opacity.animation(AppMotion.feedback))
             }
         }
         .overlay {
             if showsTimerCapsule {
                 Capsule(style: .continuous)
                     .stroke(AppColor.border.opacity(0.55), lineWidth: 1)
+                    .transition(.opacity.animation(AppMotion.feedback))
             }
         }
     }
@@ -2801,7 +2829,7 @@ struct AppOptionTileCard: View {
         // whole product moves.
         .buttonStyle(ScaleButtonStyle())
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .animation(reduceMotion ? nil : .appPress, value: isSelected)
+        .appAnimation(.appPress, value: isSelected, reduceMotion: reduceMotion)
     }
 
     private func handleTap() {
@@ -2895,10 +2923,14 @@ struct AppTimeline: View {
 
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text(item.title)
+                            .contentTransition(.opacity)
+                            .animation(AppMotion.feedback, value: item.title)
                             .font(item.isReward ? AppFont.title.font : AppFont.sectionHeader.font)
                             .foregroundStyle(AppColor.textPrimary)
 
                         Text(item.subtitle)
+                            .contentTransition(.opacity)
+                            .animation(AppMotion.feedback, value: item.subtitle)
                             .font(item.isReward ? AppFont.caption.font : AppFont.muted.font)
                             .foregroundStyle(AppColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -2999,7 +3031,7 @@ struct AppSelectableTierCard: View {
         // `withAnimation` leaked the transaction into the entire paywall,
         // momentarily reflowing the sticky CTA and clipping it on iPhone SE
         // when trial context changed.
-        .animation(reduceMotion ? nil : .appPress, value: isSelected)
+        .appAnimation(.appPress, value: isSelected, reduceMotion: reduceMotion)
     }
 
     private func handleTap() {
@@ -3598,17 +3630,25 @@ struct AppDividedList<Data, ID, RowContent>: View
     let data: Data
     let id: KeyPath<Data.Element, ID>
     @ViewBuilder let content: (Data.Element) -> RowContent
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let items = Array(data)
+        let firstID = items.first.map { $0[keyPath: id] }
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(items.indices, id: \.self) { index in
-                if index > 0 {
-                    AppDivider()
+            ForEach(items, id: id) { item in
+                VStack(alignment: .leading, spacing: 0) {
+                    if item[keyPath: id] != firstID {
+                        AppDivider()
+                    }
+                    content(item)
                 }
-                content(items[index])
+                .transition(AppBlurTransition(scales: true).animation(.appReveal))
             }
         }
+        // Existing rows keep their state and slide to their new position. The
+        // explicit row transition still fades when layout motion is disabled.
+        .appAnimation(AppMotion.collectionChange, value: items.map { $0[keyPath: id] }, reduceMotion: reduceMotion)
     }
 }
 
@@ -3923,9 +3963,7 @@ struct AppDisclosureCard<Header: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Button {
-                withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appState : nil) {
-                    isExpanded.toggle()
-                }
+                isExpanded.toggle()
             } label: {
                 HStack(spacing: AppSpacing.sm) {
                     header()
@@ -3949,8 +3987,10 @@ struct AppDisclosureCard<Header: View, Content: View>: View {
 
             if isExpanded {
                 content()
+                    .transition(AppBlurTransition().animation(.appReveal))
             }
         }
+        .appAnimation(.appState, value: isExpanded, reduceMotion: reduceMotion)
         .background(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(AppColor.cardBackground)
@@ -4020,12 +4060,14 @@ struct WorkoutCommandCard: View {
             VStack(alignment: .center, spacing: AppSpacing.lg) {
                 HStack {
                     Spacer(minLength: 0)
-                    SetProgressIndicator(steps: progressSteps, setLoggedSignal: setLoggedSignal)
+                    SetProgressIndicator(steps: progressSteps)
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity)
 
                 Text(exerciseName)
+                    .contentTransition(.opacity)
+                    .animation(AppMotion.reveal, value: exerciseName)
                     .font(AppFont.productHeading.font)
                     .tracking(AppFont.productHeading.tracking)
                     .foregroundStyle(AppColor.textPrimary)
@@ -4043,6 +4085,7 @@ struct WorkoutCommandCard: View {
                         isEnabled: state == .active && onPrimaryAction != nil,
                         action: { onPrimaryAction?() }
                     )
+                    .transition(.opacity.animation(AppMotion.reveal))
                 }
             }
             .padding(.horizontal, AppSpacing.md)
@@ -4067,6 +4110,7 @@ struct WorkoutCommandCard: View {
         }
         .frame(maxWidth: .infinity)
         .appWorkoutPanelChrome()
+        .appAnimation(.appState, value: state, reduceMotion: reduceMotion)
         .appHaptic(.success, trigger: setLoggedSignal)
         .onChange(of: setPRSignal) { _, _ in
             showPRBadge()
@@ -4127,9 +4171,11 @@ struct WorkoutCommandCard: View {
                     priorBestText.map { "\(AppCopy.Workout.personalRecord). \($0)." }
                         ?? AppCopy.Workout.personalRecord
                 )
-                .transition(.opacity)
+                .transition(.opacity.animation(AppMotion.reveal))
             } else if let metricSupportingText, !metricSupportingText.isEmpty {
                 Text(metricSupportingText)
+                    .contentTransition(.opacity)
+                    .animation(AppMotion.feedback, value: metricSupportingText)
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -5450,13 +5496,17 @@ extension View {
         self
             .padding(contentInset)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? AppColor.accentSoft : AppColor.cardBackground)
+            .background {
+                (isSelected ? AppColor.accentSoft : AppColor.cardBackground)
+                    .animation(AppMotion.feedback, value: isSelected)
+            }
             .overlay(alignment: .topTrailing) {
                 if isSelected {
                     AppIcon.checkmarkFilled.image(size: 14, weight: .semibold)
                         .foregroundStyle(AppColor.accent)
                         .padding(AppSpacing.smd)
                         .accessibilityHidden(true)
+                        .transition(.opacity.animation(AppMotion.feedback))
                 }
             }
             .overlay {
@@ -5465,6 +5515,7 @@ extension View {
                         isSelected ? AppColor.accent : AppColor.clear,
                         lineWidth: 1.5
                     )
+                    .animation(AppMotion.feedback, value: isSelected)
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .modifier(AppCardElevation(cornerRadius: cornerRadius))

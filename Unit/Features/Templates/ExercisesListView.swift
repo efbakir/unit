@@ -20,6 +20,7 @@ private struct PendingExerciseDeletion: Identifiable {
 
 struct ExercisesListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @State private var showingAddExercise = false
     @State private var query = ""
@@ -86,6 +87,8 @@ struct ExercisesListView: View {
                     .appPlainListRowChrome(separator: .hidden)
             }
         }
+        .appAnimation(AppMotion.collectionChange, value: selectedMuscle, reduceMotion: reduceMotion)
+        .appAnimation(AppMotion.collectionChange, value: selectedEquipment, reduceMotion: reduceMotion)
         .scrollContentBackground(.hidden)
         .background(AppColor.background.ignoresSafeArea())
         .appScrollEdgeSoft()

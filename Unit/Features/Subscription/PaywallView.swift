@@ -34,8 +34,10 @@ struct PaywallView: View {
         ) {
             if store.isPurchased {
                 activeSubscriptionContent
+                    .transition(AppBlurTransition().animation(.appReveal))
             } else {
                 purchaseContent
+                    .transition(AppBlurTransition().animation(.appReveal))
             }
         }
         .environment(\.appRevealSession, revealSession)
@@ -116,6 +118,7 @@ struct PaywallView: View {
 
                 if selectedTrial != nil {
                     reminderPreferenceCard
+                        .transition(AppBlurTransition().animation(.appReveal))
                         .padding(.top, AppSpacing.xl)
                 }
 
@@ -130,17 +133,20 @@ struct PaywallView: View {
                     .padding(.top, AppSpacing.xl)
                     .padding(.bottom, AppSpacing.xl)
             }
+            .transition(AppBlurTransition().animation(.appReveal))
         } else if hasNoLoadedProducts {
             VStack(alignment: .leading, spacing: 0) {
                 loadFailureBanner
                     .padding(.top, AppSpacing.xl)
             }
+            .transition(AppBlurTransition().animation(.appReveal))
         } else {
             ProgressView()
                 .tint(AppColor.accent)
                 .frame(maxWidth: .infinity, minHeight: AppSpacing.xxl)
                 .padding(.top, AppSpacing.xxl)
                 .accessibilityLabel("Loading subscription details")
+                .transition(.opacity.animation(AppMotion.reveal))
         }
     }
 
@@ -218,10 +224,14 @@ struct PaywallView: View {
         if !purchaseTimelineItems.isEmpty {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 Text(purchaseTimelineTitle)
+                    .contentTransition(.opacity)
+                    .animation(AppMotion.feedback, value: purchaseTimelineTitle)
                     .font(AppFont.sectionHeader.font)
                     .foregroundStyle(AppColor.textPrimary)
 
                 AppTimeline(items: purchaseTimelineItems)
+                    .id(purchaseTimelineItems.map(\.id))
+                    .transition(AppBlurTransition().animation(.appReveal))
                     .accessibilityIdentifier("paywall-timeline")
             }
         }

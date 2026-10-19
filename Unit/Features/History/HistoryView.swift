@@ -251,11 +251,12 @@ struct RecentSessionsView: View {
                         Group {
                             if mode == .list {
                                 listContent
+                                    .transition(AppBlurTransition().animation(.appReveal))
                             } else {
                                 calendarContent
+                                    .transition(AppBlurTransition().animation(.appReveal))
                             }
                         }
-                        .transition(.opacity)
                     }
                     .appAnimation(.appState, value: mode, reduceMotion: reduceMotion)
                     .appAnimation(.appState, value: filter, reduceMotion: reduceMotion)
@@ -356,6 +357,7 @@ struct RecentSessionsView: View {
 
             if filteredSortedDays.isEmpty && !showsMissedInList {
                 filteredEmptyState
+                    .transition(AppBlurTransition().animation(.appReveal))
             } else {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     if showsMissedInList {

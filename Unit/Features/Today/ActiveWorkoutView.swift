@@ -382,8 +382,10 @@ struct ActiveWorkoutView: View {
                         state: nextExerciseBarState,
                         onAdvance: nextSection == nil ? nil : goToNextExerciseAction
                     )
+                    .transition(.opacity.animation(AppMotion.reveal))
                 }
             }
+            .appAnimation(.appState, value: nextExerciseBarState != nil, reduceMotion: reduceMotion)
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

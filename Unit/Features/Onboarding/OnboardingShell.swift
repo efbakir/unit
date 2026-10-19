@@ -88,7 +88,7 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                 }
                 if !condensesHeader {
                     titleBlock
-                        .transition(.opacity)
+                        .transition(.opacity.animation(AppMotion.reveal))
                 }
                 if hasStickyAccessory {
                     // Width clamping for horizontal-scrolling accessories
@@ -124,14 +124,14 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
                 .appFont(.productHeading)
                 .foregroundStyle(AppColor.textPrimary)
                 .contentTransition(.opacity)
-                .appAnimation(.appReveal, value: title, reduceMotion: reduceMotion)
+                .animation(AppMotion.reveal, value: title)
 
             Text(subtitle)
                 .appFont(.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(.opacity)
-                .appAnimation(.appReveal, value: subtitle, reduceMotion: reduceMotion)
+                .animation(AppMotion.reveal, value: subtitle)
         }
     }
 

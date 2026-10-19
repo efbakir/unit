@@ -52,15 +52,16 @@ struct TemplateDetailView: View {
                     ) {
                         showingAddExercise = true
                     }
+                    .transition(AppBlurTransition().animation(.appReveal))
                 } else {
                     AppCardList(orderedExercises) { exercise in
                         exerciseRow(exercise)
-                            .transition(AppBlurTransition(scales: true))
                     } trailing: {
                         AppCardListAddRow(AppCopy.Workout.addExercise) {
                             showingAddExercise = true
                         }
                     }
+                    .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
             .animation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.collectionChange : nil, value: template.orderedExerciseIds)

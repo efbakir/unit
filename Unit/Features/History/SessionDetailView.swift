@@ -22,6 +22,7 @@ struct SessionDetailView: View {
     /// session, not just the one on display.
     @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]
     @AppStorage("unitSystem") private var unitSystem = "kg"
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsFeedbackInvitation = false
     @State private var acceptedMoment: AppCelebrationMoment?
     @State private var acceptedExerciseID: UUID?
@@ -194,6 +195,8 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(statusText(recommendation.record))
                     .appCapsLabel(.overline)
+                    .contentTransition(.opacity)
+                    .animation(AppMotion.feedback, value: statusText(recommendation.record))
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -227,6 +230,7 @@ struct SessionDetailView: View {
                    setCount: recommendation.record.configuredSetCount
                ) {
                 Text(targetText)
+                    .appNumericValue(value: targetText)
                     .font(AppFont.title.font)
                     .foregroundStyle(AppColor.textPrimary)
                     .monospacedDigit()
@@ -263,6 +267,8 @@ struct SessionDetailView: View {
             }
 
             Text(explanationText(recommendation.record))
+                .contentTransition(.opacity)
+                .animation(AppMotion.feedback, value: explanationText(recommendation.record))
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -279,6 +285,7 @@ struct SessionDetailView: View {
                 .accessibilityLabel(
                     "\(AppCopy.Workout.useThisTarget) for \(recommendation.exerciseName)"
                 )
+                .transition(AppBlurTransition().animation(.appReveal))
 
                 if recommendation.record.recommendationReason != .repeatTarget {
                     AppGhostButton(AppCopy.Workout.repeatPreviousTarget) {
@@ -287,10 +294,12 @@ struct SessionDetailView: View {
                     .accessibilityLabel(
                         "\(AppCopy.Workout.repeatPreviousTarget) for \(recommendation.exerciseName)"
                     )
+                    .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .appAnimation(.appState, value: recommendation.record.acceptedTarget != nil, reduceMotion: reduceMotion)
         .overlay {
             AppCelebration(moment: acceptedExerciseID == recommendation.exerciseID ? acceptedMoment : nil)
         }
@@ -332,6 +341,7 @@ struct SessionDetailView: View {
 
     private func evidenceLine(label: String, value: String) -> some View {
         Text("\(label) · \(value)")
+            .appNumericValue(value: value)
             .font(AppFont.caption.font)
             .foregroundStyle(AppColor.textSecondary)
             .monospacedDigit()

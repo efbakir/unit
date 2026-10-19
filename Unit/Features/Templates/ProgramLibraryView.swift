@@ -38,6 +38,7 @@ struct ProgramLibraryView: View {
 
                 if filteredPrograms.isEmpty {
                     AppEmptyHint("No programs match these filters.")
+                        .transition(AppBlurTransition().animation(.appReveal))
                 } else {
                     AppCardList(filteredPrograms) { program in
                         NavigationLink(value: program) {
@@ -45,6 +46,7 @@ struct ProgramLibraryView: View {
                         }
                         .buttonStyle(ScaleButtonStyle())
                     }
+                    .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
             .appScreenEnter()

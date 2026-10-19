@@ -266,6 +266,7 @@ struct ExerciseProgressView: View {
                         Spacer(minLength: AppSpacing.sm)
 
                         Text(chartReadoutValue(for: point))
+                            .appNumericValue(value: selectedMetric)
                             .foregroundStyle(AppColor.textPrimary)
                     }
                     .font(AppFont.caption.font)
@@ -324,6 +325,8 @@ struct ExerciseProgressView: View {
                 .chartYScale(domain: chartYDomain)
                 .chartYAxisLabel(metricAxisLabel)
                 .frame(minHeight: AppChartMetrics.compactHeight)
+                .id(selectedMetric)
+                .transition(AppBlurTransition().animation(.appReveal))
 
                 Text("Tap or drag for exact values.")
                     .font(AppFont.caption.font)
