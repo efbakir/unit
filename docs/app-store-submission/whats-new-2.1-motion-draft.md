@@ -7,5 +7,7 @@ Know what to lift next. Set an optional rep range and weight increment for each 
 - Unfinished program drafts survive reopening the app.
 - Native SF Pro typography, calmer transitions, and a small celebration when you finish.
 - Improved history validation and protection against failed saves.
+- A new Profile tab brings working-set totals, exercise progress, and accepted next targets together.
+- Native selection controls where the platform supports the required touch size and behavior.
 
-Internal release gate: build 68 is a development checkpoint, not a reserved App Store build. Store submission remains with the owner after App Store Connect, sandbox, archive validation, screenshots, and physical review.
+Internal release gate: build 69 is a development checkpoint, not a reserved App Store build. Store submission remains with the owner after App Store Connect, sandbox, archive validation, screenshots, and physical review.
