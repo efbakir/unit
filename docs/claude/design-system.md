@@ -30,7 +30,7 @@ The most frequent recent failure mode: Claude **invents a new struct / helper / 
 ### Rules
 
 1. **Default: extend > create.** Before declaring any new `struct X: View` (or new `ViewModifier`, or new variant token) in `Unit/UI/DesignSystem.swift`, grep the file for the closest existing primitive. If one covers ~80%, extend it with a `style:` / `variant:` / `tone:` param. If you still want to create a new one, state the justification in one sentence. *No silent new primitives.*
-2. **One canonical modifier per concern.** `scrollEdgeEffectStyle` lives behind `appScrollEdgeSoft(top:bottom:)`. Fades behind bars live behind the same modifier. Never add a parallel `LinearGradient` mask to a `Features/**/*.swift` view to achieve the same effect.
+2. **One canonical modifier per concern.** `scrollEdgeEffectStyle` lives behind `appScrollEdgeSoft(top:bottom:)`. Native hard vertical bar edges and soft horizontal content clipping live behind the same modifier (October 19 user override). Never add a parallel `LinearGradient` mask to a `Features/**/*.swift` view to achieve the same effect.
 3. **Fix the canonical, migrate callers, don't fork.** If the canonical helper is wrong, update it and its callers in the same change. Do not leave the old one limping while the new one ships.
 4. **Toolbar chrome defers to iOS-native.** No `.weight(.semibold/.bold/.heavy)` on `ToolbarItem` buttons unless every toolbar in the app uses the same weight.
 5. **Sheet roots are plain `VStack`.** `.sheet { }` content does not need its own `ScrollView` + `AppCard` wrapper. Sheets have chrome.
@@ -85,7 +85,7 @@ The hook (`.claude/hooks/ui-banned-list.sh`) enforces a subset of these mechanic
 
 ### Canonical modifiers, not parallel implementations
 
-- `.scrollEdgeEffectStyle(.automatic, ...)` or `.hard` — always `.soft`, and route through `appScrollEdgeSoft(top:bottom:)`, never inline
+- Inline `.scrollEdgeEffectStyle(...)` — route through `appScrollEdgeSoft(top:bottom:)`; native hard vertical edges are approved at this owner only.
 - `LinearGradient` / `.mask` used as a fade under a fixed bar in `Features/**/*.swift` — use `appScrollEdgeSoft` only
 - `.font(...).weight(.semibold/.bold/.heavy)` on `ToolbarItem` buttons — iOS-native default weight
 - `ScrollView` or `AppCard` as the **root** child of `.sheet { }` — use plain `VStack` with `presentationDetents`

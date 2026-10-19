@@ -5038,9 +5038,7 @@ struct AppScreen<Content: View>: View {
     let floatingAccessory: AnyView?
     var hidesNavigationBar: Bool = false
     var showsNativeNavigationBar: Bool = false
-    /// Set false for a chrome-free purchase surface whose first content row
-    /// must stay crisp at the top edge. The ScrollView still clips to its safe
-    /// area; this only removes AppScreen's decorative fade overlays.
+    /// Set false for a chrome-free purchase surface that needs no top bar effect.
     var showsTopScrollFade: Bool = true
     /// When `false`, the screen does not wrap content in `ScrollView` — use for fixed dashboards where an inner control (e.g. `PreviewListContainer`) owns vertical scrolling.
     var usesOuterScroll: Bool = true
@@ -5069,12 +5067,6 @@ struct AppScreen<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var floatingAccessoryHidden: Bool = false
-    /// True only when scroll content is actually under the chrome — either because
-    /// content overflows the viewport or the user has scrolled past the top. Gates
-    /// the manual chrome backdrop + soft-edge gradient so non-scrolling screens
-    /// (e.g. a 2-card onboarding step) don't show a decorative fade band above
-    /// content that never moves. Mirrors iOS-native nav-bar appearance behavior.
-    @State private var chromeBackdropVisible: Bool = false
 
     init(
         primaryButton: PrimaryButtonConfig? = nil,
@@ -5108,11 +5100,6 @@ struct AppScreen<Content: View>: View {
     /// Max content width — keeps the mobile layout on iPad / Mac.
     private var maxContentWidth: CGFloat { 430 }
 
-    /// Safe-area chrome always needs a real backdrop because scroll content can
-    /// pass underneath it. `surface == nil` only means the page fill is owned by
-    /// a parent; the pinned header / CTA bar still resolve to Milk.
-    private var chromeSurface: Color { surface ?? AppColor.background }
-
     @ViewBuilder
     private var scrollContent: some View {
         Group {
@@ -5127,10 +5114,7 @@ struct AppScreen<Content: View>: View {
                 // header chrome. iOS-native bars do this automatically;
                 // `safeAreaInset` doesn't, so we opt in explicitly.
                 .scrollBounceBehavior(.basedOnSize)
-                // Top fade is unconditional: even with the nav bar hidden
-                // (PaywallView), content still scrolls under the *status bar*,
-                // and without the fade it collides with the clock / Dynamic
-                // Island. Every nav-bar-showing caller had this true already.
+                // Native edge effects belong to the scroll view; no gradient overlay.
                 .appScrollEdgeSoft(
                     top: showsTopScrollFade,
                     bottom: hasBottomChrome
@@ -5155,27 +5139,7 @@ struct AppScreen<Content: View>: View {
                         }
                     }
                 }
-                .onScrollGeometryChange(for: Bool.self) { geometry in
-                    // Show chrome backdrop the instant the user scrolls past
-                    // the natural top edge — iOS-native nav-bar behavior.
-                    //
-                    // With nested safe-area insets (the host
-                    // `NavigationStack`'s nav bar + this AppScreen's
-                    // `safeAreaInset` for `customHeader`), `contentOffset.y`
-                    // at natural top is `-contentInsets.top` — a *negative*
-                    // value matching the total inset height (often 100–150pt).
-                    // A naive `contentOffset.y > 0` trigger only fires once
-                    // content has scrolled all the way past the visible top,
-                    // leaving the customHeader's backdrop off while body
-                    // rows are already overlapping its progress + title text
-                    // (the bug visible on the training-split screen).
-                    // `contentOffset.y + contentInsets.top > 0` is the
-                    // iOS-native "scrolled past edge" condition.
-                    geometry.contentOffset.y + geometry.contentInsets.top > 1
-                } action: { _, shouldShow in
-                    guard chromeBackdropVisible != shouldShow else { return }
-                    chromeBackdropVisible = shouldShow
-                }
+
             } else {
                 paddedMainContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -5220,14 +5184,8 @@ struct AppScreen<Content: View>: View {
                 .padding(.bottom, AppSpacing.sm)
                 .frame(maxWidth: maxContentWidth)
                 .frame(maxWidth: .infinity)
-                .background(AppScreenChromeBackground(surface: chromeSurface))
-                // Opaque always: the chrome is a VStack sibling above the
-                // ScrollView, so scroll content can't pass behind it. The soft
-                // fade where scroll content meets this chrome's bottom edge is
-                // drawn by `topScrollFade` (an explicit gradient). The OS
-                // `.scrollEdgeEffectStyle(.soft)` only renders against real
-                // system bars, so it is a no-op at this VStack-sibling boundary
-                // and left a hard cut — the gradient is what actually softens it.
+                .background(AppScreenChromeBackground())
+                .overlay(alignment: .bottom) { AppDivider() }
         }
     }
 
@@ -5297,12 +5255,8 @@ struct AppScreen<Content: View>: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: maxContentWidth)
             .frame(maxWidth: .infinity)
-            .background(AppScreenChromeBackground(surface: chromeSurface))
-            // Opaque always: VStack-sibling chrome sits below the
-            // ScrollView, scroll content never passes behind it. The soft
-            // fade above this CTA bar is drawn by `bottomScrollFade` (an
-            // explicit gradient) — see `topScrollFade` for why the OS
-            // scroll-edge effect can't do it in this layout.
+            .background(AppScreenChromeBackground())
+            .overlay(alignment: .top) { AppDivider() }
         }
     }
 
@@ -5326,68 +5280,6 @@ struct AppScreen<Content: View>: View {
         }
     }
 
-    /// Soft gradient where scroll content meets the fixed top chrome
-    /// (customHeader / nav bar). The OS `.scrollEdgeEffectStyle(.soft)` only
-    /// renders against real system bars; AppScreen's chrome is a VStack sibling,
-    /// so the OS effect is a no-op at that boundary and content was clipped with
-    /// a hard edge. This explicit gradient — canonical, system-level, lives only
-    /// here per CLAUDE.md §4 — restores the soft fade for every screen routed
-    /// through AppScreen. Gated on `chromeBackdropVisible` so it appears only
-    /// once the user scrolls (the first row stays crisp at rest), matching the
-    /// nav-bar backdrop's scroll-driven reveal.
-    @ViewBuilder
-    private var topScrollFade: some View {
-        // A hidden navigation bar still leaves the status bar above scrolling
-        // content. Apply the same canonical fade there so layout changes (for
-        // example a shorter selected paywall card) cannot leave text colliding
-        // with the clock or carrier label.
-        if usesOuterScroll, showsTopScrollFade {
-            LinearGradient(
-                colors: hidesNavigationBar && customHeader == nil
-                    ? [chromeSurface, chromeSurface, chromeSurface.opacity(0)]
-                    : [chromeSurface, chromeSurface.opacity(0)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(
-                height: hidesNavigationBar && customHeader == nil
-                    ? AppSpacing.xxl
-                    : AppSpacing.lg
-            )
-            .offset(
-                y: hidesNavigationBar && customHeader == nil
-                    ? -AppSpacing.md
-                    : 0
-            )
-            .opacity(
-                hidesNavigationBar && customHeader == nil
-                    ? 1
-                    : (chromeBackdropVisible ? 1 : 0)
-            )
-            .animation(.appState, value: chromeBackdropVisible)
-            .allowsHitTesting(false)
-        }
-    }
-
-    /// Soft gradient where scroll content meets the fixed bottom chrome (primary
-    /// CTA / floating pill). Same rationale as `topScrollFade`. Not gated: it
-    /// only darkens content within `lg` of the bottom edge, which is exactly the
-    /// content sliding under the CTA — short content that stops short of the bar
-    /// sits over the transparent half of the gradient, so there is no at-rest
-    /// artifact to gate away.
-    @ViewBuilder
-    private var bottomScrollFade: some View {
-        if usesOuterScroll, hasBottomChrome {
-            LinearGradient(
-                colors: [chromeSurface.opacity(0), chromeSurface],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: AppSpacing.lg)
-            .allowsHitTesting(false)
-        }
-    }
-
     @ViewBuilder
     private var contentWithChrome: some View {
         // VStack-based chrome layout instead of `safeAreaInset`/`safeAreaBar`.
@@ -5402,16 +5294,14 @@ struct AppScreen<Content: View>: View {
         //
         // VStack siblings remove the ambiguity: each chrome is a real layout
         // child pinned to its edge, the ScrollView fills the remaining space,
-        // and `appScrollEdgeSoft` still fades content at the ScrollView's
-        // top/bottom frame edges (where scroll content meets the chromes).
+        // Shared materials and separators retain the existing pinned geometry.
         VStack(spacing: 0) {
             if customHeader != nil {
                 topChrome
             }
             scrollContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .overlay(alignment: .top) { topScrollFade }
-                .overlay(alignment: .bottom) { bottomScrollFade }
+                .clipped()
                 .overlay(alignment: .bottom) {
                     floatingAccessoryOverlay
                 }
@@ -5426,11 +5316,8 @@ struct AppScreen<Content: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background((surface ?? AppColor.clear).ignoresSafeArea())
         .toolbar(showsNativeNavigationBar ? .automatic : .hidden, for: .navigationBar)
-        .toolbarBackground(chromeSurface, for: .navigationBar)
-        .toolbarBackground(
-            showsNativeNavigationBar && chromeBackdropVisible ? .visible : .hidden,
-            for: .navigationBar
-        )
+        .toolbarBackground(.bar, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             if showsKeyboardDismissToolbar {
                 ToolbarItemGroup(placement: .keyboard) {
@@ -5451,15 +5338,10 @@ struct AppScreen<Content: View>: View {
     }
 }
 
-/// Backdrop for fixed chrome (sticky header / sticky CTA). It is deliberately
-/// opaque: scroll content must never be readable through the header or CTA
-/// chrome while moving beneath it.
+/// Native material for pinned headers/actions. Content cards retain their flat fills.
 private struct AppScreenChromeBackground: View {
-    let surface: Color
-
     var body: some View {
-        Rectangle()
-            .fill(surface)
+        Rectangle().fill(.bar)
     }
 }
 
@@ -5594,13 +5476,9 @@ extension View {
 
     func appNavigationBarChrome() -> some View {
         self
-            // Defer bar chrome to the global `UINavigationBar.appearance()` proxy configured in
-            // `ContentView.configureNavigationBarAppearance()` — standard appearance has
-            // `shadowColor = .clear` (no hairline) and scroll-edge appearance is transparent.
-            // SwiftUI's `.toolbarBackground(Material.bar, .visible)` would generate its own
-            // appearance with a default separator, overriding the proxy and producing the
-            // visible hairline beneath the bar. The soft scroll-edge fade is the only piece
-            // that still belongs here.
+            // System material and separator; no opaque colour or transparent-edge override.
+            .toolbarBackground(.bar, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .appScrollEdgeSoft()
             // Keep nav title + toolbar buttons (e.g. "Add Exercise" / "Done") visible when
             // a `.searchable` field becomes focused. Default behavior collapses them to make
@@ -5637,32 +5515,22 @@ extension View {
         self.font(AppFont.body.font.weight(.semibold))
     }
 
-    /// iOS-native soft gradient fade at the ScrollView edges. Prevents the
-    /// sharp-cut appearance of scrolled content meeting an opaque bar (nav bar,
-    /// CTA, tab bar) on vertical scrolls, and the same sharp-cut at the
-    /// leading/trailing inset on horizontal chip/filter strips. The OS only
-    /// renders the fade where scrolling actually clips content, so calling this
-    /// on a horizontal ScrollView fades leading/trailing automatically without
-    /// extra parameters.
-    ///
-    /// This is the single canonical modifier for scroll-edge fade. Never add a
-    /// parallel LinearGradient/mask-based fade; extend this instead.
+    /// Canonical scroll-edge treatment. Legacy name retained for existing callers.
+    /// User override (2026-10-19): hard native vertical bar edges, soft horizontal
+    /// clipping for content strips. No hand-drawn gradients behind headers/actions.
     @ViewBuilder
     func appScrollEdgeSoft(top: Bool = true, bottom: Bool = true) -> some View {
         if #available(iOS 26.0, *) {
             switch (top, bottom) {
-            case (true, true):   self.scrollEdgeEffectStyle(.soft, for: .all)
-            case (true, false):  self.scrollEdgeEffectStyle(.soft, for: .top)
-            case (false, true):  self.scrollEdgeEffectStyle(.soft, for: .bottom)
+            case (true, true):
+                self.scrollEdgeEffectStyle(.hard, for: .vertical)
+                    .scrollEdgeEffectStyle(.soft, for: .horizontal)
+            case (true, false): self.scrollEdgeEffectStyle(.hard, for: .top)
+            case (false, true): self.scrollEdgeEffectStyle(.hard, for: .bottom)
             case (false, false): self
             }
         } else {
-            // iOS 18 fallback: `scrollEdgeEffectStyle` is iOS 26-only. Sharp
-            // scroll edges; acceptable degradation per CLAUDE.md §7 (don't
-            // grow the design system without explicit justification). To
-            // restore the soft fade on iOS 18, extend this branch with a
-            // centralized LinearGradient mask here — never fork into a
-            // parallel modifier in feature code.
+            // iOS 18 uses its native material navigation bars and separators.
             self
         }
     }
@@ -6036,9 +5904,9 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
             // the device's display corner radius on modern iPhones. A custom value would
             // leave the bottom corners mis-aligned with the screen on iPhone 17.
             .presentationCornerRadius(nil)
-            .presentationBackground(AppColor.background)
+            // Keep the platform sheet material instead of forcing an opaque fill.
             .presentationContentInteraction(.scrolls)
-            // Soft iOS-native gradient fade at both edges — consistent with full-screen pages.
+            // Shared native edge treatment, consistent with full-screen pages.
             .appScrollEdgeSoft()
     }
 }

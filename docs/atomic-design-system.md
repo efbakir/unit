@@ -233,3 +233,7 @@ Touch-target floors stay explicit at 44pt. Native widget metrics are unchanged.
 Recessed compact navigation rows use a 64pt minimum with 16pt vertical breathing, matching the preview viewport estimate. Disclosure arrows reuse `AppColor.textTertiary` across preview navigation and the active-program header. Overflow keeps the next title visible rather than exposing only its inset.
 
 Workout targets and their weight/reps editor reuse the existing `AppFont.numericInput` role at30pt, the user-approved middle size between36pt and24pt. Product headings stay24pt; large timer numerics retain their own36pt role. No new font token or variant.
+
+## Native bar material — October 19 override
+
+Navigation bars use native `.bar` material with the native separator retained, including at the scroll edge. `AppScreenChromeBackground` supplies the same material to custom pinned headers and actions; existing `AppDivider` supplies their full-width boundary without changing layout. The `appScrollEdgeSoft` name remains for caller compatibility, but its approved policy is now hard vertical edges on iOS26+, soft horizontal clipping for chip/content strips, and native material navigation bars on iOS18. Manual top/bottom gradient overlays are removed. System sheets keep their platform background. Content cards, sizes, spacing and fonts remain unchanged.

@@ -238,12 +238,11 @@ struct ContentView: View {
 
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
-        appearance.shadowColor = .clear
         appearance.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
         appearance.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
 
         let scrollEdgeAppearance = UINavigationBarAppearance()
-        scrollEdgeAppearance.configureWithTransparentBackground()
+        scrollEdgeAppearance.configureWithDefaultBackground()
         scrollEdgeAppearance.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
         scrollEdgeAppearance.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
 
@@ -252,6 +251,7 @@ struct ContentView: View {
         navBar.standardAppearance = appearance
         navBar.compactAppearance = appearance
         navBar.scrollEdgeAppearance = scrollEdgeAppearance
+        navBar.compactScrollEdgeAppearance = scrollEdgeAppearance
     }
 
     private func configureSegmentedControlAppearance() {

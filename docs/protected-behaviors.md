@@ -70,3 +70,7 @@ Use actual iOS Accessibility settings for Reduce Motion and VoiceOver; the catal
 does not override read-only environment values. Its failed-save editor is a local
 fixture, not a persisted workout. Builds, Simulator, and device acceptance are
 owned by the coordinating release chat.
+
+## Native chrome override — October 19
+
+Native navigation material and separators stay intact. Pinned headers/action areas use the shared `.bar` background and full-width boundaries. The existing canonical edge modifier owns hard vertical/soft horizontal clipping; feature-local gradient fades must not return. Sheets defer their background to iOS. This overrides the previous soft-gradient-only bar treatment, without changing content-card fills or any sizes.

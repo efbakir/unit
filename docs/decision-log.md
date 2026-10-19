@@ -518,3 +518,8 @@ The user renamed the third private progress tab to **Analytics**. Existing inter
 ### 2026-10-19 — Celebrate the workout start
 
 The user explicitly requested a more energetic Start Workout moment after trying build 71. Today now animates the dashboard-to-workout boundary with the existing spring and blur/scale transition, accompanied by one firm haptic after saving. This overrides quiet presentation for this deliberate action only. Session creation and logging stay immediate; resuming a session does not replay the launch. Reduce Motion and VoiceOver retain fades and haptic feedback. The active weight/reps target uses the existing 24pt productHeading font instead of 36pt numericInput. No new tokens, components, or root-routing changes.
+
+
+### 2026-10-19 — Native material bars and defined edges
+
+The user explicitly replaced the earlier soft-fade-only bar rule with native blurred material, defined vertical boundaries and subtle separators. Shared navigation/header/action-bar owners now use system `.bar` material; the canonical edge owner uses hard vertical edges on iOS26+ (including the connected iOS27 phone). Horizontal content clipping stays soft. System sheets keep their native background. No content-card material, sizing or typography changes. This supersedes transparent scroll-edge appearances, removed navigation separators, opaque custom bar fills and hand-drawn bar gradients.
