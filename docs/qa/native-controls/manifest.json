@@ -1,0 +1,155 @@
+{
+  "title": "Unit \u00b7 native selection comparison",
+  "scope": "Source commits db2a5a1 + 7194315. Real screenshots from isolated iOS27 tests. No iOS18 evidence yet; set-count test interrupted. Full screenshots and raw payload provenance retained. Current native versus retained components, not a fabricated before/after redesign.",
+  "scale": 0.65,
+  "groups": [
+    {
+      "name": "Shared owner: native and intentional fallback",
+      "decision": "Real current controls, matching content and capture. The native Picker owns platform appearance; optional and per-item-disabled contracts retain buttons. Crops are from the full catalog screenshot below, not redrawn or historic before images.",
+      "samples": [
+        {
+          "label": "Native segmented Picker",
+          "image": "screenshots/native-isolated.png",
+          "point_width": 346,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "List selected; large platform control",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Retained buttons",
+          "image": "screenshots/retained-isolated.png",
+          "point_width": 346,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "List selected; optional binding",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    },
+    {
+      "name": "Unanswered stays unanswered",
+      "decision": "Same viewport and content. Both states captured from the production control; hashes differ. XCTest exercised choose, switch and clear without inventing a selection.",
+      "samples": [
+        {
+          "label": "Before answering",
+          "image": "screenshots/unanswered-isolated.png",
+          "point_width": 346,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "Neither segment selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "After explicit answer",
+          "image": "screenshots/answered-isolated.png",
+          "point_width": 346,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "List selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    },
+    {
+      "name": "Context and disabled states",
+      "decision": "Native settings and the shared catalog. Settings selection persists on a non-seeding relaunch. Catalog verifies per-item disabled, inherited disabled, ID binding and empty input.",
+      "samples": [
+        {
+          "label": "Settings",
+          "image": "screenshots/settings-native.png",
+          "point_width": 402,
+          "source": "SettingsView",
+          "state": "Pounds selected; width and height at least44pt asserted",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Components",
+          "image": "screenshots/catalog-contracts.png",
+          "point_width": 402,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "Native, retained, unanswered, disabled and ID states",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    },
+    {
+      "name": "Preserved onboarding behavior",
+      "decision": "The screen explicitly defaults to three days; this existing product decision is preserved. Weekdays keep Monday-first calendar IDs, full spoken labels and collision prevention. Selecting Wednesday disables it for the other routine.",
+      "samples": [
+        {
+          "label": "Training-day default",
+          "image": "screenshots/training-days-default.png",
+          "point_width": 402,
+          "source": "OnboardingLibraryPickerView",
+          "state": "Existing explicit three-day answer",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Weekday defaults",
+          "image": "screenshots/weekdays-default.png",
+          "point_width": 402,
+          "source": "OnboardingScheduleView",
+          "state": "Tuesday and Friday as supplied by program",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Weekday changed",
+          "image": "screenshots/weekdays-wednesday.png",
+          "point_width": 402,
+          "source": "OnboardingScheduleView",
+          "state": "Wednesday selected; other routine disables it",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    },
+    {
+      "name": "Native sibling screens",
+      "decision": "Real History and exercise-progress consumers switch correctly. Different states have different PNG hashes.",
+      "samples": [
+        {
+          "label": "History List",
+          "image": "screenshots/history-list.png",
+          "point_width": 402,
+          "source": "HistoryView",
+          "state": "List selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "History Calendar",
+          "image": "screenshots/history-calendar.png",
+          "point_width": 402,
+          "source": "HistoryView",
+          "state": "Calendar selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Exercise Reps",
+          "image": "screenshots/progress-reps.png",
+          "point_width": 402,
+          "source": "ExerciseProgressView",
+          "state": "Reps selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        },
+        {
+          "label": "Exercise Volume",
+          "image": "screenshots/progress-volume.png",
+          "point_width": 402,
+          "source": "ExerciseProgressView",
+          "state": "Volume selected",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    },
+    {
+      "name": "Verification boundary",
+      "decision": "Catalog local accessibility3 test passed for selection and bounds, but its environment override is not proof of every UIFont-backed font scaling at system accessibility size. Main owns system Dynamic Type, iOS18, set-count completion, combined-source tests and phone verification. Isolated test bundles were interrupted; individual completed case passes are preserved in logs.",
+      "samples": [
+        {
+          "label": "Local large-text fixture",
+          "image": "screenshots/catalog-local-large-text.png",
+          "point_width": 402,
+          "source": "AppSegmentedControl / DesignSystem.swift",
+          "state": "Retained Calendar selected; local environment override, not full system Dynamic Type",
+          "evidence": "iPhone 17 Simulator \u00b7 iOS 27.0 \u00b7 402pt \u00b7 light \u00b7 current branch production components"
+        }
+      ]
+    }
+  ]
+}

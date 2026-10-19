@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/private/tmp/unit-native-controls-ios27-initial.log",
+    "sha256": "5c6c3058578587585f7137638dcfc1ceb80a45c2aa76d6900d99b21cc3ab3be2"
+  },
+  {
+    "path": "/private/tmp/unit-native-controls-ios27-pass2.log",
+    "sha256": "7e201a5034ab09ddb6de135a6c9daf66756da1079223d47de9701a982a63e8c1"
+  },
+  {
+    "path": "/private/tmp/unit-native-controls-ios27-pass3.log",
+    "sha256": "f85a0fdb330eefdf78b165bd0d34018141562ae0e80dbf4ee8550e3d2e5096f4"
+  }
+]

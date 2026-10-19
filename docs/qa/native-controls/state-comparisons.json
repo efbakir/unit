@@ -1,0 +1,30 @@
+[
+  {
+    "a": "unanswered-isolated",
+    "b": "answered-isolated",
+    "sha256_a": "fe792f8002a7694f58215db0266a4ccabf5b2bb959d558931384aa4c8adf104d",
+    "sha256_b": "8fde56ad7986a6b3951d799b979d3f86ccb3056f709dea391ecf26f60e0db4bf",
+    "byte_identical": false
+  },
+  {
+    "a": "history-list",
+    "b": "history-calendar",
+    "sha256_a": "675b670fa11b629a927f37631e432fe9bd1e8e03f2b901d86931eb893dcdcc66",
+    "sha256_b": "7f34470f725bb0233a276a252b920e1922f6b60cf7bee2a3445e9a6f37090353",
+    "byte_identical": false
+  },
+  {
+    "a": "progress-reps",
+    "b": "progress-volume",
+    "sha256_a": "094033abd8f848cbb589c0d3e852919ed0d2ac869315fd0bc064aafd1060958e",
+    "sha256_b": "3877c6ef8a15e85e15e23a051c6fd39da1a36f360dd5e04b33118ce198b28cb1",
+    "byte_identical": false
+  },
+  {
+    "a": "weekdays-default",
+    "b": "weekdays-wednesday",
+    "sha256_a": "92d38c00da670ecb7be52ffc4812882344a105e0135217db019aed0c8aa51ba2",
+    "sha256_b": "11968b8c606d5f138f1b19249a3896b3f2ad7a94d4e17530b1f2b8b6aa5070cc",
+    "byte_identical": false
+  }
+]

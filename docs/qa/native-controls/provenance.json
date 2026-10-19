@@ -1,0 +1,200 @@
+[
+  {
+    "image": "screenshots/catalog-contracts.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass3.xcresult/Data/data.0~5QRQL1FmqnikOIXVqroqnWnzNEZQGbpO5TXGZ3A4Qaa-pkLgQNYxuPf9FlGi2TXnT8ocibpJr_xUaTkouFFWlg==",
+    "sha256": "f7287b37faa49ec003ee4854f5318ed5ee1d6ab0ace02531f7fe12d4bcdfd6f4",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/unanswered.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass3.xcresult/Data/data.0~SUSW6eO94HZ6yr1nxGsKnb-10TBYLD3cOdXP3vCQKVRFksyi9MBNQsNqeRxdJO3_SAEnDX9yST0I-PZJWplvEQ==",
+    "sha256": "621bcef244f75b50c3c78cb71e1952bf7a9c9c33446fd7ee199fafc5432c1827",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/answered.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass3.xcresult/Data/data.0~TXl_HwW0mfs6X6rEhUClm5yUQcY2c-vE1OiYXVFUW8t2BJnWLgl7DfT5PCTnfHcUCShDVeqSeF1hOeieaRrm7w==",
+    "sha256": "fa0ca6038712d685f8ce552b776c2fdfd77574693c70cc2255703acca928554c",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/catalog-local-large-text.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass3.xcresult/Data/data.0~F4I3oD6iELWp9rrQcrqs9RGmzCIMPouXNL8pWcfAyiX-E6QvNjS3I4oURUJ5jifN9YdfjbR0j3DozfLjr2180w==",
+    "sha256": "6a2449b2602a5dfc1ece96425e5b392a6cdceed3246d7efee69b05ba2eafbd12",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/settings-native.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass3.xcresult/Data/data.0~NZbDir0RV7C8ZS93lAQya2qTUf-dmffWao5tQWkApb-ZntEcH2DuTOp4o5RhxozQMq2c2GHhpn6lsYziEatUKg==",
+    "sha256": "8acf091509deeb74f51032223ad2848c7f969774d88db0e6a1489fc4a9b14827",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/weekdays-wednesday.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~2RumpfxBjhZ4QQPVoQcRrmCKukJgxrsOU8jW3glaXVRvV9Jnrt3rE4vy7MTDZK_anBWwlM59r-BvwSGlXOy9Mg==",
+    "sha256": "11968b8c606d5f138f1b19249a3896b3f2ad7a94d4e17530b1f2b8b6aa5070cc",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/weekdays-default.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~QLAYYMUiswrRGbDWwu5dSsHptvt5Y5Cq4dgRFQhSihttLC-XBH99RCGbGeLy00GwaAxFjbRGfqmH82IHm9lyiQ==",
+    "sha256": "92d38c00da670ecb7be52ffc4812882344a105e0135217db019aed0c8aa51ba2",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/training-days-default.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~X0qkYZ-QXgkAvvWqPmaCm14tBvpouo0F6uXeoPNEudfNvgMm1MZvXRldbARX4cbltu_GCtM39rRzXqHOR9dj4w==",
+    "sha256": "60fc0d41de6053ce8170a64ae8ef8a455c6201c3843c767ee242de93eec0611a",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/history-list.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~P9I5TFYxzUuMya1TLLVLuPHr5zsq28Ud_w6h1LDdewCTZIhg4H_5iikSps1vA-PHwb30a-utup-TQxUi0l_xKg==",
+    "sha256": "675b670fa11b629a927f37631e432fe9bd1e8e03f2b901d86931eb893dcdcc66",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/history-calendar.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~UjkYszOee_yeFJ4N-al2k5Q3gvqC1aVC4QK5daS-KYuPDX0b35hWzZ_M_Ko1HGp4RZUCmiTRXvt7WmyYSfYcVg==",
+    "sha256": "7f34470f725bb0233a276a252b920e1922f6b60cf7bee2a3445e9a6f37090353",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/progress-volume.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~XHSMIiyeO5kN5Y-5VE-glyAyo6HdHvAyUjROgXSvo0xh4Xw5iOr-hKSUd8_vj8RRkIaMKW9LVkl0exfhjTxJkA==",
+    "sha256": "3877c6ef8a15e85e15e23a051c6fd39da1a36f360dd5e04b33118ce198b28cb1",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/progress-reps.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~rHLzXhZEp7uRqfUTJb89vG6Nqjd4rywICf65J434BTU-HL2QKemmK9ClH0qkG4a1QZufenQOU4r8CNqeyRC2ug==",
+    "sha256": "094033abd8f848cbb589c0d3e852919ed0d2ac869315fd0bc064aafd1060958e",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/set-completed.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~cb-ETmuGEU_Prhth591a5ME7uzvlWbIC-SNtBJd-akRMXYKfWjJ4RsPwXarsUP29hkNhTEsHVJMoMmu1uTDGxw==",
+    "sha256": "f9ccda00c467be403d555491fcaf1f8cc10f39f6c0a21c1a3f67bd9ae3334e7b",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/starting-target.png",
+    "recovered_from": "/private/tmp/unit-native-controls-ios27-pass2.xcresult/Data/data.0~rD0CSDR6iRiQRId_ZEcvdI1qb0RkyuiR5qCNEnVVBfaty8A49DZvsXSKYyJPUflZUUshxkyYObyy-rZGj5S2xg==",
+    "sha256": "99b440114b10f4c6d763eaf90a063b32d1149b77e82d6814aba6b6cc0d964cc5",
+    "dimensions": [
+      1206,
+      2622
+    ],
+    "point_width": 402,
+    "scale": 3
+  },
+  {
+    "image": "screenshots/native-isolated.png",
+    "cropped_from": "screenshots/catalog-contracts.png",
+    "crop_pixels": [
+      84,
+      630,
+      1122,
+      873
+    ],
+    "point_width": 346.0
+  },
+  {
+    "image": "screenshots/retained-isolated.png",
+    "cropped_from": "screenshots/catalog-contracts.png",
+    "crop_pixels": [
+      84,
+      880,
+      1122,
+      1123
+    ],
+    "point_width": 346.0
+  },
+  {
+    "image": "screenshots/unanswered-isolated.png",
+    "cropped_from": "screenshots/unanswered.png",
+    "crop_pixels": [
+      84,
+      2270,
+      1122,
+      2500
+    ],
+    "point_width": 346.0
+  },
+  {
+    "image": "screenshots/answered-isolated.png",
+    "cropped_from": "screenshots/answered.png",
+    "crop_pixels": [
+      84,
+      2270,
+      1122,
+      2500
+    ],
+    "point_width": 346.0
+  }
+]
