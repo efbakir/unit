@@ -92,17 +92,32 @@ extension Font {
         case medium, semibold, bold
     }
 
-    /// Resolve the native face through UIKit's public font factory, then preserve
-    /// the existing point size and SwiftUI's environment-driven Dynamic Type scaling.
-    /// No bundled font or hardcoded private PostScript name is requested.
+    /// Bridge native system fonts directly, with UIFontMetrics preserving the
+    /// system's Dynamic Type size. Never look up private system font names.
     static func geist(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        let native = UIFont.systemFont(ofSize: size, weight: weight.uiKitWeight)
-        return .custom(native.fontName, size: size, relativeTo: textStyle)
+        Font(UIFont.geist(weight, size: size, relativeTo: textStyle.uiKitStyle))
     }
 
     static func geistMono(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        let native = UIFont.monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
-        return .custom(native.fontName, size: size, relativeTo: textStyle)
+        Font(UIFont.geistMono(weight, size: size, relativeTo: textStyle.uiKitStyle))
+    }
+}
+
+private extension Font.TextStyle {
+    var uiKitStyle: UIFont.TextStyle {
+        switch self {
+        case .largeTitle: return .largeTitle
+        case .title: return .title1
+        case .title2: return .title2
+        case .title3: return .title3
+        case .headline: return .headline
+        case .subheadline: return .subheadline
+        case .callout: return .callout
+        case .footnote: return .footnote
+        case .caption: return .caption1
+        case .caption2: return .caption2
+        default: return .body
+        }
     }
 }
 
