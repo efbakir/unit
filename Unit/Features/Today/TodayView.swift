@@ -111,7 +111,7 @@ struct TodayView: View {
                 }
             }
             .animation(launchAnimation, value: activeSession?.id)
-            .appHaptic(.success, trigger: launchSessionID) { _, new in new != nil }
+            .appHaptic(.firm, trigger: launchSessionID) { _, new in new != nil }
             .navigationDestination(isPresented: $showsHistory) {
                 RecentSessionsView(showsCloseButton: true)
             }
@@ -363,6 +363,12 @@ struct TodayView: View {
         // Save immediately. The launch accompanies the new session; it never
         // holds the first set behind a timer or replays when resuming the app.
         let session = template.startWorkoutSession(in: modelContext)
+        guard !modelContext.hasChanges else {
+            modelContext.rollbackRestoringLoadedModels()
+            AppHaptic.error.fire()
+            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            return
+        }
         launchSessionID = session.id
     }
 
