@@ -54,3 +54,8 @@ Build 69 is development-only and unreserved until App Store Connect confirms the
 ## Subsequent screenshot correction — build 70
 
 The user’s Today/Programs feedback is now applied and installed as **2.1 (70)**: symmetric shared preview padding, full-width preview/divided-list separators, taller 64pt grouped day targets and lighter existing-token chevrons. Source `62fef5c`; signed build/install/normal launch passed, training tables remained row-identical. No further tests or Simulator pass was started. See [the row-spacing handoff](2026-10-19-unit-row-spacing.md).
+
+
+## Final gym delivery — build73
+
+Remaining motion, app-wide disclosures, explicit workout-launch feedback and final30pt workout numerics are installed and launched as **2.1 (73)**. Localmain is updated with the original work backed up; final data comparison is row-identical. No additional tests were run. See [the final handoff](2026-10-19-unit-motion-final-release.md).
