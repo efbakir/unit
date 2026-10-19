@@ -237,6 +237,7 @@ struct ExerciseProgressView: View {
             AppSegmentedControl(
                 selection: $selectedMetric,
                 items: availableMetrics,
+                label: "Progress metric",
                 title: { $0.rawValue }
             )
 

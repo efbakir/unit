@@ -244,6 +244,7 @@ struct RecentSessionsView: View {
                         AppSegmentedControl(
                             selection: $mode,
                             items: SessionHistoryMode.allCases,
+                            label: "History view",
                             title: { $0.rawValue }
                         )
 

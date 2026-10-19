@@ -1500,7 +1500,7 @@ private struct SetCountPickerSheet: View {
                 AppSegmentedControl(
                     selection: $selection,
                     items: Self.options,
-                    size: .tall,
+                    label: AppCopy.Workout.setCountQuestion,
                     title: { "\($0.value)" }
                 )
             }

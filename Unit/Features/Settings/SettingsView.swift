@@ -213,6 +213,7 @@ struct SettingsView: View {
                                 set: { unitSystem = $0.rawValue }
                             ),
                             items: SettingsWeightUnit.allCases,
+                            label: "Weight unit",
                             title: { $0.rawValue }
                         )
                     }

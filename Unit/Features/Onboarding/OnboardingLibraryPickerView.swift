@@ -179,6 +179,7 @@ struct OnboardingLibraryPickerView: View {
                 selection: dayCountBinding,
                 items: dayCountOptions,
                 size: .weekday,
+                label: "Training days",
                 title: { "\($0.value)" },
                 accessibilityLabel: { AppCopy.Onboarding.trainingDays($0.value) }
             )

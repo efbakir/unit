@@ -372,6 +372,7 @@ struct TodayWeekOverviewSheet: View {
                     AppSegmentedControl(
                         selection: $selectedTabID,
                         items: tabs,
+                        label: "Training week",
                         title: { $0.segmentTitle }
                     )
                     .padding(.horizontal, AppSpacing.md)

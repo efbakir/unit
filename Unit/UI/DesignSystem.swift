@@ -5677,58 +5677,47 @@ struct OnboardingProgressBar: View {
     }
 }
 
-// MARK: - Custom segmented control
+// MARK: - Segmented selection
 
-/// SwiftUI segmented control with a soft (non-pill) radius, larger label text,
-/// and a **single sliding** selected pill (spring-animated) on a track that
-/// reads clearly against `AppColor.background`. The pill separates from the
-/// track via fill contrast (white on grey), not shadow — matches the
-/// flat-by-fill rule from visual-language.md §4.
+/// Native segmented Picker for an existing exclusive selection. Unanswered
+/// choices and per-item enablement retain the button implementation until those
+/// contracts are verified with native Picker on every supported platform.
 struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     enum Size {
         case compact
         /// Shared training-day / weekday picker. Uses the 48pt spacing-grid
         /// token so both onboarding selectors have a comfortable control
         /// height without introducing a screen-specific measurement.
         case weekday
-        case tall
 
         var verticalPadding: CGFloat {
             switch self {
             case .compact: return AppSpacing.smd
             case .weekday: return AppSpacing.sm
-            case .tall:    return AppSpacing.xl
             }
         }
 
         var minHeight: CGFloat {
             switch self {
             case .weekday: return AppSpacing.xxl
-            case .compact, .tall: return 44
+            case .compact: return 44
             }
         }
 
         var trackHeight: CGFloat? {
             switch self {
             case .weekday: return AppSpacing.xxl
-            case .compact, .tall: return nil
+            case .compact: return nil
             }
         }
-    }
-
-    /// Visual treatment of the selected pill. `.light` (default) keeps the
-    /// historical white-on-grey look used by mode toggles. `.dark` flips to a
-    /// black pill with white text — used when the picker doubles as a primary
-    /// commitment (e.g. onboarding weekday assignment) and needs more weight.
-    enum SelectionStyle {
-        case light
-        case dark
     }
 
     private let selection: Binding<Item?>
     let items: [Item]
     var size: Size = .compact
-    var selectionStyle: SelectionStyle = .light
+    private var usesNativePicker = false
+    let label: String
     let title: (Item) -> String
     /// Optional VoiceOver label override per segment. Use when `title` is a
     /// glyph or single-letter abbreviation that wouldn't read clearly out loud
@@ -5743,7 +5732,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         selection: Binding<Item>,
         items: [Item],
         size: Size = .compact,
-        selectionStyle: SelectionStyle = .light,
+        label: String = "Options",
         title: @escaping (Item) -> String,
         accessibilityLabel: ((Item) -> String)? = nil,
         isDisabled: ((Item) -> Bool)? = nil
@@ -5756,9 +5745,10 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                 }
             }
         )
+        self.usesNativePicker = true
         self.items = items
         self.size = size
-        self.selectionStyle = selectionStyle
+        self.label = label
         self.title = title
         self.accessibilityLabel = accessibilityLabel
         self.isDisabled = isDisabled
@@ -5770,7 +5760,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         selection: Binding<Item?>,
         items: [Item],
         size: Size = .compact,
-        selectionStyle: SelectionStyle = .light,
+        label: String = "Options",
         title: @escaping (Item) -> String,
         accessibilityLabel: ((Item) -> String)? = nil,
         isDisabled: ((Item) -> Bool)? = nil
@@ -5778,15 +5768,14 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         self.selection = selection
         self.items = items
         self.size = size
-        self.selectionStyle = selectionStyle
+        self.label = label
         self.title = title
         self.accessibilityLabel = accessibilityLabel
         self.isDisabled = isDisabled
     }
 
     /// Vertical breathing room above and below each label. `.compact` keeps
-    /// mode toggles such as History List/Calendar tight; `.tall` preserves the
-    /// larger set-count picker in workout sheets.
+    /// mode toggles tight; `.weekday` keeps the existing weekday touch bounds.
     private var verticalPadding: CGFloat { size.verticalPadding }
     private let trackRadius: CGFloat = AppRadius.md
     private let pillRadius: CGFloat = AppRadius.sm
@@ -5794,28 +5783,36 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     /// Using a single value keeps the pill visually centered inside the track.
     private let trackPadding: CGFloat = AppSpacing.xs
 
-    private var pillFill: Color {
-        switch selectionStyle {
-        case .light: return AppColor.cardBackground
-        case .dark:  return AppColor.textPrimary
-        }
-    }
-
-    /// Track fill — `controlBackground` is a step darker than `AppColor.background`
-    /// so the track reads as a separated surface via contrast alone.
     private var trackFill: Color { AppColor.controlBackground }
 
     private func foreground(isSelected: Bool, isDisabled: Bool) -> Color {
         if isDisabled { return AppColor.textDisabled }
-        switch selectionStyle {
-        case .light:
-            return isSelected ? AppColor.textPrimary : AppColor.textSecondary
-        case .dark:
-            return isSelected ? AppColor.accentForeground : AppColor.textSecondary
+        return isSelected ? AppColor.textPrimary : AppColor.textSecondary
+    }
+
+    @ViewBuilder
+    var body: some View {
+        // iOS 26 added large native segments. Earlier systems keep the
+        // existing buttons rather than shrinking the gym-sized touch targets.
+        if #available(iOS 26.0, *), usesNativePicker && isDisabled == nil && selection.wrappedValue != nil {
+            Picker(label, selection: selection) {
+                ForEach(items) { item in
+                    Text(title(item))
+                        .tag(Optional(item))
+                        .accessibilityLabel(accessibilityLabel?(item) ?? title(item))
+                }
+            }
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+            .labelsHidden()
+            .accessibilityLabel(label)
+            .frame(minHeight: size.minHeight)
+        } else {
+            buttonSegments
         }
     }
 
-    var body: some View {
+    private var buttonSegments: some View {
         let trackShape = RoundedRectangle(cornerRadius: trackRadius, style: .continuous)
         let selectedItem = selection.wrappedValue
 
@@ -5835,10 +5832,10 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                     let pillX = CGFloat(index) * segmentWidth
 
                     RoundedRectangle(cornerRadius: pillRadius, style: .continuous)
-                        .fill(pillFill)
+                        .fill(AppColor.cardBackground)
                         .frame(width: segmentWidth, height: pillHeight)
                         .offset(x: pillX)
-                        .animation(.appConfirm, value: selectedItem.id)
+                        .appAnimation(.appConfirm, value: selectedItem.id, reduceMotion: reduceMotion)
                 }
             }
             .padding(trackPadding)
@@ -5859,7 +5856,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                         }
                     } label: {
                         Text(title(item))
-                            .font(.geist(.semibold, size: 16, relativeTo: .body))
+                            .font(AppFont.sectionHeader.font)
                             .foregroundStyle(foreground(isSelected: isSelected, isDisabled: disabled))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, verticalPadding)
@@ -5885,30 +5882,35 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
 extension AppSegmentedControl {
     /// ID-binding overload for callers whose state tracks the selection by
     /// `Item.ID` rather than the full `Item` (e.g. when the items carry
-    /// non-trivial collateral like nested arrays). Wraps the ID binding into an
-    /// `Item` proxy so the canonical implementation stays single.
+    /// non-trivial collateral like nested arrays). Missing IDs remain unselected;
+    /// an empty collection never indexes a fabricated first choice.
     init(
         selection: Binding<Item.ID>,
         items: [Item],
         size: Size = .compact,
-        selectionStyle: SelectionStyle = .light,
+        label: String = "Options",
         title: @escaping (Item) -> String,
         accessibilityLabel: ((Item) -> String)? = nil,
         isDisabled: ((Item) -> Bool)? = nil
     ) {
-        let proxy = Binding<Item>(
-            get: { items.first(where: { $0.id == selection.wrappedValue }) ?? items[0] },
-            set: { selection.wrappedValue = $0.id }
+        let proxy = Binding<Item?>(
+            get: { items.first(where: { $0.id == selection.wrappedValue }) },
+            set: { item in
+                if let item {
+                    selection.wrappedValue = item.id
+                }
+            }
         )
         self.init(
             selection: proxy,
             items: items,
             size: size,
-            selectionStyle: selectionStyle,
+            label: label,
             title: title,
             accessibilityLabel: accessibilityLabel,
             isDisabled: isDisabled
         )
+        self.usesNativePicker = true
     }
 }
 
@@ -5969,6 +5971,11 @@ struct AppComponentCatalog: View {
     @State private var celebration: AppCelebrationMoment?
     @State private var showsEditor = false
     @State private var failSave = true
+    @State private var segmentMode = SessionHistoryMode.list
+    @State private var unansweredMode: SessionHistoryMode?
+    @State private var retainedMode: SessionHistoryMode? = .list
+    @State private var segmentID = SessionHistoryMode.list.id
+    @State private var disabledMode = SessionHistoryMode.list
 
     var body: some View {
         AppScreen(showsNativeNavigationBar: true) {
@@ -6009,6 +6016,7 @@ struct AppComponentCatalog: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             buttonSamples
             chipSamples
+            selectionSamples
             fieldSamples
             surfaceSamples
             feedbackSamples
@@ -6047,6 +6055,43 @@ struct AppComponentCatalog: View {
                 AppTag(text: "Saved", style: .success)
                 AppTag(text: "Needs review", style: .warning)
             }
+        }
+    }
+
+    /// Real shared controls with matching labels for the comparison capture.
+    /// Optional state deliberately retains buttons after the first answer.
+    private var selectionSamples: some View {
+        SettingsSection(title: "Segmented selection", contentInset: AppSpacing.md) {
+            Text("Native · existing selection")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $segmentMode, items: SessionHistoryMode.allCases,
+                                label: "Native history view", title: { $0.rawValue })
+            Text("Retained buttons · same content")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $retainedMode, items: SessionHistoryMode.allCases,
+                                label: "Retained history view", title: { $0.rawValue })
+            Text("Unanswered · select, switch, then clear")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $unansweredMode, items: SessionHistoryMode.allCases,
+                                size: .weekday, label: "Unanswered choice", title: { $0.rawValue })
+            Button("Clear answer") { unansweredMode = nil }
+            Text("Calendar unavailable · List remains selected")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $disabledMode,
+                                items: SessionHistoryMode.allCases, size: .weekday,
+                                label: "Per-item disabled choice", title: { $0.rawValue },
+                                isDisabled: { $0 == .calendar })
+            Text("Inherited disabled · native control")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $segmentMode, items: SessionHistoryMode.allCases,
+                                label: "Disabled history view", title: { $0.rawValue })
+                .disabled(true)
+            Text("ID binding · same selection model as training week")
+                .appFont(.caption)
+            AppSegmentedControl(selection: $segmentID, items: SessionHistoryMode.allCases,
+                                label: "ID history view", title: { $0.rawValue })
+            AppSegmentedControl(selection: .constant("missing"), items: [SessionHistoryMode](),
+                                label: "Empty items", title: { $0.rawValue })
         }
     }
 

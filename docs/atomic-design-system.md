@@ -88,6 +88,7 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 |-----------|---------|
 | `AppListRow` | Standard list row; optional leading icon, title, subtitle, trailing slot. Use `.cardListContent` only when `AppCardList` owns the row chrome. |
 | `AppInlineWeightField` | Canonical compact editable weight/increment field with unit and caller-owned accessibility label. |
+| `AppSegmentedControl` | Existing exclusive choices use native `Picker(.segmented)` with `.controlSize(.large)` on iOS 26+. Optional unanswered choices, per-item disabled predicates, missing IDs, and iOS 18 retain the button implementation. The initializer fixes this policy for optional choices, even after selection. Caller supplies the group `label`; abbreviated items supply full accessibility labels. `Size` supports `.compact` / `.weekday`; unused `.tall` and dark selection chrome were removed. |
 | `AppStepper` | − / value / + control with fixed internal spacing |
 | `AppTag` | Pills (default, accent, success, warning, error, muted, custom) |
 | `AppPrimaryButton` | Full-width primary CTA (see `visual-language.md` for height/contrast) |
