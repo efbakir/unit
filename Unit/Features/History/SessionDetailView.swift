@@ -739,7 +739,7 @@ struct SessionDetailView: View {
 
                 Button(AppCopy.Engagement.noThanks) {
                     UnitAnalytics.shared.track(.feedbackAction(action: .dismiss))
-                    withAnimation(.appState) {
+                    withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: UIAccessibility.isReduceMotionEnabled, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appState : nil) {
                         showsFeedbackInvitation = false
                     }
                 }

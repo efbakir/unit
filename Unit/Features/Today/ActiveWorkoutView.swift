@@ -857,7 +857,7 @@ struct ActiveWorkoutView: View {
         guard selectedExerciseIndex < sectionModels.count - 1 else { return }
         showsReadyState = false
         restTimer.stop()
-        withAnimation(reduceMotion ? nil : .appExit) {
+        withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appExit : nil) {
             selectedExerciseIndex += 1
         }
     }
@@ -917,16 +917,9 @@ struct ActiveWorkoutView: View {
         )
         entry.session = session
 
-        // The metric value displayed by `WorkoutCommandCard` reads through
-        // `currentEntries`, which mutates as soon as we insert. Wrapping the
-        // insertion in `withAnimation` lets SwiftUI propagate the transaction
-        // through `@Query` re-renders, so the card's `.contentTransition(.numericText())`
-        // engages — the next prefill weight × reps cross-fades into view
-        // instead of flickering. `nil` under Reduce Motion preserves the
-        // mutation but skips the cross-fade.
-        withAnimation(reduceMotion ? nil : .appReveal) {
-            modelContext.insert(entry)
-        }
+        // Numeric feedback belongs to the rendered value after persistence succeeds.
+        // Do not animate a pending insert that may immediately roll back.
+        modelContext.insert(entry)
         guard saveWorkoutChanges(reportsFailure: reportsFailure) else { return false }
         showsReadyState = false
 
@@ -937,9 +930,8 @@ struct ActiveWorkoutView: View {
         setLoggedPhase &+= 1
 
         // Compare against the prior all-time best (excluding the just-inserted
-        // entry). When it beats the baseline, mark the entry so its chip flips
-        // to success chrome and stack a heavy-impact haptic on top of the
-        // success cue. No baseline → no PR (first-ever log doesn't fire).
+        // entry). A PR changes the chip and badge, sharing the set's single
+        // success haptic. No baseline → no PR (first-ever log doesn't fire).
         if let prior = priorBest(for: exercise.id, excluding: entry.id) {
             let beats = weight > prior.weight
                 || (weight == prior.weight && reps > prior.reps)
@@ -990,11 +982,9 @@ struct ActiveWorkoutView: View {
         if weight == 0 {
             exercise.isBodyweight = true
         }
-        withAnimation(reduceMotion ? nil : .appReveal) {
-            entry.weight = weight
-            entry.reps = reps
-            entry.note = note
-        }
+        entry.weight = weight
+        entry.reps = reps
+        entry.note = note
         guard saveWorkoutChanges(reportsFailure: false) else { return false }
         reevaluatePRFlag(for: entry, exerciseID: exercise.id)
         return true
@@ -1004,9 +994,7 @@ struct ActiveWorkoutView: View {
     private func deleteSet(_ entry: SetEntry, exercise: Exercise) -> Bool {
         let snapshot = SetEntrySnapshot(entry)
         let wasPR = prSetEntryIDs.contains(entry.id)
-        withAnimation(reduceMotion ? nil : .appExit) {
-            modelContext.delete(entry)
-        }
+        modelContext.delete(entry)
         guard saveWorkoutChanges(reportsFailure: false) else { return false }
         prSetEntryIDs.remove(snapshot.id)
         removedSet = snapshot
@@ -1021,9 +1009,7 @@ struct ActiveWorkoutView: View {
     private func undoRemovedSet(snapshotID: UUID) {
         guard let snapshot = removedSet, snapshot.id == snapshotID,
               !session.setEntries.contains(where: { $0.id == snapshot.id }) else { return }
-        withAnimation(reduceMotion ? nil : .appReveal) {
-            modelContext.insert(snapshot.restore(in: session))
-        }
+        modelContext.insert(snapshot.restore(in: session))
         guard saveWorkoutChanges() else { return }
         if removedSetWasPR { prSetEntryIDs.insert(snapshot.id) }
         removedSet = nil

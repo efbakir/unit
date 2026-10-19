@@ -101,13 +101,13 @@ struct TemplateDetailView: View {
         .tint(AppColor.accent)
     }
 
-    private func persistRoutine() -> Bool {
+    private func persistRoutine(reportsFailure: Bool = true) -> Bool {
         do {
             try modelContext.save()
             return true
         } catch {
             modelContext.rollback()
-            saveFailed = true
+            if reportsFailure { saveFailed = true }
             AppHaptic.error.fire()
             return false
         }
@@ -351,7 +351,7 @@ struct TemplateDetailView: View {
             template.setProgressionState(nil, for: exerciseID)
             template.setPlannedReps(reps, for: exerciseID)
         }
-        return persistRoutine()
+        return persistRoutine(reportsFailure: false)
     }
 
     private func progressionSummary(for exercise: Exercise) -> String? {

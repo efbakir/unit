@@ -106,4 +106,39 @@ final class AppFeedbackPolicyTests: XCTestCase {
         XCTAssertLessThan(AppMotion.Confetti.popperCount, AppMotion.Confetti.count)
     }
 
+    func testStaleToastTimeoutAndActionCannotConsumeReplacement() {
+        var oldActionCount = 0
+        let old = AppToastEvent("Set removed", action: AppToastAction(label: "Undo") {
+            oldActionCount += 1
+        })
+        let replacement = AppToastEvent("Set removed")
+        var visible: AppToastEvent? = replacement
+
+        // The old timer completes after the replacement was presented.
+        XCTAssertNil(AppToastEvent.consume(old.id, from: &visible))
+        // A queued tap from the old rendered pill also arrives late.
+        AppToastEvent.consume(old.id, from: &visible)?.action?.handler()
+        XCTAssertEqual(oldActionCount, 0)
+        XCTAssertEqual(visible?.id, replacement.id)
+    }
+
+    func testToastActionConsumesOnceAndPreservesHandlerReplacement() {
+        var actionCount = 0
+        var visible: AppToastEvent?
+        let replacement = AppToastEvent("Restored")
+        let original = AppToastEvent("Set removed", action: AppToastAction(label: "Undo") {
+            actionCount += 1
+            visible = replacement
+        })
+        visible = original
+        // Release inout access before running the handler, as the view does.
+        let action = AppToastEvent.consume(original.id, from: &visible)?.action
+        action?.handler()
+        AppToastEvent.consume(original.id, from: &visible)?.action?.handler()
+        XCTAssertEqual(actionCount, 1)
+        XCTAssertEqual(visible?.id, replacement.id)
+        XCTAssertEqual(AppToastEvent.consume(replacement.id, from: &visible)?.id, replacement.id)
+        XCTAssertNil(visible)
+    }
+
 }

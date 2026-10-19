@@ -50,7 +50,7 @@ struct ExercisesListView: View {
                 )
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+                .listRowBackground(AppColor.clear)
             }
             .listSectionSeparator(.hidden, edges: .bottom)
 

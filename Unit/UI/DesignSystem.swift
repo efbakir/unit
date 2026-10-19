@@ -15,6 +15,7 @@ import UIKit
 /// no `Color.black/.gray`, no raw hex literals in page files. **Light-mode only**
 /// per CLAUDE.md §4 rule 3 — no dark-mode variants are maintained.
 enum AppColor {
+    static let clear = Color.clear
     // Surfaces
     static let background = Color(uiColor: uicolor(0xF5F5F5))
     static let cardBackground = Color(uiColor: uicolor(0xFFFFFF))
@@ -1399,7 +1400,7 @@ struct AppPrimaryButton: View {
             // gate, so we don't fire an error haptic for it. AccessibilityHidden
             // so VoiceOver still hears the underlying disabled button.
             if !effectiveEnabled && !isLoading {
-                Color.clear
+                AppColor.clear
                     .frame(maxWidth: .infinity)
                     .frame(height: 60)
                     .contentShape(Rectangle())
@@ -1587,12 +1588,12 @@ struct AppSecondaryButton: View {
 
     private var backgroundColor: Color {
         guard effectiveEnabled else {
-            return tone == .destructive ? Color.clear : AppColor.controlBackground
+            return tone == .destructive ? AppColor.clear : AppColor.controlBackground
         }
         switch tone {
         case .default: return AppColor.controlBackground
         case .accentSoft: return AppColor.controlBackground
-        case .destructive: return Color.clear
+        case .destructive: return AppColor.clear
         }
     }
 }
@@ -2124,8 +2125,8 @@ struct SetProgressIndicator: View {
         var weightText: String? = nil
         /// Marks a completed step that beat the prior all-time best for this exercise
         /// (computed in `ActiveWorkoutView.completeSet`). The chip flips to success
-        /// chrome so the milestone persists for the rest of the session — pairs with
-        /// the heavy-impact haptic that fires once at log time.
+        /// chrome so the milestone persists for the rest of the session, sharing
+        /// the set's single success haptic at log time.
         var isPR: Bool = false
         /// True while this chip's set is the subject of an open edit sheet
         /// (`AdjustResultSheet` in `.edit` mode). Renders a slightly darker
@@ -2173,8 +2174,6 @@ struct SetProgressIndicator: View {
         HStack(spacing: AppSpacing.sm) {
             ForEach(steps) { step in
                 renderStep(step)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(accessibilityLabel(for: step))
             }
         }
     }
@@ -2193,8 +2192,13 @@ struct SetProgressIndicator: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel(accessibilityLabel(for: step))
+            .accessibilityHint("Edits this set.")
+            .accessibilityAddTraits(.isButton)
         } else {
             stepContent(step)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityLabel(for: step))
         }
     }
 
@@ -2219,6 +2223,7 @@ struct SetProgressIndicator: View {
                     AppIcon.remove.image(size: 10, weight: .bold)
                 }
                 Text(chipText)
+                    .appNumericValue(value: chipText)
                     .font(AppFont.stepIndicator.font)
                     .lineLimit(1)
             }
@@ -3200,6 +3205,13 @@ struct AppToastEvent: Identifiable {
         self.action = action
     }
 
+    /// Consume only this occurrence. A stale timeout/action cannot consume its replacement.
+    static func consume(_ id: UUID, from current: inout AppToastEvent?) -> AppToastEvent? {
+        guard let occurrence = current, occurrence.id == id else { return nil }
+        current = nil
+        return occurrence
+    }
+
     var duration: Double? {
         kind == .error ? nil : (action == nil ? AppMotion.Duration.toast : AppMotion.Duration.toastAction)
     }
@@ -3224,10 +3236,10 @@ struct AppToast: ViewModifier {
             ZStack {
                 if let current = event {
                     AppToastPill(event: current, dismiss: { dismiss(current.id) }) {
-                        guard event?.id == current.id else { return }
-                        // Clear this occurrence before the handler can post another result.
-                        dismiss(current.id)
-                        current.action?.handler()
+                        // Consume before invoking: a second tap cannot replay the action,
+                        // and a handler may safely publish a replacement event.
+                        let action = AppToastEvent.consume(current.id, from: &event)?.action
+                        action?.handler()
                     }
                     .id(current.id)
                     .transition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
@@ -3253,8 +3265,7 @@ struct AppToast: ViewModifier {
     }
 
     private func dismiss(_ id: UUID) {
-        guard event?.id == id else { return }
-        event = nil
+        _ = AppToastEvent.consume(id, from: &event)
     }
 }
 
@@ -3892,7 +3903,7 @@ struct AppDisclosureCard<Header: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Button {
-                withAnimation(reduceMotion ? nil : .appState) {
+                withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appState : nil) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -3959,9 +3970,8 @@ struct WorkoutCommandCard: View {
     /// Pass `nil` for non-active surfaces (previews) — feedback is a no-op then.
     var setLoggedSignal: Int? = nil
     /// Bumped by the parent only when the just-logged set beat the prior all-time best
-    /// for this exercise. Routes a heavy-impact haptic on top of the regular `.success`
-    /// — same atom layer, distinct moment. The `setLoggedSignal` haptic still fires; this
-    /// stacks for the milestone feel.
+    /// for this exercise. The badge shares the set's single success haptic;
+    /// a personal record never adds a second tactile event.
     var setPRSignal: Int? = nil
     /// Sentence-case description of the prior best the just-logged set beat — e.g.
     /// "Beat 145 kg × 8". Rendered as a quiet caption beneath the "Personal record"
@@ -4055,13 +4065,13 @@ struct WorkoutCommandCard: View {
     private func showPRBadge() {
         prBadgeSequence &+= 1
         let sequence = prBadgeSequence
-        withAnimation(reduceMotion ? nil : .appReveal) {
+        withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appReveal : nil) {
             prBadgeVisible = true
         }
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: Self.prBadgeDwellSeconds * 1_000_000_000)
             guard sequence == prBadgeSequence else { return }
-            withAnimation(reduceMotion ? nil : .appExit) {
+            withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appExit : nil) {
                 prBadgeVisible = false
             }
         }
@@ -4097,7 +4107,7 @@ struct WorkoutCommandCard: View {
                     priorBestText.map { "\(AppCopy.Workout.personalRecord). \($0)." }
                         ?? AppCopy.Workout.personalRecord
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .transition(.opacity)
             } else if let metricSupportingText, !metricSupportingText.isEmpty {
                 Text(metricSupportingText)
                     .font(AppFont.caption.font)
@@ -4964,6 +4974,8 @@ struct AppScreen<Content: View>: View {
     var surface: Color? = AppColor.background
     @ViewBuilder let content: () -> Content
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var floatingAccessoryHidden: Bool = false
     /// True only when scroll content is actually under the chrome — either because
     /// content overflows the viewport or the user has scrolled past the top. Gates
@@ -5216,7 +5228,8 @@ struct AppScreen<Content: View>: View {
                 .frame(maxWidth: maxContentWidth)
                 .frame(maxWidth: .infinity)
                 .transition(
-                    .opacity.combined(with: .offset(y: 12))
+                    AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+                        ? .opacity.combined(with: .offset(y: AppMotion.revealTravel)) : .opacity
                 )
         }
     }
@@ -5319,7 +5332,7 @@ struct AppScreen<Content: View>: View {
     var body: some View {
         contentWithChrome
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background((surface ?? Color.clear).ignoresSafeArea())
+        .background((surface ?? AppColor.clear).ignoresSafeArea())
         .toolbar(showsNativeNavigationBar ? .automatic : .hidden, for: .navigationBar)
         .toolbarBackground(chromeSurface, for: .navigationBar)
         .toolbarBackground(
@@ -5429,7 +5442,7 @@ extension View {
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(
-                        isSelected ? AppColor.accent : Color.clear,
+                        isSelected ? AppColor.accent : AppColor.clear,
                         lineWidth: 1.5
                     )
             }
@@ -5916,7 +5929,7 @@ private struct AppBottomSheetChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: AppSpacing.md)
+                AppColor.clear.frame(height: AppSpacing.md)
             }
             .presentationDragIndicator(.visible)
             // Passing `nil` lets iOS use the system sheet corner radius, which matches

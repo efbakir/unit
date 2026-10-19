@@ -986,7 +986,7 @@ private struct CalendarGrid: View {
                             onSelect(cell)
                         }
                     } else {
-                        Color.clear
+                        AppColor.clear
                             .frame(height: 40)
                     }
                 }

@@ -262,7 +262,7 @@ struct TodayView: View {
                     }
                 )
             } else {
-                Color.clear
+                AppColor.clear
                     .task { showsRoutinePickSheet = false }
             }
         }
