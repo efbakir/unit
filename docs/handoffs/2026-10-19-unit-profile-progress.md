@@ -5,7 +5,7 @@
 - Worktree: `/Users/efbakir/.codex/worktrees/bbd7/unit`.
 - Branch: `codex/unit-profile-progress`, based exactly on `9643cb8567b082cf37ace5529b23a4b188737a06`.
 - Edits applied, not yet runtime verified. Final commit is reported in the chat; no merge/cherry-pick into integration was performed.
-- Release queue remains reserved by the main chat. No `xcodebuild`, Simulator boot/install/screenshot, phone operation, version/build-number edit, or store operation was run.
+- Main owns combined iOS 27 / iOS 18 verification and delivery. An isolated verification process waited for the shared lock, then was cancelled at the coordinator's request before acquiring it or starting `xcodebuild`. No Profile lock ownership remains. No `xcodebuild`, Simulator boot/install/screenshot, phone operation, version/build-number edit, or store operation was run by this chat.
 - No persistence schema/model mutation, migration, seed, training-store write or preference reset. No changes to `/Users/efbakir/unit` working files or Plate. Git necessarily writes shared worktree/branch metadata.
 
 ## Applied behavior
@@ -24,7 +24,7 @@
 | `Unit/Features/History/ExerciseProgressView.swift` | Existing SessionPoint and chart owner now derive all exercise points through one helper using `SetEntry.isValidCompletedWorkingSet`. Keeps maximum reps separate from the heaviest set. Canonical exact-performance and same-routine comparison text. Explicit chart units, one-session limitation, all-routine history explanation, bodyweight total reps. Pure BW excludes zero-load Weight metric. Epley estimate is labelled and computed from the strongest eligible 1–12-rep set, not merely the heaviest set. |
 | `Unit/Features/Templates/ExercisesListView.swift` | Existing ExerciseDetailView keeps live queries and delegates to canonical progress. Deletes unused ExerciseSessionSummary and parallel charts/Brzycki calculation. Removes unused Charts import. |
 | `UnitTests/ProgressionPersistenceTests.swift` | Three focused contracts: valid finished-work filtering/actual totals; BW and conservative 1RM eligibility; same-routine comparable-set rules. Prepared, not executed. |
-| `UnitUITests/ProgressionContractUITests.swift` | Adds Profile → accepted-target evidence → exercise chart → Today to the existing full progression journey. Prepared, not executed. |
+| `UnitUITests/ProgressionContractUITests.swift` | Adds Profile → accepted-target evidence → exercise chart → Settings lb → converted Profile/chart → Settings kg → Today to the existing full progression journey. One small separate UI test uses the existing starting-target fixture to check empty Profile. Screenshot attachments are prepared. Tests not executed by this chat. |
 | `docs/product-compass.md`, `docs/decision-log.md`, `docs/goals.md`, `docs/claude/scope.md` | Records the requested private Profile scope while retaining social-profile and hot-loop exclusions. |
 | `docs/research/2026-10-19-profile-progress.md` | Bounded official-source/App Store research, dated reviews and caveats, recovered Unit decisions, owner/reuse map. |
 | `docs/qa/design-evaluation/scorecards/2026-10-19-profile.md` | Contextual source-only provisional scorecard. Not an official visual grade. |
@@ -42,7 +42,7 @@
 ## Coordinator's next checks
 
 1. Integrate sequentially with the separate shared native-control work. Profile intentionally leaves `AppSegmentedControl`, `AppCardList`, token and motion ownership unchanged. Resolve docs additively and retain the newest SF Pro/native-control decisions.
-2. Build once after integration. Run `ProgressionPersistenceTests` (includes the three new analytics tests), then the existing full progression-contract journey with its added Profile branch.
+2. Build once after integration. Run `ProgressionPersistenceTests` (includes the three new analytics tests), `ProgressionContractUITests/testProgressionContract_outcomesActionsPersistenceAndNextWorkout`, and `ProgressionContractUITests/testProfileDoesNotTreatStartingTargetsAsCompletedProgress`. Main owns both OS runs and actual screenshot export/inspection.
 3. Inspect Profile standard-size light/portrait on iOS 27, then iOS 18 compatibility. Verify the native three-tab strip, first viewport density, long exercise/routine labels, BW/weighted-BW, kg/lb, empty and one-session states. No enlarged-font layout redesign is part of this change.
 4. Exercise Profile → History → session → chart; Profile → Settings → change units → back; exercise library → existing ExerciseDetailView → same canonical chart. Check native stack restoration after switching tabs.
 5. Check actual VoiceOver row/metric announcements and Reduce Motion. Shared policies were reused; no runtime accessibility claim is made.
@@ -51,3 +51,10 @@
 ## Research takeaways
 
 Hevy documents Profile as an analytics/history hub and exercise records as inspectable evidence. An individual review's bodyweight-volume complaint supports clarifying units, not inventing body-mass data. Alpha Progression documents charts with explicit weight/rep guidance; Unit preserves its own post-workout acceptance boundary. Strong's dated official help separates real and estimated records and cautions about estimates above 12 reps. These are useful product patterns and review anecdotes, not a representative demand study. Source links/dates are in the research note.
+
+
+## Source checkpoints
+
+- `7b97f54`: Profile/shared-progress implementation, three analytics contracts, initial UI path, research and scope docs. Main reports integration as `ffc3eb4`; this chat did not perform that integration.
+- `c38b57f`: coordinator-requested empty-Profile check and kg/lb Settings/chart round trip in the existing full journey. No broad new suite.
+- All local source checks above pass; source/syntax evidence is not runtime proof. No Profile screenshot or xcresult exists from this chat. Main must attach the combined-app evidence after its run.

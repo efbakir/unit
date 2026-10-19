@@ -51,4 +51,6 @@ No new SwiftUI view types, design tokens, styles, or variants. No `DesignSystem.
 
 ## Evidence boundary
 
-Source guard and whitespace checks can run without the release queue. Focused analytics tests and an added Profile leg of the existing progression UI journey are prepared. Build, Simulator, phone, VoiceOver, and rendered Profile evidence remain pending until coordinated verification is available. Historical screenshots establish the visual anchor, not a render of these edits.
+Source guard and whitespace checks can run without the release queue. Three focused analytics tests, a Profile/settings/unit/chart leg of the existing progression journey, and one empty-Profile test using the existing starting-target fixture are prepared. Build, Simulator, phone, VoiceOver, and rendered Profile evidence remain pending until coordinated verification is available. Historical screenshots establish the visual anchor, not a render of these edits.
+
+The coordinator later selected one combined-app verification run for both follow-on branches. This chat cancelled its lock-waiting process before any build or Simulator operation. Runtime results and screenshots belong to the main chat's combined run.
