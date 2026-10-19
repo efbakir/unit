@@ -17,6 +17,18 @@ final class ProgressionContractUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    func testProfileDoesNotTreatStartingTargetsAsCompletedProgress() throws {
+        let app = makeStartingTargetApp(reset: true)
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 20))
+        tap(app.tabBars.buttons["Profile"], "empty Profile tab")
+        XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Progress starts with a workout"].exists)
+        XCTAssertFalse(staticText(in: app, containing: "Accepted next target").exists)
+        XCTAssertFalse(button(in: app, containing: "Bench Press").exists)
+        attachScreenshot(of: app, named: "profile-empty-starting-target")
+    }
+
     func testProgressionContract_outcomesActionsPersistenceAndNextWorkout() throws {
         var app = makeApp(reset: true)
         app.launch()
@@ -198,6 +210,7 @@ final class ProgressionContractUITests: XCTestCase {
         tap(app.tabBars.buttons["Profile"], "Profile tab")
         XCTAssertTrue(app.staticTexts["Last 30 days"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["Progressive overload"].exists)
+        attachScreenshot(of: app, named: "09-profile-summary-kg")
         let profileExercise = button(in: app, containing: "Bench Press")
         scrollTo(profileExercise, in: app, maximumSwipes: 4)
         XCTAssertTrue(
@@ -207,7 +220,28 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "09-profile-progress")
         tap(profileExercise, "Profile exercise progress")
         XCTAssertTrue(staticText(in: app, containing: "Best set · 60 kg × 10").waitForExistence(timeout: 10))
+        attachScreenshot(of: app, named: "09-profile-exercise-kg")
         tap(app.navigationBars.buttons.firstMatch, "back to Profile")
+
+        let profileSettings = button(in: app, containing: "Settings")
+        scrollTo(profileSettings, in: app)
+        tap(profileSettings, "Profile Settings")
+        tap(app.buttons["lb"].firstMatch, "pounds weight unit")
+        tap(app.navigationBars.buttons.firstMatch, "back to Profile in pounds")
+        scrollTo(profileExercise, in: app)
+        XCTAssertTrue(staticText(in: app, containing: "132.3 lb × 10").exists)
+        XCTAssertTrue(staticText(in: app, containing: "Accepted next target · 3 × 8 at 137.8 lb").exists)
+        attachScreenshot(of: app, named: "09-profile-progress-lb")
+        tap(profileExercise, "Profile exercise progress in pounds")
+        XCTAssertTrue(staticText(in: app, containing: "Best set · 132.3 lb × 10").waitForExistence(timeout: 10))
+        tap(app.buttons["Volume"].firstMatch, "working-set volume metric")
+        XCTAssertTrue(staticText(in: app, containing: "3,968.3 lb·reps").exists)
+        attachScreenshot(of: app, named: "09-profile-exercise-volume-lb")
+        tap(app.navigationBars.buttons.firstMatch, "back to Profile from pounds chart")
+        scrollTo(profileSettings, in: app)
+        tap(profileSettings, "Profile Settings to restore kilograms")
+        tap(app.buttons["kg"].firstMatch, "kilograms weight unit")
+        tap(app.navigationBars.buttons.firstMatch, "back to Profile in kilograms")
         tap(app.tabBars.buttons["Today"], "Today tab")
         tap(app.buttons[AppCopy.Nav.history], "History")
         let completedSessionRow = app.buttons["history-session-row"].firstMatch
