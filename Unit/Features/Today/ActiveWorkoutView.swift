@@ -200,13 +200,12 @@ struct ActiveWorkoutView: View {
                         keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
                             stepInput(direction: 1)
                         }
-                        keyboardButton(focusedField.isReps ? AppCopy.Workout.kgPrev(unitSystem: unitSystem) : AppCopy.Workout.repsNext) {
+                        keyboardButton(focusedField.isReps ? AppCopy.Workout.weightField : AppCopy.Workout.repsLabel) {
                             self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
                         }
+                        .accessibilityLabel(focusedField.isReps ? AppCopy.Workout.editWeight : AppCopy.Workout.editReps)
                         keyboardButton(AppCopy.Nav.done, action: finishEditing)
                     }
-                    .font(AppFont.caption.font)
-                    .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity)
                 }
                 .padding(AppSpacing.md)
@@ -666,11 +665,9 @@ struct ActiveWorkoutView: View {
         return success
     }
     private func keyboardButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title).lineLimit(1)
-                .frame(maxWidth: .infinity, minHeight: AppWorkoutMetrics.rowHeight)
-                .contentShape(Rectangle())
-        }
+        AppSecondaryButton(title, detailAlignment: .center, action: action)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
     }
 
     private var inputDrafts: [String: InputDraft] {

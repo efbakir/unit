@@ -24,6 +24,9 @@ enum AppCopy {
         static let restFinishedInline = "Rest finished."
         static func stepDown(unitSystem: String, reps: Bool) -> String { reps ? "−1" : (unitSystem == "lb" ? "−5" : "−2.5") }
         static func stepUp(unitSystem: String, reps: Bool) -> String { reps ? "+1" : (unitSystem == "lb" ? "+5" : "+2.5") }
+        static let weightField = "Weight"
+        static let editWeight = "Edit weight"
+        static let editReps = "Edit reps"
         static let repsNext = "Reps ›"
         static func kgPrev(unitSystem: String) -> String { unitSystem == "lb" ? "‹ Lb" : "‹ Kg" }
         static let bodyweightToggle = "Bodyweight"
