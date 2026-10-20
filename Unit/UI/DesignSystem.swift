@@ -6276,17 +6276,18 @@ struct AppTrendChart: View {
     var bodyweight = false
     var metric: AnalyticsEngine.Metric = .weight
     @State private var selectedDate: Date?
+    @State private var revealedMetric: AnalyticsEngine.Metric?
     @GestureState private var selectionIsActive = false
     @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiate
     @Environment(\.colorSchemeContrast) private var contrast
 
     private var selected: AnalyticsEngine.ChartPoint? {
-        guard selectionIsActive, let selectedDate else { return nil }
+        guard metricIsRevealed, selectionIsActive, let selectedDate else { return nil }
         return data.points.min { abs($0.week.timeIntervalSince(selectedDate)) < abs($1.week.timeIntervalSince(selectedDate)) }
     }
     private var selectedMetric: AnalyticsEngine.Metric { bodyweight ? .reps : metric }
+    private var metricIsRevealed: Bool { revealedMetric == nil || revealedMetric == selectedMetric }
     private var chartTitle: String { caption.replacingOccurrences(of: " · ", with: ", ") }
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -6352,6 +6353,10 @@ struct AppTrendChart: View {
                     }
                 }
             }
+            // Plot units/domains change immediately. Fade only its drawing;
+            // the overlay below stays mounted and accepts scrub input at once.
+            .transaction { $0.animation = nil }
+            .opacity(metricIsRevealed ? 1 : 0)
             .chartOverlay { proxy in
                 if interactive {
                     GeometryReader { geometry in
@@ -6371,11 +6376,33 @@ struct AppTrendChart: View {
             .accessibilityChartDescriptor(TrendDescriptor(data: data, title: chartTitle, metric: selectedMetric, unit: unit))
             .accessibilityHidden(!interactive)
             .accessibilityIdentifier("analytics-trend-chart")
-            .transaction { if reduceMotion { $0.animation = nil } }
-            .onChange(of: metric) { _, _ in selectedDate = nil }
+            .onChange(of: selectedMetric) { _, _ in selectedDate = nil }
             Text(data.points.isEmpty ? "No sets in 12 weeks" : caption)
                 .font(AppFont.muted.font)
                 .foregroundStyle(AppColor.textSecondary)
+                .opacity(metricIsRevealed ? 1 : 0)
+        }
+        .transaction { transaction in
+            // Hide the replacement immediately, even inside a native Picker
+            // transaction. Its reveal never interpolates kg into reps/volume.
+            if let revealedMetric, revealedMetric != selectedMetric {
+                transaction.animation = nil
+            }
+        }
+        .task(id: selectedMetric) {
+            guard revealedMetric != nil else {
+                // Already-loaded content has no entrance/re-entry animation.
+                var instant = Transaction()
+                instant.disablesAnimations = true
+                withTransaction(instant) { revealedMetric = selectedMetric }
+                return
+            }
+            guard revealedMetric != selectedMetric else { return }
+            // Give the hidden replacement its own render transaction. There is
+            // no timed delay, recreated Chart, disabled gesture or cached data.
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            withAnimation(AppMotion.transition) { revealedMetric = selectedMetric }
         }
     }
     private struct TrendDescriptor: AXChartDescriptorRepresentable {
