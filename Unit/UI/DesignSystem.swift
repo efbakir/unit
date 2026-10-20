@@ -6563,6 +6563,7 @@ struct CurrentSetRow<Value: View>: View {
     let isSetup: Bool
     let isCTAEnabled: Bool
     var showsCTA: Bool = true
+    var showsAction: Bool = true
     var showsCompletion: Bool = true
     let onComplete: () -> Void
     let onSaveTarget: () -> Void
@@ -6581,19 +6582,15 @@ struct CurrentSetRow<Value: View>: View {
             }
             if showsCTA {
                 Group {
-                    if isSetup {
-                        Button("Save starting target", action: onSaveTarget)
-                            .font(AppFont.productAction.font)
-                            .foregroundStyle(isCTAEnabled ? AppColor.textPrimary : AppColor.textDisabled)
-                            .frame(maxWidth: .infinity, minHeight: 60)
-                            .background(AppColor.cardBackground, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-                            .overlay { RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).stroke(isCTAEnabled ? AppColor.textPrimary : AppColor.border, lineWidth: 1) }
-                            .buttonStyle(ScaleButtonStyle())
-                            .disabled(!isCTAEnabled)
-                    } else {
-                        AppPrimaryButton("Complete set \(number)", isEnabled: isCTAEnabled, action: onComplete)
-                    }
+                    AppPrimaryButton(
+                        isSetup ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(number),
+                        isEnabled: isCTAEnabled && showsAction,
+                        action: isSetup ? onSaveTarget : onComplete
+                    )
                 }
+                .opacity(showsAction ? 1 : 0)
+                .allowsHitTesting(showsAction)
+                .accessibilityHidden(!showsAction)
                 .transition(.opacity)
                 .accessibilityIdentifier(isSetup ? "save-starting-target" : "complete-set-\(number)")
             }

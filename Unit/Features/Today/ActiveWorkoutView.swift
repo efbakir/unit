@@ -17,12 +17,14 @@ struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
     @AppStorage("restDurationSeconds") private var restDurationSeconds = 120
     @AppStorage("unitSystem") private var unitSystem = "kg"
     @AppStorage("unit.preparedSetTargets") private var preparedSetTargetsData = Data()
+    @SceneStorage("unit.loggingInputDrafts") private var inputDraftsData = Data()
     @State private var viewModel = ActiveWorkoutViewModel()
     @State private var restTimer = RestTimerManager()
     @State private var logging = WorkoutLoggingState()
@@ -70,6 +72,12 @@ struct ActiveWorkoutView: View {
         var isReps: Bool {
             if case .reps = self { return true }; return false
         }
+    }
+
+    /// Raw input is kept separate from validated targets and completed history.
+    private struct InputDraft: Codable {
+        let weight: String
+        let reps: String
     }
 
     private struct InlineEditor {
@@ -166,7 +174,28 @@ struct ActiveWorkoutView: View {
             .coordinateSpace(name: "workout-list")
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if focusedField == nil {
+            if focusedField != nil, let editor, editor.isCurrent,
+               let section = currentSection, section.id == editor.exerciseID {
+                VStack(spacing: AppSpacing.sm) {
+                    if restTimer.isRunning {
+                        Text(AppCopy.Workout.restIdle(restTimer.label))
+                            .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                    }
+                    AppPrimaryButton(
+                        needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
+                        isEnabled: canCommitEditor && !guardActive
+                    ) {
+                        if needsStartingTarget(section, row: editor.number) {
+                            saveStartingTarget(section: section, number: editor.number)
+                        } else {
+                            completeSuggestedSet(section: section, number: editor.number)
+                        }
+                    }
+                    .accessibilityIdentifier("keyboard-current-action")
+                }
+                .padding(AppSpacing.md)
+                .background(AppColor.background)
+            } else if focusedField == nil {
                 RestBar(
                     timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
                     state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
@@ -200,21 +229,23 @@ struct ActiveWorkoutView: View {
                     Button(AppCopy.Workout.finishShort, action: requestFinish)
                 }
             }
-            ToolbarItemGroup(placement: .keyboard) {
+            ToolbarItem(placement: .keyboard) {
                 if let focusedField {
-                    if restTimer.isRunning {
-                        Text(AppCopy.Workout.restIdle(restTimer.label)).font(AppFont.muted.font)
+                    HStack(spacing: AppSpacing.sm) {
+                        keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: -1)
+                        }
+                        keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: 1)
+                        }
+                        keyboardButton(focusedField.isReps ? AppCopy.Workout.kgPrev(unitSystem: unitSystem) : AppCopy.Workout.repsNext) {
+                            self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
+                        }
+                        keyboardButton(AppCopy.Nav.done, action: finishEditing)
                     }
-                    Button(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                        stepInput(direction: -1)
-                    }
-                    Button(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                        stepInput(direction: 1)
-                    }
-                    Button(focusedField.isReps ? AppCopy.Workout.kgPrev(unitSystem: unitSystem) : AppCopy.Workout.repsNext) {
-                        self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
-                    }
-                    Button(AppCopy.Nav.done) { commitEditor(); self.focusedField = nil }
+                    .font(AppFont.caption.font)
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -376,8 +407,9 @@ struct ActiveWorkoutView: View {
             let setup = needsStartingTarget(section, row: row.number)
             CurrentSetRow(
                 number: row.number, supportingText: row.kind == .current ? supportingText(for: section, row: row.number) : nil,
-                isSetup: setup, isCTAEnabled: setup ? canCommitEditor : focusedField == nil,
+                isSetup: setup, isCTAEnabled: canPerformCurrentAction(section, number: row.number),
                 showsCTA: row.kind == .current,
+                showsAction: !(focusedField != nil && editor?.id == id && editor?.isCurrent == true),
                 showsCompletion: { if case .logged = row.kind { return true }; return false }(),
                 onComplete: { completeSuggestedSet(section: section, number: row.number) },
                 onSaveTarget: { saveStartingTarget(section: section, number: row.number) }
@@ -406,15 +438,21 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    @ViewBuilder
     private func valueFields(section: WorkoutExerciseSectionModel, row: WorkoutLoggingState.Row) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: AppSpacing.sm) {
-                weightField(section: section, row: row)
-                Text("×").font(AppFont.title.font).accessibilityHidden(true)
-                repsField(section: section, row: row)
-            }
+        let load = editor?.id == rowID(section.id, row.number)
+            ? parsedDisplayWeight : resolvedTarget(section, row: row.number).map { displayWeight($0.weight) }
+        let needsWideLoad = (section.exercise.isBodyweight && (load ?? 0) > 0)
+            || (load?.weightString.count ?? 0) > 5
+        if dynamicTypeSize.isAccessibilitySize || needsWideLoad {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 weightField(section: section, row: row)
+                repsField(section: section, row: row)
+            }
+        } else {
+            HStack(spacing: AppSpacing.xs) {
+                weightField(section: section, row: row)
+                Text("×").font(AppFont.title.font).accessibilityHidden(true)
                 repsField(section: section, row: row)
             }
         }
@@ -433,9 +471,10 @@ struct ActiveWorkoutView: View {
                         && (editor?.id == id ? parsedDisplayWeight ?? 0 : target?.weight ?? 0) == 0 { return "" }
                     return editor?.id == id ? weightText : inputWeight(target, section: section)
                 },
-                set: { text in guard ensureEditor(section: section, row: row) else { return }; weightText = text; editedRows.insert(id) }
+                set: { text in guard ensureEditor(section: section, row: row) else { return }; weightText = text; editedRows.insert(id); retainInputDraft() }
             ))
-            .fixedSize(horizontal: true, vertical: false)
+            .multilineTextAlignment(.trailing)
+            .frame(minWidth: 0, maxWidth: .infinity)
             .keyboardType(.decimalPad)
             .focused($focusedField, equals: .weight(id))
             .accessibilityLabel(AppCopy.Workout.weightLabel(isBodyweight: section.exercise.isBodyweight, unitSystem: unitSystem))
@@ -449,12 +488,12 @@ struct ActiveWorkoutView: View {
         .tracking(AppFont.setValue.tracking)
         .monospacedDigit()
         .foregroundStyle(AppColor.textPrimary)
-        .frame(minWidth: editor?.id == id && editor?.isCurrent == false ? nil : AppWorkoutMetrics.weightChipWidth)
+        .frame(minWidth: AppWorkoutMetrics.weightChipWidth, maxWidth: .infinity)
         .appInputFieldStyle(height: editor?.id == id && editor?.isCurrent == false ? AppWorkoutMetrics.rowHeight : (isCompact ? compactChipHeight : chipHeight), horizontalPadding: AppSpacing.smd)
         .contentShape(Rectangle())
-        .onTapGesture {
+        .simultaneousGesture(TapGesture().onEnded {
             if beginEditing(section: section, row: row) { focusedField = .weight(id) }
-        }
+        })
         .overlay {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .stroke(AppColor.accent, lineWidth: AppWorkoutMetrics.focusLineWidth)
@@ -467,9 +506,9 @@ struct ActiveWorkoutView: View {
         let id = rowID(section.id, row.number)
         return TextField(AppCopy.Workout.repsLabel.lowercased(), text: Binding(
             get: { editor?.id == id ? repsText : resolvedTarget(section, row: row.number).map { String($0.reps) } ?? "" },
-            set: { text in guard ensureEditor(section: section, row: row) else { return }; repsText = text; editedRows.insert(id) }
+            set: { text in guard ensureEditor(section: section, row: row) else { return }; repsText = text; editedRows.insert(id); retainInputDraft() }
         ))
-        .fixedSize(horizontal: true, vertical: false)
+        .frame(minWidth: 0, maxWidth: .infinity)
         .keyboardType(.numberPad)
         .focused($focusedField, equals: .reps(id))
         .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
@@ -477,12 +516,12 @@ struct ActiveWorkoutView: View {
         .monospacedDigit()
         .multilineTextAlignment(.center)
         .foregroundStyle(AppColor.textPrimary)
-        .frame(minWidth: editor?.id == id && editor?.isCurrent == false ? nil : AppWorkoutMetrics.repsChipWidth)
+        .frame(minWidth: 0, maxWidth: .infinity)
         .appInputFieldStyle(height: editor?.id == id && editor?.isCurrent == false ? AppWorkoutMetrics.rowHeight : (isCompact ? compactChipHeight : chipHeight), horizontalPadding: AppSpacing.smd)
         .contentShape(Rectangle())
-        .onTapGesture {
+        .simultaneousGesture(TapGesture().onEnded {
             if beginEditing(section: section, row: row) { focusedField = .reps(id) }
-        }
+        })
         .overlay {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .stroke(AppColor.accent, lineWidth: AppWorkoutMetrics.focusLineWidth)
@@ -579,8 +618,10 @@ struct ActiveWorkoutView: View {
         editor = InlineEditor(exerciseID: section.id, number: row.number, entryID: entryID,
                               isCurrent: row.kind == .current, isSetup: needsStartingTarget(section, row: row.number), original: target,
                               initialWeightText: initialWeight, initialRepsText: initialReps)
-        weightText = initialWeight
-        repsText = initialReps
+        let draft = inputDrafts[inputDraftKey(rowID(section.id, row.number))]
+        weightText = draft?.weight ?? initialWeight
+        repsText = draft?.reps ?? initialReps
+        if draft != nil { editedRows.insert(rowID(section.id, row.number)) }
         return true
     }
     @discardableResult
@@ -602,11 +643,13 @@ struct ActiveWorkoutView: View {
         guard let editor else { return true }
         if editor.isSetup && editor.isCurrent && !saveSetup { return true }
         if !saveSetup && weightText == editor.initialWeightText && repsText == editor.initialRepsText {
+            removeInputDraft(editor.id)
             self.editor = nil
             return true
         }
         guard canCommitEditor, let exercise = exercises.first(where: { $0.id == editor.exerciseID }) else {
-            self.editor = nil
+            retainInputDraft()
+            AppHaptic.error.fire()
             return false
         }
         let weightKg = WorkoutLoggingState.canonicalWeight(originalKg: editor.original?.weight,
@@ -621,11 +664,51 @@ struct ActiveWorkoutView: View {
                 note: editor.original?.note ?? "", row: editor.isCurrent ? nil : editor.number,
                 currentRow: editor.isCurrent ? editor.number : nil)
         }
-        if success { self.editor = nil }
+        if success {
+            removeInputDraft(editor.id)
+            self.editor = nil
+        }
         return success
     }
+    private func keyboardButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).frame(maxWidth: .infinity, minHeight: AppWorkoutMetrics.rowHeight)
+                .contentShape(Rectangle())
+        }
+    }
+
+    private var inputDrafts: [String: InputDraft] {
+        (try? JSONDecoder().decode([String: InputDraft].self, from: inputDraftsData)) ?? [:]
+    }
+    private func inputDraftKey(_ row: String) -> String { "\(session.id)#\(row)" }
+    private func retainInputDraft() {
+        guard let editor else { return }
+        var drafts = inputDrafts.filter { $0.key.hasPrefix("\(session.id)#") }
+        drafts[inputDraftKey(editor.id)] = InputDraft(weight: weightText, reps: repsText)
+        if let encoded = try? JSONEncoder().encode(drafts) { inputDraftsData = encoded }
+    }
+    private func removeInputDraft(_ row: String) {
+        var drafts = inputDrafts
+        drafts.removeValue(forKey: inputDraftKey(row))
+        if let encoded = try? JSONEncoder().encode(drafts) { inputDraftsData = encoded }
+    }
+    private func finishEditing() {
+        let isSetup = editor?.isSetup == true && editor?.isCurrent == true
+        let saved = commitEditor(saveSetup: isSetup)
+        // Invalid input and durable save failures keep the draft available.
+        if saved { focusedField = nil }
+    }
+    private func canPerformCurrentAction(_ section: WorkoutExerciseSectionModel, number: Int) -> Bool {
+        guard !guardActive else { return false }
+        if let editor {
+            return editor.id == rowID(section.id, number) && canCommitEditor
+        }
+        return !needsStartingTarget(section, row: number)
+    }
+
     private func stepInput(direction: Int) {
         guard let focusedField else { return }
+        defer { retainInputDraft() }
         editedRows.insert(focusedField.rowID)
         if focusedField.isReps {
             repsText = String(WorkoutLoggingState.steppedReps(Int(repsText) ?? 1, direction: direction))
@@ -652,10 +735,15 @@ struct ActiveWorkoutView: View {
     }
 
     private func completeSuggestedSet(section: WorkoutExerciseSectionModel, number: Int) {
-        guard focusedField == nil, logging.canLog(at: Date()),
-              currentExerciseID == section.id,
-              section.entries.count + 1 == number,
-              !needsStartingTarget(section, row: number), let target = resolvedTarget(section, row: number) else { return }
+        guard logging.canLog(at: Date()), currentExerciseID == section.id,
+              section.entries.count + 1 == number else { return }
+        if let editor {
+            guard editor.id == rowID(section.id, number), !editor.isSetup,
+                  commitEditor() else { return }
+        }
+        focusedField = nil
+        guard !needsStartingTarget(section, row: number),
+              let target = resolvedTarget(section, row: number) else { return }
         completeSet(exercise: section.exercise, target: target, number: number)
     }
     private func completeSet(exercise: Exercise, target: SetPrefill, number: Int) {
@@ -783,6 +871,11 @@ struct ActiveWorkoutView: View {
         _ = saveWorkoutChanges()
     }
     private func restoreWorkout() {
+        if editor == nil, let section = currentSection,
+           let row = WorkoutLoggingState.rows(for: state(for: section), isCurrent: true).first(where: { $0.kind == .current }),
+           inputDrafts[inputDraftKey(rowID(section.id, row.number))] != nil {
+            _ = beginEditing(section: section, row: row)
+        }
         restTimer.enableForegroundAlerts()
         restTimer.resumeFromBackground()
         if !didTrackWorkoutStart { didTrackWorkoutStart = true; UnitAnalytics.shared.track(.workoutStarted) }
