@@ -174,42 +174,49 @@ struct ActiveWorkoutView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let focusedField {
-                VStack(spacing: AppSpacing.sm) {
-                    if restTimer.isRunning {
-                        Text(AppCopy.Workout.restIdle(restTimer.label))
-                            .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
-                    }
-                    if let editor, editor.isCurrent, let section = currentSection,
-                       section.id == editor.exerciseID {
-                        AppPrimaryButton(
-                            needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
-                            isEnabled: canCommitEditor && !guardActive
-                        ) {
-                            if needsStartingTarget(section, row: editor.number) {
-                                saveStartingTarget(section: section, number: editor.number)
-                            } else {
-                                completeSuggestedSet(section: section, number: editor.number)
+                VStack(spacing: 0) {
+                    RestBar.progressLine(progress: restTimer.totalDuration > 0
+                        ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
+                        endDate: restTimer.endDate, totalDuration: TimeInterval(restTimer.totalDuration),
+                        isRunning: restTimer.isRunning,
+                        spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
+                    VStack(spacing: AppSpacing.sm) {
+                        RestBar.status(timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
+                            state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
+                            spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
+                        if let editor, editor.isCurrent, let section = currentSection,
+                           section.id == editor.exerciseID {
+                            AppPrimaryButton(
+                                needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
+                                isEnabled: canCommitEditor && !guardActive
+                            ) {
+                                if needsStartingTarget(section, row: editor.number) {
+                                    saveStartingTarget(section: section, number: editor.number)
+                                } else {
+                                    completeSuggestedSet(section: section, number: editor.number)
+                                }
                             }
+                            .accessibilityIdentifier("keyboard-current-action")
                         }
-                        .accessibilityIdentifier("keyboard-current-action")
+                        HStack(spacing: AppSpacing.sm) {
+                            keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                                stepInput(direction: -1)
+                            }
+                            keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                                stepInput(direction: 1)
+                            }
+                            keyboardButton(focusedField.isReps ? AppCopy.Workout.weightField : AppCopy.Workout.repsLabel) {
+                                self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
+                            }
+                            .accessibilityLabel(focusedField.isReps ? AppCopy.Workout.editWeight : AppCopy.Workout.editReps)
+                            keyboardButton(AppCopy.Nav.done, action: finishEditing)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    HStack(spacing: AppSpacing.sm) {
-                        keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                            stepInput(direction: -1)
-                        }
-                        keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                            stepInput(direction: 1)
-                        }
-                        keyboardButton(focusedField.isReps ? AppCopy.Workout.weightField : AppCopy.Workout.repsLabel) {
-                            self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
-                        }
-                        .accessibilityLabel(focusedField.isReps ? AppCopy.Workout.editWeight : AppCopy.Workout.editReps)
-                        keyboardButton(AppCopy.Nav.done, action: finishEditing)
-                    }
-                    .frame(maxWidth: .infinity)
+                    .padding(AppSpacing.md)
                 }
-                .padding(AppSpacing.md)
-                .background(AppColor.background)
+                .background(AppColor.background.ignoresSafeArea(edges: .bottom))
+                .overlay(alignment: .top) { AppDivider() }
             } else {
                 RestBar(
                     timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,

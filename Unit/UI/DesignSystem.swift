@@ -6775,118 +6775,93 @@ struct RestBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
-    @State private var lastRunningTimeText: String?
-
     private var spatial: Bool {
         AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            TimelineView(.animation(paused: state != .running || endDate == nil || !spatial)) { timeline in
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        AppColor.controlBackground
-                        AppColor.accent.frame(width: geometry.size.width * progress(at: spatial ? timeline.date : .now))
-                    }
-                    // Each frame is the deadline's current value, never a tween
-                    // towards an old sample or an inherited collection animation.
-                    .transaction { $0.animation = nil }
-                }
+            Self.progressLine(progress: progress, endDate: endDate, totalDuration: totalDuration,
+                              isRunning: state == .running, spatial: spatial)
+            VStack(spacing: AppSpacing.sm) {
+                Self.status(timeText: timeText, state: state, spatial: spatial)
+                controls
             }
-            .frame(height: 3)
-            .opacity(state == .running ? 1 : 0)
-            .animation(AppMotion.transition, value: state)
-            .accessibilityHidden(true)
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: AppSpacing.sm) {
-                    status.fixedSize(horizontal: true, vertical: false)
-                    Spacer(minLength: AppSpacing.xs)
-                    controls
-                }
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    status
-                    controls
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, AppSpacing.sm)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .frame(minHeight: 60)
+            .padding(AppSpacing.md)
         }
-        .background(AppColor.cardBackground.ignoresSafeArea(edges: .bottom))
+        .background(AppColor.background.ignoresSafeArea(edges: .bottom))
         .overlay(alignment: .top) { AppDivider() }
         .dynamicTypeSize(...DynamicTypeSize.accessibility3)
-        .onChange(of: timeText, initial: true) { _, text in
-            if state == .running { lastRunningTimeText = text }
-        }
-        .onChange(of: state) { _, state in
-            if state == .running { lastRunningTimeText = timeText }
-        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("workout-rest-bar")
     }
 
-    /// Mounted layers preserve their room through start, completion and Skip.
-    private var status: some View {
-        ZStack(alignment: .leading) {
-            HStack(spacing: AppSpacing.sm) {
-                Text("Rest").appFont(.caption).foregroundStyle(AppColor.textSecondary)
-                Text(state == .running ? timeText : (lastRunningTimeText ?? timeText))
-                    .font(AppFont.productHeading.font.monospacedDigit())
-                    .contentTransition(spatial ? .numericText(countsDown: true) : .opacity)
-                    .animation(AppMotion.transition, value: timeText)
+    /// Both bottom modes use this header, so the timer never changes its type
+    /// or leading/trailing anchors when the keyboard or timer state changes.
+    static func status(timeText: String, state: State, spatial: Bool) -> some View {
+        let displayTime = state == .finished ? "0:00" : timeText
+        return HStack(spacing: AppSpacing.sm) {
+            ZStack(alignment: .leading) {
+                Text(AppCopy.Workout.restLabel)
+                    .opacity(state == .finished ? 0 : 1)
+                Text(AppCopy.Workout.restFinishedInline)
+                    .opacity(state == .finished ? 1 : 0)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Rest").accessibilityValue(timeText)
-            .opacity(state == .running ? 1 : 0)
+            .appFont(.caption)
+            .foregroundStyle(AppColor.textSecondary)
             .animation(AppMotion.transition, value: state)
-            .accessibilityHidden(state != .running)
-
-            Text("Rest \(timeText)")
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textTertiary)
-                .opacity(state == .idle ? 1 : 0)
-                .animation(AppMotion.transition, value: state)
-                .accessibilityHidden(state != .idle)
-
-            Text("Rest finished.")
-                .font(AppFont.sectionHeader.font)
+            Spacer(minLength: AppSpacing.sm)
+            Text(displayTime).appFont(.performance).monospacedDigit()
                 .foregroundStyle(AppColor.textPrimary)
-                .opacity(state == .finished ? 1 : 0)
-                .animation(AppMotion.transition, value: state)
-                .accessibilityHidden(state != .finished)
+                .contentTransition(spatial ? .numericText(countsDown: true) : .opacity)
+                .animation(AppMotion.transition, value: displayTime)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(state == .finished ? AppCopy.Workout.restFinishedInline : AppCopy.Workout.restLabel)
+        .accessibilityValue(displayTime)
+        .accessibilityIdentifier("rest-duration")
+    }
+
+    /// One deadline-driven progress owner for resting and keyboard editing.
+    static func progressLine(progress: Double, endDate: Date?, totalDuration: TimeInterval,
+                             isRunning: Bool, spatial: Bool) -> some View {
+        TimelineView(.animation(paused: !isRunning || endDate == nil || !spatial)) { timeline in
+            GeometryReader { geometry in
+                let sampled = spatial ? timeline.date : Date.now
+                let value = isRunning && totalDuration > 0
+                    ? endDate.map { $0.timeIntervalSince(sampled) / totalDuration } ?? progress : progress
+                let fraction = value.isFinite ? min(1, max(0, value)) : 0
+                ZStack(alignment: .leading) {
+                    AppColor.controlBackground
+                    AppColor.accent.frame(width: geometry.size.width * fraction)
+                }
+                .transaction { $0.animation = nil }
+            }
+        }
+        .frame(height: 3)
+        .opacity(isRunning ? 1 : 0)
+        .animation(AppMotion.transition, value: isRunning)
+        .accessibilityHidden(true)
     }
 
     private var controls: some View {
         HStack(spacing: AppSpacing.sm) {
-            control("−15", label: "Subtract 15 seconds", action: onDecrease).disabled(!canDecrease)
-            control("+15", label: "Add 15 seconds", action: onIncrease)
-            control("Skip", label: "Skip rest", action: onSkip)
+            control(AppCopy.Workout.restMinus, label: "Subtract 15 seconds", action: onDecrease)
+                .disabled(!canDecrease)
+            control(AppCopy.Workout.restPlus, label: "Add 15 seconds", action: onIncrease)
+            control(AppCopy.Workout.restSkip, label: "Skip rest", action: onSkip)
         }
-        .fixedSize(horizontal: true, vertical: false)
+        .frame(maxWidth: .infinity)
         .disabled(state != .running)
-        .opacity(state == .running ? 1 : 0)
-        .animation(AppMotion.transition, value: state)
         .allowsHitTesting(state == .running)
         .accessibilityHidden(state != .running)
     }
 
-    private func progress(at date: Date) -> Double {
-        let value: Double
-        if state == .running, let endDate, totalDuration > 0 {
-            value = endDate.timeIntervalSince(date) / totalDuration
-        } else {
-            value = progress
-        }
-        return value.isFinite ? min(1, max(0, value)) : 0
-    }
-
     private func control(_ text: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(text, action: action)
-            .font(AppFont.caption.font).foregroundStyle(AppColor.textPrimary)
-            .frame(minWidth: 44, minHeight: 44)
-            .background(AppColor.controlBackground, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
-            .buttonStyle(ScaleButtonStyle())
+        AppSecondaryButton(text, detailAlignment: .center, action: action)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
             .accessibilityLabel(label)
             .accessibilityIdentifier(text)
     }
