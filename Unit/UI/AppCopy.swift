@@ -9,6 +9,28 @@ import Foundation
 
 enum AppCopy {
     enum Workout {
+        static let finishShort = "Finish"
+        static func completeSetNumbered(_ number: Int) -> String { "Complete set \(number)" }
+        static func lastTimeValue(_ weight: String, _ reps: Int) -> String { "Last time \(weight) × \(reps)" }
+        static let noStartingTarget = "No starting target yet"
+        static let saveStartingTarget = "Save starting target"
+        static let markNotDone = "Mark not done"
+        static let addSet = "+ Add set"
+        static func restIdle(_ time: String) -> String { "Rest \(time)" }
+        static let restLabel = "Rest"
+        static let restMinus = "−15"
+        static let restPlus = "+15"
+        static let restSkip = "Skip"
+        static let restFinishedInline = "Rest finished."
+        static func stepDown(unitSystem: String, reps: Bool) -> String { reps ? "−1" : (unitSystem == "lb" ? "−5" : "−2.5") }
+        static func stepUp(unitSystem: String, reps: Bool) -> String { reps ? "+1" : (unitSystem == "lb" ? "+5" : "+2.5") }
+        static let repsNext = "Reps ›"
+        static func kgPrev(unitSystem: String) -> String { unitSystem == "lb" ? "‹ Lb" : "‹ Kg" }
+        static let bodyweightToggle = "Bodyweight"
+        static let updateRoutineTitle = "Update routine with today's weights?"
+        static func updateRoutineMessage(_ names: [String]) -> String { names.joined(separator: ", ") }
+        static let updateRoutineAction = "Update"
+        static let keepRoutineAction = "Keep routine"
         static let startWorkout = "Start workout"
         static let continueWorkout = "Continue workout"
         static let completeSet = "Complete set"

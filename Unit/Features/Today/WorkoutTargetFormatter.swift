@@ -9,6 +9,16 @@ import Foundation
 
 enum WorkoutTargetFormatter {
 
+    /// Final B logging distinguishes explicit zero external load from bodyweight.
+    /// Kept scoped so historical/progression presentation retains its contracts.
+    static func loggingSetText(weightKg: Double, reps: Int, isBodyweight: Bool, unitSystem: String) -> String {
+        let display = unitSystem == "lb" ? weightKg * 2.20462 : weightKg
+        let number = display.formatted(.number.locale(englishNumberLocale).grouping(.never).precision(.fractionLength(0...1)))
+        let load = "\(number) \(unitSystem)"
+        let weight = isBodyweight ? (weightKg == 0 ? "BW" : "BW + \(load)") : load
+        return "\(weight) × \(reps)"
+    }
+
     private static let englishNumberLocale = Locale(identifier: "en_US")
 
     /// Unit token beside the active set-entry weight field. Bodyweight means
