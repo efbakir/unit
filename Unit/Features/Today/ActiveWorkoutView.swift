@@ -173,28 +173,45 @@ struct ActiveWorkoutView: View {
             .coordinateSpace(name: "workout-list")
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if focusedField != nil, let editor, editor.isCurrent,
-               let section = currentSection, section.id == editor.exerciseID {
+            if let focusedField {
                 VStack(spacing: AppSpacing.sm) {
                     if restTimer.isRunning {
                         Text(AppCopy.Workout.restIdle(restTimer.label))
                             .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                     }
-                    AppPrimaryButton(
-                        needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
-                        isEnabled: canCommitEditor && !guardActive
-                    ) {
-                        if needsStartingTarget(section, row: editor.number) {
-                            saveStartingTarget(section: section, number: editor.number)
-                        } else {
-                            completeSuggestedSet(section: section, number: editor.number)
+                    if let editor, editor.isCurrent, let section = currentSection,
+                       section.id == editor.exerciseID {
+                        AppPrimaryButton(
+                            needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
+                            isEnabled: canCommitEditor && !guardActive
+                        ) {
+                            if needsStartingTarget(section, row: editor.number) {
+                                saveStartingTarget(section: section, number: editor.number)
+                            } else {
+                                completeSuggestedSet(section: section, number: editor.number)
+                            }
                         }
+                        .accessibilityIdentifier("keyboard-current-action")
                     }
-                    .accessibilityIdentifier("keyboard-current-action")
+                    HStack(spacing: AppSpacing.sm) {
+                        keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: -1)
+                        }
+                        keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: 1)
+                        }
+                        keyboardButton(focusedField.isReps ? AppCopy.Workout.kgPrev(unitSystem: unitSystem) : AppCopy.Workout.repsNext) {
+                            self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
+                        }
+                        keyboardButton(AppCopy.Nav.done, action: finishEditing)
+                    }
+                    .font(AppFont.caption.font)
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(AppSpacing.md)
                 .background(AppColor.background)
-            } else if focusedField == nil {
+            } else {
                 RestBar(
                     timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
                     state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
@@ -228,25 +245,6 @@ struct ActiveWorkoutView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if hasLoggedSets && !isWorkoutComplete {
                     Button(AppCopy.Workout.finishShort, action: requestFinish)
-                }
-            }
-            ToolbarItem(placement: .keyboard) {
-                if let focusedField {
-                    HStack(spacing: AppSpacing.sm) {
-                        keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                            stepInput(direction: -1)
-                        }
-                        keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                            stepInput(direction: 1)
-                        }
-                        keyboardButton(focusedField.isReps ? AppCopy.Workout.kgPrev(unitSystem: unitSystem) : AppCopy.Workout.repsNext) {
-                            self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
-                        }
-                        keyboardButton(AppCopy.Nav.done, action: finishEditing)
-                    }
-                    .font(AppFont.caption.font)
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -669,7 +667,8 @@ struct ActiveWorkoutView: View {
     }
     private func keyboardButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).frame(maxWidth: .infinity, minHeight: AppWorkoutMetrics.rowHeight)
+            Text(title).lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: AppWorkoutMetrics.rowHeight)
                 .contentShape(Rectangle())
         }
     }

@@ -42,3 +42,9 @@ Merged main `8e3cf4d` into the clean existing logging branch. The merge encounte
 7. Capture compact, standard and AX3 keyboard states. Verify full-width toolbar, all tap areas, pinned action above the keyboard, no duplicate visible primary action and no native accessory clipping. Confirm scrolling can reveal either field with the pinned action present.
 
 Main should integrate the source checkpoint together with its card-composition work, then run the central build/test/visual queue before installation.
+
+## Central visual follow-up
+
+Central iOS 27 capture `/private/tmp/unit-gym-feedback-captures/AF2545F9-E45A-43DC-AA5C-D37952C58B87.png` showed the native keyboard ToolbarItem compressing the HStack into a small capsule; Kg and Done wrapped. The follow-up removes that keyboard ToolbarItem entirely. The existing bottom safe-area inset now hosts the same four equal-width, single-line native buttons for every focused row. The current Save target/Complete action sits above them only when editing the current row. Logged/planned editing also retains the full accessory row. Native top navigation, validation, canonical conversion, drafts and rest behavior are unchanged.
+
+Syntax parsing, source guards and whitespace checks pass. Main must rerun the keyboard capture on compact/current iOS and verify full width, one-line labels and comfortable hit areas. No build or Simulator run here.
