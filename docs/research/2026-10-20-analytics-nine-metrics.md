@@ -42,7 +42,7 @@ Reuse AppCard, AppDivider, AppFont, AppSpacing and AppTrendChart. Add no new vie
 
 ## Decisions for later work
 
-- Consider prominent lifts drawn from the user's actual routine. Retain Squat, Bench Press and Deadlift for this pass; changing the approved main slots needs its own selection and migration rules.
+- The later approved Analytics blue brief supersedes the fixed main-slot presentation: logged slot winners are followed by recent compound lifts, and users can pin and order up to three. This changes presentation selection without changing the strength comparison or migrating stored history.
 - Keep the nine-metric table as research, not a nine-card dashboard specification. Body measurements, readiness tests and cardiovascular integrations are separate work.
 
 ## Implementation status
@@ -63,3 +63,7 @@ The frozen integrated source passed 24 tests on iOS 27 and 22 on iOS 18.6. Main,
 - Central verification runs AnalyticsEngineTests and AnalyticsR5UITests, then checks History and Analytics entry points, long values, AX5, VoiceOver, Reduce Motion and chart scrubbing on the integrated build.
 
 Verification used isolated Simulator fixtures. No physical-device install, training-data write, version change or public submission occurred in this pass.
+
+## Follow-on main-lift selection
+
+The 20 October Analytics blue brief adds alias/qualifier matching, treats the model's default Other equipment as unspecified, removes unlogged main candidates, and supports automatic compound fill or custom ordered UUID pins. The native Main lifts editor stages move/add/delete changes locally; Cancel discards and Done persists. This fixes a confirmed exclusion of valid completed bench history without editing the stored workout or equipment. Source parsing and guards passed; this newer selection/editor work awaits its own central build/tests and is not covered by the earlier 24/22-test screenshot record.

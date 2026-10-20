@@ -582,3 +582,8 @@ zero. Retain existing SF fonts, approved blue action accent, native bars,
 SwiftData schema and opt-in progression calculation. No phone installation is
 implied by this source request; later explicit device delivery is coordinated
 separately. Source brief: `docs/specs/2026-10-20-logging-final-b.md`.
+## 2026-10-20 — Logged and editable main lifts
+
+Efe's Analytics blue implementation brief supersedes the fixed three-slot presentation. Show logged Squat, Bench Press and Deadlift candidates from the twelve-week window, then fill up to three with recently trained lifts under the brief's compound-first ranking. Users may choose and order one to three historical exercises through the native Main lifts editor; Cancel discards edits and Use automatic restores the calculated selection. Persist only UUID choices in `unit.analytics.mainLiftIDs`.
+
+The phone-data investigation confirmed that valid completed Bench Press history was excluded from Main lifts because its equipment was the model's default Other. Snapshot Other now means unspecified, while explicit dumbbell/machine/etc still exclude barbell slot matching. Pass exercise aliases and strip one approved trailing equipment/conventional qualifier; keep other variants out of the fixed slots. All shown main cards navigate and use the actual exercise name. No placeholder cards, history merging, stored equipment edits, schema changes or comparison/status calculation changes. Shared blue styling and Big 6 icon ownership remain with the main chat. Source checkpoints and runtime verification are coordinated centrally before phone installation.
