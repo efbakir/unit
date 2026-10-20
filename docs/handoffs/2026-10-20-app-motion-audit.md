@@ -101,3 +101,33 @@ AppTimeline, AppScreenEnter/AppRevealSession and existing row owners. No new
 palette, type scale, components or animation durations are required. Blue action
 accent and grayscale remain. Do not change logging, RestBar, SwiftData schema,
 workout values or progression acceptance as part of this report.
+
+## Assigned follow-up implementation
+
+After audit checkpoint `22d0530`, main authorized small feature-local fixes,
+keeping shared design-system code and runtime operations centrally owned.
+
+- **M1 applied:** existing editor VStack keys collection motion to footer
+  visibility; the existing button has an explicit opacity transition. Native
+  List move/delete, drafts, Done/Cancel and persistence are unchanged. This fixes
+  the footer ownership gap, not every possible native row-update behavior.
+- **M3 applied:** existing schedule body keys collection motion to flexible mode,
+  and its weekday section uses existing AppBlurTransition. Native Toggle and
+  controls are unchanged. Existing gates drop spatial motion for Reduce Motion
+  or VoiceOver while the section transition retains a fade.
+- **M4 applied narrowly:** format-examples button now supplies its own explicit
+  opacity animation instead of relying on the sibling header transaction. No
+  whole-editor layout animation was added; keyboard resizing remains native.
+- **M2 deferred:** main explicitly requires already-loaded async data to remain
+  immediate. No background-refresh animation or loading delay was introduced.
+- **M5 deferred:** AppTrendChart is shared DesignSystem ownership, excluded from
+  the implementation assignment.
+- **M6 deferred:** the safe fix needs common weekday/drag row anatomy, rather
+  than a speculative animation wrapper around replaced interactive hierarchies.
+  Programs ownership and an interaction check are needed before that restructure.
+- **V1 deferred:** compact-device regression risk requires main's paywall check;
+  broad paywall animation remains explicitly excluded.
+
+Existing source guards, UI banned-pattern hook on all three edited features and
+whitespace checks pass. No build or tests were run here, as assigned. **Applied,
+not runtime-verified**; main owns the integrated build and visual/motion checks.

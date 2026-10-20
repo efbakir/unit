@@ -7,6 +7,7 @@ struct MainLiftsEditor: View {
     @Binding private var pinnedRaw: String
     @State private var draft: [UUID]
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(output: AnalyticsEngine.Output, automaticIDs: [UUID], pinnedRaw: Binding<String>) {
         self.output = output
@@ -82,8 +83,10 @@ struct MainLiftsEditor: View {
                         AppSecondaryButton("Use automatic") { draft = automaticIDs }
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.bottom, AppSpacing.md)
+                            .transition(.opacity.animation(AppMotion.reveal))
                     }
                 }
+                .appAnimation(AppMotion.collectionChange, value: draft != automaticIDs, reduceMotion: reduceMotion)
                 .background(AppColor.background)
                 .navigationTitle("Main lifts").navigationBarTitleDisplayMode(.inline)
                 .toolbar {

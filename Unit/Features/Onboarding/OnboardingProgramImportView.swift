@@ -97,7 +97,7 @@ struct OnboardingProgramImportView: View {
                     AppGhostButton("Show format examples") {
                         showingFormatSheet = true
                     }
-                    .transition(.opacity)
+                    .transition(.opacity.animation(AppMotion.reveal))
                 }
 
                 if isParsing {

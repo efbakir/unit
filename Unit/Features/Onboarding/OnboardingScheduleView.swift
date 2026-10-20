@@ -15,6 +15,7 @@ import SwiftUI
 
 struct OnboardingScheduleView: View {
     @Environment(OnboardingViewModel.self) private var vm
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var progressStep: Int
     var progressTotal: Int
     var onContinue: () -> Void
@@ -115,8 +116,10 @@ struct OnboardingScheduleView: View {
                             )
                         }
                     }
+                    .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
+            .appAnimation(AppMotion.collectionChange, value: vm.useFlexibleSchedule, reduceMotion: reduceMotion)
             .onAppear { seedDefaultsIfNeeded() }
             .onChange(of: vm.dayCount) { _, _ in seedDefaultsIfNeeded() }
         }
