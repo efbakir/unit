@@ -568,3 +568,17 @@ The user requested online library research, Mobbin MCP inspection, other-app art
 ## 2026-10-20 — Clarify Analytics comparison evidence
 
 Efe requested documentation of the nine-metric AĞIRSAĞLAM video and authorized starting implementation. Keep performance primary and volume supporting. Clarify the latest-session label and show the exact current/previous four-week best sets in lift detail. This extends R5 copy/evidence presentation without changing metrics, comparison/status policy, main-lift selection, accepted targets, native navigation or logging. Body composition, readiness scores and cardiovascular tracking remain outside this pass. The scoped implementation brief and shared-owner follow-ups live in `docs/research/2026-10-20-analytics-nine-metrics.md`.
+
+## 2026-10-20 — Final B whole-day active logging
+
+Efe supplied and requested implementation of the Final B logging handoff, then
+explicitly approved its seven shared logging owners and 30pt set-value role.
+Replace the single command panel and 2.5-second confirmation dwell with one
+expanded current row in the full exercise list, a 400ms duplicate-tap guard,
+five-second inline Undo, inline target/edit fields and a fixed rest bar.
+Preparation stays session-only; updating routine starting values requires an
+explicit Finish decision. Bodyweight is chosen explicitly, never inferred from
+zero. Retain existing SF fonts, approved blue action accent, native bars,
+SwiftData schema and opt-in progression calculation. No phone installation is
+implied by this source request; later explicit device delivery is coordinated
+separately. Source brief: `docs/specs/2026-10-20-logging-final-b.md`.

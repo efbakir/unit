@@ -266,3 +266,29 @@ Keep stateful presentation layers mounted when they crossfade. Bind animation af
 Analytics is read-only. `AnalyticsStore` fetches completed sessions with set-entry prefetch, snapshots model values on their actor and computes off the main actor. A day/calendar/source-value cache invalidates on appear, context save, foreground, day/time-zone and active-program changes. `AnalyticsEngine` owns comparison windows, status persistence, best-set selection, main-lift identity, weekly series and estimates. `WorkoutTargetFormatter` owns locale-aware presentation. `ExerciseProgressView.SessionPoint` and the compatibility projection use this same engine.
 
 The native TabView, tab-bar appearance and selection behavior are unchanged. Logging, progression and the SwiftData schema are outside this change. System dark appearance still presents Unit in light mode.
+
+## Whole-day workout logging — approved 20 October 2026
+
+`WorkoutDayList`, `ExerciseLoggingCard`, `CurrentSetRow`, `LoggedSetRow`,
+`PlannedSetRow`, `ExerciseSummaryRow` and `RestBar` are the approved active-workout
+owners in `DesignSystem.swift`. They compose existing card, button, input, icon,
+color, spacing and press owners. `AppFont.setValue` / `setValueCompact` provide
+30/28pt SF Mono values; `AppWorkoutMetrics` contains their geometry. Controls
+retain Unit's approved blue accent and native navigation/keyboard behavior.
+
+The current row alone contains Complete set. A successful save immediately
+collapses it into a checked row and expands the next; no saved-mark dwell gates
+logging. Undo reserves its slot for five seconds. Native Menu owns Edit / Mark
+not done. The fixed RestBar owns time, draining progress and −15 / +15 / Skip;
+it never repeats the upcoming set. While editing, its time moves to the native
+keyboard toolbar. Existing command-card/step/timer definitions remain for their
+catalog/preview consumers, but ActiveWorkoutView no longer uses them.
+
+`WorkoutLoggingState` owns value-only row grouping, admission timing, Undo,
+next-set text and optional routine-update candidates. SwiftData saves stay in
+the existing view/model owner; schema and progression policy are unchanged.
+Unlogged targets remain session-scoped preferences. Only explicit Finish →
+Update writes their first logged values back to the routine. Explicit zero on
+a weighted exercise is a real load; only the Bodyweight toggle changes that
+exercise flag. The source brief is `docs/specs/2026-10-20-logging-final-b.md`;
+its historical Geist references map to the already approved SF font system.

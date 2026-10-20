@@ -53,7 +53,7 @@ enum SessionReviewState: Equatable {
 
     var markerColor: Color {
         switch self {
-        case .completed: return AppColor.accent
+        case .completed: return AppColor.textPrimary
         case .partial: return AppColor.warning
         case .skipped: return AppColor.error
         }
@@ -572,11 +572,11 @@ enum PRHistory {
 }
 
 /// Ink "PR" chip shared by the History session rows, detail header, and set
-/// rows — same accent language as the live workout's PR set chip. Composition
+/// rows — neutral status language as completed working sets. Composition
 /// of existing atoms only; lives here because all call sites are in this file.
 @ViewBuilder
 func historyPRTag() -> some View {
-    AppTag(text: AppCopy.Workout.prTag, style: .accent, layout: .compactCapsule)
+    AppTag(text: AppCopy.Workout.prTag, style: .ink, layout: .compactCapsule)
         .accessibilityLabel(AppCopy.Workout.personalRecord)
 }
 

@@ -60,6 +60,10 @@ struct UnitApp: App {
                 )
             }
         }
+        if CommandLine.arguments.contains("-ui-testing"), CommandLine.arguments.contains("-ui-testing-logging-finalb") {
+            do { try StartingTargetUITestSeeder.seedLogging(in: sharedModelContainer.mainContext) }
+            catch { Self.logger.error("Logging UI-test fixture failed: \(String(describing: error), privacy: .public)") }
+        }
         if CommandLine.arguments.contains(Self.startingTargetUITestArgument) {
             do {
                 try StartingTargetUITestSeeder.seed(
@@ -502,6 +506,32 @@ enum StartingTargetUITestSeeder {
         }
         ActiveSplitStore.setCurrent(split.id)
         TodayRoutineOverride.set(templateId: templateID)
+    }
+}
+
+extension StartingTargetUITestSeeder {
+    /// Isolated test store only. Idempotent so a relaunch exercises saved drafts.
+    @MainActor static func seedLogging(in context: ModelContext) throws {
+        let isFirstLaunch = try context.fetchCount(FetchDescriptor<Split>()) == 0
+        try seed(in: context)
+        guard isFirstLaunch else { return }
+        let templates = try context.fetch(FetchDescriptor<DayTemplate>())
+        let exercises = try context.fetch(FetchDescriptor<Exercise>())
+        guard let template = templates.first,
+              let benchID = template.orderedExerciseIds.first else { return }
+        template.setPlannedSets(4, for: benchID)
+        if CommandLine.arguments.contains("-logging-empty-target") {
+            template.setPlannedWeight(nil, for: benchID)
+            template.setPlannedReps(nil, for: benchID)
+        }
+        if CommandLine.arguments.contains("-logging-bodyweight"),
+           let bench = exercises.first(where: { $0.id == benchID }) {
+            bench.isBodyweight = true
+            template.setPlannedWeight(0, for: benchID)
+        }
+        UserDefaults.standard.set(CommandLine.arguments.contains("-logging-lb") ? "lb" : "kg", forKey: "unitSystem")
+        UserDefaults.standard.set(120, forKey: "restDurationSeconds")
+        try context.save()
     }
 }
 

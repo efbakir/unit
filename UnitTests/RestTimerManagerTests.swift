@@ -4,7 +4,7 @@ import UserNotifications
 
 @MainActor
 final class RestTimerManagerTests: XCTestCase {
-    private final class Notifications {
+    @MainActor private final class Notifications {
         var requests: [UNNotificationRequest] = []
         var cancelled: [String] = []
         var permissionRequests = 0

@@ -149,10 +149,13 @@ struct WorkoutLoggingState {
 
     static func savingTarget(
         _ target: SetPrefill, in targets: Targets, sessionID: UUID,
-        exerciseID: UUID, row: Int? = nil
+        exerciseID: UUID, row: Int? = nil, currentRow: Int? = nil
     ) -> Targets? {
         guard target.weight.isFinite, target.weight >= 0, target.reps > 0 else { return nil }
         var result = targets
+        if row == nil, let currentRow {
+            result[sessionID.uuidString]?[targetKey(exerciseID: exerciseID, row: currentRow)] = nil
+        }
         result[sessionID.uuidString, default: [:]][targetKey(exerciseID: exerciseID, row: row)] = target
         return result
     }
@@ -168,6 +171,12 @@ struct WorkoutLoggingState {
             return RoutineUpdate(exerciseID: exercise.id, name: exercise.name,
                                  weight: first.weight, reps: first.reps)
         }
+    }
+
+    /// Editing reps must never round-trip an unchanged stored load through pounds.
+    static func canonicalWeight(originalKg: Double?, displayWeight: Double, weightChanged: Bool, unitSystem: String) -> Double {
+        if !weightChanged, let originalKg { return originalKg }
+        return unitSystem == "lb" ? displayWeight / 2.20462 : displayWeight
     }
 
     static func steppedWeight(_ displayWeight: Double, direction: Int, unitSystem: String) -> Double {

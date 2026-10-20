@@ -93,6 +93,10 @@
 		EC5DFA95D6B67F403B8E34EF /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */; };
 		731891AABC1DC739C9D4D21F /* AnalyticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57A78E537603FFC994E344E /* AnalyticsStore.swift */; };
 		D851C871E9881A9E92347CAC /* AnalyticsR5UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D851C871E9881A9E92347CAB /* AnalyticsR5UITests.swift */; };
+		48554AB56FC796653A89CD6A /* WorkoutLoggingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00C42131526B82226FF6842 /* WorkoutLoggingState.swift */; };
+		4559761791D9015B415F61F3 /* WorkoutLoggingStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */; };
+		5AF649418EF8C64C753FFFB6 /* ActiveWorkoutLoggingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CA1F50C3B509D55BE1E7C4 /* ActiveWorkoutLoggingUITests.swift */; };
+		C04A1F20D44C4A33AA558672 /* RestTimerManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -224,6 +228,10 @@
 		3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsView.swift; sourceTree = "<group>"; };
 		F57A78E537603FFC994E344E /* AnalyticsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsStore.swift; sourceTree = "<group>"; };
 		D851C871E9881A9E92347CAB /* AnalyticsR5UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsR5UITests.swift; sourceTree = "<group>"; };
+		B00C42131526B82226FF6842 /* WorkoutLoggingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Today/WorkoutLoggingState.swift; sourceTree = "<group>"; };
+		DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLoggingStateTests.swift; sourceTree = "<group>"; };
+		E3CA1F50C3B509D55BE1E7C4 /* ActiveWorkoutLoggingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutLoggingUITests.swift; sourceTree = "<group>"; };
+		C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,7 +278,9 @@
 				AFA200000000000000000001 /* AppFeedbackPolicyTests.swift */,
 				UT200000000000000000005 /* EntitlementRefreshStateTests.swift */,
 				UT200000000000000000006 /* FeedbackPortalConfigurationTests.swift */,
+				C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */,
 				18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */,
+				DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */,
 				5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */,
 				UT200000000000000000007 /* UnitAnalyticsTests.swift */,
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
@@ -326,6 +336,7 @@
 				A20000000000000000000013 /* Unit.storekit */,
 				A20000000000000000000001 /* UnitApp.swift */,
 				D86E6B92A45BF7EFFC8F4F1B /* AnalyticsEngine.swift */,
+				B00C42131526B82226FF6842 /* WorkoutLoggingState.swift */,
 				266B0D9D8F85DCFA3658F850 /* AnalyticsSnapshot.swift */,
 				F8B996A9E2DBB3201556B4C6 /* AnalyticsFormatting.swift */,
 				3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */,
@@ -527,6 +538,7 @@
 			children = (
 				UT200000000000000000001 /* OnboardingPaywallFlowUITests.swift */,
 				D851C871E9881A9E92347CAB /* AnalyticsR5UITests.swift */,
+				E3CA1F50C3B509D55BE1E7C4 /* ActiveWorkoutLoggingUITests.swift */,
 				A1B2C3D4E5F60718293A4B5D /* ProgressionContractUITests.swift */,
 			);
 			path = UnitUITests;
@@ -697,6 +709,7 @@
 			files = (
 				A10000000000000000000001 /* UnitApp.swift in Sources */,
 				978ABAE042AB735F1585EB91 /* AnalyticsEngine.swift in Sources */,
+				48554AB56FC796653A89CD6A /* WorkoutLoggingState.swift in Sources */,
 				5984E5FA51CDE7DE10A95A7E /* AnalyticsSnapshot.swift in Sources */,
 				3587D3ADE48DC774203C3C99 /* AnalyticsFormatting.swift in Sources */,
 				EC5DFA95D6B67F403B8E34EF /* AnalyticsView.swift in Sources */,
@@ -763,7 +776,9 @@
 				AFA100000000000000000001 /* AppFeedbackPolicyTests.swift in Sources */,
 				UT100000000000000000005 /* EntitlementRefreshStateTests.swift in Sources */,
 				UT100000000000000000006 /* FeedbackPortalConfigurationTests.swift in Sources */,
+				C04A1F20D44C4A33AA558672 /* RestTimerManagerTests.swift in Sources */,
 				11133D3987E11AFC2FED1A27 /* AnalyticsEngineTests.swift in Sources */,
+				4559761791D9015B415F61F3 /* WorkoutLoggingStateTests.swift in Sources */,
 				DDF5A7E4C221443092E6BC44 /* ExerciseIconResolverTests.swift in Sources */,
 				UT100000000000000000007 /* UnitAnalyticsTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
@@ -777,6 +792,7 @@
 			files = (
 				UT100000000000000000001 /* OnboardingPaywallFlowUITests.swift in Sources */,
 				D851C871E9881A9E92347CAC /* AnalyticsR5UITests.swift in Sources */,
+				5AF649418EF8C64C753FFFB6 /* ActiveWorkoutLoggingUITests.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* ProgressionContractUITests.swift in Sources */,
 				UT100000000000000000003 /* AppCopy.swift in Sources */,
 			);

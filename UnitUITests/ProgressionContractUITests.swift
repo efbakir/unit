@@ -275,12 +275,13 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(startNextWorkout, in: app)
         tap(startNextWorkout, "Start next workout", timeout: 10)
         XCTAssertTrue(
-            staticText(in: app, containing: "3 × 8 at 62.5 kg")
-                .waitForExistence(timeout: 10),
+            app.buttons["complete-set-1"].waitForExistence(timeout: 10)
+                && (app.textFields["logging-weight"].firstMatch.value as? String) == "62.5"
+                && (app.textFields["logging-reps"].firstMatch.value as? String) == "8",
             "Accepted complete target is not prefilled in the next workout"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time · 3 × 10 at 60 kg").exists,
+            staticText(in: app, containing: "Last time 60 × 10").exists,
             "The next workout lost the prior-session evidence"
         )
         assertNoProgressionDecisionUI(in: app)
@@ -385,12 +386,12 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(startWorkout, in: app)
         tap(startWorkout, "start accepted-target workout — US screenshot")
         XCTAssertTrue(
-            staticText(in: app, containing: "3 × 8 at 140 lb")
-                .waitForExistence(timeout: 10),
+            app.buttons["complete-set-1"].waitForExistence(timeout: 10)
+                && (app.textFields["logging-weight"].firstMatch.value as? String) == "140",
             "Accepted US target was not prefilled"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time · 3 × 10 at 135 lb").exists,
+            staticText(in: app, containing: "Last time 135 × 10").exists,
             "US active workout lost previous-session evidence"
         )
         attachScreenshot(of: app, named: "store-02-one-tap-workout")
@@ -447,11 +448,11 @@ final class ProgressionContractUITests: XCTestCase {
         )
         attachScreenshot(of: app, named: "09-first-session-starting-target")
 
-        tap(app.buttons[AppCopy.Workout.completeSet], "Complete the prefilled first set")
+        tap(app.buttons["complete-set-1"], "Complete the prefilled first set")
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(
-                NSPredicate(format: "label CONTAINS %@", "Set 1, completed")
+                NSPredicate(format: "identifier == %@", "logged-set-1")
             ).firstMatch.waitForExistence(timeout: 8),
             "The one-tap action did not record the first set"
         )
@@ -460,9 +461,7 @@ final class ProgressionContractUITests: XCTestCase {
             "The next set did not retain the within-session 60 kg × 8 prefill"
         )
         XCTAssertTrue(
-            app.buttons.containing(
-                NSPredicate(format: "label CONTAINS %@", "running")
-            ).firstMatch.waitForExistence(timeout: 8),
+            app.buttons["Skip"].waitForExistence(timeout: 8),
             "The normal rest timer did not begin after one-tap completion"
         )
         attachScreenshot(of: app, named: "10-first-session-set-completed")
@@ -472,14 +471,14 @@ final class ProgressionContractUITests: XCTestCase {
         var app = makeStartingTargetApp(reset: true)
         app.launch()
         tap(app.buttons[AppCopy.Workout.startWorkout], "Start isolated workout", timeout: 20)
-        tap(app.buttons[AppCopy.Workout.completeSet], "Log seeded 60 kg × 8 set")
+        tap(app.buttons["complete-set-1"], "Log seeded 60 kg × 8 set")
         let loggedSet = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS %@", "Set 1, completed")
+            NSPredicate(format: "identifier == %@", "logged-set-1")
         ).firstMatch
         XCTAssertTrue(loggedSet.waitForExistence(timeout: 8))
         let originalLabel = loggedSet.label
         tap(loggedSet, "Edit completed set")
-        tap(app.buttons[AppCopy.Workout.deleteSet], "Delete completed set")
+        tap(app.buttons["Mark not done"], "Mark completed set not done")
         let undo = app.buttons["toast-action"]
         XCTAssertTrue(undo.waitForExistence(timeout: 2), "Set removal did not offer Undo")
         undo.tap()
@@ -491,7 +490,7 @@ final class ProgressionContractUITests: XCTestCase {
         app = makeStartingTargetApp()
         app.launch()
         let restoredSet = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS %@", "Set 1, completed")
+            NSPredicate(format: "identifier == %@", "logged-set-1")
         ).firstMatch
         XCTAssertTrue(restoredSet.waitForExistence(timeout: 20), "Interrupted workout lost its completed set")
         XCTAssertEqual(restoredSet.label, originalLabel)

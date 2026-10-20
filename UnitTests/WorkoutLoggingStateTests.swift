@@ -159,6 +159,30 @@ final class WorkoutLoggingStateTests: XCTestCase {
         XCTAssertTrue(WorkoutLoggingState.routineUpdates(exercises: [exercise([], id: exerciseID)], targets: targets, sessionID: sessionID, isFreestyle: false).isEmpty)
     }
 
+    func testEditingCurrentRowReplacesOnlyItsOldPlannedOverride() throws {
+        let sessionID = UUID(), exerciseID = UUID()
+        var targets: WorkoutLoggingState.Targets = [:]
+        for number in [3, 4] {
+            targets = try XCTUnwrap(WorkoutLoggingState.savingTarget(
+                .init(weight: 65, reps: 8, source: .prepared), in: targets,
+                sessionID: sessionID, exerciseID: exerciseID, row: number))
+        }
+        targets = try XCTUnwrap(WorkoutLoggingState.savingTarget(
+            .init(weight: 70, reps: 9, source: .prepared), in: targets,
+            sessionID: sessionID, exerciseID: exerciseID, currentRow: 3))
+        XCTAssertEqual(WorkoutLoggingState.resolvedTarget(in: targets, sessionID: sessionID,
+            exerciseID: exerciseID, row: 3, fallback: nil)?.weight, 70)
+        XCTAssertEqual(WorkoutLoggingState.resolvedTarget(in: targets, sessionID: sessionID,
+            exerciseID: exerciseID, row: 4, fallback: nil)?.weight, 65)
+    }
+
+    func testRepsOnlyEditPreservesExactCanonicalWeightInPounds() {
+        XCTAssertEqual(WorkoutLoggingState.canonicalWeight(originalKg: 60, displayWeight: 132.3,
+            weightChanged: false, unitSystem: "lb"), 60)
+        XCTAssertEqual(WorkoutLoggingState.canonicalWeight(originalKg: 60, displayWeight: 135,
+            weightChanged: true, unitSystem: "lb"), 135 / 2.20462, accuracy: 0.000001)
+    }
+
     func testScopedLoggingFormatsExplicitZeroBodyweightAddedLoadAndPounds() {
         XCTAssertEqual(WorkoutTargetFormatter.loggingSetText(weightKg: 0, reps: 10, isBodyweight: false, unitSystem: "kg"), "0 kg × 10")
         XCTAssertEqual(WorkoutTargetFormatter.loggingSetText(weightKg: 0, reps: 10, isBodyweight: true, unitSystem: "kg"), "BW × 10")

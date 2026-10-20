@@ -1736,7 +1736,7 @@ struct AppGhostButton: View {
 /// owns scroll-direction show/hide; the atom itself stays stateless.
 ///
 /// Two styles:
-/// - `.accent` (default) — Ink fill, Paper text. Use when this is the page's
+/// - `.accent` (default) — Accent fill, Paper text. Use when this is the page's
 ///   primary action (e.g. "Continue" floating over scroll content). The black
 ///   fill on a light surface carries its own contrast; no shadow needed.
 /// - `.elevated` — Paper fill (`AppColor.cardBackground`) with Ink text. Use
@@ -1854,6 +1854,7 @@ struct AppTag: View {
     enum Style {
         case `default`
         case accent
+        case ink
         case success
         case warning
         case error
@@ -1909,7 +1910,7 @@ struct AppTag: View {
     private var isEmphasized: Bool {
         switch style {
         case .default, .muted, .custom: return false
-        case .accent, .success, .warning, .error: return true
+        case .accent, .ink, .success, .warning, .error: return true
         }
     }
 
@@ -1917,6 +1918,7 @@ struct AppTag: View {
         switch style {
         case .default: return AppColor.textPrimary
         case .accent: return AppColor.accentForeground
+        case .ink: return AppColor.cardBackground
         case .success: return AppColor.successOnSoft
         case .warning: return AppColor.warningOnSoft
         case .error: return AppColor.errorOnSoft
@@ -1929,6 +1931,7 @@ struct AppTag: View {
         switch style {
         case .default: return AppColor.controlBackground
         case .accent: return AppColor.accent
+        case .ink: return AppColor.textPrimary
         case .success: return AppColor.successSoft
         case .warning: return AppColor.warningSoft
         case .error: return AppColor.errorSoft
@@ -5668,7 +5671,7 @@ struct AppIconCircle<Icon: View>: View {
 
     enum Surface {
         case control                   // grey neutral
-        case accentSoft                // `AppColor.accentSoft` (adaptive warm neutral / dim white)
+        case accentSoft                // `AppColor.accentSoft` (pale accent container / dim white)
         case background                // `AppColor.background` (on-card badge)
         case cardBackground            // `AppColor.cardBackground` (on-control-bg badge)
         case tinted(Color, opacity: Double)
@@ -6313,17 +6316,18 @@ struct AppTrendChart: View {
                             .lineStyle(StrokeStyle(lineWidth: differentiate ? 2.5 : 2))
                             .foregroundStyle(AppColor.textPrimary)
                     }
+                    if selected?.id == point.id {
+                        RuleMark(x: .value("", point.week))
+                            .lineStyle(StrokeStyle(lineWidth: 1))
+                            .foregroundStyle(AppColor.accent)
+                    }
                     PointMark(x: .value("", point.week), y: .value("", point.value))
                         .symbol {
                             Circle()
-                                .fill(point.id == data.points.last?.id ? AppColor.textPrimary : AppColor.cardBackground)
-                                .frame(width: point.id == data.points.last?.id ? 7 : 5, height: point.id == data.points.last?.id ? 7 : 5)
-                                .overlay { Circle().stroke(AppColor.textPrimary, lineWidth: 1.5) }
+                                .fill(selected?.id == point.id ? AppColor.accent : (point.id == data.points.last?.id ? AppColor.textPrimary : AppColor.cardBackground))
+                                .frame(width: selected?.id == point.id ? 9 : (point.id == data.points.last?.id ? 7 : 5), height: selected?.id == point.id ? 9 : (point.id == data.points.last?.id ? 7 : 5))
+                                .overlay { Circle().stroke(selected?.id == point.id ? AppColor.cardBackground : AppColor.textPrimary, lineWidth: selected?.id == point.id ? 2 : 1.5) }
                         }
-                    if selected?.id == point.id {
-                        RuleMark(x: .value("", point.week))
-                            .foregroundStyle(AppColor.chartSelection)
-                    }
                 }
             }
             .chartXScale(domain: data.xDomain, range: .plotDimension(startPadding: AppSpacing.sm, endPadding: AppSpacing.sm))
@@ -6491,6 +6495,8 @@ struct AppMainLiftCard: View {
 
 /// Geometry belongs to the logging family, not individual screens.
 enum AppWorkoutMetrics {
+    static let compactWidth: CGFloat = 343
+    static let focusLineWidth: CGFloat = 2
     static let rowHeight: CGFloat = 48
     static let editingRowHeight: CGFloat = 56
     static let indexWidth: CGFloat = 30
@@ -6515,12 +6521,18 @@ struct ExerciseLoggingCard<Content: View>: View {
     @Binding var isBodyweight: Bool
     let onSkip: () -> Void
     let onAddSet: () -> Void
+    var onSelect: (() -> Void)? = nil
     @ViewBuilder let content: () -> Content
     var body: some View {
         AppCard(contentInset: AppSpacing.sm) {
             HStack(spacing: AppSpacing.sm) {
-                Text(name).appFont(.productHeading).lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    if let onSelect {
+                        Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
+                    } else { Text(name) }
+                }
+                .font(AppFont.productHeading.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
                     Toggle("Bodyweight", isOn: $isBodyweight)
                     Button("Skip exercise", role: .destructive, action: onSkip)
@@ -6534,9 +6546,12 @@ struct ExerciseLoggingCard<Content: View>: View {
             }
             .padding(.horizontal, AppSpacing.xs)
             content()
-            AppGhostButton("+ Add set", action: onAddSet)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(minHeight: 44)
+            Button("+ Add set", action: onAddSet)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(.horizontal, AppSpacing.smd)
+                .buttonStyle(ScaleButtonStyle())
         }
     }
 }
@@ -6548,10 +6563,13 @@ struct CurrentSetRow<Value: View>: View {
     let isSetup: Bool
     let isCTAEnabled: Bool
     var showsCTA: Bool = true
+    var showsCompletion: Bool = true
     let onComplete: () -> Void
     let onSaveTarget: () -> Void
     @ViewBuilder let value: () -> Value
     var body: some View {
+        Group {
+        if showsCTA {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Set \(number)").appFont(.muted)
                 .foregroundStyle(AppColor.textSecondary)
@@ -6564,7 +6582,14 @@ struct CurrentSetRow<Value: View>: View {
             if showsCTA {
                 Group {
                     if isSetup {
-                        AppSecondaryButton("Save starting target", isEnabled: isCTAEnabled, action: onSaveTarget)
+                        Button("Save starting target", action: onSaveTarget)
+                            .font(AppFont.productAction.font)
+                            .foregroundStyle(isCTAEnabled ? AppColor.textPrimary : AppColor.textDisabled)
+                            .frame(maxWidth: .infinity, minHeight: 60)
+                            .background(AppColor.cardBackground, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).stroke(isCTAEnabled ? AppColor.textPrimary : AppColor.border, lineWidth: 1) }
+                            .buttonStyle(ScaleButtonStyle())
+                            .disabled(!isCTAEnabled)
                     } else {
                         AppPrimaryButton("Complete set \(number)", isEnabled: isCTAEnabled, action: onComplete)
                     }
@@ -6577,6 +6602,19 @@ struct CurrentSetRow<Value: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColor.cardRowFill, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .padding(.vertical, AppSpacing.xxs)
+        } else {
+            HStack(spacing: AppSpacing.xs) {
+                Text("\(number)").appFont(.stepIndicator)
+                    .foregroundStyle(AppColor.textTertiary)
+                    .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
+                value()
+                if showsCompletion { AppIcon.checkmarkFilled.image(size: 20).accessibilityHidden(true) }
+            }
+            .padding(.horizontal, AppSpacing.smd)
+            .frame(minHeight: AppWorkoutMetrics.editingRowHeight)
+        }
+        }
+        .transition(.opacity.animation(AppMotion.transition))
     }
 }
 
@@ -6611,8 +6649,10 @@ struct LoggedSetRow: View {
             .accessibilityAction(named: "Mark not done", onMarkNotDone)
             Button("Undo", action: onUndo)
                 .font(AppFont.caption.font).underline()
+                .foregroundStyle(AppColor.textPrimary)
                 .frame(minWidth: 44, minHeight: 44)
                 .opacity(showsUndo ? 1 : 0)
+                .animation(AppMotion.transition, value: showsUndo)
                 .allowsHitTesting(showsUndo)
                 .accessibilityHidden(!showsUndo)
             AppIcon.checkmarkFilled.image(size: 20)
@@ -6620,6 +6660,7 @@ struct LoggedSetRow: View {
         }
         .padding(.horizontal, AppSpacing.smd)
         .foregroundStyle(AppColor.textPrimary)
+        .transition(.opacity.animation(AppMotion.transition))
     }
 }
 
@@ -6673,8 +6714,10 @@ struct ExerciseSummaryRow: View {
             if isCompleted {
                 Button("Undo", action: onUndo)
                     .font(AppFont.caption.font).underline()
+                .foregroundStyle(AppColor.textPrimary)
                     .frame(minWidth: 44, minHeight: 44)
                     .opacity(showsUndo ? 1 : 0)
+                .animation(AppMotion.transition, value: showsUndo)
                     .allowsHitTesting(showsUndo)
                     .accessibilityHidden(!showsUndo)
             }
