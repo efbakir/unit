@@ -29,14 +29,23 @@ struct RestTimerLiveActivityView: View {
                     .textCase(.uppercase)
                     .tracking(0.5)
 
-                Text(timerInterval: timerRange,
-                     countsDown: true,
-                     showsHours: false)
-                    .font(.title.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .contentTransition(.numericText(countsDown: true))
+                if context.isStale {
+                    Text("Rest finished")
+                        .font(.title.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text(timerInterval: timerRange,
+                         countsDown: true,
+                         showsHours: false)
+                        .font(.title.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .contentTransition(.numericText(countsDown: true))
+                    ProgressView(timerInterval: timerRange, countsDown: true)
+                        .labelsHidden()
+                        .accessibilityLabel("Rest remaining")
+                }
             }
             .accessibilityElement(children: .combine)
 
@@ -97,42 +106,63 @@ enum RestTimerLiveActivityIsland {
             }
 
             DynamicIslandExpandedRegion(.trailing) {
-                Text(timerInterval: timerRange,
-                     countsDown: true,
-                     showsHours: false)
-                    .font(.title2.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .multilineTextAlignment(.trailing)
-                    .contentTransition(.numericText(countsDown: true))
+                if context.isStale {
+                    Text("Rest finished")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text(timerInterval: timerRange,
+                         countsDown: true,
+                         showsHours: false)
+                        .font(.title2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .multilineTextAlignment(.trailing)
+                        .contentTransition(.numericText(countsDown: true))
+                }
             }
 
             DynamicIslandExpandedRegion(.bottom) {
-                bottomRow(state: state)
-                    .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 4) {
+                    if !context.isStale {
+                        ProgressView(timerInterval: timerRange, countsDown: true)
+                            .labelsHidden()
+                            .accessibilityLabel("Rest remaining")
+                    }
+                    bottomRow(state: state)
+                }
+                .padding(.top, 4)
             }
         } compactLeading: {
             Image(systemName: "timer")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-                .accessibilityLabel("Rest timer")
+                .accessibilityLabel(context.isStale ? "Rest finished" : "Rest timer")
         } compactTrailing: {
-            Text(timerInterval: timerRange,
-                 countsDown: true,
-                 showsHours: false)
-                .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .multilineTextAlignment(.trailing)
-                .frame(minWidth: 44)
-                .contentTransition(.numericText(countsDown: true))
+            if context.isStale {
+                Text("Rest finished")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            } else {
+                Text(timerInterval: timerRange,
+                     countsDown: true,
+                     showsHours: false)
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.trailing)
+                    .frame(minWidth: 44)
+                    .contentTransition(.numericText(countsDown: true))
+            }
         } minimal: {
             Image(systemName: "timer")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.primary)
-                .accessibilityLabel("Unit rest timer")
+                .accessibilityLabel(context.isStale ? "Rest finished" : "Unit rest timer")
         }
         .keylineTint(.primary)
     }

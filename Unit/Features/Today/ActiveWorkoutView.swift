@@ -1724,35 +1724,78 @@ final class ActiveWorkoutViewModel {
 @MainActor
 @Observable
 final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
+    /// Injectable notification effects keep timer tests away from system permissions.
+    struct NotificationClient {
+        var authorizationStatus: () async -> UNAuthorizationStatus
+        var requestAuthorization: () async -> Bool
+        var add: (UNNotificationRequest) async throws -> Void
+        var cancel: ([String]) -> Void
+
+        static var live: Self {
+            let center = UNUserNotificationCenter.current()
+            return Self(
+                authorizationStatus: { await center.notificationSettings().authorizationStatus },
+                requestAuthorization: { (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false },
+                add: { try await center.add($0) },
+                cancel: {
+                    center.removePendingNotificationRequests(withIdentifiers: $0)
+                    center.removeDeliveredNotifications(withIdentifiers: $0)
+                }
+            )
+        }
+    }
+
     var secondsRemaining = 0
     var isRunning = false
     var completionCount = 0
+    private(set) var finishedAt: Date?
+    var isFinished: Bool { finishedAt != nil }
+    var sourceEntryID: UUID? {
+        didSet { defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey) }
+    }
     private(set) var notificationIssue: String?
-    private var notificationTask: Task<Void, Never>?
-    private nonisolated static let notificationPrefix = "unit.restTimer.finished."
-    private static let notificationIDKey = "unit.restTimer.notificationID"
-    private static let upNextKey = "unit.restTimer.upNext"
     private(set) var totalDuration = 0
+    private(set) var endDate: Date?
 
+    private let defaults: UserDefaults
+    private let now: () -> Date
+    private let notifications: NotificationClient
+    private let usesLiveActivities: Bool
+    private let automaticallyTicks: Bool
+    private var notificationTask: Task<Void, Never>?
     private var task: Task<Void, Never>?
     private var activity: Activity<RestTimerAttributes>?
-    private(set) var endDate: Date?
     private var startDate: Date?
     private var upNext: String?
 
-    /// Persisted across app launches so a force-quit during rest doesn't
-    /// desync the in-app timer from the Live Activity (compass: timer follows
-    /// the user, including outside the app).
+    private nonisolated static let notificationPrefix = "unit.restTimer.finished."
+    private static let notificationIDKey = "unit.restTimer.notificationID"
+    private static let upNextKey = "unit.restTimer.upNext"
+    private static let sourceEntryIDKey = "unit.restTimer.sourceEntryID"
+    private static let finishedAtKey = "unit.restTimer.finishedAt"
     private static let endDateKey = "unit.restTimer.endDate"
     private static let totalDurationKey = "unit.restTimer.totalDuration"
+    private static let finishedDisplayDuration: TimeInterval = 30
 
-    /// Nonisolated for the same back-deploy-shim SIGABRT as
-    /// `ActiveWorkoutViewModel.deinit` — see the comment there. The ticking
-    /// `task` exits on its own via `[weak self]` once this deallocates; no
-    /// isolated state is touched here.
+    // Keep deallocation nonisolated for the existing back-deployment shim.
     nonisolated deinit {}
 
-    override init() {
+    override convenience init() {
+        self.init(defaults: .standard, now: Date.init, notifications: .live)
+    }
+
+    init(
+        defaults: UserDefaults,
+        now: @escaping () -> Date,
+        notifications: NotificationClient,
+        usesLiveActivities: Bool = true,
+        automaticallyTicks: Bool = true
+    ) {
+        self.defaults = defaults
+        self.now = now
+        self.notifications = notifications
+        self.usesLiveActivities = usesLiveActivities
+        self.automaticallyTicks = automaticallyTicks
         super.init()
         restoreFromPersistedState()
     }
@@ -1769,28 +1812,25 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     var label: String {
-        let minutes = secondsRemaining / 60
-        let seconds = secondsRemaining % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        String(format: "%d:%02d", secondsRemaining / 60, secondsRemaining % 60)
     }
 
-    func start(totalSeconds: Int, upNext: String? = nil) {
+    func start(totalSeconds: Int, upNext: String? = nil, sourceEntryID: UUID? = nil) {
         task?.cancel()
         task = nil
-        totalDuration = totalSeconds
-        secondsRemaining = totalSeconds
-        let now = Date()
-        startDate = now
-        endDate = now.addingTimeInterval(TimeInterval(totalSeconds))
+        finishedAt = nil
+        self.sourceEntryID = sourceEntryID
+        notificationIssue = nil
+        totalDuration = max(15, totalSeconds)
+        secondsRemaining = totalDuration
+        let start = now()
+        startDate = start
+        endDate = start.addingTimeInterval(TimeInterval(totalDuration))
         self.upNext = upNext
         isRunning = true
         persistState()
         scheduleCompletionNotification()
-        if activity == nil {
-            startActivity()
-        } else {
-            updateActivity()
-        }
+        if activity == nil { startActivity() } else { updateActivity() }
         startCountdownTask()
     }
 
@@ -1809,9 +1849,9 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     func resume() {
         guard !isRunning, secondsRemaining > 0 else { return }
         isRunning = true
-        let now = Date()
-        startDate = now
-        endDate = now.addingTimeInterval(TimeInterval(secondsRemaining))
+        let start = now()
+        startDate = start
+        endDate = start.addingTimeInterval(TimeInterval(secondsRemaining))
         persistState()
         scheduleCompletionNotification()
         startActivity()
@@ -1819,35 +1859,52 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func resumeFromBackground() {
-        guard let end = endDate else { return }
-        let remaining = Int(ceil(end.timeIntervalSinceNow))
-        if remaining <= 0 {
-            completeIfFinished()
+        if let end = endDate {
+            let remaining = Int(ceil(end.timeIntervalSince(now())))
+            if remaining <= 0 {
+                completeIfFinished()
+            } else {
+                secondsRemaining = remaining
+                isRunning = true
+                startCountdownTask()
+            }
         } else {
-            secondsRemaining = remaining
-            isRunning = true
-            startCountdownTask()
+            clearExpiredFinishedState()
         }
     }
 
-    func adjust(by delta: Int, minimumSeconds: Int = 30) {
-        let baseRemaining = secondsRemaining > 0 ? secondsRemaining : totalDuration
-        let updatedRemaining = max(minimumSeconds, baseRemaining + delta)
-        let updatedTotal = max(minimumSeconds, totalDuration + delta)
-
-        secondsRemaining = updatedRemaining
-        totalDuration = updatedTotal
-
+    func adjust(by delta: Int, minimumSeconds: Int = 15) {
         if isRunning {
-            let now = Date()
-            startDate = now
-            endDate = now.addingTimeInterval(TimeInterval(updatedRemaining))
+            resumeFromBackground()
+            guard isRunning else { return }
+        }
+        let minimum = max(15, minimumSeconds)
+        let baseRemaining = secondsRemaining > 0 ? secondsRemaining : totalDuration
+        let updatedRemaining = max(minimum, baseRemaining + delta)
+        totalDuration = max(minimum, totalDuration + delta)
+        secondsRemaining = updatedRemaining
+        if isRunning {
+            endDate = now().addingTimeInterval(TimeInterval(updatedRemaining))
+            startDate = endDate?.addingTimeInterval(-TimeInterval(totalDuration))
             persistState()
             scheduleCompletionNotification()
             updateActivity()
         }
     }
 
+    /// A plan edit changes only the notification/activity text, never the deadline.
+    func updateUpNext(_ text: String?) {
+        guard upNext != text else { return }
+        upNext = text
+        guard isRunning else { return }
+        resumeFromBackground()
+        guard isRunning else { return }
+        persistState()
+        scheduleCompletionNotification()
+        updateActivity()
+    }
+
+    /// Skip/cancellation does not produce a completion event or finished state.
     func stop() {
         cancelCompletionNotification()
         task?.cancel()
@@ -1857,106 +1914,105 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         totalDuration = 0
         endDate = nil
         startDate = nil
+        finishedAt = nil
+        sourceEntryID = nil
         upNext = nil
+        notificationIssue = nil
         clearPersistedState()
         endActivity()
     }
 
     private func completeIfFinished() {
+        guard isRunning, let deadline = endDate else { return }
         secondsRemaining = 0
         isRunning = false
         totalDuration = 0
         endDate = nil
         startDate = nil
         upNext = nil
+        finishedAt = deadline
         completionCount += 1
-        clearPersistedState()
+        persistState()
         endActivity()
-    }
-
-    /// Reconstruct timer state on init from UserDefaults; if defaults are
-    /// empty (e.g. after a reinstall mid-rest) fall back to the live Activity.
-    private func restoreFromPersistedState() {
-        let defaults = UserDefaults.standard
-        var recoveredEnd: Date?
-        var recoveredTotal: Int = 0
-        var recoveredStart: Date?
-        var recoveredUpNext = defaults.string(forKey: Self.upNextKey)
-
-        if let stored = defaults.object(forKey: Self.endDateKey) as? Date {
-            recoveredEnd = stored
-            recoveredTotal = defaults.integer(forKey: Self.totalDurationKey)
-        }
-
-        if let liveActivity = Activity<RestTimerAttributes>.activities.first {
-            let liveState = liveActivity.content.state
-            if recoveredEnd == nil {
-                recoveredEnd = liveState.endDate
-                recoveredTotal = max(30, Int(liveState.endDate.timeIntervalSinceNow))
-            }
-            recoveredStart = liveState.startDate
-            recoveredUpNext = recoveredUpNext ?? liveState.upNext
-            activity = liveActivity
-        }
-
-        guard let end = recoveredEnd else { return }
-        let remaining = Int(ceil(end.timeIntervalSinceNow))
-        if remaining <= 0 {
-            // Timer expired while the app was killed — surface the Ready state.
-            clearPersistedState()
-            completionCount += 1
-            endActivity()
-            return
-        }
-
-        endDate = end
-        startDate = recoveredStart ?? end.addingTimeInterval(-TimeInterval(max(remaining, recoveredTotal)))
-        upNext = recoveredUpNext
-        secondsRemaining = remaining
-        totalDuration = max(remaining, recoveredTotal)
-        isRunning = true
-        // The system retains the existing notification across app launches.
-        // Restore must not replace it or request permission.
+        clearExpiredFinishedState()
         startCountdownTask()
     }
 
-    private func persistState() {
-        let defaults = UserDefaults.standard
-        if let endDate {
-            defaults.set(endDate, forKey: Self.endDateKey)
-            defaults.set(totalDuration, forKey: Self.totalDurationKey)
-            defaults.set(upNext, forKey: Self.upNextKey)
+    private func clearExpiredFinishedState() {
+        guard let finishedAt, now().timeIntervalSince(finishedAt) >= Self.finishedDisplayDuration else { return }
+        stop()
+    }
+
+    private func restoreFromPersistedState() {
+        sourceEntryID = defaults.string(forKey: Self.sourceEntryIDKey).flatMap(UUID.init(uuidString:))
+        finishedAt = defaults.object(forKey: Self.finishedAtKey) as? Date
+        var recoveredEnd = defaults.object(forKey: Self.endDateKey) as? Date
+        var recoveredTotal = defaults.integer(forKey: Self.totalDurationKey)
+        var recoveredStart: Date?
+        var recoveredUpNext = defaults.string(forKey: Self.upNextKey)
+
+        if usesLiveActivities, let liveActivity = Activity<RestTimerAttributes>.activities.first {
+            let state = liveActivity.content.state
+            if recoveredEnd == nil, finishedAt == nil {
+                recoveredEnd = state.endDate
+                recoveredTotal = max(15, Int(ceil(state.endDate.timeIntervalSince(state.startDate))))
+            }
+            recoveredStart = state.startDate
+            recoveredUpNext = recoveredUpNext ?? state.upNext
+            activity = liveActivity
+        }
+
+        guard let end = recoveredEnd else {
+            clearExpiredFinishedState()
+            if isFinished { endActivity(); startCountdownTask() }
+            return
+        }
+        finishedAt = nil
+        endDate = end
+        startDate = recoveredStart ?? end.addingTimeInterval(-TimeInterval(max(15, recoveredTotal)))
+        upNext = recoveredUpNext
+        secondsRemaining = max(0, Int(ceil(end.timeIntervalSince(now()))))
+        totalDuration = max(secondsRemaining, recoveredTotal)
+        isRunning = true
+        if end <= now() {
+            // The system already owns the elapsed deadline. Never reschedule it.
+            completeIfFinished()
         } else {
-            clearPersistedState()
+            startCountdownTask()
         }
     }
 
-    private func clearPersistedState() {
-        let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: Self.endDateKey)
-        defaults.removeObject(forKey: Self.totalDurationKey)
-        defaults.removeObject(forKey: Self.upNextKey)
+    private func persistState() {
+        defaults.set(endDate, forKey: Self.endDateKey)
+        defaults.set(totalDuration, forKey: Self.totalDurationKey)
+        defaults.set(upNext, forKey: Self.upNextKey)
+        defaults.set(finishedAt, forKey: Self.finishedAtKey)
+        defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey)
     }
 
-    /// Schedule against the deadline now, so suspension/termination does not
-    /// depend on an app-owned countdown task to deliver the alert.
+    private func clearPersistedState() {
+        for key in [Self.endDateKey, Self.totalDurationKey, Self.upNextKey, Self.finishedAtKey, Self.sourceEntryIDKey] {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     private func scheduleCompletionNotification() {
         cancelCompletionNotification()
-        enableForegroundAlerts()
-        guard let deadline = endDate, isRunning else { return }
+        guard let deadline = endDate, isRunning, deadline > now() else { return }
+        if usesLiveActivities { enableForegroundAlerts() }
         let identifier = Self.notificationPrefix + UUID().uuidString
         let next = upNext
-        UserDefaults.standard.set(identifier, forKey: Self.notificationIDKey)
+        defaults.set(identifier, forKey: Self.notificationIDKey)
         notificationTask = Task { [weak self] in
             guard let self else { return }
-            let center = UNUserNotificationCenter.current()
-            var settings = await center.notificationSettings()
-            if settings.authorizationStatus == .notDetermined {
-                _ = try? await center.requestAuthorization(options: [.alert, .sound])
-                settings = await center.notificationSettings()
+            var status = await self.notifications.authorizationStatus()
+            guard !Task.isCancelled else { return }
+            if status == .notDetermined {
+                _ = await self.notifications.requestAuthorization()
+                status = await self.notifications.authorizationStatus()
             }
-            guard !Task.isCancelled, self.endDate == deadline, self.isRunning else { return }
-            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+            guard !Task.isCancelled, self.endDate == deadline, self.isRunning, deadline > self.now() else { return }
+            guard status == .authorized || status == .provisional else {
                 self.notificationIssue = "Rest alerts are off. Enable notifications in Settings."
                 return
             }
@@ -1964,20 +2020,16 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
             content.title = "Rest finished"
             content.body = next.map { "Next: \($0)" } ?? "Start your next set."
             content.sound = .default
+            content.interruptionLevel = .timeSensitive
             let request = UNNotificationRequest(
                 identifier: identifier,
                 content: content,
-                trigger: UNTimeIntervalNotificationTrigger(
-                    timeInterval: max(1, deadline.timeIntervalSinceNow), repeats: false
-                )
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, deadline.timeIntervalSince(self.now())), repeats: false)
             )
             do {
-                try await center.add(request)
-                // Each generation has its own identifier. A stale add can only
-                // remove itself, never a newer timer's notification.
-                if Task.isCancelled {
-                    center.removePendingNotificationRequests(withIdentifiers: [identifier])
-                }
+                try await self.notifications.add(request)
+                // A late add from an old generation can remove only itself.
+                if Task.isCancelled { self.notifications.cancel([identifier]) }
             } catch {
                 guard !Task.isCancelled else { return }
                 self.notificationIssue = "Rest alert could not be set."
@@ -1988,74 +2040,56 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     private func cancelCompletionNotification() {
         notificationTask?.cancel()
         notificationTask = nil
-        guard let identifier = UserDefaults.standard.string(forKey: Self.notificationIDKey) else { return }
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [identifier])
-        center.removeDeliveredNotifications(withIdentifiers: [identifier])
-        UserDefaults.standard.removeObject(forKey: Self.notificationIDKey)
+        guard let identifier = defaults.string(forKey: Self.notificationIDKey) else { return }
+        notifications.cancel([identifier])
+        defaults.removeObject(forKey: Self.notificationIDKey)
     }
 
     private func startCountdownTask() {
         task?.cancel()
+        guard automaticallyTicks, isRunning || isFinished else { task = nil; return }
         task = Task { [weak self] in
             while !Task.isCancelled {
-                guard let manager = self, let end = manager.endDate else { return }
-
-                let remaining = Int(ceil(end.timeIntervalSinceNow))
-                if remaining <= 0 {
-                    manager.completeIfFinished()
-                    return
-                }
-
-                manager.secondsRemaining = remaining
+                guard self?.tick() == true else { return }
                 try? await Task.sleep(for: .milliseconds(500))
             }
         }
     }
 
+    private func tick() -> Bool {
+        if let endDate {
+            secondsRemaining = max(0, Int(ceil(endDate.timeIntervalSince(now()))))
+            if secondsRemaining == 0 { completeIfFinished(); return false }
+        } else {
+            clearExpiredFinishedState()
+        }
+        return isRunning || isFinished
+    }
+
     private func startActivity() {
-        guard let endDate, let startDate else { return }
-        let attributes = RestTimerAttributes()
-        let state = RestTimerAttributes.ContentState(
-            startDate: startDate,
-            endDate: endDate,
-            upNext: upNext
-        )
+        guard usesLiveActivities, let endDate, let startDate else { return }
         let content = ActivityContent(
-            state: state,
+            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate, upNext: upNext),
             staleDate: endDate,
             relevanceScore: 100
         )
-        activity = try? Activity<RestTimerAttributes>.request(
-            attributes: attributes,
-            content: content,
-            pushType: nil
-        )
+        activity = try? Activity<RestTimerAttributes>.request(attributes: RestTimerAttributes(), content: content, pushType: nil)
     }
 
     private func updateActivity() {
-        guard let endDate, let startDate else { return }
-        let updatedState = RestTimerAttributes.ContentState(
-            startDate: startDate,
-            endDate: endDate,
-            upNext: upNext
-        )
-        let updatedContent = ActivityContent(
-            state: updatedState,
+        guard usesLiveActivities, let endDate, let startDate else { return }
+        let content = ActivityContent(
+            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate, upNext: upNext),
             staleDate: endDate,
             relevanceScore: 100
         )
         let currentActivity = activity
-        Task {
-            await currentActivity?.update(updatedContent)
-        }
+        Task { await currentActivity?.update(content) }
     }
 
     private func endActivity() {
         let currentActivity = activity
         activity = nil
-        Task {
-            await currentActivity?.end(nil, dismissalPolicy: .immediate)
-        }
+        Task { await currentActivity?.end(nil, dismissalPolicy: .immediate) }
     }
 }
