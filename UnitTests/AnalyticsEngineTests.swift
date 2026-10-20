@@ -167,6 +167,28 @@ final class AnalyticsEngineTests: XCTestCase {
         XCTAssertEqual(next.main[.deadlift], other)
         XCTAssertNotNil(next.lifts[exerciseID])
     }
+    func testCatalogNamesMatchSlots() {
+        for (name, expected) in [("Back Squat (BB)", AnalyticsEngine.Slot.squat), ("Deadlift (Conv)", .deadlift), ("Bench Press (Barbell)", .bench)] {
+            XCTAssertEqual(AnalyticsEngine.slot(for: .init(id: UUID(), name: name, isBodyweight: false, equipment: "barbell", muscleGroup: "")), expected)
+        }
+        for name in ["Deadlift (Dumbbell)", "Smith Machine Squat", "Romanian DL", "Incline DB Press"] {
+            XCTAssertNil(AnalyticsEngine.slot(for: .init(id: UUID(), name: name, isBodyweight: false, equipment: "barbell", muscleGroup: "")))
+        }
+    }
+    func testOtherEquipmentTreatedAsUnknown() throws {
+        let schema = Schema([Exercise.self, DayTemplate.self, WorkoutSession.self, SetEntry.self, Split.self])
+        let container = try ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let exercise = Exercise(displayName: "Squat")
+        container.mainContext.insert(exercise)
+        let snapshot = AnalyticsSnapshot.make(sessions: [], exercises: [exercise], templates: [], plannedDaysPerWeek: 0)
+        XCTAssertNil(snapshot.exercises.first?.equipment)
+        XCTAssertEqual(snapshot.exercises.first.flatMap(AnalyticsEngine.slot), .squat)
+        XCTAssertEqual(exercise.equipment, .other)
+    }
+    func testZeroSessionCandidateNeverWins() {
+        XCTAssertNil(compute([]).main[.bench])
+        XCTAssertNil(compute([session(-140)]).main[.bench])
+    }
     func testValidityWeeklyGapsRecordsAndMixedBodyweight() {
         let sets: [AnalyticsEngine.SetInput] = [.init(exerciseID: exerciseID, weight: 100, reps: 20, isWarmup: true), .init(exerciseID: exerciseID, weight: 200, reps: 5, isCompleted: false), .init(exerciseID: exerciseID, weight: 0, reps: 50), .init(exerciseID: exerciseID, weight: 82.5, reps: 3)]
         let result = compute([session(-100, weight: 82.5, reps: 3), session(-14, weight: 81.25), session(0, sets: sets)])
