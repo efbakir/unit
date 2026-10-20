@@ -191,6 +191,9 @@ enum AppFont {
     /// (mono cells inflate punctuation). `.monospacedDigit()` keeps digits tabular
     /// so values still align if rendered in a column.
     case numericInput
+    /// Approved inline working-set value, SF Mono.
+    case setValue
+    case setValueCompact
     /// 14pt mono semibold — set step counters in `SetProgressIndicator` (numeric).
     case stepIndicator
     /// 24pt bold — product-screen heading on `ProductTopBar`, hero copy on empty states.
@@ -205,6 +208,8 @@ enum AppFont {
 
     var font: Font {
         switch self {
+        case .setValue: return .geistMono(.bold, size: 30, relativeTo: .title)
+        case .setValueCompact: return .geistMono(.bold, size: 28, relativeTo: .title)
         case .analyticsStatus: return .geist(.bold, size: 34, relativeTo: .largeTitle)
         case .largeTitle:     return .geist(.bold,     size: 22, relativeTo: .title2)
         case .title:          return .geist(.bold,     size: 20, relativeTo: .title3)
@@ -244,6 +249,7 @@ enum AppFont {
     var tracking: CGFloat {
         switch self {
         case .largeTitle, .title, .productHeading: return -0.3
+        case .setValue, .setValueCompact: return -0.5
         case .analyticsStatus: return -0.8
         case .splashTitle: return -0.6
         default: return 0
@@ -750,6 +756,8 @@ nonisolated enum AppIcon: String, Sendable {
     case add = "plus"
     case remove = "minus"
     case edit = "pencil"
+    case more = "ellipsis"
+    case undo = "arrow.uturn.backward"
     case trash = "trash"
     case swap = "arrow.triangle.2.circlepath"
     case search = "magnifyingglass"
@@ -6475,5 +6483,263 @@ struct AppMainLiftCard: View {
         if let best = lift.best { text += " Best \(WorkoutTargetFormatter.analyticsSpokenSet(best, bodyweight: lift.bodyweight, unit: unit))." }
         if let target = lift.target { text += " Next \(WorkoutTargetFormatter.analyticsSpokenTarget(target, unit: unit))." }
         return text
+    }
+}
+
+
+// MARK: - Final B active workout (approved 20 October 2026)
+
+/// Geometry belongs to the logging family, not individual screens.
+enum AppWorkoutMetrics {
+    static let rowHeight: CGFloat = 48
+    static let editingRowHeight: CGFloat = 56
+    static let indexWidth: CGFloat = 30
+    static let chipHeight: CGFloat = 54
+    static let compactChipHeight: CGFloat = 50
+    static let weightChipWidth: CGFloat = 140
+    static let repsChipWidth: CGFloat = 64
+}
+
+/// The screen owns its ScrollView/position; this owner supplies only list rhythm.
+struct WorkoutDayList<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: AppSpacing.sm, content: content)
+            .scrollTargetLayout()
+    }
+}
+
+/// An exercise's editable rows share one existing card surface.
+struct ExerciseLoggingCard<Content: View>: View {
+    let name: String
+    @Binding var isBodyweight: Bool
+    let onSkip: () -> Void
+    let onAddSet: () -> Void
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        AppCard(contentInset: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                Text(name).appFont(.productHeading).lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Menu {
+                    Toggle("Bodyweight", isOn: $isBodyweight)
+                    Button("Skip exercise", role: .destructive, action: onSkip)
+                } label: {
+                    Label("Edit", systemImage: AppIcon.more.systemName)
+                        .labelStyle(.iconOnly)
+                        .frame(width: 44, height: 44)
+                        .background(AppColor.cardRowFill, in: Circle())
+                }
+                .tint(AppColor.textSecondary)
+            }
+            .padding(.horizontal, AppSpacing.xs)
+            content()
+            AppGhostButton("+ Add set", action: onAddSet)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: 44)
+        }
+    }
+}
+
+/// Only the current row owns a completion action; values/focus stay with the caller.
+struct CurrentSetRow<Value: View>: View {
+    let number: Int
+    let supportingText: String?
+    let isSetup: Bool
+    let isCTAEnabled: Bool
+    var showsCTA: Bool = true
+    let onComplete: () -> Void
+    let onSaveTarget: () -> Void
+    @ViewBuilder let value: () -> Value
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Set \(number)").appFont(.muted)
+                .foregroundStyle(AppColor.textSecondary)
+            value()
+            if let supportingText {
+                Text(supportingText).appFont(.muted)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if showsCTA {
+                Group {
+                    if isSetup {
+                        AppSecondaryButton("Save starting target", isEnabled: isCTAEnabled, action: onSaveTarget)
+                    } else {
+                        AppPrimaryButton("Complete set \(number)", isEnabled: isCTAEnabled, action: onComplete)
+                    }
+                }
+                .transition(.opacity)
+                .accessibilityIdentifier(isSetup ? "save-starting-target" : "complete-set-\(number)")
+            }
+        }
+        .padding(AppSpacing.smd)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColor.cardRowFill, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .padding(.vertical, AppSpacing.xxs)
+    }
+}
+
+/// Menu and Undo are sibling controls; the reserved Undo slot never moves the check.
+struct LoggedSetRow: View {
+    let number: Int
+    let value: String
+    let showsUndo: Bool
+    let onUndo: () -> Void
+    let onEdit: () -> Void
+    let onMarkNotDone: () -> Void
+    var body: some View {
+        HStack(spacing: AppSpacing.xs) {
+            Menu {
+                Button("Edit", systemImage: AppIcon.edit.systemName, action: onEdit)
+                Button("Mark not done", systemImage: AppIcon.undo.systemName, role: .destructive, action: onMarkNotDone)
+            } label: {
+                HStack(spacing: AppSpacing.xs) {
+                    Text("\(number)").appFont(.stepIndicator)
+                        .foregroundStyle(AppColor.textTertiary)
+                        .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
+                    Text(value).appFont(.performance).monospacedDigit()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(minHeight: AppWorkoutMetrics.rowHeight)
+                .contentShape(Rectangle())
+            }
+            .tint(AppColor.textPrimary)
+            .accessibilityIdentifier("logged-set-\(number)")
+            .accessibilityLabel("Set \(number), \(value), done")
+            .accessibilityAction(named: "Edit", onEdit)
+            .accessibilityAction(named: "Mark not done", onMarkNotDone)
+            Button("Undo", action: onUndo)
+                .font(AppFont.caption.font).underline()
+                .frame(minWidth: 44, minHeight: 44)
+                .opacity(showsUndo ? 1 : 0)
+                .allowsHitTesting(showsUndo)
+                .accessibilityHidden(!showsUndo)
+            AppIcon.checkmarkFilled.image(size: 20)
+                .foregroundStyle(AppColor.textPrimary).accessibilityHidden(true)
+        }
+        .padding(.horizontal, AppSpacing.smd)
+        .foregroundStyle(AppColor.textPrimary)
+    }
+}
+
+struct PlannedSetRow: View {
+    let number: Int
+    let value: String
+    let onEdit: () -> Void
+    var body: some View {
+        Button(action: onEdit) {
+            HStack(spacing: AppSpacing.xs) {
+                Text("\(number)").appFont(.stepIndicator)
+                    .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
+                Text(value).appFont(.performance).monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .foregroundStyle(AppColor.textDisabled)
+            .padding(.horizontal, AppSpacing.smd)
+            .frame(minHeight: AppWorkoutMetrics.rowHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .accessibilityIdentifier("planned-set-\(number)")
+        .accessibilityLabel("Set \(number), planned, \(value)")
+        .accessibilityHint("Double-tap to edit.")
+    }
+}
+
+struct ExerciseSummaryRow: View {
+    let name: String
+    let summary: String
+    let isCompleted: Bool
+    let showsUndo: Bool
+    let onUndo: () -> Void
+    let onSelect: () -> Void
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Button(action: onSelect) {
+                HStack(spacing: AppSpacing.sm) {
+                    if isCompleted {
+                        AppIcon.checkmarkFilled.image(size: 22).accessibilityHidden(true)
+                    }
+                    Text(name).font(AppFont.caption.font).lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(summary).appFont(.muted).monospacedDigit()
+                        .foregroundStyle(isCompleted ? AppColor.textSecondary : AppColor.textDisabled)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+                .frame(minHeight: 52).contentShape(Rectangle())
+            }
+            .buttonStyle(ScaleButtonStyle())
+            if isCompleted {
+                Button("Undo", action: onUndo)
+                    .font(AppFont.caption.font).underline()
+                    .frame(minWidth: 44, minHeight: 44)
+                    .opacity(showsUndo ? 1 : 0)
+                    .allowsHitTesting(showsUndo)
+                    .accessibilityHidden(!showsUndo)
+            }
+        }
+        .foregroundStyle(isCompleted ? AppColor.textPrimary : AppColor.textSecondary)
+        .padding(.horizontal, AppSpacing.md)
+        .background(AppColor.cardBackground.opacity(isCompleted ? 1 : 0.6), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    }
+}
+
+/// Fixed bottom rest chrome. No duplicated next-set label or pause action.
+struct RestBar: View {
+    enum State: Equatable { case idle, running, finished }
+    let timeText: String
+    let state: State
+    let progress: Double
+    let canDecrease: Bool
+    let onDecrease: () -> Void
+    let onIncrease: () -> Void
+    let onSkip: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    var body: some View {
+        VStack(spacing: 0) {
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    AppColor.controlBackground
+                    AppColor.textPrimary.frame(width: geometry.size.width * min(1, max(0, progress)))
+                }
+                .opacity(state == .running ? 1 : 0)
+            }
+            .frame(height: 3).accessibilityHidden(true)
+            HStack(spacing: AppSpacing.sm) {
+                if state == .running {
+                    Text("Rest").appFont(.caption).foregroundStyle(AppColor.textSecondary)
+                    Text(timeText).font(AppFont.productHeading.font.monospacedDigit())
+                        .contentTransition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? .numericText(countsDown: true) : .opacity)
+                        .animation(AppMotion.transition, value: timeText)
+                        .accessibilityLabel("Rest").accessibilityValue(timeText)
+                } else {
+                    Text(state == .finished ? "Rest finished." : "Rest \(timeText)")
+                        .font(state == .finished ? AppFont.sectionHeader.font : AppFont.caption.font)
+                        .foregroundStyle(state == .finished ? AppColor.textPrimary : AppColor.textTertiary)
+                }
+                Spacer(minLength: AppSpacing.xs)
+                if state == .running {
+                    control("−15", label: "Subtract 15 seconds", action: onDecrease).disabled(!canDecrease)
+                    control("+15", label: "Add 15 seconds", action: onIncrease)
+                    control("Skip", label: "Skip rest", action: onSkip)
+                }
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .frame(minHeight: 60)
+        }
+        .background(AppColor.cardBackground.ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { AppDivider() }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+    }
+    private func control(_ text: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(text, action: action)
+            .font(AppFont.caption.font).foregroundStyle(AppColor.textPrimary)
+            .frame(minWidth: 44, minHeight: 44)
+            .background(AppColor.controlBackground, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel(label)
+            .accessibilityIdentifier(text)
     }
 }
