@@ -153,7 +153,6 @@ struct TemplateDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                .appNavigationDisclosure()
                 .contentShape(Rectangle())
             }
             .buttonStyle(ScaleButtonStyle())

@@ -11,6 +11,7 @@ import SwiftData
 struct ProgramDetailView: View {
     @Bindable var split: Split
 
+    @Environment(\.dismiss) private var dismiss
     @Query(sort: \DayTemplate.name) private var allTemplates: [DayTemplate]
     @Query(sort: \Split.name) private var allSplits: [Split]
     @AppStorage(ActiveSplitStore.defaultsKey) private var activeSplitIdString: String = ""
@@ -26,7 +27,7 @@ struct ProgramDetailView: View {
 
     private var displayName: String {
         let trimmed = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Program" : trimmed
+        return trimmed.isEmpty ? "Untitled Program" : trimmed
     }
 
     private var isActive: Bool {
@@ -39,8 +40,8 @@ struct ProgramDetailView: View {
             // placement every onboarding step and sheet uses — instead of sitting
             // inline after the card, where a short routine floated it mid-screen
             // (CLAUDE.md §4: one rule for CTA placement). Nil while the program is
-            // already active, so AppScreen renders no bottom bar at all.
-            primaryButton: isActive ? nil : PrimaryButtonConfig(
+            // already active or has no routines to use.
+            primaryButton: isActive || orderedTemplates.isEmpty ? nil : PrimaryButtonConfig(
                 label: "Use this program",
                 action: { showingActivateConfirmation = true }
             ),
@@ -81,7 +82,7 @@ struct ProgramDetailView: View {
         .appNavigationBarChrome()
         .toolbar(.hidden, for: .tabBar)
         .navigationDestination(isPresented: $showingEdit) {
-            EditProgramView(split: split)
+            EditProgramView(split: split, onDelete: { dismiss() })
         }
         .tint(AppColor.accent)
     }

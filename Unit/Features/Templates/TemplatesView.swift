@@ -22,7 +22,7 @@ struct TemplatesView: View {
 
     @State private var showingOnboarding = false
     @State private var showingSettings = false
-    @State private var showingEditProgram = false
+    @State private var editingSplit: Split?
 
     private var activeSplit: Split? {
         ActiveSplitStore.resolve(from: splits)
@@ -94,10 +94,8 @@ struct TemplatesView: View {
             .navigationDestination(for: ProgramLibraryDestination.self) { _ in
                 ProgramLibraryView()
             }
-            .navigationDestination(isPresented: $showingEditProgram) {
-                if let split = activeSplit {
-                    EditProgramView(split: split)
-                }
+            .navigationDestination(item: $editingSplit) { split in
+                EditProgramView(split: split)
             }
             .navigationDestination(isPresented: $showingOnboarding) {
                 OnboardingView()
@@ -148,7 +146,7 @@ struct TemplatesView: View {
                     let exerciseCount = splitDays.reduce(0) { $0 + $1.orderedExerciseIds.count }
                     NavigationLink(value: split) {
                         PreviewListRow(
-                            title: split.name.isEmpty ? "Untitled Program" : split.name,
+                            title: programDisplayName(for: split),
                             subtitle: "\(dayCount) day\(dayCount == 1 ? "" : "s") · \(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")",
                             showsDisclosure: true
                         )
@@ -178,30 +176,29 @@ struct TemplatesView: View {
     }
 
     private func activeProgramCard(split: Split, days: [DayTemplate]) -> some View {
-        let displayName = split.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "Untitled Program"
-            : split.name
+        let displayName = programDisplayName(for: split)
 
         return AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(displayName)
-                            .appFont(.largeTitle)
-                            .foregroundStyle(AppColor.textPrimary)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        AppTag(text: "Active", style: .muted, layout: .compactCapsule)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(displayName), active program")
+                    Text(displayName)
+                        .appFont(.largeTitle)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel("\(displayName), active program")
 
                     Spacer(minLength: 0)
 
-                    AppSecondaryButton("Edit", fillsAvailableWidth: false) {
-                        showingEditProgram = true
+                    Button {
+                        editingSplit = split
+                    } label: {
+                        AppIcon.edit.image(size: AppIconSize.readiness, weight: .semibold)
+                            .foregroundStyle(AppColor.accent)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(ScaleButtonStyle())
                     .accessibilityLabel("Edit program")
                 }
 
@@ -223,9 +220,19 @@ struct TemplatesView: View {
                             .buttonStyle(ScaleButtonStyle())
                         }
                     }
+                } else {
+                    Text("No routines yet. Edit this program to add your first routine.")
+                        .appFont(.body)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
+    }
+
+    private func programDisplayName(for split: Split) -> String {
+        let trimmed = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Untitled Program" : trimmed
     }
 
     private func orderedTemplates(for split: Split) -> [DayTemplate] {
@@ -280,6 +287,7 @@ struct TemplatesView: View {
 
 struct EditProgramView: View {
     @Bindable var split: Split
+    var onDelete: (() -> Void)? = nil
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -576,7 +584,11 @@ struct EditProgramView: View {
         }
         modelContext.delete(split)
         try? modelContext.save()
-        dismiss()
+        if let onDelete {
+            onDelete()
+        } else {
+            dismiss()
+        }
     }
 }
 
