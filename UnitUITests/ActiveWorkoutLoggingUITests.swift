@@ -56,8 +56,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(weight, in: app); weight.typeText("24")
         let reps = app.textFields["logging-reps"].firstMatch
         tap(reps, in: app); reps.typeText("8")
-        tap(app.buttons["Done"].firstMatch, in: app)
-        tap(app.buttons["save-starting-target"], in: app)
+        tap(app.buttons["keyboard-current-action"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["logged-set-1"].exists)
         XCTAssertFalse(app.buttons["Skip"].exists)
@@ -69,6 +68,34 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-update-routine-prompt")
         tap(app.buttons["Keep routine"], in: app)
         XCTAssertFalse(app.buttons["complete-set-2"].waitForExistence(timeout: 2))
+    }
+
+    func testKeyboardActionPreparesThenExplicitlyLogsCurrentSet() throws {
+        let app = launch(extra: ["-logging-empty-target"])
+        let weight = app.textFields["logging-weight"].firstMatch
+        tap(weight, in: app)
+        weight.typeText("24")
+        let reps = app.textFields["logging-reps"].firstMatch
+        tap(reps, in: app)
+        reps.typeText("8")
+        let keyboardAction = app.buttons["keyboard-current-action"]
+        XCTAssertTrue(keyboardAction.waitForExistence(timeout: 5))
+        XCTAssertTrue(keyboardAction.isHittable)
+        XCTAssertEqual(keyboardAction.label, "Save target")
+        capture(app, "gym-feedback-keyboard-target")
+        tap(keyboardAction, in: app)
+        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["logged-set-1"].exists)
+        XCTAssertFalse(app.buttons["Skip"].exists)
+        tap(app.textFields["logging-reps"].firstMatch, in: app)
+        XCTAssertTrue(keyboardAction.waitForExistence(timeout: 5))
+        XCTAssertTrue(keyboardAction.isHittable)
+        XCTAssertEqual(keyboardAction.label, "Complete set 1")
+        capture(app, "gym-feedback-keyboard-complete")
+        tap(keyboardAction, in: app)
+        XCTAssertTrue(app.buttons["complete-set-2"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["logged-set-1"].exists)
+        capture(app, "gym-feedback-next-set")
     }
 
     func testFinishUpdateAndEndOfDay() throws {

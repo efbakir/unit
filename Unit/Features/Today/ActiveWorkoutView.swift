@@ -17,6 +17,7 @@ struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
@@ -201,6 +202,8 @@ struct ActiveWorkoutView: View {
                     state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
                     progress: restTimer.totalDuration > 0
                         ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
+                    endDate: restTimer.endDate,
+                    totalDuration: TimeInterval(restTimer.totalDuration),
                     canDecrease: restTimer.secondsRemaining > 15,
                     onDecrease: { adjustRestTimer(by: -15) },
                     onIncrease: { adjustRestTimer(by: 15) },
@@ -756,7 +759,7 @@ struct ActiveWorkoutView: View {
         entry.session = session
         modelContext.insert(entry)
         guard saveWorkoutChanges() else { return }
-        withAnimation(reduceMotion ? nil : AppMotion.collectionChange) {
+        withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.collectionChange : nil) {
             logging.didLog(entryID: entry.id, exerciseID: exercise.id, at: Date())
             guardActive = true
             expandedCompletedID = nil
@@ -777,7 +780,7 @@ struct ActiveWorkoutView: View {
         guardActive = false
         currentRowFocused = true
         if currentRowBottom > visibleListHeight - AppSpacing.md, let currentSection {
-            withAnimation(reduceMotion ? nil : AppMotion.collectionChange) {
+            withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.collectionChange : nil) {
                 scrollPosition.scrollTo(id: rowID(currentSection.id, currentSection.entries.count + 1), anchor: .bottom)
             }
         }
@@ -790,7 +793,7 @@ struct ActiveWorkoutView: View {
               let entry = session.setEntries.first(where: { $0.id == undo.entryID }) else { return }
         modelContext.delete(entry)
         guard saveWorkoutChanges() else { return }
-        withAnimation(reduceMotion ? nil : AppMotion.collectionChange) {
+        withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? AppMotion.collectionChange : nil) {
             selectedExerciseID = undo.exerciseID
             logging.invalidateUndo()
         }
