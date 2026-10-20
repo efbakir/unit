@@ -6242,23 +6242,24 @@ struct AppStatusSummaryCard: View {
     let sentence: String
 
     var body: some View {
-        AppCard(contentInset: AppSpacing.md, cornerRadius: AppRadius.md) {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("LAST 4 WEEKS").appCapsLabel(.overline)
-                    Spacer(minLength: AppSpacing.sm)
-                    AppIcon.info.image(size: AppIconSize.readiness)
-                        .accessibilityHidden(true)
-                }
-                .foregroundStyle(AppColor.textSecondary)
-                Text(word).appFont(.analyticsStatus)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(sentence).appFont(.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack {
+                Text("Last 4 weeks").appFont(.muted)
+                Spacer(minLength: AppSpacing.sm)
+                AppIcon.info.image(size: AppIconSize.readiness)
+                    .accessibilityHidden(true)
             }
+            .foregroundStyle(AppColor.textSecondary)
+            Text(word).appFont(.analyticsStatus)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(AppColor.textPrimary)
+            Text(sentence).appFont(.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.vertical, AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(word). \(sentence)")
         .accessibilityHint("Shows how this works.")
@@ -6483,13 +6484,13 @@ struct AppMainLiftCard: View {
     }
     @ViewBuilder private func footer(_ lift: AnalyticsEngine.Lift, best: AnalyticsEngine.Performance) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("BEST").appCapsLabel(.smallLabel).foregroundStyle(AppColor.textSecondary)
+            Text("Best").appFont(.muted).foregroundStyle(AppColor.textSecondary)
             Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
                 .font(AppFont.caption.font).monospacedDigit()
         }.frame(maxWidth: .infinity, alignment: .leading)
         if let target = lift.target {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("NEXT").appCapsLabel(.smallLabel).foregroundStyle(AppColor.textSecondary)
+                Text("Next").appFont(.muted).foregroundStyle(AppColor.textSecondary)
                 Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).monospacedDigit()
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -6558,7 +6559,7 @@ struct ExerciseLoggingCard<Content: View>: View {
                         Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
                     } else { Text(name) }
                 }
-                .font(AppFont.productHeading.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
+                .font(AppFont.sectionHeader.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
                     Toggle("Bodyweight", isOn: $isBodyweight)
@@ -6726,7 +6727,7 @@ struct ExerciseSummaryRow: View {
             HStack(spacing: AppSpacing.sm) {
                 Button(action: onSelect) {
                     HStack(spacing: AppSpacing.sm) {
-                        Text(name).font(AppFont.caption.font).lineLimit(2)
+                        Text(name).font(AppFont.body.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(summary).appFont(.muted).monospacedDigit()

@@ -4,7 +4,7 @@
 
 Borrow JOI’s **typographic emphasis, open page structure and quiet supporting rows**. Keep Unit’s native SF fonts, current numeric sizes, blue action accent, grayscale content, native bottom navigation and existing components. Start with a flatter Analytics summary header; do not shrink the whole interface or copy JOI’s calendar, floating navigation, dark overview or colored category marks.
 
-Research only. No theme, component, asset or feature edits were made for this research. The worktree was merged with Main’s build-85 baseline `8e3cf4d` in `5ca3aab`; two merge conflicts retained Main’s exact shared-system source. Application source matches that baseline. Main may have advanced independently afterward.
+The initial research checkpoint is `858a15a`; it contains no production changes. The worktree first merged Main’s build-85 baseline `8e3cf4d` in `5ca3aab`; two merge conflicts retained Main’s exact shared-system source. Main’s later workout-summary and motion changes were merged before the narrowly assigned implementation below.
 
 ## Identity and source scope
 
@@ -50,3 +50,16 @@ Supporting official images examined: [App Store overview](joi-evidence-2026-10-2
 ## Evidence limits and next verification
 
 This is a contextual reference study, not a scored Unit page audit. No new build, Simulator, device installation or runtime interaction was performed. Exact JOI fonts, token values, motion and accessibility remain unverified. No claim is made that its very light metadata is accessible. Any implementation should be checked on the assigned Unit screen at standard and accessibility text sizes, with real long content, contrast, 44pt targets and reduced motion; keep workout numerics unchanged. No source-level blocker remains for the proposed existing-owner changes.
+
+## Assigned implementation — source applied, runtime pending
+
+After the research checkpoint, Main authorized proposals A/B above as a visual-language override to the older summary-card treatment. `AppStatusSummaryCard` now uses the existing page surface instead of an `AppCard` wrapper, retains its 34pt status and 15pt explanation, and uses sentence-case 13pt muted time context. Existing 16pt vertical padding, full-width hit shape, information cue, accessible summary and caller-owned explanation-sheet action remain. `AppMainLiftCard.footer` now uses sentence-case Best/Next labels at `AppFont.muted`; every evidence value and chart is unchanged.
+
+Main assigned only `ExerciseLoggingCard` header typography and `ExerciseSummaryRow` visual typography after reviewing the comparison sheet. Their current flat cards, aligned gutters, two-line title handling and trailing completion check already meet the structural recommendation; additional chrome or spacing changes are unnecessary.
+
+- `ExerciseLoggingCard`: title changes from `AppFont.productHeading` (24pt bold) to existing `sectionHeader` (17pt semibold). The editable name stays clear while the 30/28pt set values retain primary emphasis. The 44pt menu keeps the header’s control-height floor.
+- `ExerciseSummaryRow`: title changes from `AppFont.caption` (15pt medium) to existing `body` (17pt medium); supporting summary remains `muted` (13pt). Identity gains readability without adding another type size or container.
+
+Production edits are limited to those four existing owners in `Unit/UI/DesignSystem.swift`. Workout card shapes/gutters, fields, `CurrentSetRow`, `RestBar`, numeric sizes, trailing check, Undo, motion, colors, icons and native navigation are unchanged. No new token, component, asset or dependency. Source guard and whitespace checks passed; Main owns build/runtime verification.
+
+Consumer checks needed: Analytics loaded/long status and loading placeholder, summary tap → explanation sheet → dismissal, main-lift footer with and without Next, and active workout expanded/collapsed long exercise names with Undo and the trailing check. Check standard/large text and confirm 30/28pt workout numbers retain emphasis. The report’s reference sheet is not a screenshot of these Unit changes.
