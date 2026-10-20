@@ -51,6 +51,7 @@
 | `docs/mental-models.md` | Mental models — identity change, process over goals, simplicity, next step | Defending a UX decision or retention strategy |
 | `docs/cognitive-principles.md` | Psychology — friction, clarity, commitment, consistency | A/B testing copy or onboarding flows |
 | `docs/skills-reference.md` | External skill references (iOS, SwiftUI, HealthKit, fitness) and takeaways | Adjacent-domain research |
+| `docs/research/2026-10-20-analytics-nine-metrics.md` | Nine fitness metrics and the implementation brief for clearer Analytics evidence | Improving lift comparisons or deciding which metrics belong in Analytics |
 
 ## Release & QA
 

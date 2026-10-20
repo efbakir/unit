@@ -98,6 +98,9 @@ nonisolated enum AnalyticsEngine {
         let sessions: [SessionResult]
         let best: Performance?
         let comparison: Comparison
+        /// Exact winners used by the current four-week comparison, not latest/all-time best.
+        let currentWindowBest: Performance?
+        let previousWindowBest: Performance?
         let weeks: [WeeklyPoint]
         let target: Target?
         var latest: Performance? { sessions.last?.best }
@@ -223,7 +226,7 @@ nonisolated enum AnalyticsEngine {
         let firstWeightedDays = accumulators.mapValues { accumulator in
             accumulator.days.compactMap { $0.value.weightedCandidates.isEmpty ? nil : $0.key }.min()
         }
-        func comparison(_ id: UUID, on date: Date) -> Comparison {
+        func windowBests(_ id: UUID, on date: Date) -> (current: Performance?, previous: Performance?, bodyweight: Bool) {
             let bodyweight = (firstWeightedDays[id] ?? nil).map { $0 > date } ?? true
             let aStart = day(-27, from: date), bStart = day(-55, from: date), bEnd = day(-28, from: date)
             var a: [Performance] = [], b: [Performance] = []
@@ -232,7 +235,11 @@ nonisolated enum AnalyticsEngine {
                 if dateKey >= aStart && dateKey <= date { a.append(contentsOf: values) }
                 if dateKey >= bStart && dateKey <= bEnd { b.append(contentsOf: values) }
             }
-            return compare(best(a, bodyweight: bodyweight), best(b, bodyweight: bodyweight), bodyweight: bodyweight)
+            return (best(a, bodyweight: bodyweight), best(b, bodyweight: bodyweight), bodyweight)
+        }
+        func comparison(_ id: UUID, on date: Date) -> Comparison {
+            let evidence = windowBests(id, on: date)
+            return compare(evidence.current, evidence.previous, bodyweight: evidence.bodyweight)
         }
 
         typealias Counts = (n: Int, u: Int, s: Int, p: Int, ratio: Double)
@@ -298,7 +305,8 @@ nonisolated enum AnalyticsEngine {
                 let a = lastTemplateDates[$0.id]!, b = lastTemplateDates[$1.id]!
                 return a == b ? $0.id.uuidString > $1.id.uuidString : a < b
             }
-            lifts[exercise.id] = Lift(exercise: exercise, bodyweight: bodyweight, sessions: sessions, best: best(daily, bodyweight: bodyweight), comparison: comparison(exercise.id, on: today), weeks: weeks, target: lastTemplate?.targets[exercise.id])
+            let evidence = windowBests(exercise.id, on: today)
+            lifts[exercise.id] = Lift(exercise: exercise, bodyweight: bodyweight, sessions: sessions, best: best(daily, bodyweight: bodyweight), comparison: compare(evidence.current, evidence.previous, bodyweight: evidence.bodyweight), currentWindowBest: evidence.current, previousWindowBest: evidence.previous, weeks: weeks, target: lastTemplate?.targets[exercise.id])
         }
         var main: [Slot: UUID] = [:]
         for slot in Slot.allCases {

@@ -55,6 +55,54 @@ final class AnalyticsEngineTests: XCTestCase {
         XCTAssertEqual(lift?.latest?.weight, 80)
         XCTAssertEqual(lift?.best?.weight, 80)
     }
+    func testComparisonEvidenceSeparatesWindowWinnersFromLatestAndAllTimeBest() throws {
+        let values = [
+            session(-100, weight: 120, reps: 1),
+            session(-55, weight: 75, reps: 6),
+            session(-28, weight: 80, reps: 6),
+            session(-27, weight: 80, reps: 8),
+            session(-2, sets: [.init(exerciseID: exerciseID, weight: 200, reps: 8, isWarmup: true)]),
+            session(-1, weight: 75, reps: 6),
+            session(1, weight: 300, reps: 1)
+        ]
+        let lift = try XCTUnwrap(compute(values).lifts[exerciseID])
+        XCTAssertEqual(lift.best?.weight, 120)
+        XCTAssertEqual(lift.latest?.weight, 75)
+        XCTAssertEqual(lift.currentWindowBest?.weight, 80)
+        XCTAssertEqual(lift.currentWindowBest?.reps, 8)
+        XCTAssertEqual(lift.currentWindowBest?.date, date(-27))
+        XCTAssertEqual(lift.previousWindowBest?.weight, 80)
+        XCTAssertEqual(lift.previousWindowBest?.reps, 6)
+        XCTAssertEqual(lift.previousWindowBest?.date, date(-28))
+        XCTAssertEqual(lift.comparison, .up(weight: 0, reps: 2))
+        XCTAssertEqual(AnalyticsEngine.compare(lift.currentWindowBest, lift.previousWindowBest, bodyweight: lift.bodyweight), lift.comparison)
+    }
+    func testExtraSetsChangeVolumeWithoutChangingPerformanceComparison() throws {
+        let repeatedSets = (0..<3).map { AnalyticsEngine.SetInput(exerciseID: exerciseID, weight: 80, reps: 5, index: $0) }
+        let lift = try XCTUnwrap(compute([session(-30), session(-1, sets: repeatedSets)]).lifts[exerciseID])
+        XCTAssertEqual(lift.comparison, .same)
+        XCTAssertEqual(lift.currentWindowBest?.reps, lift.previousWindowBest?.reps)
+        XCTAssertEqual(lift.currentWindowBest?.weight, lift.previousWindowBest?.weight)
+        XCTAssertEqual(lift.sessions.first?.volumeKg, 400)
+        XCTAssertEqual(lift.sessions.last?.volumeKg, 1200)
+    }
+    func testComparisonEvidenceHandlesMissingWindowsAndBodyweight() throws {
+        let newLift = try XCTUnwrap(compute([session(-1)]).lifts[exerciseID])
+        XCTAssertNotNil(newLift.currentWindowBest)
+        XCTAssertNil(newLift.previousWindowBest)
+        XCTAssertEqual(ExerciseProgressView.comparisonText(for: newLift, unit: "kg"), "No previous comparison")
+        let staleLift = try XCTUnwrap(compute([session(-30)]).lifts[exerciseID])
+        XCTAssertNil(staleLift.currentWindowBest)
+        XCTAssertNotNil(staleLift.previousWindowBest)
+        XCTAssertEqual(ExerciseProgressView.comparisonText(for: staleLift, unit: "kg"), "No sets in the last 4 weeks")
+        let bodyweightLift = try XCTUnwrap(compute([session(-30, weight: 0, reps: 8), session(-1, weight: 0, reps: 10)]).lifts[exerciseID])
+        XCTAssertTrue(bodyweightLift.bodyweight)
+        XCTAssertEqual(bodyweightLift.previousWindowBest?.reps, 8)
+        XCTAssertEqual(bodyweightLift.currentWindowBest?.reps, 10)
+        XCTAssertEqual(bodyweightLift.comparison, .up(weight: 0, reps: 2))
+        let current = try XCTUnwrap(bodyweightLift.currentWindowBest)
+        XCTAssertEqual(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: true, unit: "lb"), "BW × 10")
+    }
     func testStatusThresholdsAndThreeDayPersistence() {
         let otherID = UUID()
         let exercises = [exerciseID, otherID].map { AnalyticsEngine.ExerciseInput(id: $0, name: $0.uuidString, isBodyweight: false, equipment: nil, muscleGroup: "back") }
@@ -186,6 +234,7 @@ final class AnalyticsEngineTests: XCTestCase {
         let result = compute(values).lifts[exerciseID]
         XCTAssertEqual(result?.best?.reps, 5)
         XCTAssertEqual(result?.best?.weight, 80)
+        XCTAssertEqual(result?.currentWindowBest, result?.best)
         XCTAssertEqual(compute(Array(values.reversed())).lifts[exerciseID]?.best, result?.best)
     }
     func testFiveYearPerformance() {

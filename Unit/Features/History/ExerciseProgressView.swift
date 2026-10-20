@@ -34,7 +34,6 @@ struct ExerciseProgressView: View {
         self.exerciseId = exerciseId; self.exerciseName = exerciseName
         self.isBodyweight = isBodyweight; self.sessions = sessions; self.templates = templates
         initialAnalytics = analytics
-        _metric = State(initialValue: isBodyweight ? .reps : .weight)
     }
     private var output: AnalyticsEngine.Output? { store.output ?? initialAnalytics }
     private var lift: AnalyticsEngine.Lift? { output?.lifts[exerciseId] }
@@ -54,14 +53,32 @@ struct ExerciseProgressView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.smd) {
                             AppMainLiftCard.metric(latest, bodyweight: lift.bodyweight, unit: unit, numberStyle: .splashTitle)
                                 .accessibilityLabel(Self.performanceText(for: Self.point(lift.sessions.last!), isBodyweight: lift.bodyweight, unit: unit))
-                            Text("\(Self.comparisonText(for: lift, unit: unit)) vs. previous 4 weeks")
-                                .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
-                            Text("\(WorkoutTargetFormatter.analyticsDate(latest.date, now: output.today))\(routineSuffix(latest.templateID))")
+                            Text("Latest session · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: output.today))\(routineSuffix(latest.templateID))")
                                 .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                            AppDivider()
+                            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                                Text("4-week comparison · \(Self.comparisonText(for: lift, unit: unit))")
+                                    .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
+                                if let current = lift.currentWindowBest {
+                                    if let previous = lift.previousWindowBest {
+                                        Text("Previous → Last 4 weeks")
+                                            .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                                            .accessibilityHidden(true)
+                                        Text("\(WorkoutTargetFormatter.analyticsPerformance(previous, bodyweight: lift.bodyweight, unit: unit)) → \(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: lift.bodyweight, unit: unit))")
+                                            .font(AppFont.performance.font).monospacedDigit()
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .accessibilityLabel("Previous 4 weeks: \(WorkoutTargetFormatter.analyticsSpokenSet(previous, bodyweight: lift.bodyweight, unit: unit)). Last 4 weeks: \(WorkoutTargetFormatter.analyticsSpokenSet(current, bodyweight: lift.bodyweight, unit: unit)).")
+                                    } else {
+                                        Text("Last 4 weeks: \(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: lift.bodyweight, unit: unit))")
+                                            .font(AppFont.performance.font).monospacedDigit()
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
                             if !lift.bodyweight {
                                 AppSegmentedControl(selection: $metric, items: AnalyticsEngine.Metric.allCases, label: "Progress metric", title: { $0.rawValue })
                             }
-                            AppTrendChart(data: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : metric, unit: unit), caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", interactive: true, height: AppChartMetrics.compactHeight, unit: unit, bodyweight: lift.bodyweight)
+                            AppTrendChart(data: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : metric, unit: unit), caption: Self.chartCaption(for: metric, bodyweight: lift.bodyweight), interactive: true, height: AppChartMetrics.compactHeight, unit: unit, bodyweight: lift.bodyweight)
                         }
                     }
                     if let target = lift.target {
@@ -149,7 +166,19 @@ struct ExerciseProgressView: View {
         SessionPoint(id: value.id, date: value.best.date, weight: value.best.weight, reps: value.best.reps, maxReps: value.maxReps, volumeKg: value.volumeKg, totalReps: value.sets.reduce(0) { $0 + $1.reps }, templateId: value.best.templateID, estimatedOneRM: value.estimatedOneRM)
     }
     static func comparisonText(for lift: AnalyticsEngine.Lift, unit: String) -> String {
-        WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit)
+        switch lift.comparison {
+        case .new: "No previous comparison"
+        case .notRecent: "No sets in the last 4 weeks"
+        default: WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit)
+        }
+    }
+    static func chartCaption(for metric: AnalyticsEngine.Metric, bodyweight: Bool) -> String {
+        if bodyweight { return "Most reps per week · 12 weeks" }
+        switch metric {
+        case .weight: return "Best set per week · 12 weeks"
+        case .reps: return "Reps in each week's best set · 12 weeks"
+        case .volume: return "Exercise volume in each week's best-set session · 12 weeks"
+        }
     }
     /// Compatibility projection for History callers; calculations have one owner.
     static func sessionPointsByExercise(
