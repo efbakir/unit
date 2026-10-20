@@ -189,6 +189,75 @@ final class AnalyticsEngineTests: XCTestCase {
         XCTAssertNil(compute([]).main[.bench])
         XCTAssertNil(compute([session(-140)]).main[.bench])
     }
+    func testAliasesFromExerciseMatch() {
+        let exercise = AnalyticsEngine.ExerciseInput(id: exerciseID, name: "Low-bar", isBodyweight: false, equipment: "barbell", muscleGroup: "quads", aliases: ["Squat"])
+        XCTAssertEqual(AnalyticsEngine.slot(for: exercise), .squat)
+        XCTAssertEqual(AnalyticsEngine.slotKey("Back Squat (BB) (BB)"), "back squat (bb)")
+        XCTAssertEqual(AnalyticsEngine.normalizedName("Back Squat (BB)"), "back squat (bb)")
+    }
+    private func selectionFixture(_ rows: [(String, String, [Int])], pins: [UUID] = []) -> AnalyticsEngine.Output {
+        let exercises = rows.enumerated().map { index, row in
+            AnalyticsEngine.ExerciseInput(id: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(index + 1))), name: row.0, isBodyweight: false, equipment: nil, muscleGroup: row.1)
+        }
+        let sessions = zip(rows, exercises).flatMap { row, exercise in row.2.map { session($0, id: exercise.id) } }
+        var value = input(sessions, exercises: exercises)
+        value.pinnedMainIDs = pins
+        return AnalyticsEngine.compute(value, now: now, calendar: calendar)
+    }
+    func testAutomaticFillOrder() {
+        let rows: [(String, String, [Int])] = [("Bench Press", "chest", [-1]), ("Overhead Press", "shoulders", Array(-8 ... -1)), ("Barbell Row", "back", Array(-6 ... -1)), ("Biceps Curl", "biceps", Array(-10 ... -1))]
+        let result = selectionFixture(rows)
+        XCTAssertEqual(result.mainIDs.compactMap { result.lifts[$0]?.exercise.name }, ["Bench Press", "Overhead Press", "Barbell Row"])
+        XCTAssertEqual(result.mainSource, .automatic)
+        XCTAssertEqual(Set(result.other).intersection(result.mainIDs), [])
+        let lower = selectionFixture([("Leg Press", "quads", Array(-5 ... 0)), ("Lat Pulldown", "back", Array(-6 ... -1)), ("Pull-Up", "back", Array(-4 ... -1))])
+        XCTAssertEqual(lower.mainIDs.compactMap { lower.lifts[$0]?.exercise.name }, ["Leg Press", "Lat Pulldown", "Pull-Up"])
+        let isolation = selectionFixture([("Biceps Curl", "biceps", [-1]), ("Hanging Leg Raise", "core", [-2])])
+        XCTAssertEqual(isolation.mainIDs.compactMap { isolation.lifts[$0]?.exercise.name }, ["Biceps Curl", "Hanging Leg Raise"])
+        let duplicate = selectionFixture([("Squat", "quads", [-3, -2, -1]), ("Back Squat (BB)", "quads", [-5, -4, -3, -2, -1])])
+        XCTAssertEqual(duplicate.mainIDs.compactMap { duplicate.lifts[$0]?.exercise.name }, ["Back Squat (BB)"])
+        XCTAssertEqual(duplicate.other.compactMap { duplicate.lifts[$0]?.exercise.name }, ["Squat"])
+        let old = selectionFixture([("Squat", "quads", [-140])])
+        XCTAssertTrue(old.mainIDs.isEmpty)
+        XCTAssertEqual(old.other.count, 1)
+        let three = selectionFixture([("Squat", "quads", [-2]), ("Bench Press", "chest", [-3]), ("Deadlift", "back", [-1]), ("Row", "back", [-1])])
+        XCTAssertEqual(three.mainIDs.compactMap { three.lifts[$0]?.exercise.name }, ["Squat", "Bench Press", "Deadlift"])
+    }
+    func testCustomPinsRespectedNoFillAndCleanedAndCapped() throws {
+        let rows: [(String, String, [Int])] = [("Front Squat", "quads", [-1]), ("Bench Press", "chest", [-2]), ("Row", "back", [-3]), ("Curl", "biceps", [-4])]
+        let initial = selectionFixture(rows)
+        let byName = Dictionary(uniqueKeysWithValues: initial.lifts.values.map { ($0.exercise.name, $0.id) })
+        let front = try XCTUnwrap(byName["Front Squat"]), bench = try XCTUnwrap(byName["Bench Press"])
+        let custom = selectionFixture(rows, pins: [front, bench])
+        XCTAssertEqual(custom.mainIDs, [front, bench])
+        XCTAssertEqual(custom.mainSource, .custom)
+        XCTAssertEqual(Set(custom.other).intersection(custom.mainIDs), [])
+        let all = rows.compactMap { byName[$0.0] }
+        let cleaned = selectionFixture(rows, pins: [UUID(), front, front] + Array(all.dropFirst()))
+        XCTAssertEqual(cleaned.mainIDs, Array(all.prefix(3)))
+        XCTAssertEqual(selectionFixture(rows, pins: [UUID()]).mainSource, .automatic)
+        let raw = "bad,\(front),\(front),\(bench)"
+        XCTAssertEqual(AnalyticsEngine.parsedMainIDs(raw), [front, bench])
+        XCTAssertEqual(AnalyticsEngine.storedMainIDs([], automatic: initial.mainIDs), "")
+        XCTAssertEqual(AnalyticsEngine.storedMainIDs(initial.mainIDs, automatic: initial.mainIDs), "")
+    }
+    func testPhoneShapeLegacyBenchIsShownWithoutChangingSavedMetadata() throws {
+        let schema = Schema([Exercise.self, DayTemplate.self, WorkoutSession.self, SetEntry.self, Split.self])
+        let container = try ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        let exercise = Exercise(displayName: "Bench Press")
+        let workout = WorkoutSession(date: date(-1), templateId: templateID, isCompleted: true)
+        context.insert(exercise); context.insert(workout)
+        workout.setEntries = (0..<4).map { SetEntry(sessionId: workout.id, exerciseId: exercise.id, weight: 72.5, reps: 7, isCompleted: true, setIndex: $0) }
+        try context.save()
+        let snapshot = AnalyticsSnapshot.make(sessions: [workout], exercises: [exercise], templates: [], plannedDaysPerWeek: 0)
+        let result = AnalyticsEngine.compute(snapshot, now: now, calendar: calendar)
+        XCTAssertEqual(result.mainIDs, [exercise.id])
+        XCTAssertEqual(result.lifts[exercise.id]?.latest?.weight, 72.5)
+        XCTAssertEqual(result.lifts[exercise.id]?.latest?.reps, 7)
+        XCTAssertEqual(exercise.equipmentRaw, "other")
+        XCTAssertFalse(context.hasChanges)
+    }
     func testValidityWeeklyGapsRecordsAndMixedBodyweight() {
         let sets: [AnalyticsEngine.SetInput] = [.init(exerciseID: exerciseID, weight: 100, reps: 20, isWarmup: true), .init(exerciseID: exerciseID, weight: 200, reps: 5, isCompleted: false), .init(exerciseID: exerciseID, weight: 0, reps: 50), .init(exerciseID: exerciseID, weight: 82.5, reps: 3)]
         let result = compute([session(-100, weight: 82.5, reps: 3), session(-14, weight: 81.25), session(0, sets: sets)])

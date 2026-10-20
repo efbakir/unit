@@ -11,6 +11,7 @@ nonisolated enum AnalyticsEngine {
         let isBodyweight: Bool
         let equipment: String?
         let muscleGroup: String
+        var aliases: [String] = []
     }
     struct SetInput: Sendable, Hashable {
         let exerciseID: UUID
@@ -45,6 +46,7 @@ nonisolated enum AnalyticsEngine {
         let templates: [TemplateInput]
         /// Schedules have no historical versions. Use current routine count × 4.
         let plannedDaysPerWeek: Int
+        var pinnedMainIDs: [UUID] = []
     }
     struct Performance: Sendable, Hashable {
         let weight: Double
@@ -114,10 +116,13 @@ nonisolated enum AnalyticsEngine {
         let firstDay: Date
         let lastDay: Date
     }
+    enum MainSource: Sendable, Equatable { case automatic, custom }
     struct Output: Sendable {
         let summary: Summary?
         let lifts: [UUID: Lift]
         let main: [Slot: UUID]
+        let mainIDs: [UUID]
+        let mainSource: MainSource
         let other: [UUID]
         let weekStarts: [Date]
         let today: Date
@@ -142,8 +147,34 @@ nonisolated enum AnalyticsEngine {
     static func slot(for exercise: ExerciseInput) -> Slot? {
         // Empty/unknown metadata is accepted. Explicit non-barbell equipment is not.
         guard exercise.equipment == nil || exercise.equipment == "" || exercise.equipment == "barbell" else { return nil }
-        let name = normalizedName(exercise.name)
-        return Slot.allCases.first { $0.aliases.contains(name) }
+        let keys = ([exercise.name] + exercise.aliases).map(slotKey)
+        return Slot.allCases.first { slot in keys.contains(where: slot.aliases.contains) }
+    }
+    static func slotKey(_ raw: String) -> String {
+        let name = normalizedName(raw)
+        guard name.hasSuffix(")"), let opening = name.lastIndex(of: "(") else { return name }
+        let qualifier = normalizedName(String(name[name.index(after: opening)..<name.index(before: name.endIndex)]))
+        guard ["bb", "barbell", "conv", "conventional"].contains(qualifier) else { return name }
+        return String(name[..<opening]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    static func parsedMainIDs(_ raw: String) -> [UUID] {
+        var seen: Set<UUID> = []
+        return Array(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) }.filter { seen.insert($0).inserted }.prefix(3))
+    }
+    static func storedMainIDs(_ draft: [UUID], automatic: [UUID]) -> String {
+        draft.isEmpty || draft == automatic ? "" : draft.prefix(3).map(\.uuidString).joined(separator: ",")
+    }
+    static func recentSessionCount(_ lift: Lift, since: Date) -> Int {
+        Set(lift.sessions.filter { $0.best.date >= since }.map(\.id)).count
+    }
+    static func rankedLifts(_ lifts: [Lift], since: Date) -> [Lift] {
+        let counts = Dictionary(uniqueKeysWithValues: lifts.map { ($0.id, recentSessionCount($0, since: since)) })
+        return lifts.sorted { a, b in
+            if counts[a.id] != counts[b.id] { return counts[a.id, default: 0] > counts[b.id, default: 0] }
+            if a.latest?.date != b.latest?.date { return (a.latest?.date ?? .distantPast) > (b.latest?.date ?? .distantPast) }
+            let order = a.exercise.name.localizedStandardCompare(b.exercise.name)
+            return order == .orderedSame ? a.id.uuidString < b.id.uuidString : order == .orderedAscending
+        }
     }
     static func better(_ lhs: Performance, than rhs: Performance?, bodyweight: Bool) -> Bool {
         guard let rhs else { return true }
@@ -310,7 +341,9 @@ nonisolated enum AnalyticsEngine {
         }
         var main: [Slot: UUID] = [:]
         for slot in Slot.allCases {
-            let candidates = input.exercises.filter { Self.slot(for: $0) == slot }.sorted { a, b in
+            let candidates = input.exercises.filter {
+                Self.slot(for: $0) == slot && lifts[$0.id]?.sessions.contains(where: { $0.best.date >= weekStarts[0] }) == true
+            }.sorted { a, b in
                 let aSessions = lifts[a.id]?.sessions ?? [], bSessions = lifts[b.id]?.sessions ?? []
                 let aCount = aSessions.filter { $0.best.date >= weekStarts[0] }.count, bCount = bSessions.filter { $0.best.date >= weekStarts[0] }.count
                 if aCount != bCount { return aCount > bCount }
@@ -321,12 +354,27 @@ nonisolated enum AnalyticsEngine {
             }
             main[slot] = candidates.first?.id
         }
-        let selected = Set(main.values)
+        var seen: Set<UUID> = []
+        let custom = Array(input.pinnedMainIDs.filter { lifts[$0] != nil && seen.insert($0).inserted }.prefix(3))
+        var mainIDs = custom.isEmpty ? Slot.allCases.compactMap { main[$0] } : custom
+        if custom.isEmpty {
+            let cutoff = day(-55, from: today)
+            let ranked = rankedLifts(Array(lifts.values), since: cutoff).filter { recentSessionCount($0, since: cutoff) > 0 }
+            let isolationGroups: Set<String> = ["biceps", "triceps", "calves", "forearms", "core"]
+            for compoundOnly in [true, false] {
+                for lift in ranked where mainIDs.count < 3 && !mainIDs.contains(lift.id) {
+                    if let slot = Self.slot(for: lift.exercise), main[slot] != nil { continue }
+                    if compoundOnly && isolationGroups.contains(lift.exercise.muscleGroup) { continue }
+                    mainIDs.append(lift.id)
+                }
+            }
+        }
+        let selected = Set(mainIDs)
         let other = lifts.values.filter { !selected.contains($0.id) }.sorted { a, b in
             if a.latest?.date != b.latest?.date { return (a.latest?.date ?? .distantPast) > (b.latest?.date ?? .distantPast) }
             return a.exercise.name.localizedStandardCompare(b.exercise.name) == .orderedAscending
         }.map(\.id)
-        return Output(summary: summary, lifts: lifts, main: main, other: other, weekStarts: weekStarts, today: today)
+        return Output(summary: summary, lifts: lifts, main: main, mainIDs: mainIDs, mainSource: custom.isEmpty ? .automatic : .custom, other: other, weekStarts: weekStarts, today: today)
     }
 }
 
