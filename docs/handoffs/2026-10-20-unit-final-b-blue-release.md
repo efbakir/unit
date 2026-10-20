@@ -21,7 +21,7 @@ Runtime checkpoint f4a4752 on main; includes Analytics 437d963, 6af80f6, ffc69be
 - Source guards and whitespace checks passed.
 
 ## Phone
-Installed in place on connected iPhone 00008150-00064558340A401C. Full Library backup before installation: /private/tmp/unit-delivery85/before (plus before-live recovery copy). Post-install read-back confirms all five training tables and preferences identical; database integrity ok. No uninstall/reset/test flags used. Launch currently blocked by device lock, awaiting unlock. Evidence: /private/tmp/unit-delivery85.
+Installed in place on connected iPhone 00008150-00064558340A401C. Full Library backup before installation: /private/tmp/unit-delivery85/before (plus before-live recovery copy). Post-install read-back confirms all five training tables and preferences identical; database integrity ok. No uninstall/reset/test flags used. Normal launch succeeded after unlock. Postlaunch read-back preserved every existing session and all 231 set rows exactly. One new unfinished session was created, with its matching routine last-performed timestamp updated; no existing session was modified/deleted. The only preference change was StoreKit’s SKTransactionUpdatesLastChecked timestamp. Database integrity remains ok and recovery notice false. Evidence: /private/tmp/unit-delivery85.
 
 ## Remaining checks
-Confirm normal launch after unlock and postlaunch data comparison. Physical haptics, Lock Screen rest delivery, purchase sandbox, full VoiceOver/Reduce Motion and latest combined visual sweep remain unverified. No public submission performed. Review the new whole-day workout screen and Analytics selections.
+Physical haptics, Lock Screen rest delivery, purchase sandbox, full VoiceOver/Reduce Motion and latest combined visual sweep remain unverified. No public submission performed. Review the new whole-day workout screen and Analytics selections.
