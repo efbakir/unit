@@ -419,6 +419,8 @@ struct EditProgramView: View {
                 showAddDay = true
             }
         })
+        // Schedule mode changes row content without changing routine identity.
+        .appAnimation(AppMotion.collectionChange, value: isWeekdayScheduled, reduceMotion: reduceMotion)
     }
 
     // MARK: - Rows
@@ -427,8 +429,10 @@ struct EditProgramView: View {
     private func routineRow(_ template: DayTemplate) -> some View {
         if isWeekdayScheduled {
             weekdayRoutineRow(template)
+                .transition(.opacity.animation(AppMotion.feedback))
         } else {
             draggableRoutineRow(template)
+                .transition(.opacity.animation(AppMotion.feedback))
         }
     }
 
