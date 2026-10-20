@@ -302,3 +302,7 @@ its historical Geist references map to the already approved SF font system.
 - AppTrendChart changes units/domains immediately and fades only the replacement drawing; scrub interaction and semantic readout remain immediate.
 
 No new component, style variant, palette color, typography token or dependency was introduced by this feedback pass. JOI evidence and limits: docs/research/2026-10-20-joi-visual-language.md.
+
+### Rest/footer consistency follow-up
+
+RestBar’s existing status/progress functions are shared with the keyboard panel. Both use page background, the same gutters/divider, fixed status anchors and AppSecondaryButton containers. Duration stays in the same existing typography role in idle/running/finished; finished reads0:00. Rest controls remain visible and disabled outside running, with taps/accessibility actions suppressed. The keyboard panel adds its explicit current action as needed; it does not introduce another rest renderer. Details and runtime boundaries: docs/handoffs/2026-10-20-rest-footer-consistency.md.

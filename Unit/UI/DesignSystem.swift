@@ -6807,7 +6807,7 @@ struct RestBar: View {
                 Text(AppCopy.Workout.restFinishedInline)
                     .opacity(state == .finished ? 1 : 0)
             }
-            .appFont(.caption)
+            .font(AppFont.caption.font)
             .foregroundStyle(AppColor.textSecondary)
             .animation(AppMotion.transition, value: state)
             Spacer(minLength: AppSpacing.sm)

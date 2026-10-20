@@ -59,7 +59,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(app.buttons["keyboard-current-action"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["logged-set-1"].exists)
-        XCTAssertFalse(app.buttons["Skip"].isHittable)
+        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
         capture(app, "final-b-target-prepared-not-logged")
         tap(app.buttons["complete-set-1"], in: app)
         tap(app.buttons["Finish"], in: app)
@@ -89,7 +89,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(keyboardAction, in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["logged-set-1"].exists)
-        XCTAssertFalse(app.buttons["Skip"].isHittable)
+        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
         tap(app.textFields["logging-reps"].firstMatch, in: app)
         XCTAssertTrue(keyboardAction.waitForExistence(timeout: 5))
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
@@ -117,7 +117,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
             for number in 1...sets { tap(app.buttons["complete-set-\(number)"], in: app) }
         }
         XCTAssertTrue(app.buttons["Finish workout"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Skip"].isHittable)
+        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
         capture(app, "final-b-end-of-day")
         tap(app.buttons["Finish workout"], in: app)
         tap(app.alerts.buttons["Finish workout"], in: app)
@@ -127,13 +127,36 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-finished-update")
     }
 
+    func testRestFooterKeepsItsFrameAcrossStates() throws {
+        let app = launch(extra: ["-restDurationSeconds", "15"])
+        let bar = app.otherElements["workout-rest-bar"].firstMatch
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        let idleFrame = bar.frame
+        capture(app, "rest-footer-idle")
+        tap(app.buttons["complete-set-1"], in: app)
+        XCTAssertTrue(app.buttons["Skip"].isHittable)
+        XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
+        XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
+        capture(app, "rest-footer-running")
+        tap(app.buttons["+15"], in: app)
+        tap(app.buttons["−15"], in: app)
+        let status = app.descendants(matching: .any).matching(identifier: "rest-duration").firstMatch
+        let finished = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@ AND value == %@", "Rest finished.", "0:00"), object: status)
+        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 25), .completed)
+        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
+        XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
+        XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
+        capture(app, "rest-footer-finished")
+    }
+
     func testMarkNotDoneStopsSourceRest() throws {
         let app = launch()
         tap(app.buttons["complete-set-1"], in: app)
         tap(app.buttons["logged-set-1"], in: app)
         tap(app.buttons["Mark not done"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Skip"].isHittable)
+        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
         capture(app, "final-b-mark-not-done")
     }
 

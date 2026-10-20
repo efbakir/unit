@@ -8,7 +8,7 @@ Confirmed mismatches: white rest surface versus page-colored keyboard surface; 1
 
 Small existing-owner fix:
 
-- `RestBar.status` draws one stable header for both modes. Rest and the existing Rest finished. cue share the 15pt caption role/leading anchor; the right-aligned countdown keeps the 17pt performance role in idle/running/finished. Finished explicitly reads 0:00. The mounted caption layers reserve the same space and crossfade.
+- `RestBar.status` draws one stable header for both modes. Rest and the existing Rest finished. cue share the 15pt caption role/leading anchor; the right-aligned countdown keeps the 15pt performance role in idle/running/finished. Finished explicitly reads 0:00. The mounted caption layers reserve the same space and crossfade.
 - Three rest actions each use `AppSecondaryButton`, matching the four keyboard actions. Both rows use individual neutral containers, single-line text, equal flexible cells and the same existing 60pt minimum. Inactive rest controls stay visibly disabled, ignore taps and remain hidden from accessibility. No functioning action was removed.
 - Both bottom regions use the page background, 16pt inset, 8pt internal spacing and existing top divider. Rest uses a header above controls instead of a state-dependent horizontal/vertical fit switch. All normal timer states keep identical anatomy and height; keyboard editing adds its already-required explicit current action above the accessory row.
 - `RestBar.progressLine` is the sole deadline-driven blue progress renderer for both modes. Original deadline/total duration, clamping, fixed 3pt slot, no interpolated samples and Reduce Motion/VoiceOver gates remain.
@@ -31,3 +31,11 @@ Swift frontend syntax parsing, `scripts/check-guards.sh`, and diff whitespace ch
 Use the isolated fixture with `-restDurationSeconds 15`. Measure `workout-rest-bar` bounds through idle → Complete/running → +15 → −15 → expiry/finished → Skip/idle. Check steady header/countdown anchors and footer height, Rest finished. plus 0:00, correct blue deadline progress, −15 disabled at minimum, and no inactive control taps or VoiceOver actions. Verify timer expiry while backgrounded and source-set removal retain existing behavior.
 
 Capture standard and compact width, plus AX3/Reduce Motion if the central budget allows. Open/close weight and reps editors: confirm the same status anchors, separate keyboard buttons, visible explicit current action, native keyboard safe-area behavior, no second finish-message row and no accidental set completion. Confirm the deliberate 60pt shared controls do not crowd the compact workout viewport. Main owns any runtime follow-up and final installation.
+
+## Central integration and runtime result
+
+Integrated6918436 as19feebe. Corrected the caption modifier on its shared ZStack to `.font(AppFont.caption.font)` after the first build type-check rejected the Text-only appFont extension; no styling/API change.
+
+Focused iOS27 Simulator keyboard preparation/Complete passed in /private/tmp/unit-rest-footer-consistency-r2.xcresult. The first expiry assertion incorrectly found a hidden finished caption while still running; changed the test to wait for rest-duration’s actual accessible label and0:00 value. The final rest test PASSED in /private/tmp/unit-rest-footer-consistency-final.xcresult: idle→running→+15→−15→natural expiry, footer height and vertical position equal within1pt across states, inactive Skip disabled. The failed combined run is not a full passing suite. Stopped its stalled diagnostic collector after test completion; no successful test run interrupted.
+
+Viewed actual running/keyboard images; current captures include idle/running/finished and keyboard in docs/qa/build85-gym-feedback/rest-footer. No fresh compact/AX/VoiceOver/device run for this local follow-up; prior keyboard layout checks remain historical. Timer behavior, workout data, build/version and phone installation unchanged. No new component/token/variant.
