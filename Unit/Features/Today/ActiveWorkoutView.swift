@@ -150,12 +150,8 @@ struct ActiveWorkoutView: View {
         AppScreen(showsNativeNavigationBar: true, usesOuterScroll: false) {
             ScrollView {
                 WorkoutDayList {
-                    ForEach(WorkoutLoggingState.groups(exercises: exerciseStates, currentID: currentExerciseID, expandedID: expandedCompletedID)) { group in
-                        if group.isUpcoming {
-                            upcomingExercises(group.exerciseIDs)
-                        } else if let section = sectionModels.first(where: { $0.id == group.id }) {
-                            exerciseContent(section).id(section.id.uuidString)
-                        }
+                    ForEach(sectionModels) { section in
+                        exerciseContent(section).id(section.id.uuidString)
                     }
                     if isFreestyleSession { addExerciseButton }
                     if sectionModels.isEmpty { addExercisePrompt }
@@ -165,6 +161,8 @@ struct ActiveWorkoutView: View {
                 }
                 .scrollTargetLayout()
                 .appAnimation(AppMotion.collectionChange, value: session.setEntries.map(\.id), reduceMotion: reduceMotion)
+                .appAnimation(AppMotion.collectionChange, value: currentExerciseID, reduceMotion: reduceMotion)
+                .appAnimation(AppMotion.collectionChange, value: expandedCompletedID, reduceMotion: reduceMotion)
             }
             .scrollPosition($scrollPosition)
             .scrollDismissesKeyboard(.interactively)
@@ -378,8 +376,12 @@ struct ActiveWorkoutView: View {
                         .id(rowID(section.id, row.number))
                 }
             }
+            .transition(AppBlurTransition().animation(.appReveal))
         } else {
             exerciseSummary(section)
+                .accessibilityIdentifier(section.hasReachedPlannedSetGoal
+                    ? "completed-exercise-\(section.id)" : "upcoming-exercise-\(section.id)")
+                .transition(AppBlurTransition().animation(.appReveal))
         }
     }
 
@@ -430,14 +432,6 @@ struct ActiveWorkoutView: View {
             PlannedSetRow(number: row.number, value: plannedValueText(section, row: row.number)) {
                 if beginEditing(section: section, row: row) { focusedField = .weight(id) }
             }
-        }
-    }
-
-    private func upcomingExercises(_ ids: [UUID]) -> some View {
-        ForEach(sectionModels.filter { ids.contains($0.id) }) { section in
-            exerciseSummary(section)
-                .id(section.id.uuidString)
-                .accessibilityIdentifier("upcoming-exercise-\(section.id)")
         }
     }
 
