@@ -6740,40 +6740,51 @@ struct RestBar: View {
     let timeText: String
     let state: State
     let progress: Double
+    /// The manager's actual deadline and duration; never inferred from rounded text.
+    var endDate: Date? = nil
+    var totalDuration: TimeInterval = 0
     let canDecrease: Bool
     let onDecrease: () -> Void
     let onIncrease: () -> Void
     let onSkip: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+
+    @State private var lastRunningTimeText: String?
+
+    private var spatial: Bool {
+        AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    AppColor.controlBackground
-                    AppColor.textPrimary.frame(width: geometry.size.width * min(1, max(0, progress)))
+            TimelineView(.animation(paused: state != .running || endDate == nil || !spatial)) { timeline in
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        AppColor.controlBackground
+                        AppColor.accent.frame(width: geometry.size.width * progress(at: spatial ? timeline.date : .now))
+                    }
+                    // Each frame is the deadline's current value, never a tween
+                    // towards an old sample or an inherited collection animation.
+                    .transaction { $0.animation = nil }
                 }
-                .opacity(state == .running ? 1 : 0)
             }
-            .frame(height: 3).accessibilityHidden(true)
-            HStack(spacing: AppSpacing.sm) {
-                if state == .running {
-                    Text("Rest").appFont(.caption).foregroundStyle(AppColor.textSecondary)
-                    Text(timeText).font(AppFont.productHeading.font.monospacedDigit())
-                        .contentTransition(AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) ? .numericText(countsDown: true) : .opacity)
-                        .animation(AppMotion.transition, value: timeText)
-                        .accessibilityLabel("Rest").accessibilityValue(timeText)
-                } else {
-                    Text(state == .finished ? "Rest finished." : "Rest \(timeText)")
-                        .font(state == .finished ? AppFont.sectionHeader.font : AppFont.caption.font)
-                        .foregroundStyle(state == .finished ? AppColor.textPrimary : AppColor.textTertiary)
+            .frame(height: 3)
+            .opacity(state == .running ? 1 : 0)
+            .animation(AppMotion.transition, value: state)
+            .accessibilityHidden(true)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: AppSpacing.sm) {
+                    status.fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: AppSpacing.xs)
+                    controls
                 }
-                Spacer(minLength: AppSpacing.xs)
-                if state == .running {
-                    control("−15", label: "Subtract 15 seconds", action: onDecrease).disabled(!canDecrease)
-                    control("+15", label: "Add 15 seconds", action: onIncrease)
-                    control("Skip", label: "Skip rest", action: onSkip)
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    status
+                    controls
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, AppSpacing.sm)
             }
             .padding(.horizontal, AppSpacing.md)
             .frame(minHeight: 60)
@@ -6781,7 +6792,70 @@ struct RestBar: View {
         .background(AppColor.cardBackground.ignoresSafeArea(edges: .bottom))
         .overlay(alignment: .top) { AppDivider() }
         .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+        .onChange(of: timeText, initial: true) { _, text in
+            if state == .running { lastRunningTimeText = text }
+        }
+        .onChange(of: state) { _, state in
+            if state == .running { lastRunningTimeText = timeText }
+        }
     }
+
+    /// Mounted layers preserve their room through start, completion and Skip.
+    private var status: some View {
+        ZStack(alignment: .leading) {
+            HStack(spacing: AppSpacing.sm) {
+                Text("Rest").appFont(.caption).foregroundStyle(AppColor.textSecondary)
+                Text(state == .running ? timeText : (lastRunningTimeText ?? timeText))
+                    .font(AppFont.productHeading.font.monospacedDigit())
+                    .contentTransition(spatial ? .numericText(countsDown: true) : .opacity)
+                    .animation(AppMotion.transition, value: timeText)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Rest").accessibilityValue(timeText)
+            .opacity(state == .running ? 1 : 0)
+            .animation(AppMotion.transition, value: state)
+            .accessibilityHidden(state != .running)
+
+            Text("Rest \(timeText)")
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textTertiary)
+                .opacity(state == .idle ? 1 : 0)
+                .animation(AppMotion.transition, value: state)
+                .accessibilityHidden(state != .idle)
+
+            Text("Rest finished.")
+                .font(AppFont.sectionHeader.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .opacity(state == .finished ? 1 : 0)
+                .animation(AppMotion.transition, value: state)
+                .accessibilityHidden(state != .finished)
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: AppSpacing.sm) {
+            control("−15", label: "Subtract 15 seconds", action: onDecrease).disabled(!canDecrease)
+            control("+15", label: "Add 15 seconds", action: onIncrease)
+            control("Skip", label: "Skip rest", action: onSkip)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+        .disabled(state != .running)
+        .opacity(state == .running ? 1 : 0)
+        .animation(AppMotion.transition, value: state)
+        .allowsHitTesting(state == .running)
+        .accessibilityHidden(state != .running)
+    }
+
+    private func progress(at date: Date) -> Double {
+        let value: Double
+        if state == .running, let endDate, totalDuration > 0 {
+            value = endDate.timeIntervalSince(date) / totalDuration
+        } else {
+            value = progress
+        }
+        return value.isFinite ? min(1, max(0, value)) : 0
+    }
+
     private func control(_ text: String, label: String, action: @escaping () -> Void) -> some View {
         Button(text, action: action)
             .font(AppFont.caption.font).foregroundStyle(AppColor.textPrimary)
