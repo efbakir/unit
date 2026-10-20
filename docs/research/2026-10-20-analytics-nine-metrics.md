@@ -43,15 +43,15 @@ Reuse AppCard, AppDivider, AppFont, AppSpacing and AppTrendChart. Add no new vie
 ## Decisions for later work
 
 - Consider prominent lifts drawn from the user's actual routine. Retain Squat, Bench Press and Deadlift for this pass; changing the approved main slots needs its own selection and migration rules.
-- The shared AppMainLiftCard still pairs a latest-session value with a window comparison. Main-chat integration should clarify that shared composition using the same window evidence; do not fork it in AnalyticsView.
-- AppTrendChart's shared scrub readout and Audio Graph title currently describe a best set for every weighted metric. Its owner should make those descriptions match Reps and Volume as well as Weight. Do not claim a caption change fixes those shared behaviors.
 - Keep the nine-metric table as research, not a nine-card dashboard specification. Body measurements, readiness tests and cardiovascular integrations are separate work.
 
 ## Implementation status
 
-The first source pass exposes `currentWindowBest` and `previousWindowBest` on the read-only lift result. ExerciseProgressView labels Latest session, shows the four-week comparison evidence with explicit previous/current ordering, handles missing comparison windows in words, and describes the selected Reps/Volume series. The earlier weighted-lift default fix is retained. AnalyticsEngineTests adds window-evidence, volume-only and bodyweight/missing-window cases, plus an assertion that epsilon selection matches the displayed evidence. Tests have not run in this topic chat.
+The first source pass exposes `currentWindowBest` and `previousWindowBest` on the read-only lift result. ExerciseProgressView labels Latest session, shows the four-week comparison evidence with explicit previous/current ordering, handles missing comparison windows in words, and describes the selected Reps/Volume series. The earlier weighted-lift default fix is retained. AnalyticsEngineTests adds window-evidence, volume-only and bodyweight/missing-window cases, plus an assertion that epsilon selection matches the displayed evidence.
 
-Only AnalyticsEngine.swift and ExerciseProgressView.swift changed in app source. Shared components, AnalyticsView and its explanation sheet retain their assigned owners. The shared-owner changes above remain follow-ups for main-chat integration.
+Main-chat integration also clarifies latest session versus four-week comparison in AppMainLiftCard. AppTrendChart formats its scrub value for the selected metric and refreshes the Audio Graph title, axes and series when metrics change. Weight retains the full set as its scrub readout; Reps and Volume use the plotted value. AnalyticsView and its explanation sheet remain unchanged.
+
+The frozen integrated source passed 24 tests on iOS 27 and 22 on iOS 18.6. Main, scrolled, weighted/bodyweight detail, summary sheet and metric captures are saved in the [verification record](../qa/analytics-comparison-evidence/README.md). Manual VoiceOver audio, held scrub/cancel, AX5 and physical-device performance remain separate checks.
 
 ## Acceptance checks
 
@@ -62,4 +62,4 @@ Only AnalyticsEngine.swift and ExerciseProgressView.swift changed in app source.
 - Volume and Reps captions describe their actual series; accepted Next remains unchanged.
 - Central verification runs AnalyticsEngineTests and AnalyticsR5UITests, then checks History and Analytics entry points, long values, AX5, VoiceOver, Reduce Motion and chart scrubbing on the integrated build.
 
-Builds, tests, Simulator use and phone installation remain centrally queued. Source guards do not establish rendered layout or runtime behavior.
+Verification used isolated Simulator fixtures. No physical-device install, training-data write, version change or public submission occurred in this pass.
