@@ -5,6 +5,7 @@ import SwiftUI
 struct AnalyticsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var phase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("unitSystem") private var unit = "kg"
     @AppStorage(ActiveSplitStore.defaultsKey) private var activeSplit = ""
     @AppStorage("unit.analytics.mainLiftIDs") private var pinnedRaw = ""
@@ -13,6 +14,7 @@ struct AnalyticsView: View {
     @State private var showsExplanation = false
     @State private var showsMainLiftEditor = false
     @State private var error: AppToastEvent?
+    @State private var hasPresentedMainLifts = false
 
     var body: some View {
         AppScreen(showsNativeNavigationBar: true) {
@@ -41,9 +43,12 @@ struct AnalyticsView: View {
                                                 .buttonStyle(ScaleButtonStyle())
                                                 .accessibilityHint("Opens details.")
                                                 .accessibilityIdentifier("analytics-main-\(lift.exercise.name)")
+                                                .transition(AppBlurTransition(scales: true).animation(hasPresentedMainLifts ? .appReveal : nil))
                                         }
                                     }
                                 }
+                                .appAnimation(AppMotion.collectionChange, value: output.mainIDs, reduceMotion: reduceMotion)
+                                .onAppear { hasPresentedMainLifts = true }
                             }
                         }
                         if !output.other.isEmpty {

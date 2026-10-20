@@ -118,8 +118,11 @@ keeping shared design-system code and runtime operations centrally owned.
 - **M4 applied narrowly:** format-examples button now supplies its own explicit
   opacity animation instead of relying on the sibling header transaction. No
   whole-editor layout animation was added; keyboard resizing remains native.
-- **M2 deferred:** main explicitly requires already-loaded async data to remain
-  immediate. No background-refresh animation or loading delay was introduced.
+- **M2 applied in a separate follow-up:** main subsequently assigned collection
+  changes explicitly. The existing main-card VStack keys collection motion to
+  UUID order; rows reuse AppBlurTransition. A presentation flag leaves first
+  display unanimated. No root entrance, loading delay, metric-value animation or
+  store changes. Unchanged main IDs do not trigger the collection transaction.
 - **M5 deferred:** AppTrendChart is shared DesignSystem ownership, excluded from
   the implementation assignment.
 - **M6 deferred:** the safe fix needs common weekday/drag row anatomy, rather
