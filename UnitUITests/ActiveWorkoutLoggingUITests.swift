@@ -59,7 +59,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(app.buttons["keyboard-current-action"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["logged-set-1"].exists)
-        XCTAssertFalse(app.buttons["Skip"].exists)
+        XCTAssertFalse(app.buttons["Skip"].isHittable)
         capture(app, "final-b-target-prepared-not-logged")
         tap(app.buttons["complete-set-1"], in: app)
         tap(app.buttons["Finish"], in: app)
@@ -86,7 +86,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(keyboardAction, in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["logged-set-1"].exists)
-        XCTAssertFalse(app.buttons["Skip"].exists)
+        XCTAssertFalse(app.buttons["Skip"].isHittable)
         tap(app.textFields["logging-reps"].firstMatch, in: app)
         XCTAssertTrue(keyboardAction.waitForExistence(timeout: 5))
         XCTAssertTrue(keyboardAction.isHittable)
@@ -111,7 +111,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
             for number in 1...sets { tap(app.buttons["complete-set-\(number)"], in: app) }
         }
         XCTAssertTrue(app.buttons["Finish workout"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Skip"].exists)
+        XCTAssertFalse(app.buttons["Skip"].isHittable)
         capture(app, "final-b-end-of-day")
         tap(app.buttons["Finish workout"], in: app)
         tap(app.alerts.buttons["Finish workout"], in: app)
@@ -127,7 +127,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(app.buttons["logged-set-1"], in: app)
         tap(app.buttons["Mark not done"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Skip"].exists)
+        XCTAssertFalse(app.buttons["Skip"].isHittable)
         capture(app, "final-b-mark-not-done")
     }
 

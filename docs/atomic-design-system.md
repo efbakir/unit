@@ -292,3 +292,13 @@ Update writes their first logged values back to the routine. Explicit zero on
 a weighted exercise is a real load; only the Bodyweight toggle changes that
 exercise flag. The source brief is `docs/specs/2026-10-20-logging-final-b.md`;
 its historical Geist references map to the already approved SF font system.
+
+## Build85 gym-feedback follow-up — 2026-10-20
+
+- WorkoutDayList now keeps one flat, stable exercise-ID hierarchy through upcoming/current/completed states. ExerciseSummaryRow is the one owner for separate flat completed/upcoming cards; completion sits at the trailing edge and all titles share the leading inset. This user-approved workout exception supersedes grouped upcoming rows only.
+- CurrentSetRow reuses AppPrimaryButton for both preparation and completion, with distinct labels/actions. Preparation never creates a set. ActiveWorkoutView owns full-width native field composition, keyboard accessory buttons and the keyboard-visible current action; only one current action is interactive/visible. Typed drafts are separate from completed history.
+- RestBar owns a blue line sampled from the manager deadline, mounted fading status/control layers, and accessibility gates. It does not own notifications, persistence or timer scheduling.
+- AppStatusSummaryCard keeps its compatibility name but now draws an editorial page stack, not an extra card surface. Status remains34pt, supporting copy15pt, time context13pt via existing roles. AppMainLiftCard Best/Next labels use the muted role; data/charts unchanged. Exercise card titles use existing17pt roles; workout numbers retain30/28pt.
+- AppTrendChart changes units/domains immediately and fades only the replacement drawing; scrub interaction and semantic readout remain immediate.
+
+No new component, style variant, palette color, typography token or dependency was introduced by this feedback pass. JOI evidence and limits: docs/research/2026-10-20-joi-visual-language.md.

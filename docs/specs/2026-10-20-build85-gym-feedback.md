@@ -9,7 +9,7 @@ The user is reviewing installed 2.1 (85) while lifting. Accept further feedback 
 - Current action stays reachable while the keyboard is open. Keyboard actions fill the available width with comfortable targets. Weight/reps fields expand to use available width without a wide multiplication gap.
 - Rest progress line is Unit blue and smoothly follows the actual deadline. Preserve timer state, notifications and persistence.
 - Audit abrupt state transitions across the app; apply animation at canonical owners with stable identity. Keep immediate feedback, no blocked logging or artificial delays. Reduced motion and VoiceOver retain fades and static cues.
-- JOI (J-O-I), a calendar/task app, is the requested visual reference. Confirm identity and inspect actual main/highlight screens before visual-language changes. Use mobile MCP if available; no mobile MCP tool was exposed in the coordinator inventory. Mobbin MCP and official sources are fallback evidence. Unit blue stays; other styling is grayscale.
+- JOI (J-O-I), a calendar/task app, is the requested visual reference. Confirm identity and inspect actual main/highlight screens before visual-language changes. User clarified the requested tool is Mobbin MCP (not mobile-device MCP). Use Mobbin as primary evidence and official JOI sources for identity/supporting context. Unit blue stays; other styling is grayscale.
 
 ## Dedicated visible chats
 | Work | Chat | Owned scope |
