@@ -1228,7 +1228,15 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     nonisolated deinit {}
 
     override convenience init() {
-        self.init(defaults: .standard, now: Date.init, notifications: .live)
+#if DEBUG
+        // UI tests use an isolated store; retained system activities must not
+        // restore another test's timer or outlive that isolated fixture.
+        let usesLiveActivities = !CommandLine.arguments.contains("-ui-testing")
+#else
+        let usesLiveActivities = true
+#endif
+        self.init(defaults: .standard, now: Date.init, notifications: .live,
+                  usesLiveActivities: usesLiveActivities)
     }
 
     init(
