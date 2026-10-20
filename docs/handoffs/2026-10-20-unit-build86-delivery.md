@@ -19,7 +19,11 @@ Device00008150-00064558340A401C, bundleapp.unitlift. Fresh inventory before85, a
 Before and after in-place installation, all five training table full-row hashes and preferences were identical:14WorkoutSessions,250SetEntries,9DayTemplates,951Exercises,1Split. Recovery noticefalse. Evidence: /private/tmp/unit-delivery86/preservation-before-launch.json. No uninstall/reset/restore-to-phone/test flags.
 
 ## Launch status
-Installed and inventory-confirmed2.1(86). Normal launch attempt was denied only because iPhone is locked (FBSOpenApplicationErrorDomain7, Locked). Unlock requested in Main. Normal launch and postlaunch comparison are still pending; do not claim those completed. Phone data and preferences are preserved through installation.
+Installed and inventory-confirmed2.1(86). Initial normal launch was blocked by the phone lock; retry after the unlock request succeeded. Evidence: /private/tmp/unit-delivery86/launch-retry.json.
+
+Postlaunch comparison/investigation confirms all14 session rows, all250 set rows, exercises and split byte-for-byte identical. All template content/targets unchanged except template9 lastPerformedDate (last-started recency) and its SwiftData Z_OPT revision. Only preference change is StoreKit’s SKTransactionUpdatesLastChecked cache timestamp. The full-row comparison therefore intentionally reports trainingIdentical=false/preferencesIdentical=false; do not describe it as wholly identical after launch. Exact row differences: /private/tmp/unit-delivery86/postlaunch-row-differences.json. The routine recency change can reflect a start/cancel during review; its origin was not conclusively established, so this is disclosed rather than silently ignored. No existing history row was changed/deleted, no set was lost, integrityok and recovery noticefalse. No backup was restored over the phone.
+
+Phone launch is confirmed; visual/interaction captures in this delivery remain Simulator evidence. Physical haptics, purchase sandbox and full VoiceOver/Reduce Motion remain separate checks.
 
 ## Evidence
 /private/tmp/unit-delivery86 contains before/after inventories, candidate hashes, successful targeted backups, install JSON, blocked launch JSON and preservation comparisons. These include private workout data; keep local. Simulator captures: docs/qa/build85-gym-feedback. They are not physical-device visual evidence.
