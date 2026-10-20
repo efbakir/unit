@@ -2573,7 +2573,7 @@ extension View {
             HStack(spacing: AppSpacing.sm) {
                 self.frame(maxWidth: .infinity, alignment: .leading)
                 AppIcon.forward.image(size: AppIconSize.indicator, weight: .medium)
-                    .foregroundStyle(AppColor.textDisabled)
+                    .foregroundStyle(AppColor.textTertiary)
                     .accessibilityHidden(true)
             }
             .frame(minHeight: 44)
@@ -6404,7 +6404,7 @@ struct AppTrendChart: View {
 /// R5 lift anatomy. Native NavigationLink ownership stays with the page.
 struct AppMainLiftCard: View {
     let title: String
-    let icon: AppIcon
+    let icon: AppIcon?
     let lift: AnalyticsEngine.Lift?
     let chart: AnalyticsEngine.ChartData
     let unit: String
@@ -6415,7 +6415,7 @@ struct AppMainLiftCard: View {
         AppCard(contentInset: 0, cornerRadius: AppRadius.md) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    Self.iconTile(icon, side: 30)
+                    if let icon { Self.iconTile(icon, side: 30) }
                     Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)

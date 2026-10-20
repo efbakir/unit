@@ -846,7 +846,7 @@ extension ProgressionContractUITestSeeder {
         UserDefaults.standard.set(args.contains("-analytics-lb") ? "lb" : "kg", forKey: "unitSystem")
         let split = Split(name: "Analytics fixture")
         context.insert(split)
-        let names = ["Squat", "Bench Press", "Deadlift", "Overhead Press", "Barbell Row", "Pull-Up", "Biceps Curl", "Hanging Leg Raise"]
+        let names = [args.contains("-analytics-catalog-names") ? "Back Squat (BB)" : "Squat", "Bench Press", args.contains("-analytics-catalog-names") ? "Deadlift (Conv)" : "Deadlift", "Overhead Press", "Barbell Row", "Pull-Up", "Biceps Curl", "Hanging Leg Raise"]
         let muscles: [MuscleGroup] = [.quads, .chest, .back, .shoulders, .back, .back, .biceps, .core]
         let exercises = names.enumerated().map { index, name in
             Exercise(displayName: name, isBodyweight: index == 5 || index == 7, muscleGroup: muscles[index], equipment: index == 5 || index == 7 ? .bodyweight : .barbell)
