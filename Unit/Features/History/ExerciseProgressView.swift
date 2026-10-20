@@ -78,7 +78,7 @@ struct ExerciseProgressView: View {
                             if !lift.bodyweight {
                                 AppSegmentedControl(selection: $metric, items: AnalyticsEngine.Metric.allCases, label: "Progress metric", title: { $0.rawValue })
                             }
-                            AppTrendChart(data: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : metric, unit: unit), caption: Self.chartCaption(for: metric, bodyweight: lift.bodyweight), interactive: true, height: AppChartMetrics.compactHeight, unit: unit, bodyweight: lift.bodyweight)
+                            AppTrendChart(data: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : metric, unit: unit), caption: Self.chartCaption(for: metric, bodyweight: lift.bodyweight), interactive: true, height: AppChartMetrics.compactHeight, unit: unit, bodyweight: lift.bodyweight, metric: lift.bodyweight ? .reps : metric)
                         }
                     }
                     if let target = lift.target {
@@ -166,11 +166,7 @@ struct ExerciseProgressView: View {
         SessionPoint(id: value.id, date: value.best.date, weight: value.best.weight, reps: value.best.reps, maxReps: value.maxReps, volumeKg: value.volumeKg, totalReps: value.sets.reduce(0) { $0 + $1.reps }, templateId: value.best.templateID, estimatedOneRM: value.estimatedOneRM)
     }
     static func comparisonText(for lift: AnalyticsEngine.Lift, unit: String) -> String {
-        switch lift.comparison {
-        case .new: "No previous comparison"
-        case .notRecent: "No sets in the last 4 weeks"
-        default: WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit)
-        }
+        WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit)
     }
     static func chartCaption(for metric: AnalyticsEngine.Metric, bodyweight: Bool) -> String {
         if bodyweight { return "Most reps per week · 12 weeks" }

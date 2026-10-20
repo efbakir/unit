@@ -31,6 +31,25 @@ extension WorkoutTargetFormatter {
         }
         return date.formatted(.dateTime.month(.abbreviated).day().year())
     }
+    static func analyticsComparison(_ state: AnalyticsEngine.Comparison, unit: String) -> String {
+        switch state {
+        case .new: return "No previous comparison"
+        case .notRecent: return "No sets in the last 4 weeks"
+        default: return analyticsChange(state, unit: unit)
+        }
+    }
+    /// Chart values are already converted into the selected display unit by the engine.
+    static func analyticsChartValue(_ value: Double, metric: AnalyticsEngine.Metric, unit: String, locale: Locale = .current, spoken: Bool = false) -> String {
+        let number = value.formatted(.number.locale(locale).grouping(.automatic).precision(.fractionLength(0...(metric == .reps ? 0 : unit == "lb" ? 1 : 2))))
+        switch metric {
+        case .reps: return "\(number) \(value == 1 ? "rep" : "reps")"
+        case .weight:
+            let spokenUnit = unit == "lb" ? (value == 1 ? "pound" : "pounds") : (value == 1 ? "kilogram" : "kilograms")
+            return "\(number) \(spoken ? spokenUnit : unit)"
+        case .volume:
+            return "\(number) \(spoken ? (unit == "lb" ? "pound repetitions" : "kilogram repetitions") : "\(unit)·reps")"
+        }
+    }
     static func analyticsSummary(_ value: AnalyticsEngine.Summary, now: Date) -> String {
         if value.status == .baseline { return "First session \(analyticsDate(value.firstDay, now: now))." }
         if value.status == .fewer && value.sessions == 0 { return "Last session \(analyticsDate(value.lastDay, now: now))." }

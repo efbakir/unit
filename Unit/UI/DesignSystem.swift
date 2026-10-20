@@ -6263,6 +6263,7 @@ struct AppTrendChart: View {
     var height: CGFloat = AppChartMetrics.trendHeight
     var unit = "kg"
     var bodyweight = false
+    var metric: AnalyticsEngine.Metric = .weight
     @State private var selectedDate: Date?
     @GestureState private var selectionIsActive = false
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -6274,10 +6275,17 @@ struct AppTrendChart: View {
         guard selectionIsActive, let selectedDate else { return nil }
         return data.points.min { abs($0.week.timeIntervalSince(selectedDate)) < abs($1.week.timeIntervalSince(selectedDate)) }
     }
+    private var selectedMetric: AnalyticsEngine.Metric { bodyweight ? .reps : metric }
+    private var chartTitle: String { caption.replacingOccurrences(of: " · ", with: ", ") }
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             if interactive {
-                Text(selected.map { "\(WorkoutTargetFormatter.analyticsPerformance($0.best, bodyweight: bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate($0.best.date, now: data.xDomain.upperBound))" } ?? " ")
+                Text(selected.map { point in
+                    let value = selectedMetric == .weight
+                        ? WorkoutTargetFormatter.analyticsPerformance(point.best, bodyweight: bodyweight, unit: unit)
+                        : WorkoutTargetFormatter.analyticsChartValue(point.value, metric: selectedMetric, unit: unit)
+                    return "\(value) · \(WorkoutTargetFormatter.analyticsDate(point.best.date, now: data.xDomain.upperBound))"
+                } ?? " ")
                     .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textPrimary)
                     .monospacedDigit()
@@ -6348,10 +6356,11 @@ struct AppTrendChart: View {
                 }
             }
             .frame(height: typeSize.isAccessibilitySize ? max(height, AppChartMetrics.accessibleTrendHeight) : height)
-            .accessibilityChartDescriptor(TrendDescriptor(data: data, title: bodyweight ? "Most reps per week, 12 weeks" : "Best set per week, 12 weeks"))
+            .accessibilityChartDescriptor(TrendDescriptor(data: data, title: chartTitle, metric: selectedMetric, unit: unit))
             .accessibilityHidden(!interactive)
             .accessibilityIdentifier("analytics-trend-chart")
             .transaction { if reduceMotion { $0.animation = nil } }
+            .onChange(of: metric) { _, _ in selectedDate = nil }
             Text(data.points.isEmpty ? "No sets in 12 weeks" : caption)
                 .font(AppFont.muted.font)
                 .foregroundStyle(AppColor.textSecondary)
@@ -6360,15 +6369,23 @@ struct AppTrendChart: View {
     private struct TrendDescriptor: AXChartDescriptorRepresentable {
         let data: AnalyticsEngine.ChartData
         let title: String
+        let metric: AnalyticsEngine.Metric
+        let unit: String
         func makeChartDescriptor() -> AXChartDescriptor {
             let x = AXNumericDataAxisDescriptor(title: "", range: data.xDomain.lowerBound.timeIntervalSince1970...data.xDomain.upperBound.timeIntervalSince1970, gridlinePositions: []) { value in
                 Date(timeIntervalSince1970: value).formatted(.dateTime.month(.wide).day())
             }
-            let y = AXNumericDataAxisDescriptor(title: "", range: data.yDomain, gridlinePositions: data.yTicks) { $0.formatted() }
+            let y = AXNumericDataAxisDescriptor(title: metric.rawValue, range: data.yDomain, gridlinePositions: data.yTicks) { WorkoutTargetFormatter.analyticsChartValue($0, metric: metric, unit: unit, spoken: true) }
             let series = AXDataSeriesDescriptor(name: title, isContinuous: data.points.count > 1, dataPoints: data.points.map { AXDataPoint(x: $0.week.timeIntervalSince1970, y: $0.value) })
             return AXChartDescriptor(title: title, summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [series])
         }
-        func updateChartDescriptor(_ descriptor: AXChartDescriptor) { descriptor.title = title; descriptor.series = makeChartDescriptor().series }
+        func updateChartDescriptor(_ descriptor: AXChartDescriptor) {
+            let updated = makeChartDescriptor()
+            descriptor.title = updated.title
+            descriptor.xAxis = updated.xAxis
+            descriptor.yAxis = updated.yAxis
+            descriptor.series = updated.series
+        }
     }
 }
 
@@ -6391,26 +6408,10 @@ struct AppMainLiftCard: View {
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
                 if let lift, let latest = lift.latest {
-                    if typeSize.isAccessibilitySize {
-                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                            Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
-                            change(lift)
-                        }
-                    } else {
-                        ViewThatFits(in: .horizontal) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
-                                Spacer(minLength: AppSpacing.sm)
-                                change(lift)
-                            }
-                            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
-                                change(lift)
-                            }
-                        }
-                    }
-                    Text("\(WorkoutTargetFormatter.analyticsDate(latest.date, now: now)) · vs. previous 4 weeks")
+                    Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
+                    Text("Latest session · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: now))")
                         .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                    change(lift)
                     AppTrendChart(data: chart, caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", unit: unit, bodyweight: lift.bodyweight)
                 } else {
                     Text("—").font(AppFont.numericInput.font).foregroundStyle(AppColor.textSecondary)
@@ -6436,10 +6437,10 @@ struct AppMainLiftCard: View {
         .accessibilityLabel(spokenLabel)
     }
     private func change(_ lift: AnalyticsEngine.Lift) -> some View {
-        Text(WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit))
+        Text("4-week comparison · \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))")
             .font(AppFont.caption.font.weight(.semibold)).monospacedDigit()
             .foregroundStyle(lift.comparison.isUp ? AppColor.textPrimary : AppColor.textSecondary)
-            .fixedSize(horizontal: true, vertical: false)
+            .fixedSize(horizontal: false, vertical: true)
     }
     @ViewBuilder private func footer(_ lift: AnalyticsEngine.Lift, best: AnalyticsEngine.Performance) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -6470,7 +6471,7 @@ struct AppMainLiftCard: View {
     }
     private var spokenLabel: String {
         guard let lift, let latest = lift.latest else { return "\(title). No sessions yet" }
-        var text = "\(title). \(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit)), \(latest.date.formatted(.dateTime.month(.wide).day())). \(WorkoutTargetFormatter.analyticsChange(lift.comparison, unit: unit, spoken: true)) versus previous 4 weeks."
+        var text = "\(title). Latest session: \(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit)), \(latest.date.formatted(.dateTime.month(.wide).day())). Four-week comparison: \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))."
         if let best = lift.best { text += " Best \(WorkoutTargetFormatter.analyticsSpokenSet(best, bodyweight: lift.bodyweight, unit: unit))." }
         if let target = lift.target { text += " Next \(WorkoutTargetFormatter.analyticsSpokenTarget(target, unit: unit))." }
         return text
