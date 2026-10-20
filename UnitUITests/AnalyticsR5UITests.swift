@@ -24,6 +24,9 @@ final class AnalyticsR5UITests: XCTestCase {
         }
         XCTAssertTrue(element.isHittable)
     }
+    private func mainCards(_ app: XCUIApplication) -> XCUIElementQuery {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "analytics-main-"))
+    }
     func testNormalCardsSummaryAndDetails() {
         let app = app(); open(app)
         let summary = app.buttons["analytics-summary"]
@@ -35,6 +38,12 @@ final class AnalyticsR5UITests: XCTestCase {
         capture(app, "r5-summary-info")
         app.buttons["Done"].tap()
         let bench = app.buttons["analytics-main-Bench Press"]
+        for name in ["Squat", "Deadlift"] {
+            let card = app.buttons["analytics-main-\(name)"]
+            reveal(card, in: app); card.tap()
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
+            app.navigationBars.buttons.firstMatch.tap()
+        }
         reveal(bench, in: app); bench.tap()
         XCTAssertTrue(app.buttons["Weight"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Latest session ·")).firstMatch.exists)
@@ -79,6 +88,11 @@ final class AnalyticsR5UITests: XCTestCase {
             capture(app, name)
             if flags.contains("-analytics-missing") {
                 XCTAssertFalse(app.buttons["analytics-main-Deadlift"].exists)
+                XCTAssertEqual(mainCards(app).count, 3)
+                let fill = app.buttons["analytics-main-Barbell Row"]
+                reveal(fill, in: app); fill.tap()
+                XCTAssertTrue(app.staticTexts["Barbell Row"].waitForExistence(timeout: 5))
+                app.navigationBars.buttons.firstMatch.tap()
                 app.swipeUp(); capture(app, "r5-never-logged-scrolled")
             }
             if flags.contains("-analytics-lb") {
@@ -86,5 +100,54 @@ final class AnalyticsR5UITests: XCTestCase {
             }
             app.terminate()
         }
+    }
+    func testCatalogNamesOpenTheirOwnDetails() {
+        let app = app(["-analytics-catalog-names"]); open(app)
+        for name in ["Back Squat (BB)", "Bench Press", "Deadlift (Conv)"] {
+            let card = app.buttons["analytics-main-\(name)"]
+            reveal(card, in: app); card.tap()
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        capture(app, "main-lifts-catalog-names")
+    }
+    func testMainLiftEditingPersistsAndCanReturnToAutomatic() {
+        let app = app(); open(app)
+        app.buttons["analytics-edit-main"].tap()
+        XCTAssertTrue(app.navigationBars["Main lifts"].waitForExistence(timeout: 5))
+        let squat = app.cells.containing(.staticText, identifier: "Squat").firstMatch
+        squat.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Delete")).firstMatch.tap()
+        if app.buttons["Delete"].exists { app.buttons["Delete"].tap() }
+        let addPullup = app.buttons["analytics-add-Pull-Up"]
+        reveal(addPullup, in: app); addPullup.tap()
+        let pullup = app.cells.containing(.staticText, identifier: "Pull-Up").firstMatch
+        for _ in 0..<4 { if pullup.isHittable { break }; app.swipeDown() }
+        let bench = app.cells.containing(.staticText, identifier: "Bench Press").firstMatch
+        pullup.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Reorder")).firstMatch.press(forDuration: 0.5, thenDragTo: bench)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["analytics-main-Pull-Up"].waitForExistence(timeout: 5))
+        XCTAssertEqual(mainCards(app).allElementsBoundByIndex.map(\.identifier), ["analytics-main-Pull-Up", "analytics-main-Bench Press", "analytics-main-Deadlift"])
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
+        app.launch()
+        app.tabBars.buttons["Analytics"].tap()
+        XCTAssertTrue(app.buttons["analytics-main-Pull-Up"].waitForExistence(timeout: 8))
+        XCTAssertEqual(mainCards(app).allElementsBoundByIndex.map(\.identifier), ["analytics-main-Pull-Up", "analytics-main-Bench Press", "analytics-main-Deadlift"])
+        capture(app, "main-lifts-custom")
+        app.buttons["analytics-edit-main"].tap()
+        let reset = app.buttons["Use automatic"]
+        XCTAssertTrue(reset.waitForExistence(timeout: 5)); reset.tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["analytics-main-Squat"].waitForExistence(timeout: 5))
+    }
+    func testMainLiftEditorCancelDiscardsChanges() {
+        let app = app(); open(app)
+        app.buttons["analytics-edit-main"].tap()
+        let squat = app.cells.containing(.staticText, identifier: "Squat").firstMatch
+        squat.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Delete")).firstMatch.tap()
+        if app.buttons["Delete"].exists { app.buttons["Delete"].tap() }
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["analytics-main-Squat"].waitForExistence(timeout: 5))
+        XCTAssertEqual(mainCards(app).count, 3)
     }
 }

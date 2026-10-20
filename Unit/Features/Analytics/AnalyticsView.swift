@@ -7,9 +7,11 @@ struct AnalyticsView: View {
     @Environment(\.scenePhase) private var phase
     @AppStorage("unitSystem") private var unit = "kg"
     @AppStorage(ActiveSplitStore.defaultsKey) private var activeSplit = ""
+    @AppStorage("unit.analytics.mainLiftIDs") private var pinnedRaw = ""
     @State private var store = AnalyticsStore()
     @State private var revision = 0
     @State private var showsExplanation = false
+    @State private var showsMainLiftEditor = false
     @State private var error: AppToastEvent?
 
     var body: some View {
@@ -22,17 +24,24 @@ struct AnalyticsView: View {
                         }
                         .buttonStyle(ScaleButtonStyle())
                         .accessibilityIdentifier("analytics-summary")
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            AppSectionHeader("Main lifts")
-                            VStack(spacing: AppSpacing.smd) {
-                                ForEach(AnalyticsEngine.Slot.allCases, id: \.self) { slot in
-                                    let lift = output.main[slot].flatMap { output.lifts[$0] }
-                                    if let lift, lift.latest != nil {
-                                        NavigationLink(value: lift.id) { mainCard(slot, lift: lift, output: output) }
-                                            .buttonStyle(ScaleButtonStyle())
-                                            .accessibilityIdentifier("analytics-main-\(slot.rawValue)")
-                                    } else {
-                                        mainCard(slot, lift: nil, output: output)
+                        if !output.mainIDs.isEmpty {
+                            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                                AppSectionHeader("Main lifts") {
+                                    Button("Edit") { showsMainLiftEditor = true }
+                                        .font(AppFont.caption.font).foregroundStyle(AppColor.accent)
+                                        .frame(minWidth: AppSpacing.xxl, minHeight: AppSpacing.xxl)
+                                        .accessibilityLabel("Edit main lifts")
+                                        .accessibilityHint("Choose up to 3 main lifts.")
+                                        .accessibilityIdentifier("analytics-edit-main")
+                                }
+                                VStack(spacing: AppSpacing.smd) {
+                                    ForEach(output.mainIDs, id: \.self) { id in
+                                        if let lift = output.lifts[id] {
+                                            NavigationLink(value: id) { mainCard(lift, output: output) }
+                                                .buttonStyle(ScaleButtonStyle())
+                                                .accessibilityHint("Opens details.")
+                                                .accessibilityIdentifier("analytics-main-\(lift.exercise.name)")
+                                        }
                                     }
                                 }
                             }
@@ -80,21 +89,27 @@ struct AnalyticsView: View {
             }
         }
         .sheet(isPresented: $showsExplanation) { explanationSheet }
+        .sheet(isPresented: $showsMainLiftEditor) {
+            if let output = store.output {
+                MainLiftsEditor(output: output, automaticIDs: store.automaticMainIDs, pinnedRaw: $pinnedRaw)
+            }
+        }
         .appToast(event: $error)
         .task(id: revision) { await reload() }
         .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave)) { _ in revision += 1 }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in revision += 1 }
         .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in revision += 1 }
         .onChange(of: activeSplit) { _, _ in revision += 1 }
+        .onChange(of: pinnedRaw) { _, _ in revision += 1 }
         .onChange(of: phase) { _, phase in if phase == .active { revision += 1 } }
     }
     private func reload() async {
-        do { try await store.refresh(context: context, now: Date(), calendar: .current) }
+        do { try await store.refresh(context: context, now: Date(), calendar: .current, pinnedMainIDs: AnalyticsEngine.parsedMainIDs(pinnedRaw)) }
         catch { self.error = AppToastEvent(error.localizedDescription, kind: .error) }
     }
-    private func mainCard(_ slot: AnalyticsEngine.Slot, lift: AnalyticsEngine.Lift?, output: AnalyticsEngine.Output) -> some View {
-        AppMainLiftCard(title: slot.rawValue, icon: Self.icon(for: slot), lift: lift,
-                        chart: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift?.bodyweight == true ? .reps : .weight, unit: unit), unit: unit, now: output.today)
+    private func mainCard(_ lift: AnalyticsEngine.Lift, output: AnalyticsEngine.Output) -> some View {
+        AppMainLiftCard(title: lift.exercise.name, icon: AnalyticsEngine.slot(for: lift.exercise).map(Self.icon(for:)) ?? Self.icon(for: lift.exercise), lift: lift,
+                        chart: AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : .weight, unit: unit), unit: unit, now: output.today)
     }
     static func icon(for slot: AnalyticsEngine.Slot) -> AppIcon {
         switch slot { case .squat: .liftSquat; case .bench: .liftBench; case .deadlift: .liftDeadlift }
