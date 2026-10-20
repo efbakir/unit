@@ -345,14 +345,18 @@ struct ActiveWorkoutView: View {
                 }
             }
         } else {
-            ExerciseSummaryRow(
-                name: section.exercise.displayName, summary: summary(for: section),
-                isCompleted: section.hasReachedPlannedSetGoal,
-                showsUndo: showsInlineUndo(for: section.id),
-                onUndo: undoLastLog, onSelect: { jump(to: section.id) }
-            )
-            .allowsHitTesting(!guardActive)
+            exerciseSummary(section)
         }
+    }
+
+    private func exerciseSummary(_ section: WorkoutExerciseSectionModel) -> some View {
+        ExerciseSummaryRow(
+            name: section.exercise.displayName, summary: summary(for: section),
+            isCompleted: section.hasReachedPlannedSetGoal,
+            showsUndo: showsInlineUndo(for: section.id),
+            onUndo: undoLastLog, onSelect: { jump(to: section.id) }
+        )
+        .allowsHitTesting(!guardActive)
     }
 
     @ViewBuilder
@@ -395,17 +399,10 @@ struct ActiveWorkoutView: View {
     }
 
     private func upcomingExercises(_ ids: [UUID]) -> some View {
-        AppCardList(data: sectionModels.filter { ids.contains($0.id) }, id: \.id, rowVerticalInset: AppSpacing.xs) { section in
-            Button { jump(to: section.id) } label: {
-                AppListRow(title: section.exercise.displayName, style: .cardListContent) {
-                    Text(summary(for: section)).font(AppFont.muted.font)
-                        .foregroundStyle(AppColor.textDisabled).monospacedDigit()
-                }
-                .frame(minHeight: AppWorkoutMetrics.rowHeight)
+        ForEach(sectionModels.filter { ids.contains($0.id) }) { section in
+            exerciseSummary(section)
                 .id(section.id.uuidString)
-            }
-            .buttonStyle(ScaleButtonStyle())
-            .accessibilityIdentifier("upcoming-exercise-\(section.id)")
+                .accessibilityIdentifier("upcoming-exercise-\(section.id)")
         }
     }
 

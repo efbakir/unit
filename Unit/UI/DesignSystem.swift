@@ -6696,35 +6696,41 @@ struct ExerciseSummaryRow: View {
     let onUndo: () -> Void
     let onSelect: () -> Void
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            Button(action: onSelect) {
-                HStack(spacing: AppSpacing.sm) {
-                    if isCompleted {
-                        AppIcon.checkmarkFilled.image(size: 22).accessibilityHidden(true)
+        // Match the expanded exercise header's 8pt card + 4pt title inset.
+        // Each summary is its own flat card, including upcoming exercises.
+        AppCard(contentInset: AppSpacing.smd, verticalInset: 0, cornerRadius: AppRadius.md) {
+            HStack(spacing: AppSpacing.sm) {
+                Button(action: onSelect) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(name).font(AppFont.caption.font).lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(summary).appFont(.muted).monospacedDigit()
+                            .foregroundStyle(isCompleted ? AppColor.textSecondary : AppColor.textDisabled)
+                            .lineLimit(1).minimumScaleFactor(0.7)
                     }
-                    Text(name).font(AppFont.caption.font).lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(summary).appFont(.muted).monospacedDigit()
-                        .foregroundStyle(isCompleted ? AppColor.textSecondary : AppColor.textDisabled)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(minHeight: 52).contentShape(Rectangle())
                 }
-                .frame(minHeight: 52).contentShape(Rectangle())
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel(name)
+                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary]
+                    .filter { !$0.isEmpty }.joined(separator: ", "))
+                .accessibilityHint("Opens exercise sets")
+                if isCompleted {
+                    Button("Undo", action: onUndo)
+                        .font(AppFont.caption.font).underline()
+                        .foregroundStyle(AppColor.textPrimary)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .opacity(showsUndo ? 1 : 0)
+                        .animation(AppMotion.transition, value: showsUndo)
+                        .allowsHitTesting(showsUndo)
+                        .accessibilityHidden(!showsUndo)
+                    AppIcon.checkmarkFilled.image(size: 22)
+                        .accessibilityHidden(true)
+                }
             }
-            .buttonStyle(ScaleButtonStyle())
-            if isCompleted {
-                Button("Undo", action: onUndo)
-                    .font(AppFont.caption.font).underline()
-                .foregroundStyle(AppColor.textPrimary)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .opacity(showsUndo ? 1 : 0)
-                .animation(AppMotion.transition, value: showsUndo)
-                    .allowsHitTesting(showsUndo)
-                    .accessibilityHidden(!showsUndo)
-            }
+            .foregroundStyle(isCompleted ? AppColor.textPrimary : AppColor.textSecondary)
         }
-        .foregroundStyle(isCompleted ? AppColor.textPrimary : AppColor.textSecondary)
-        .padding(.horizontal, AppSpacing.md)
-        .background(AppColor.cardBackground.opacity(isCompleted ? 1 : 0.6), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 }
 
