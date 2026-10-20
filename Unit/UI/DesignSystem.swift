@@ -54,10 +54,10 @@ enum AppColor {
 
     /// Filled segment in multi-step progress (e.g. onboarding) — softer than `textPrimary` but reads clearly against `border` for inactive steps.
 
-    // Interactive
-    static let accent = Color(uiColor: uicolor(0x0A0A0A))
+    // Interactive — October 20 user-approved blue, deepened for light CTA labels.
+    static let accent = Color(uiColor: uicolor(0x0068E0))
     static let accentForeground = Color(uiColor: uicolor(0xF6F6F6))
-    static let accentSoft = Color(uiColor: uicolor(0xEBEBEB))
+    static let accentSoft = Color(uiColor: uicolor(0xEAF2FF))
 
     // Status
     static let success = Color(uiColor: uicolor(0x34C759))
@@ -786,6 +786,7 @@ nonisolated enum AppIcon: String, Sendable {
     case climbing = "figure.climbing"
     case core = "figure.core.training"
 
+    // Original movement artwork: approved custom fallback after the library benchmark.
     case liftSquat = "unit.lift.squat"
     case liftBench = "unit.lift.bench"
     case liftDeadlift = "unit.lift.deadlift"
@@ -793,16 +794,14 @@ nonisolated enum AppIcon: String, Sendable {
     case liftRow = "unit.lift.row"
     case liftPullup = "unit.lift.pullup"
 
-    static let liftIconsAreSymbols = false
-    static let liftImagesetOpticalScale: CGFloat = 1
-    var isLiftAsset: Bool { rawValue.hasPrefix("unit.lift.") }
-    var systemName: String { isLiftAsset ? AppIcon.deadlift.rawValue : rawValue }
+    var isMovementAsset: Bool { rawValue.hasPrefix("unit.lift.") }
+    var systemName: String { isMovementAsset ? AppIcon.deadlift.rawValue : rawValue }
 
     @MainActor func image(size: CGFloat = 17, weight: Font.Weight = .semibold, maximumScale: CGFloat? = nil) -> some View {
         Glyph(icon: self, size: size, weight: weight, maximumScale: maximumScale)
     }
 
-    /// Internal rendering implementation of AppIcon, shared by assets and symbols.
+    /// One renderer for movement vectors and native control symbols.
     @MainActor private struct Glyph: View {
         let icon: AppIcon
         let size: CGFloat
@@ -813,17 +812,11 @@ nonisolated enum AppIcon: String, Sendable {
         var body: some View {
             let pointSize = size * min(scale, maximumScale ?? .greatestFiniteMagnitude)
             Group {
-                if icon.isLiftAsset, let asset = loadedAsset {
-                    if AppIcon.liftIconsAreSymbols {
-                        Image(uiImage: asset).renderingMode(.template)
-                            .font(.system(size: pointSize, weight: .regular))
-                    } else {
-                        Image(uiImage: asset).renderingMode(.template).resizable().scaledToFit()
-                            .frame(width: pointSize * AppIcon.liftImagesetOpticalScale,
-                                   height: pointSize * AppIcon.liftImagesetOpticalScale)
-                    }
+                if icon.isMovementAsset, let asset = movementAsset {
+                    Image(uiImage: asset).renderingMode(.template).resizable().scaledToFit()
+                        .frame(width: pointSize, height: pointSize)
                 } else if maximumScale != nil {
-                    // Exercise symbols share the vector glyph box, including wide figures.
+                    // Wide exercise figures stay inside the shared tile's glyph box.
                     Image(systemName: icon.systemName).resizable().scaledToFit()
                         .font(.system(size: pointSize, weight: weight))
                         .frame(width: pointSize, height: pointSize)
@@ -833,10 +826,10 @@ nonisolated enum AppIcon: String, Sendable {
                 }
             }.symbolRenderingMode(.monochrome)
         }
-        private var loadedAsset: UIImage? {
-            let image = UIImage(named: icon.rawValue)
-            assert(image != nil, "Missing lift asset: \(icon.rawValue)")
-            return image
+        private var movementAsset: UIImage? {
+            let asset = UIImage(named: icon.rawValue)
+            assert(asset != nil, "Missing movement artwork: \(icon.rawValue)")
+            return asset
         }
     }
 }

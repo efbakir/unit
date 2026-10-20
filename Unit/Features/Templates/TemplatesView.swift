@@ -22,6 +22,7 @@ struct TemplatesView: View {
 
     @State private var showingOnboarding = false
     @State private var showingSettings = false
+    @State private var showingEditProgram = false
 
     private var activeSplit: Split? {
         ActiveSplitStore.resolve(from: splits)
@@ -92,6 +93,11 @@ struct TemplatesView: View {
             }
             .navigationDestination(for: ProgramLibraryDestination.self) { _ in
                 ProgramLibraryView()
+            }
+            .navigationDestination(isPresented: $showingEditProgram) {
+                if let split = activeSplit {
+                    EditProgramView(split: split)
+                }
             }
             .navigationDestination(isPresented: $showingOnboarding) {
                 OnboardingView()
@@ -178,8 +184,8 @@ struct TemplatesView: View {
 
         return AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                NavigationLink(value: split) {
-                    HStack(alignment: .center, spacing: AppSpacing.sm) {
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text(displayName)
                             .appFont(.largeTitle)
                             .foregroundStyle(AppColor.textPrimary)
@@ -187,16 +193,17 @@ struct TemplatesView: View {
                             .fixedSize(horizontal: false, vertical: true)
 
                         AppTag(text: "Active", style: .muted, layout: .compactCapsule)
-
-                        Spacer(minLength: 0)
                     }
-                    .appNavigationDisclosure()
-                    .contentShape(Rectangle())
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(displayName), active program")
-                    .accessibilityHint("Opens program details")
+
+                    Spacer(minLength: 0)
+
+                    AppSecondaryButton("Edit", fillsAvailableWidth: false) {
+                        showingEditProgram = true
+                    }
+                    .accessibilityLabel("Edit program")
                 }
-                .buttonStyle(ScaleButtonStyle())
 
                 if !days.isEmpty {
                     PreviewListContainer(

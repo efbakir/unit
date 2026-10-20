@@ -1,5 +1,7 @@
 # Exercise icons
 
+**Historical evidence:** these screenshots show the rejected supplied silhouette set. The October 20 temporary native replacement was superseded by a benchmark-led set of six original rounded-line vectors. Current owners, sources and verification limits: [exercise artwork benchmark](../../research/2026-10-20-exercise-art-benchmark.md).
+
 Approved on 19 October 2026. Six supplied 24×24 filled SVGs use template-rendered, vector-preserving image sets. No dark duplicates. Assets retain the dotted names from the handoff.
 
 - `AppIcon` owns asset/system rendering. Its internal `Glyph` uses body-relative scaling. `liftIconsAreSymbols` is false; `liftImagesetOpticalScale` is 1.

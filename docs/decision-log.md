@@ -549,3 +549,18 @@ Explicitly approved `AppStatusSummaryCard`, `AppMainLiftCard`, `AppTrendChart`, 
 ## 2026-10-19 — Let SwiftUI own tab-bar backgrounds
 
 Efe rejected the full-width background behind the floating bottom navigation and requested native SwiftUI defaults. Removed forced hard/soft scroll-edge styles from the shared compatibility modifier, the extra AppScreen content clip that cut off scrolling above the bar, and the UITabBarItem font override. This supersedes the earlier hard-edge styling decision. Native TabView, Analytics content, layout sizes, app palette and phone build remain unchanged. No replacement gradient, material, background or custom tab bar was added.
+
+
+## 2026-10-20 — Use native exercise icons
+
+The user rejected the supplied custom lifting figures and requested native SF Symbols for now. Reuse existing AppIcon roles, the exercise resolver, and shared tiles. Remove the six custom imagesets and asset-rendering branch. The active workout redesign awaits competitor benchmarks and the user’s wireframe choice; Analytics grouping and Programs navigation are separate review tasks. No version bump or phone install in this pass.
+
+
+## 2026-10-20 — Blue accent only
+
+The user chose blue actions over colors for six exercise families. Reuse `AppColor.accent`, `accentForeground`, and `accentSoft`; no new runtime color roles or components. The supplied Display P3 image’s blue converts to sRGB #1E86FC. Use deeper #0068E0 for actions and #EAF2FF for soft selections; Chalk #F6F6F6 on the action fill measures 4.79:1 contrast. Ink remains text/data. Native navigation action tint follows the same accent. This supersedes the prior Ink-only action rule; no new exercise category colors. Source checks only; visual pass and installation pending.
+
+
+## 2026-10-20 — Benchmark-led movement artwork and small UI fixes
+
+The user requested online library research, Mobbin MCP inspection, other-app art benchmarks and article review before applying changes, authorizing simple original icons if no suitable pack was found. A complete paid pack was too detailed at the existing 20/28pt sizes; the coherent free pack lacked exact coverage. Implement six original 24pt-grid, 2pt rounded-line movement vectors through the existing AppIcon/Glyph and tile owners. Native controls/fallbacks remain; names remain visible and blue stays in existing action/selection roles. This supersedes the temporary native-only exercise choice and the rejected supplied silhouettes. No new component, dependency, color role, schema or logging redesign. Also apply the previously requested Analytics explanation-card grouping and direct active-program Edit action, preserving inactive-program switching and all routine links. Benchmark and evidence: docs/research/2026-10-20-exercise-art-benchmark.md. Generic iOS compilation passed; in-app visuals/full QA/phone delivery remain pending.

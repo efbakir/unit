@@ -3,6 +3,8 @@ name: Unit
 description: The fastest, most trustworthy gym logging tool for athletes who already know how to train.
 colors:
   ink: "#0A0A0A"
+  actionBlue: "#0068E0"
+  actionBlueSoft: "#EAF2FF"
   milk: "#F5F5F5"
   bond: "#FFFFFF"
   pumice: "#E8E8E8"
@@ -133,7 +135,7 @@ spacing:
   xxl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
+    backgroundColor: "{colors.actionBlue}"
     textColor: "{colors.chalk}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
@@ -186,6 +188,8 @@ components:
 ---
 
 # Design System: Unit
+
+**October 20 approved color override:** `AppColor.accent` is blue `#0068E0`, with `accentSoft` `#EAF2FF` and the existing Chalk foreground. This supersedes references below to Ink as the action accent. Ink remains the primary text/data color. Reuse existing action and selection owners; no per-exercise colors. Layout, type, and native navigation structure remain unchanged.
 
 Runtime owners and the DEBUG catalog: [design-system index](docs/design-system-index.md).
 

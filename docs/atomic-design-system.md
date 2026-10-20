@@ -32,7 +32,7 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 - **Surfaces**: `background` = `#F5F5F5`, `cardBackground` = `#FFFFFF`, `cardRowFill` = `#F5F5F5` (nested-in-card recipe), `sheetBackground` = `#FFFFFF`, `controlBackground` = `#E8E8E8` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5`
 - **Text**: `textPrimary` = `#0A0A0A`, `textSecondary` = `#595959`, `textDisabled` = `#949494`
-- **Interactive**: `accent` = `#0A0A0A`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EBEBEB`. `accent` doubles as the `.tint(...)` on every NavigationStack — there is no separate `systemTint`.
+- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). `accent` doubles as the `.tint(...)` on every NavigationStack — there is no separate `systemTint`. Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
 - **Status**: `success` = `#34C759`, `warning` = `#FF9500`, `error` = `#FF3B30`. Plus accessible chip pairs `successSoft`/`successOnSoft`, `warningSoft`/`warningOnSoft`, `errorSoft`/`errorOnSoft`.
 
 **Rules**
@@ -69,7 +69,7 @@ Use named steps (`xs` … `xl` / `sm` … `lg`) for padding, `VStack` spacing, a
 
 ### Icons — `AppIcon`
 
-SF Symbol names and six approved `unit.lift.*` vector asset names as `String` raw values; use `.image(size:weight:)` for consistent sizing. `ExerciseIconResolver` owns exercise movement mapping. `AppIcon` owns template rendering and `AppMainLiftCard.iconTile` owns exercise tiles; screens never load assets directly. See `docs/qa/lift-icons/README.md`.
+Use `.image(size:weight:)` for consistent sizing. After the October 20 library/Mobbin benchmark, six original rounded-line `unit.lift.*` vectors identify movement families; native SF Symbols remain controls and generic fallbacks. The user authorized this custom fallback after the temporary native-only replacement. `AppIcon` owns template/native rendering, `ExerciseIconResolver` owns movement-pattern mapping, and `AppMainLiftCard.iconTile` owns all exercise tiles. See `docs/research/2026-10-20-exercise-art-benchmark.md`.
 
 **Rules**
 

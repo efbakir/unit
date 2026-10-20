@@ -23,10 +23,10 @@
 - **Disabled** (`AppColor.textDisabled`): `#949494` for disabled buttons and inactive controls.
 
 ### Accent and primary CTA (high contrast)
-- **Primary CTA background** (`AppColor.accent`): Ink ink in light mode, near-white in dark mode.
+- **Primary CTA background** (`AppColor.accent`): Blue `#0068E0`, approved by the user on October 20. Ink remains the primary text/data color; the app remains light-only.
 - **Primary CTA foreground** (`AppColor.accentForeground`): Text/icon color chosen to keep the CTA **high contrast** on `AppColor.accent`.
 - **Rule**: Restrained — **one obvious primary action** per screen where the Gym Test applies.
-- **Accent soft** (`AppColor.accentSoft`): Milk `#EBEBEB` for subtle fills and iOS-style utility controls.
+- **Accent soft** (`AppColor.accentSoft`): Pale blue `#EAF2FF` for subtle selection fills and iOS-style utility controls.
 
 ### Supporting
 

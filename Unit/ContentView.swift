@@ -117,7 +117,7 @@ struct ContentView: View {
         // Preserve Unit's typography/tint; leave every bar background and
         // scroll-edge appearance to UIKit/SwiftUI's native defaults.
         let navBar = UINavigationBar.appearance()
-        navBar.tintColor = titleColor
+        navBar.tintColor = UIColor(AppColor.accent)
         navBar.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
         navBar.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
     }

@@ -27,8 +27,8 @@ final class ExerciseIconResolverTests: XCTestCase {
     func testRenameRecomputesIcon() {
         let exercise = Exercise(displayName: "Bench Press")
         XCTAssertEqual(exercise.icon, .liftBench)
-        exercise.displayName = "Pendlay Row"
-        XCTAssertEqual(exercise.icon, .liftRow)
+        exercise.displayName = "Pull-Up"
+        XCTAssertEqual(exercise.icon, .liftPullup)
     }
 
     func testIconDoesNotQualifyVariantAsMainLift() {
@@ -37,11 +37,11 @@ final class ExerciseIconResolverTests: XCTestCase {
         XCTAssertEqual(ExerciseIconResolver.icon(name: exercise.name), .liftSquat)
     }
 
-    func testAssetsAndRenderedComparisons() throws {
+    func testMovementAssetsAndRenderedComparisons() throws {
         let icons: [AppIcon] = [.liftSquat, .liftBench, .liftDeadlift, .liftOverhead, .liftRow, .liftPullup, .core, .dumbbell, .deadlift]
-        for icon in icons where icon.isLiftAsset {
-            let image = try XCTUnwrap(UIImage(named: icon.rawValue))
-            XCTAssertEqual(image.renderingMode, .alwaysTemplate)
+        for icon in icons {
+            let image = try XCTUnwrap(icon.isMovementAsset ? UIImage(named: icon.rawValue) : UIImage(systemName: icon.systemName))
+            if icon.isMovementAsset { XCTAssertEqual(image.renderingMode, .alwaysTemplate) }
             XCTAssertGreaterThan(image.size.width, 0)
             let rendered = UIGraphicsImageRenderer(size: image.size).image { _ in image.draw(at: .zero) }
             let bytes = try XCTUnwrap(rendered.cgImage?.dataProvider?.data)
@@ -65,7 +65,7 @@ final class ExerciseIconResolverTests: XCTestCase {
                 preview = renderer.uiImage
             }
             let attachment = XCTAttachment(image: try XCTUnwrap(preview))
-            attachment.name = "lift-icons-\(name)"
+            attachment.name = "movement-icons-v2-\(name)"
             attachment.lifetime = .keepAlways
             add(attachment)
         }

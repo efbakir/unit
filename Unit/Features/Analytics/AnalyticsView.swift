@@ -107,35 +107,30 @@ struct AnalyticsView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("Each lift compares its best set from the last 4 weeks with the 4 weeks before.")
                             .font(AppFont.body.font)
-                        AppDividedList(data: [
+                        AppCardList(data: [
                             ("Up", "More weight or reps, nothing less"),
                             ("Same", "No change"),
                             ("Mixed", "Weight and reps both changed"),
                             ("Below best", "Less weight or reps, the other the same")
                         ], id: \.0) { item in
-                            HStack(alignment: .top, spacing: AppSpacing.md) {
-                                Text(item.0).font(AppFont.sectionHeader.font).frame(maxWidth: .infinity, alignment: .leading)
-                                Text(item.1).font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary).frame(maxWidth: .infinity, alignment: .leading)
-                            }.padding(.vertical, AppSpacing.smd)
+                            AppListRow(title: item.0, subtitle: item.1, style: .cardListContent)
                         }
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             AppSectionHeader("Status")
-                            AppDividedList(data: [
+                            AppCardList(data: [
                                 ("Getting stronger", "Half or more of your lifts up, most planned sessions done"),
                                 ("Holding steady", "Anything else"),
                                 ("Fewer sessions lately", "Under half of planned sessions done"),
                                 ("Building a baseline", "Under 2 weeks of sessions")
                             ], id: \.0) { item in
-                                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                    Text(item.0).font(AppFont.sectionHeader.font)
-                                    Text(item.1).font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
-                                }.padding(.vertical, AppSpacing.smd)
+                                AppListRow(title: item.0, subtitle: item.1, style: .cardListContent)
                             }
                         }
                         Text("Warm-up sets don't count. The status changes after 3 days.")
                             .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                     }.padding(AppSpacing.md)
                 }
+                .background(AppColor.background)
                 .navigationTitle("How this works").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showsExplanation = false } } }
                 .appNavigationBarChrome()

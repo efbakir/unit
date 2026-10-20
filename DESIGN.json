@@ -3,6 +3,7 @@
   "generatedAt": "2026-04-28T00:00:00Z",
   "title": "Design System: Unit",
   "platform": "ios-swiftui",
+  "approvedColorOverride": {"date": "2026-10-20", "accent": "#0068E0", "accentForeground": "#F6F6F6", "accentSoft": "#EAF2FF", "scope": "Existing action and selection owners; Ink remains text/data. Supersedes older Ink-as-action examples. No exercise colors."},
   "platformNote": "Unit is iOS / SwiftUI. The HTML/CSS component snippets below are web approximations of the canonical SwiftUI primitives in Unit/UI/DesignSystem.swift, generated for live-panel rendering only — they are not used by the app.",
   "extensions": {
     "colorMeta": {
@@ -113,9 +114,9 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The single Ink-black CTA. One per stress screen, full-width, 60pt tall.",
+      "description": "The single blue CTA. One per stress screen, full-width, 60pt tall.",
       "html": "<button class=\"ds-btn-primary\">Done</button>",
-      "css": ".ds-btn-primary { background: #0A0A0A; color: #F6F6F6; font-family: 'SF Pro Rounded', -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.25; padding: 16px 24px; min-height: 60px; border: none; border-radius: 14px; cursor: pointer; transition: opacity 0.15s ease-out, transform 0.15s ease-out; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:disabled { background: #E8E8E8; color: #949494; cursor: not-allowed; transform: none; opacity: 1; }"
+      "css": ".ds-btn-primary { background: #0068E0; color: #F6F6F6; font-family: 'SF Pro Rounded', -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.25; padding: 16px 24px; min-height: 60px; border: none; border-radius: 14px; cursor: pointer; transition: opacity 0.15s ease-out, transform 0.15s ease-out; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:disabled { background: #E8E8E8; color: #949494; cursor: not-allowed; transform: none; opacity: 1; }"
     },
     {
       "name": "Secondary Button",
