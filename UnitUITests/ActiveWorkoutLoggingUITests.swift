@@ -76,8 +76,11 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(weight, in: app)
         weight.typeText("24")
         let reps = app.textFields["logging-reps"].firstMatch
-        tap(reps, in: app)
+        tap(app.buttons["Edit reps"], in: app)
         reps.typeText("8")
+        XCTAssertTrue(app.buttons["Edit weight"].exists)
+        tap(app.buttons["Edit weight"], in: app)
+        tap(app.buttons["Edit reps"], in: app)
         let keyboardAction = app.buttons["keyboard-current-action"]
         XCTAssertTrue(keyboardAction.waitForExistence(timeout: 5))
         XCTAssertTrue(keyboardAction.isHittable)
