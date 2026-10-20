@@ -44,7 +44,9 @@ struct AnalyticsView: View {
                                     if let lift = output.lifts[id], let latest = lift.latest {
                                         NavigationLink(value: id) {
                                             HStack(spacing: AppSpacing.sm) {
-                                                AppMainLiftCard.iconTile(Self.icon(for: lift.exercise), side: AppSpacing.xl)
+                                                if let icon = Self.icon(for: lift.exercise) {
+                                                    AppMainLiftCard.iconTile(icon, side: AppSpacing.xl)
+                                                }
                                                 AppListRow(title: lift.exercise.name, style: .cardListContent, showsDisclosure: true) {
                                                     Text(WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit))
                                                         .font(AppFont.caption.font).monospacedDigit()
@@ -97,7 +99,7 @@ struct AnalyticsView: View {
     static func icon(for slot: AnalyticsEngine.Slot) -> AppIcon {
         switch slot { case .squat: .liftSquat; case .bench: .liftBench; case .deadlift: .liftDeadlift }
     }
-    static func icon(for exercise: AnalyticsEngine.ExerciseInput) -> AppIcon {
+    static func icon(for exercise: AnalyticsEngine.ExerciseInput) -> AppIcon? {
         ExerciseIconResolver.icon(name: exercise.name, muscleGroup: exercise.muscleGroup, equipment: exercise.equipment)
     }
     private var explanationSheet: some View {

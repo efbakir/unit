@@ -69,7 +69,7 @@ Use named steps (`xs` … `xl` / `sm` … `lg`) for padding, `VStack` spacing, a
 
 ### Icons — `AppIcon`
 
-Use `.image(size:weight:)` for consistent sizing. After the October 20 library/Mobbin benchmark, six original rounded-line `unit.lift.*` vectors identify movement families; native SF Symbols remain controls and generic fallbacks. The user authorized this custom fallback after the temporary native-only replacement. `AppIcon` owns template/native rendering, `ExerciseIconResolver` owns movement-pattern mapping, and `AppMainLiftCard.iconTile` owns all exercise tiles. See `docs/research/2026-10-20-exercise-art-benchmark.md`.
+Use `.image(size:weight:)` for consistent sizing. Six user-drawn body-fold `unit.lift.*` vectors exported from Figma are reserved for the Big 6 in Analytics and exercise detail: squat, bench press, deadlift, overhead press, barbell row and pull-up. `ExerciseIconResolver` matches complete canonical names/aliases and returns `nil` for other exercises, including related movements and equipment variants. There is no generic exercise-icon fallback. Today, routines, pickers, onboarding and active logging remain text-only. `AppIcon` owns template/native rendering; `AppMainLiftCard.iconTile` owns the 20/28pt neutral tiles. All six marks use `AppColor.textPrimary`, including empty main-lift cards. Original Figma outlines are preserved on transparent centred 32pt canvases. Source nodes and adjustments: `docs/qa/movement-icons-v3/source.json`.
 
 **Rules**
 
@@ -230,7 +230,7 @@ Touch-target floors stay explicit at 44pt. Native widget metrics are unchanged.
 
 `PreviewListRow` owns the recessed preview’s 16pt horizontal inset and symmetric vertical breathing. Its identity-first content is vertically centered within the existing 80pt minimum, growing for longer content. `PreviewListContainer` owns the surface and capped scroll viewport only, with no second layer of row padding. Separators overlay the full row width outside the content inset. `AppDividedList` no longer supports inset separator variants; its rows own padding and its dividers span the container. No new tokens, components or visual variants were introduced.
 
-Recessed compact navigation rows use a 64pt minimum with 16pt vertical breathing, matching the preview viewport estimate. Disclosure arrows reuse `AppColor.textTertiary` across preview navigation and the active-program header. Overflow keeps the next title visible rather than exposing only its inset.
+Recessed compact navigation rows use a 64pt minimum with 16pt vertical breathing, matching the preview viewport estimate. Disclosure arrows use the shared 12pt indicator size, medium weight and `AppColor.textDisabled` across custom navigation rows/cards; native List disclosures remain system-owned. Overflow keeps the next title visible rather than exposing only its inset.
 
 Workout targets and their weight/reps editor reuse the existing `AppFont.numericInput` role at30pt, the user-approved middle size between36pt and24pt. Product headings stay24pt; large timer numerics retain their own36pt role. No new font token or variant.
 

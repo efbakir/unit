@@ -2572,8 +2572,8 @@ extension View {
         if isPresented {
             HStack(spacing: AppSpacing.sm) {
                 self.frame(maxWidth: .infinity, alignment: .leading)
-                AppIcon.forward.image(size: AppIconSize.compact, weight: .semibold)
-                    .foregroundStyle(AppColor.textTertiary)
+                AppIcon.forward.image(size: AppIconSize.indicator, weight: .medium)
+                    .foregroundStyle(AppColor.textDisabled)
                     .accessibilityHidden(true)
             }
             .frame(minHeight: 44)
@@ -6415,7 +6415,7 @@ struct AppMainLiftCard: View {
         AppCard(contentInset: 0, cornerRadius: AppRadius.md) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    Self.iconTile(icon, side: 30, empty: lift == nil)
+                    Self.iconTile(icon, side: 30)
                     Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
@@ -6467,10 +6467,10 @@ struct AppMainLiftCard: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-    static func iconTile(_ icon: AppIcon, side: CGFloat, detail: Bool = false, empty: Bool = false) -> some View {
+    static func iconTile(_ icon: AppIcon, side: CGFloat, detail: Bool = false) -> some View {
         AppIconCircle(diameter: side, shape: .roundedRect(radius: AppRadius.sm), surface: .background, maximumScale: 2) {
             icon.image(size: detail ? AppIconSize.exerciseDetail : AppIconSize.exercise, weight: .regular, maximumScale: 2)
-                .foregroundStyle(empty ? AppColor.textSecondary : AppColor.textPrimary)
+                .foregroundStyle(AppColor.textPrimary)
         }.accessibilityHidden(true)
     }
     static func metric(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String, numberStyle: AppFont = .numericInput) -> some View {

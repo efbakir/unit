@@ -89,7 +89,7 @@ Patterns we rely on:
 
 ## 6. Iconography
 
-- **SF Symbols** only; weights/sizes set explicitly (`AppIcon` + `.image(size:weight:)`).
+- Six user-drawn body-fold vectors are reserved for the Big 6 in Analytics and exercise detail. Other exercises and all Today, routine, picker and workout screens have no exercise icons. `AppMainLiftCard.iconTile` uses the same dark neutral tint for all six, including empty slots. Native SF Symbols remain the control path. Shared navigation disclosures use the existing 12pt indicator size, medium weight and subdued `textDisabled` foreground; their 44pt touch areas remain.
 - Passive icons: secondary text color. Active / primary: accent or primary text as appropriate.
 
 ---

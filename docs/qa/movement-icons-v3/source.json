@@ -1,0 +1,125 @@
+{
+  "fileKey": "blqxXK1lBcyJxwzek2L3eH",
+  "adjustments": [
+    "Remove opaque white export background for template tinting",
+    "Centre original outline inside its 32pt square canvas"
+  ],
+  "pathsPreserved": true,
+  "uniformScale": 1,
+  "icons": [
+    {
+      "name": "squat",
+      "nodeId": "1327:76",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.squat.imageset/unit.lift.squat.svg",
+      "sourceBounds": [
+        8.0,
+        5.0,
+        24.5898,
+        26.2363
+      ],
+      "translation": [
+        -0.2948999999999984,
+        0.38185
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    },
+    {
+      "name": "hinge",
+      "nodeId": "1327:77",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.deadlift.imageset/unit.lift.deadlift.svg",
+      "sourceBounds": [
+        11.0,
+        3.0,
+        21.0908,
+        29.1631
+      ],
+      "translation": [
+        -0.04540000000000077,
+        -0.08155000000000001
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    },
+    {
+      "name": "bench",
+      "nodeId": "1327:79",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.bench.imageset/unit.lift.bench.svg",
+      "sourceBounds": [
+        7.0,
+        5.0,
+        25.3613,
+        26.2031
+      ],
+      "translation": [
+        -0.18064999999999998,
+        0.3984500000000004
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    },
+    {
+      "name": "ohp",
+      "nodeId": "1327:81",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.overhead.imageset/unit.lift.overhead.svg",
+      "sourceBounds": [
+        7.0,
+        5.0,
+        25.6436,
+        27.7471
+      ],
+      "translation": [
+        -0.32179999999999964,
+        -0.3735500000000016
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    },
+    {
+      "name": "row",
+      "nodeId": "1327:83",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.row.imageset/unit.lift.row.svg",
+      "sourceBounds": [
+        9.00098,
+        5.0,
+        23.9189,
+        27.1963
+      ],
+      "translation": [
+        -0.45993999999999957,
+        -0.0981500000000004
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    },
+    {
+      "name": "pullup",
+      "nodeId": "1327:85",
+      "asset": "Unit/Assets.xcassets/Lifts/unit.lift.pullup.imageset/unit.lift.pullup.svg",
+      "sourceBounds": [
+        9.14412,
+        4.0,
+        24.0006,
+        28.1885
+      ],
+      "translation": [
+        -0.5723599999999998,
+        -0.09425000000000239
+      ],
+      "glyphSizes": [
+        20,
+        28
+      ]
+    }
+  ]
+}

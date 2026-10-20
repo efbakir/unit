@@ -5,23 +5,24 @@ import SwiftUI
 @MainActor
 final class ExerciseIconResolverTests: XCTestCase {
     func testPatternsAndFalseFriends() {
-        let groups: [(AppIcon, [String])] = [
-            (.liftSquat, ["Squat", "Back Squat", "Front Squat", "Goblet Squat", "Hack Squat", "Box Squat", "Pause Squat", "Bulgarian Split Squat", "Leg Press", "Squat Jump", "Lunges", "Thruster", "SQUATS"]),
-            (.liftBench, ["Bench", "Bench Press", "INCLINE BENCH", "Close-Grip Bench", "Dumbbell Bench Press", "bench-press", "Bench  Press ", "Floor Press", "Chest Press", "BÉNCH PRESS", "ＢＥＮＣＨ ＰＲＥＳＳ", "bench_press", "bench/press", "bench.press", "bench,press"]),
-            (.liftDeadlift, ["Deadlift", "Deadlifts", "Romanian Deadlift", "Sumo Deadlift", "Trap Bar Deadlift", "RDL", "Stiff-Legged Deadlift", "Good Morning", "Rack Pull", "Hip Hinge"]),
-            (.liftRow, ["Bench Row", "Bench Supported Row", "Pendlay Row", "Chest-Supported Row", "Seated Cable Row", "Rows", "Machine Row"]),
-            (.liftPullup, ["Pull Up", "pull-up", "PULLUPS", "Weighted Pull-Up", "Chin-up", "Chinups", "Lat Pulldown", "Pull Downs", "Muscle Up", "Pullups"]),
-            (.liftOverhead, ["Overhead Press", "OHP", "Military Press", "Shoulder Press", "Push Press", "Strict Press", "Arnold Press", "Landmine Press", "Seated Dumbbell Shoulder Press"]),
-            (.deadlift, ["", "Rowing Machine", "Upright Row", "Overhead Triceps Extension", "Pullover", "Bench Dip", "Face Pull", "Hip Thrust", "Überzug", "Unknown"]),
-            (.core, ["Plank", "Crunch", "Sit Up", "Abs", "Hollow Hold"]),
-            (.dumbbell, ["Leg Curl", "DB Fly", "Kettlebell Swing"])
+        let groups: [(AppIcon?, [String])] = [
+            (.liftSquat, ["Squat", "Back Squat", "Barbell Back Squat", "Back Squat (BB)", "High Bar Squat", "SQUAT"]),
+            (.liftBench, ["Bench", "Bench Press", "Bench Press (BB)", "Barbell Bench Press", "bench-press", "Bench  Press ", "BÉNCH PRESS", "ＢＥＮＣＨ ＰＲＥＳＳ", "bench_press", "bench/press", "bench.press", "bench,press"]),
+            (.liftDeadlift, ["Deadlift", "Conventional Deadlift", "Deadlift (Conv)", "Sumo Deadlift", "Barbell Deadlift"]),
+            (.liftRow, ["Row", "Barbell Row", "Bent-Over Barbell Row", "Bent Over Row (BB)"]),
+            (.liftPullup, ["Pull Up", "pull-up", "PULLUPS", "Weighted Pull-Up"]),
+            (.liftOverhead, ["Overhead Press", "OHP", "OHP (BB)", "Military Press", "Shoulder Press", "Barbell Overhead Press"]),
+            (nil, ["", "Front Squat", "Goblet Squat", "Leg Press", "Lunges", "Step-Up", "Thruster", "Incline Bench", "Close-Grip Bench", "Dumbbell Bench Press", "Push-Up", "Floor Press", "Chest Press", "Romanian Deadlift", "RDL", "Good Morning", "Kettlebell Swing", "DB Row", "Bench Row", "Machine Row", "Seated Cable Row", "Face Pull", "Upright Barbell Row", "Pulldown", "Lat Pulldown", "Chin-Up", "Muscle Up", "Arnold Press", "Landmine Press", "Overhead Triceps Extension", "Plank", "Crunch", "Leg Curl", "DB Fly", "Unknown"])
         ]
         for (expected, names) in groups {
             for name in names { XCTAssertEqual(ExerciseIconResolver.icon(name: name), expected, name) }
         }
-        XCTAssertEqual(ExerciseIconResolver.icon(name: "Fly", equipment: "dumbbell"), .dumbbell)
-        XCTAssertEqual(ExerciseIconResolver.icon(name: "Hold", muscleGroup: "core"), .core)
-        XCTAssertEqual(ExerciseIconResolver.icon(name: "", muscleGroup: "core"), .deadlift)
+        XCTAssertNil(ExerciseIconResolver.icon(name: "Fly", equipment: "dumbbell"))
+        XCTAssertNil(ExerciseIconResolver.icon(name: "Hold", muscleGroup: "core"))
+        XCTAssertNil(ExerciseIconResolver.icon(name: "Bench Press", equipment: "dumbbell"))
+        XCTAssertNil(ExerciseIconResolver.icon(name: "Row", equipment: "machine"))
+        XCTAssertEqual(ExerciseIconResolver.icon(name: "Bench Press", equipment: "barbell"), .liftBench)
+        XCTAssertEqual(ExerciseIconResolver.icon(name: "Squat", equipment: "other"), .liftSquat)
     }
 
     func testRenameRecomputesIcon() {
@@ -34,11 +35,11 @@ final class ExerciseIconResolverTests: XCTestCase {
     func testIconDoesNotQualifyVariantAsMainLift() {
         let exercise = AnalyticsEngine.ExerciseInput(id: UUID(), name: "Front Squat", isBodyweight: false, equipment: "barbell", muscleGroup: "quads")
         XCTAssertNil(AnalyticsEngine.slot(for: exercise))
-        XCTAssertEqual(ExerciseIconResolver.icon(name: exercise.name), .liftSquat)
+        XCTAssertNil(ExerciseIconResolver.icon(name: exercise.name))
     }
 
     func testMovementAssetsAndRenderedComparisons() throws {
-        let icons: [AppIcon] = [.liftSquat, .liftBench, .liftDeadlift, .liftOverhead, .liftRow, .liftPullup, .core, .dumbbell, .deadlift]
+        let icons: [AppIcon] = [.liftSquat, .liftBench, .liftDeadlift, .liftOverhead, .liftRow, .liftPullup]
         for icon in icons {
             let image = try XCTUnwrap(icon.isMovementAsset ? UIImage(named: icon.rawValue) : UIImage(systemName: icon.systemName))
             if icon.isMovementAsset { XCTAssertEqual(image.renderingMode, .alwaysTemplate) }
