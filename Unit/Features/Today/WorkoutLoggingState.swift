@@ -3,6 +3,23 @@ import Foundation
 /// Value-only decisions for the active workout. Persistence and timer effects
 /// stay with their existing owners; the clock is always supplied by the caller.
 struct WorkoutLoggingState {
+    private struct SessionExerciseOrder: Codable {
+        let sessionID: UUID
+        let exerciseIDs: [UUID]
+    }
+
+    static func orderedExerciseIDs(templateIDs: [UUID], sessionID: UUID, saved: Data) -> [UUID] {
+        guard let order = try? JSONDecoder().decode(SessionExerciseOrder.self, from: saved),
+              order.sessionID == sessionID else { return templateIDs }
+        let valid = Set(templateIDs)
+        var seen = Set<UUID>()
+        return (order.exerciseIDs + templateIDs).filter { valid.contains($0) && seen.insert($0).inserted }
+    }
+
+    static func encodeExerciseOrder(_ ids: [UUID], sessionID: UUID) -> Data {
+        (try? JSONEncoder().encode(SessionExerciseOrder(sessionID: sessionID, exerciseIDs: ids))) ?? Data()
+    }
+
     struct Entry: Equatable {
         let id: UUID
         let weight: Double

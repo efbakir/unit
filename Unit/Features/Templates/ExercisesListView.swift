@@ -101,13 +101,16 @@ struct ExercisesListView: View {
         .appExerciseSearchable(text: $query)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingAddExercise = true
-                } label: {
-                    Label("Add exercise", systemImage: AppIcon.addCircle.systemName)
-                        .labelStyle(.iconOnly)
+                Group {
+                    Button {
+                        showingAddExercise = true
+                    } label: {
+                        Label("Add exercise", systemImage: AppIcon.addCircle.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel("Add exercise")
                 }
-                .accessibilityLabel("Add exercise")
+                .tint(AppColor.textPrimary)
             }
         }
         .appNavigationBarChrome()

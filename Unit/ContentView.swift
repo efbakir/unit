@@ -77,22 +77,22 @@ struct ContentView: View {
     }
 
     private var mainTabView: some View {
-        // Native tabs retain their stacks; only the arriving page fades out of blur.
+        // Native tabs own their transitions; never fade the whole navigation stack.
         // Entitlement/onboarding/root swaps above remain immediate (iOS 27).
         TabView(selection: $selectedTab) {
             Tab(RootTab.today.title, systemImage: RootTab.today.systemImage, value: RootTab.today) {
                 TodayView()
-                    .appTabEntrance(isSelected: selectedTab == .today)
+                    .tint(AppColor.textPrimary)
             }
 
             Tab(RootTab.program.title, systemImage: RootTab.program.systemImage, value: RootTab.program) {
                 TemplatesView()
-                    .appTabEntrance(isSelected: selectedTab == .program)
+                    .tint(AppColor.textPrimary)
             }
 
             Tab(RootTab.profile.title, systemImage: RootTab.profile.systemImage, value: RootTab.profile) {
                 profileTab
-                    .appTabEntrance(isSelected: selectedTab == .profile)
+                    .tint(AppColor.textPrimary)
             }
         }
         .tint(AppColor.accent)
@@ -117,7 +117,7 @@ struct ContentView: View {
         // Preserve Unit's typography/tint; leave every bar background and
         // scroll-edge appearance to UIKit/SwiftUI's native defaults.
         let navBar = UINavigationBar.appearance()
-        navBar.tintColor = UIColor(AppColor.accent)
+        navBar.tintColor = UIColor(AppColor.textPrimary)
         navBar.titleTextAttributes = [.foregroundColor: titleColor, .font: titleFont]
         navBar.largeTitleTextAttributes = [.foregroundColor: titleColor, .font: largeTitleFont]
     }

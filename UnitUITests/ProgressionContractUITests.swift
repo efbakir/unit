@@ -37,7 +37,7 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts["Upper A"].waitForExistence(timeout: 20),
             "Seeded active workout did not open"
         )
-        let finishWorkout = app.buttons[AppCopy.Workout.finishWorkout].firstMatch
+        let finishWorkout = app.buttons[AppCopy.Workout.finishShort].firstMatch
         XCTAssertTrue(
             finishWorkout.waitForExistence(timeout: 12),
             "Seeded workout is not ready to finish"
@@ -58,7 +58,7 @@ final class ProgressionContractUITests: XCTestCase {
             "Increase-weight target is incomplete or incorrect"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Every set reached the top of your 8–10 range").exists,
+            staticText(in: app, containing: AppCopy.Workout.allSetsReachedTopReason).exists,
             "Increase-weight explanation is missing"
         )
         attachScreenshot(of: app, named: "01b-completed-workout-summary")
@@ -96,7 +96,26 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts[AppCopy.Workout.editNextTarget].waitForExistence(timeout: 8),
             "Recommendation edit sheet did not open"
         )
-        tap(app.buttons["Increase"].firstMatch, "Increase edited target reps")
+        let weightField = app.textFields[AppCopy.Workout.nextTargetLabel]
+        let repsField = app.textFields[AppCopy.Workout.repsLabel]
+        XCTAssertEqual(weightField.frame.width, repsField.frame.width, accuracy: 1)
+        XCTAssertEqual(weightField.frame.height, repsField.frame.height, accuracy: 1)
+        attachScreenshot(of: app, named: "05-matched-target-inputs")
+        tap(repsField, "Edit target reps")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        repsField.doubleTap()
+        if app.menuItems["Select All"].waitForExistence(timeout: 1) {
+            app.menuItems["Select All"].tap()
+        }
+        let previousReps = repsField.value as? String ?? ""
+        repsField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previousReps.count))
+        attachScreenshot(of: app, named: "05-empty-target-reps")
+        XCTAssertEqual(repsField.value as? String, "")
+        let disabledSave = NSPredicate(format: "isEnabled == false")
+        expectation(for: disabledSave, evaluatedWith: app.buttons[AppCopy.Workout.saveChanges])
+        waitForExpectations(timeout: 3)
+        repsField.typeText("10")
+        tap(app.buttons[AppCopy.Nav.done], "Dismiss target keyboard")
         tap(app.buttons[AppCopy.Workout.saveChanges], "Save edited recommendation")
         XCTAssertTrue(
             staticText(in: app, containing: AppCopy.Workout.editedForNextTime)
@@ -299,7 +318,7 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts["Upper A"].waitForExistence(timeout: 20),
             "US App Store seed did not open the completed workout"
         )
-        let finishWorkout = app.buttons[AppCopy.Workout.finishWorkout].firstMatch
+        let finishWorkout = app.buttons[AppCopy.Workout.finishShort].firstMatch
         tap(finishWorkout, "finish US screenshot workout", timeout: 12)
         tap(
             app.alerts.firstMatch.buttons[AppCopy.Workout.finishWorkout],
@@ -312,11 +331,12 @@ final class ProgressionContractUITests: XCTestCase {
             "US screenshot recommendation did not show the complete 140 lb target"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Previous target · 3 × 10 at 135 lb").exists,
+            staticText(in: app, containing: "Previous").exists
+                && staticText(in: app, containing: "3 × 10 at 135 lb").exists,
             "US screenshot recommendation lost the 135 lb evidence"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Every set reached the top of your 8–10 range").exists,
+            staticText(in: app, containing: AppCopy.Workout.allSetsReachedTopReason).exists,
             "US screenshot recommendation lost its transparent reason"
         )
 
@@ -551,7 +571,7 @@ final class ProgressionContractUITests: XCTestCase {
         let pounds = app.buttons["lb"].firstMatch
         tap(pounds, "Weight unit pounds")
         XCTAssertTrue(pounds.isSelected)
-        XCTAssertGreaterThanOrEqual(pounds.frame.height, 44)
+        XCTAssertTrue(app.segmentedControls["Weight unit"].exists, "Weight units must use a native segmented picker")
         XCTAssertGreaterThanOrEqual(pounds.frame.width, 44)
         attachScreenshot(of: app, named: "native-01-settings-pounds")
         app.terminate()
@@ -576,7 +596,7 @@ final class ProgressionContractUITests: XCTestCase {
             tap(native.buttons["List"], "Native list")
             XCTAssertTrue(native.buttons["List"].isSelected)
         } else {
-            XCTAssertEqual(app.segmentedControls.count, 0, "iOS 18 should retain touch-sized buttons")
+            XCTAssertTrue(app.segmentedControls["Native history view"].exists, "iOS 18 must also use the native picker")
         }
         attachScreenshot(of: app, named: "native-02-native-and-retained")
         let unansweredList = app.buttons["Unanswered List"]
@@ -616,13 +636,14 @@ final class ProgressionContractUITests: XCTestCase {
     func testNativeHistoryAndProgressConsumers() throws {
         var app = makeApp(reset: true)
         app.launch()
-        tap(app.buttons[AppCopy.Workout.finishWorkout].firstMatch, "Finish seeded workout", timeout: 20)
+        tap(app.buttons[AppCopy.Workout.finishShort].firstMatch, "Finish seeded workout", timeout: 20)
         tap(app.alerts.firstMatch.buttons[AppCopy.Workout.finishWorkout], "Confirm finish")
         XCTAssertTrue(app.staticTexts[AppCopy.Workout.nextTimeTitle].waitForExistence(timeout: 15))
         app.terminate()
         app = makeApp()
         app.launch()
         tap(app.buttons[AppCopy.Nav.history], "History", timeout: 20)
+        XCTAssertTrue(app.segmentedControls["History view"].exists, "History must use the native picker")
         tap(app.buttons["Calendar"], "History calendar")
         XCTAssertTrue(app.buttons["Calendar"].isSelected)
         attachScreenshot(of: app, named: "native-07-history-calendar")
@@ -633,6 +654,7 @@ final class ProgressionContractUITests: XCTestCase {
         let exercise = button(in: app, containing: "Bench Press")
         scrollTo(exercise, in: app)
         tap(exercise, "Exercise progress")
+        XCTAssertTrue(app.segmentedControls["Progress metric"].exists, "Progress must use the native picker")
         tap(app.buttons["Reps"], "Progress reps")
         XCTAssertTrue(app.buttons["Reps"].isSelected)
         attachScreenshot(of: app, named: "native-09-progress-reps")
@@ -683,7 +705,7 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(retained, in: app, maximumSwipes: 8)
         tap(retained, "Retained calendar at large text")
         XCTAssertTrue(retained.isSelected)
-        XCTAssertGreaterThanOrEqual(retained.frame.height, 44)
+        XCTAssertTrue(app.segmentedControls["Retained history view"].exists)
         XCTAssertLessThanOrEqual(retained.frame.maxX, app.frame.maxX)
         attachScreenshot(of: app, named: "native-16-large-text-retained")
     }

@@ -13,6 +13,33 @@ final class WorkoutLoggingStateTests: XCTestCase {
         .init(id: id, name: name, plannedCount: count, entries: entries)
     }
 
+    func testSessionOrderSurvivesEncodingWithoutChangingTemplateOrder() {
+        let sessionID = UUID(), first = UUID(), second = UUID()
+        let templateIDs = [first, second]
+        let saved = WorkoutLoggingState.encodeExerciseOrder([second, first], sessionID: sessionID)
+        XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: templateIDs,
+            sessionID: sessionID, saved: saved), [second, first])
+        XCTAssertEqual(templateIDs, [first, second])
+        XCTAssertEqual(WorkoutLoggingState.currentExerciseID(in: [exercise([], id: second),
+            exercise([entry(0)], id: first)], selectedID: first), first)
+    }
+
+    func testSavedOrderIgnoresOtherSessionsAndCorruptData() {
+        let ids = [UUID(), UUID()], sessionID = UUID()
+        let saved = WorkoutLoggingState.encodeExerciseOrder(Array(ids.reversed()), sessionID: UUID())
+        for data in [saved, Data("invalid".utf8), Data()] {
+            XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: ids,
+                sessionID: sessionID, saved: data), ids)
+        }
+    }
+
+    func testSavedOrderDropsDeletedAndDuplicateIDsAndAppendsNewExercises() {
+        let first = UUID(), second = UUID(), added = UUID(), deleted = UUID(), sessionID = UUID()
+        let saved = WorkoutLoggingState.encodeExerciseOrder([second, deleted, second, first], sessionID: sessionID)
+        XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: [first, second, added],
+            sessionID: sessionID, saved: saved), [second, first, added])
+    }
+
     func testRowsDeriveCurrentAndPlannedPositionsForZeroTwoAndFourSets() {
         let empty = WorkoutLoggingState.rows(for: exercise([]), isCurrent: true)
         XCTAssertEqual(empty.map(\.number), [1, 2, 3, 4])

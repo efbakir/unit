@@ -332,3 +332,101 @@ final class DayTemplate {
         return session
     }
 }
+
+/// Shared target-editor input for Today and routine details.
+struct RoutineTargetEdit: Identifiable {
+    let templateID: UUID
+    let exerciseID: UUID
+    let exerciseName: String
+    let setCount: Int
+    let reps: Int
+    let progression: DoubleProgressionConfiguration?
+    var id: UUID { exerciseID }
+}
+
+@MainActor
+extension DayTemplate {
+    func targetEdit(for exercise: Exercise, sessions: [WorkoutSession],
+                    defaultSets: Int, defaultReps: Int) -> RoutineTargetEdit {
+        let history = SetEntry.latestValidWorkingSets(for: exercise.id, in: sessions)
+        let sets = plannedSets(for: exercise.id).flatMap { $0 > 0 ? $0 : nil }
+            ?? (history.isEmpty ? defaultSets : history.count)
+        let reps = plannedReps(for: exercise.id).flatMap { $0 > 0 ? $0 : nil }
+            ?? history.last?.reps ?? defaultReps
+        return RoutineTargetEdit(templateID: id, exerciseID: exercise.id,
+                                 exerciseName: exercise.displayName, setCount: sets, reps: reps,
+                                 progression: progressionState(for: exercise.id)?.configuration(workingSetCount: sets))
+    }
+
+    /// Mutate the same configuration regardless of the screen that opened it.
+    /// Callers save and restore their model context on failure.
+    func applyTarget(setCount: Int, reps: Int, progression: DoubleProgressionConfiguration?,
+                     for exerciseID: UUID, sessions: [WorkoutSession]) {
+        let previousSetCount = plannedSets(for: exerciseID)
+        setPlannedSets(setCount, for: exerciseID)
+
+        if let progression {
+            let previous = progressionState(for: exerciseID)
+            let targetReps = min(
+                max(
+                    previous?.currentAcceptedTargetReps ?? progression.lowerRepBound,
+                    progression.lowerRepBound
+                ),
+                progression.upperRepBound
+            )
+            let configurationChanged = previous?.lowerRepBound != progression.lowerRepBound
+                || previous?.upperRepBound != progression.upperRepBound
+                || previous?.weightIncrementKg != progression.weightIncrementKg
+                || previousSetCount != setCount
+            let targetChanged = previous?.currentAcceptedTargetReps != targetReps
+            let preservesAcceptedDecision = !configurationChanged && !targetChanged
+            let state = ExerciseProgressionState(
+                lowerRepBound: progression.lowerRepBound,
+                upperRepBound: progression.upperRepBound,
+                weightIncrementKg: progression.weightIncrementKg,
+                currentAcceptedTargetWeightKg: previous?.currentAcceptedTargetWeightKg
+                    ?? progressionSeedWeight(for: exerciseID, sessions: sessions),
+                currentAcceptedTargetReps: targetReps,
+                sourceWorkoutSessionID: preservesAcceptedDecision
+                    ? previous?.sourceWorkoutSessionID
+                    : nil,
+                lastAcceptedReason: preservesAcceptedDecision
+                    ? previous?.lastAcceptedReason
+                    : nil
+            )
+            setProgressionState(state, for: exerciseID)
+            setPlannedReps(targetReps, for: exerciseID)
+        } else {
+            setProgressionState(nil, for: exerciseID)
+            setPlannedReps(reps, for: exerciseID)
+        }
+    }
+
+    private func progressionSeedWeight(for exerciseID: UUID, sessions: [WorkoutSession]) -> Double? {
+        if let planned = plannedWeight(for: exerciseID), planned > 0 {
+            return planned
+        }
+
+        return sessions.first(where: { candidate in
+            candidate.templateId == id
+                && candidate.isCompleted
+                && candidate.setEntries.contains(where: {
+                    $0.exerciseId == exerciseID
+                        && $0.isCompleted
+                        && !$0.isWarmup
+                        && $0.weight > 0
+                })
+        })?
+        .setEntries
+        .filter {
+            $0.exerciseId == exerciseID
+                && $0.isCompleted
+                && !$0.isWarmup
+                && $0.weight > 0
+        }
+        .sorted { $0.setIndex < $1.setIndex }
+        .last?
+        .weight
+    }
+
+}

@@ -169,6 +169,7 @@ struct RecentSessionsView: View {
     @State private var displayMonth: Date = Calendar.current.startOfMonth(for: Date())
     @State private var selectedDate: Date?
     @State private var selectedPayload: SelectedSessionsPayload?
+    @State private var toastMessage: AppToastEvent?
 
     private var historySessions: [WorkoutSession] {
         sessions.filter { session in
@@ -267,6 +268,7 @@ struct RecentSessionsView: View {
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
         .appNavigationBarChrome()
+        .appToast(event: $toastMessage)
         .toolbar(.hidden, for: .tabBar)
         .sheet(item: $selectedPayload, onDismiss: {
             selectedDate = nil
@@ -300,12 +302,20 @@ struct RecentSessionsView: View {
             isCompleted: false
         )
 
+        let previousLastPerformedDate = template.lastPerformedDate
         modelContext.insert(session)
         template.lastPerformedDate = session.date
-        try? modelContext.save()
-
-        if showsCloseButton {
-            dismiss()
+        do {
+            try modelContext.save()
+            if showsCloseButton {
+                dismiss()
+            }
+        } catch {
+            // Undo only this attempted start. A context-wide rollback would
+            // discard unrelated edits made elsewhere in the shared context.
+            template.lastPerformedDate = previousLastPerformedDate
+            modelContext.delete(session)
+            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
         }
     }
 
@@ -359,13 +369,10 @@ struct RecentSessionsView: View {
                 filteredEmptyState
                     .transition(AppBlurTransition().animation(.appReveal))
             } else {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if showsMissedInList {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("This week")
-                                .appCapsLabel(.smallLabel)
-                                .foregroundStyle(AppColor.textSecondary)
-                                .padding(.horizontal, AppSpacing.xs)
+                            AppSectionHeader("This week")
 
                             ForEach(earlierWeekItems) { info in
                                 EarlierWeekRoutineRow(info: info) {
@@ -377,10 +384,7 @@ struct RecentSessionsView: View {
 
                     ForEach(monthSections, id: \.month) { section in
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text(monthLabel(for: section.month))
-                                .appCapsLabel(.smallLabel)
-                                .foregroundStyle(AppColor.textSecondary)
-                                .padding(.horizontal, AppSpacing.xs)
+                            AppSectionHeader(monthLabel(for: section.month))
 
                             AppCardList(section.sessions) { snapshot in
                                 if let session = sessions.first(where: { $0.id == snapshot.id }) {
@@ -446,8 +450,7 @@ struct RecentSessionsView: View {
     }
 
     private var calendarContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            AppCard {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     CalendarMonthHeader(displayMonth: $displayMonth)
 
@@ -470,7 +473,6 @@ struct RecentSessionsView: View {
                         }
                     )
                 }
-            }
 
             calendarDetailSection
         }

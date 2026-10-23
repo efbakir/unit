@@ -46,7 +46,6 @@ struct OnboardingSplitBuilderView: View {
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
 
-                AppCard {
                     HStack {
                         Text("Days per week")
                             .font(AppFont.body.font)
@@ -60,7 +59,7 @@ struct OnboardingSplitBuilderView: View {
                             onIncrement: { vm.updateDayCount(vm.dayCount + 1) }
                         )
                     }
-                }
+                    .padding(.vertical, AppSpacing.sm)
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     AppSectionHeader("Day names")

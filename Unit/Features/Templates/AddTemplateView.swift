@@ -15,6 +15,7 @@ struct AddTemplateView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var isSaving = false
+    @State private var saveFailed = false
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -24,8 +25,8 @@ struct AddTemplateView: View {
         AppSheetScreen(
             title: "New day",
             primaryButton: PrimaryButtonConfig(
-                label: "Create Day",
-                isEnabled: canSave,
+                label: "Create day",
+                isEnabled: canSave && !isSaving,
                 isLoading: isSaving,
                 disabledReason: AppCopy.FormHint.dayNameRequired,
                 action: save
@@ -44,10 +45,15 @@ struct AddTemplateView: View {
                     .appInputFieldStyle(height: 52)
             }
         }
+        .alert("Couldn't save routine", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your changes weren't saved. Try again.")
+        }
     }
 
     private func save() {
-        guard !isSaving else { return }
+        guard canSave, !isSaving else { return }
         isSaving = true
 
         let template = DayTemplate(
@@ -60,8 +66,15 @@ struct AddTemplateView: View {
         ids.append(template.id)
         split.orderedTemplateIds = ids
 
-        try? modelContext.save()
-        dismiss()
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            modelContext.rollbackRestoringLoadedModels()
+            isSaving = false
+            saveFailed = true
+            AppHaptic.error.fire()
+        }
     }
 }
 

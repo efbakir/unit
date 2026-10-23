@@ -159,14 +159,18 @@ struct OnboardingShell<Content: View, StickyAccessory: View, FloatingAccessory: 
             surface: nil
         ) {
             content()
+                .padding(.vertical, usesOuterScroll ? 0 : AppSpacing.md)
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(action: onBack) {
-                    Label("Back", systemImage: AppIcon.back.systemName)
-                        .labelStyle(.iconOnly)
+                Group {
+                    Button(action: onBack) {
+                        Label("Back", systemImage: AppIcon.back.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel("Back")
                 }
-                .accessibilityLabel("Back")
+                .tint(AppColor.textPrimary)
             }
         }
         // Nav bar appearance is owned by the global proxy in

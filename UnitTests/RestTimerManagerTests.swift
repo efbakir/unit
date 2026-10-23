@@ -70,7 +70,7 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: "unit.restTimer.endDate") as? Date, deadline)
     }
 
-    func testFifteenSecondAdjustmentsKeepElapsedTimeAndMinimum() async throws {
+    func testTwentySecondAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()
         var now = Date(timeIntervalSince1970: 2_000_000_000)
@@ -78,11 +78,15 @@ final class RestTimerManagerTests: XCTestCase {
         defer { timer.stop() }
         await notifications.waitForRequest { timer.start(totalSeconds: 120) }
         now = now.addingTimeInterval(20)
-        await notifications.waitForRequest { timer.adjust(by: 15) }
-        XCTAssertEqual(timer.secondsRemaining, 115)
-        XCTAssertEqual(timer.totalDuration, 135)
-        XCTAssertEqual(timer.endDate, now.addingTimeInterval(115))
-        XCTAssertEqual((notifications.requests.last?.trigger as? UNTimeIntervalNotificationTrigger)?.timeInterval, 115)
+        await notifications.waitForRequest { timer.adjust(by: 20) }
+        XCTAssertEqual(timer.secondsRemaining, 120)
+        XCTAssertEqual(timer.totalDuration, 140)
+        XCTAssertEqual(timer.endDate, now.addingTimeInterval(120))
+        XCTAssertEqual((notifications.requests.last?.trigger as? UNTimeIntervalNotificationTrigger)?.timeInterval, 120)
+        await notifications.waitForRequest { timer.adjust(by: -20) }
+        XCTAssertEqual(timer.secondsRemaining, 100)
+        XCTAssertEqual(timer.totalDuration, 120)
+        XCTAssertEqual(timer.endDate, now.addingTimeInterval(100))
         await notifications.waitForRequest { timer.adjust(by: -500) }
         XCTAssertEqual(timer.secondsRemaining, 15)
         XCTAssertEqual(timer.totalDuration, 15)

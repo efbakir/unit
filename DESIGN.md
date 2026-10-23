@@ -387,3 +387,43 @@ These guardrails carry PRODUCT.md's anti-references through into pixels. Every "
 - **Don't** copy Strava / Nike Training Club patterns — feeds, badges, friend activity, share prompts, motivational hero copy, lifestyle photography of athletes mid-jump.
 - **Don't** copy Whoop / Oura aesthetics — dark dashboards, neon data viz arcs, gradient hero metrics, recovery rings, sleep-score chrome. Unit is not a wellness product; it is a working tool.
 - **Don't** add SaaS landing-page clichés to the marketing surface — stock-photo athletes, "transform your training" hero copy, three-icon feature grids, pricing tiers above the fold.
+
+## JOI direction — 20 October 2026
+
+The full JOI-inspired overhaul supersedes earlier default 24pt card gutters and
+centered boxed empty states. Page headings and empty states sit directly on the
+page, left aligned. Cards group related content; previews do not add a second
+filled container. Default card and list-row horizontal gutters are 16pt; section
+headers use the existing 15pt secondary role. Explicit inset exceptions remain
+for the active logging inputs and full-bleed charts/dividers.
+
+Existing surface tokens: page #FAFAFA, card #FFFFFF, inset #F5F5F5, secondary
+control #F0F0F0, active control #E5E5E5. Blue #0068E0 remains for primary actions,
+selection and the rest line. Top-bar actions are ink. Native navigation owns its
+materials. Keep numeric sizes, button heights and card radii. Completed and
+upcoming exercises each use ExerciseSummaryRow, with a leading title, wrapping
+metadata and far-trailing completion mark. No new component or variant.
+
+### Surface separation correction — 20 October 2026
+
+Page background uses `AppColor.background` #F5F5F5 again; cards remain white.
+This supersedes the JOI pass’s #FAFAFA page value: the user found white cards
+too difficult to distinguish. Logging weight inputs center the number and unit
+as one group, retaining full-width tap targets.
+
+### Rounded typography trial — 20 October 2026
+
+User-approved SF Pro Rounded trial through the existing UIFont.geist bridge;
+SF Mono workout values remain unchanged. JOI’s exact font is unconfirmed.
+Secondary control fill returns to #E8E8E8; active fill #D6D6D6 for clearer
+separation on both #F5F5F5 pages and white cards. No new tokens/components.
+
+### 21 October corrections
+
+Standard SF Pro restored at user request; SF Mono unchanged. Collapsed exercise
+cards use 16pt inner spacing, full-width leading content and trailing completion
+marks; expired Undo no longer reserves invisible space. Shared sticky action
+chrome uses 16pt bottom spacing above native navigation.
+
+Analytics correction: simplification must retain charts and Best/Next tables.
+Keep single-point and no-recent-data chart states; simplify repeated wording only.

@@ -114,11 +114,14 @@ struct SettingsView: View {
         .toolbar {
             if shouldShowCloseButton {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
-                            .labelStyle(.iconOnly)
+                    Group {
+                        Button { dismiss() } label: {
+                            Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
+                                .labelStyle(.iconOnly)
+                        }
+                        .accessibilityLabel(AppCopy.Nav.close)
                     }
-                    .accessibilityLabel(AppCopy.Nav.close)
+                    .tint(AppColor.textPrimary)
                 }
             }
         }
@@ -150,9 +153,9 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var settingsContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            dataSection
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             preferencesSection
+            dataSection
             subscriptionSection
             feedbackSection
             legalSection
@@ -244,11 +247,11 @@ struct SettingsView: View {
                         Task { await runRestore() }
                     } label: {
                         AppListRow(title: row.rawValue) {
-                            if store.isLoading {
-                                ProgressView()
-                            } else {
-                                EmptyView()
-                            }
+                            // Reserve the indicator's space so the row stays
+                            // still when restoring begins or finishes.
+                            ProgressView()
+                                .opacity(store.isLoading ? 1 : 0)
+                                .accessibilityHidden(!store.isLoading)
                         }
                     }
                     .buttonStyle(ScaleButtonStyle())

@@ -30,7 +30,8 @@ struct SessionDetailView: View {
     @State private var toastMessage: AppToastEvent?
     @State private var editingRecommendationID: UUID?
     @State private var editingWeightText = ""
-    @State private var editingTargetReps = 1
+    @State private var editingRepsText = ""
+    @FocusState private var editingTargetField: String?
     @State private var didTrackRecommendations = false
 
     private struct ProgressionRecommendationRow: Identifiable {
@@ -194,7 +195,7 @@ struct SessionDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(statusText(recommendation.record))
-                    .appCapsLabel(.overline)
+                    .font(AppFont.muted.font)
                     .contentTransition(.opacity)
                     .animation(AppMotion.feedback, value: statusText(recommendation.record))
                     .foregroundStyle(AppColor.textSecondary)
@@ -224,45 +225,35 @@ struct SessionDetailView: View {
                 }
             }
 
-            if let target = recommendation.displayTarget,
-               let targetText = completeTargetText(
-                   target,
-                   setCount: recommendation.record.configuredSetCount
-               ) {
-                Text(targetText)
-                    .appNumericValue(value: targetText)
-                    .font(AppFont.title.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .monospacedDigit()
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 if let previousTarget = recommendation.record.previousTarget,
                    let previousTargetText = completeTargetText(
                        previousTarget,
                        setCount: recommendation.record.configuredSetCount
                    ) {
-                    evidenceLine(
-                        label: "Previous target",
-                        value: previousTargetText
-                    )
+                    evidenceLine(label: "Previous target", value: previousTargetText)
                 }
 
                 if let actualText = actualPerformanceText(recommendation.record) {
-                    evidenceLine(
-                        label: AppCopy.Workout.lastResultLabel,
-                        value: actualText
-                    )
+                    evidenceLine(label: "Logged", value: actualText)
                 }
 
-                if recommendation.record.acceptedTarget != nil,
-                   let suggestedTarget = recommendation.record.suggestedTarget,
+                if let accepted = recommendation.record.acceptedTarget,
+                   let suggested = recommendation.record.suggestedTarget,
+                   accepted != suggested,
                    let suggestedText = completeTargetText(
-                       suggestedTarget,
+                       suggested,
                        setCount: recommendation.record.configuredSetCount
                    ) {
                     evidenceLine(label: "Suggested", value: suggestedText)
+                }
+
+                if let target = recommendation.displayTarget,
+                   let targetText = completeTargetText(
+                       target,
+                       setCount: recommendation.record.configuredSetCount
+                   ) {
+                    evidenceLine(label: recommendation.record.acceptedTarget == nil ? "Suggested target" : "Next target", value: targetText, emphasized: true)
                 }
             }
 
@@ -339,13 +330,18 @@ struct SessionDetailView: View {
         )
     }
 
-    private func evidenceLine(label: String, value: String) -> some View {
-        Text("\(label) · \(value)")
-            .appNumericValue(value: value)
-            .font(AppFont.caption.font)
-            .foregroundStyle(AppColor.textSecondary)
-            .monospacedDigit()
-            .fixedSize(horizontal: false, vertical: true)
+    private func evidenceLine(label: String, value: String, emphasized: Bool = false) -> some View {
+        AppListRow(title: label, style: .cardListContent) {
+            Text(value)
+                .appNumericValue(value: value)
+                .font(AppFont.performance.font)
+                .bold(emphasized)
+                .foregroundStyle(emphasized ? AppColor.textPrimary : AppColor.textSecondary)
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var recommendationEditSheet: some View {
@@ -353,11 +349,12 @@ struct SessionDetailView: View {
             title: AppCopy.Workout.editNextTarget,
             primaryButton: PrimaryButtonConfig(
                 label: AppCopy.Workout.saveChanges,
-                isEnabled: parsedEditingWeightKg != nil,
+                isEnabled: parsedEditingWeightKg != nil && parsedEditingReps != nil,
                 action: saveEditedRecommendation
             ),
             dismissLabel: AppCopy.Nav.cancel,
-            onDismissAction: { editingRecommendationID = nil }
+            onDismissAction: { editingRecommendationID = nil },
+            showsKeyboardDismissToolbar: true
         ) {
             VStack(alignment: .center, spacing: AppSpacing.xl) {
                 if let recommendation = editingRecommendation {
@@ -366,16 +363,9 @@ struct SessionDetailView: View {
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .bottom, spacing: AppSpacing.lg) {
-                            recommendationWeightEditor(for: recommendation)
-                            recommendationRepsEditor(for: recommendation)
-                        }
-
-                        VStack(spacing: AppSpacing.lg) {
-                            recommendationWeightEditor(for: recommendation)
-                            recommendationRepsEditor(for: recommendation)
-                        }
+                    HStack(alignment: .bottom, spacing: AppSpacing.lg) {
+                        recommendationWeightEditor(for: recommendation)
+                        recommendationRepsEditor(for: recommendation)
                     }
                 }
             }
@@ -397,11 +387,14 @@ struct SessionDetailView: View {
             .font(AppFont.sectionHeader.font)
             .foregroundStyle(AppColor.textPrimary)
 
-            AppInlineWeightField(
-                text: $editingWeightText,
-                unitSuffix: unitSystem,
-                accessibilityLabel: AppCopy.Workout.nextTargetLabel
-            )
+            TextField("", text: $editingWeightText)
+                .focused($editingTargetField, equals: "weight")
+                .keyboardType(.decimalPad)
+                .font(AppFont.performance.font)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .appInputFieldStyle()
+                .accessibilityLabel(AppCopy.Workout.nextTargetLabel)
         }
         .frame(maxWidth: .infinity)
     }
@@ -414,25 +407,14 @@ struct SessionDetailView: View {
                 .font(AppFont.sectionHeader.font)
                 .foregroundStyle(AppColor.textPrimary)
 
-            AppStepper(
-                value: "\(editingTargetReps)",
-                size: .prominent,
-                minimumValueWidth: AppSpacing.xl,
-                isDecrementEnabled: editingTargetReps > recommendation.record.lowerRepBound,
-                isIncrementEnabled: editingTargetReps < recommendation.record.upperRepBound,
-                onDecrement: {
-                    editingTargetReps = max(
-                        recommendation.record.lowerRepBound,
-                        editingTargetReps - 1
-                    )
-                },
-                onIncrement: {
-                    editingTargetReps = min(
-                        recommendation.record.upperRepBound,
-                        editingTargetReps + 1
-                    )
-                }
-            )
+            TextField("", text: $editingRepsText)
+                .focused($editingTargetField, equals: "reps")
+                .keyboardType(.numberPad)
+                .font(AppFont.performance.font)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .appInputFieldStyle()
+                .accessibilityLabel(AppCopy.Workout.repsLabel)
         }
         .frame(maxWidth: .infinity)
     }
@@ -446,16 +428,17 @@ struct SessionDetailView: View {
         toastMessage = nil
         guard let target = recommendation.displayTarget else { return }
         editingWeightText = displayedWeight(target.weightKg)
-        editingTargetReps = target.reps
+        editingRepsText = String(target.reps)
         editingRecommendationID = recommendation.id
     }
 
     private func saveEditedRecommendation() {
         guard let recommendation = editingRecommendation,
-              let weightKg = parsedEditingWeightKg else { return }
+              let weightKg = parsedEditingWeightKg,
+              let reps = parsedEditingReps else { return }
         let target = DoubleProgressionTarget(
             weightKg: weightKg,
-            reps: editingTargetReps
+            reps: reps
         )
         let saved = persistTarget(
             target,
@@ -651,45 +634,25 @@ struct SessionDetailView: View {
         if let reason = record.unavailableReason {
             switch reason {
             case .mixedWorkingSetWeights:
-                return "\(AppCopy.Workout.mixedWeightsUnavailable)\n\(AppCopy.Workout.chooseTargetManually)"
+                return "\(AppCopy.Workout.mixedWeightsUnavailable) \(AppCopy.Workout.chooseTargetManually)"
             case .incompleteWorkingSets:
-                return "\(AppCopy.Workout.incompleteSetsUnavailable)\n\(AppCopy.Workout.chooseTargetManually)"
+                return "\(AppCopy.Workout.incompleteSetsUnavailable) \(AppCopy.Workout.chooseTargetManually)"
             case .invalidWeightIncrement:
                 return AppCopy.Workout.invalidIncrementUnavailable
             case .unsupportedBodyweightOnly:
                 return AppCopy.Workout.bodyweightUnavailable
             case .invalidConfiguration, .invalidTarget, .invalidWorkingSetData, .targetWeightOverflow:
-                return "\(AppCopy.Workout.invalidDataUnavailable)\n\(AppCopy.Workout.chooseTargetManually)"
-            }
-        }
-
-        if record.acceptedTarget != nil, record.decisionAction == nil {
-            switch record.recommendationReason {
-            case .allSetsReachedTop:
-                return AppCopy.Workout.allSetsReachedTopReason
-            case .addARep:
-                return AppCopy.Workout.addARepReason
-            case .repeatTarget:
-                return AppCopy.Workout.repeatTargetReason
-            case nil:
-                return AppCopy.Workout.invalidDataUnavailable
+                return "\(AppCopy.Workout.invalidDataUnavailable) \(AppCopy.Workout.chooseTargetManually)"
             }
         }
 
         switch record.recommendationReason {
         case .allSetsReachedTop:
-            let completed = actualPerformanceText(record).map {
-                "You completed \($0).\n"
-            } ?? ""
-            return completed + "Every set reached the top of your \(record.lowerRepBound)–\(record.upperRepBound) range."
+            return AppCopy.Workout.allSetsReachedTopReason
         case .addARep:
-            let targetReps = record.previousTarget?.reps ?? record.lowerRepBound
-            return "You completed at least \(targetReps) reps on all \(record.configuredSetCount) sets.\nKeep the weight and add one rep."
+            return AppCopy.Workout.addARepReason
         case .repeatTarget:
-            let targetReps = record.previousTarget?.reps
-                ?? record.suggestedTarget?.reps
-                ?? record.lowerRepBound
-            return "One or more sets were below the \(targetReps)-rep target.\nRepeat it or edit the target."
+            return AppCopy.Workout.repeatTargetReason
         case nil:
             return AppCopy.Workout.invalidDataUnavailable
         }
@@ -705,6 +668,14 @@ struct SessionDetailView: View {
         if didChange {
             try? modelContext.save()
         }
+    }
+
+    private var parsedEditingReps: Int? {
+        guard let recommendation = editingRecommendation,
+              let reps = Int(editingRepsText),
+              (recommendation.record.lowerRepBound...recommendation.record.upperRepBound).contains(reps)
+        else { return nil }
+        return reps
     }
 
     private var parsedEditingWeightKg: Double? {

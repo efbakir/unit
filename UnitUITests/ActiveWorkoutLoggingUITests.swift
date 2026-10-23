@@ -16,7 +16,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["complete-set-3"].waitForExistence(timeout: 5))
         capture(app, "final-b-after-set-two")
         let undo = try XCTUnwrap(app.buttons.matching(identifier: "Undo").allElementsBoundByIndex.first(where: \.isHittable))
-        tap(undo, in: app)
+        undo.tap() // Five-second Undo window: avoid the generic helper’s extra waits.
         XCTAssertTrue(app.buttons["complete-set-2"].waitForExistence(timeout: 5))
         tap(app.buttons["complete-set-2"], in: app)
         tap(app.buttons["logged-set-1"], in: app)
@@ -108,23 +108,73 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         let app = launch()
         let weight = app.textFields["logging-weight"].firstMatch
         tap(weight, in: app)
-        if let current = weight.value as? String { weight.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count)) }
-        weight.typeText("65")
+        // Use the visible step controls; tapping a native field does not promise
+        // the caret starts at the end of its existing value.
+        tap(app.buttons["+2.5"], in: app)
+        tap(app.buttons["+2.5"], in: app)
         tap(app.buttons["Done"].firstMatch, in: app)
         XCTAssertEqual(app.textFields["logging-weight"].firstMatch.value as? String, "65")
         capture(app, "final-b-current-target-edited")
         for sets in [4, 3, 3, 3] {
             for number in 1...sets { tap(app.buttons["complete-set-\(number)"], in: app) }
         }
-        XCTAssertTrue(app.buttons["Finish workout"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Finish"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
         capture(app, "final-b-end-of-day")
-        tap(app.buttons["Finish workout"], in: app)
+        tap(app.buttons["Finish"], in: app)
         tap(app.alerts.buttons["Finish workout"], in: app)
         tap(app.buttons["Update"], in: app)
         XCTAssertTrue(app.staticTexts["Next time"].waitForExistence(timeout: 10)
             || app.staticTexts["Workout complete"].exists)
         capture(app, "final-b-finished-update")
+    }
+
+    func testReorderKeepsLoggedSetRestAndSurvivesRelaunch() throws {
+        let app = launch()
+        tap(app.buttons["complete-set-1"], in: app)
+        tap(app.buttons["workout-reorder"], in: app)
+        let bench = app.cells.containing(.staticText, identifier: "workout-reorder-Bench Press").firstMatch
+        let row = app.cells.containing(.staticText, identifier: "workout-reorder-Barbell Row").firstMatch
+        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.exists)
+        bench.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+            .press(forDuration: 1, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.9)))
+        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
+        capture(app, "workout-reordered-sheet")
+        tap(app.buttons["Done"], in: app)
+        XCTAssertTrue(app.buttons["logged-set-1"].exists)
+        XCTAssertTrue(app.buttons["complete-set-2"].exists)
+        XCTAssertTrue(app.buttons["Skip"].isEnabled)
+        XCTAssertTrue(app.buttons["Finish"].isHittable)
+        capture(app, "workout-reordered-active-set")
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
+        app.launch()
+        tap(app.buttons["workout-reorder"], in: app)
+        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
+        capture(app, "workout-reordered-relaunch")
+    }
+
+    func testLongPressCanReorderExerciseCards() throws {
+        let app = launch()
+        tap(app.buttons["workout-reorder"], in: app)
+        let bench = app.cells.containing(.staticText, identifier: "workout-reorder-Bench Press").firstMatch
+        let row = app.cells.containing(.staticText, identifier: "workout-reorder-Barbell Row").firstMatch
+        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        bench.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+            .press(forDuration: 1, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.9)))
+        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
+        tap(app.buttons["Done"], in: app)
+        let rowTitle = app.staticTexts["Barbell Row"].firstMatch
+        let benchTitle = app.staticTexts["Bench Press"].firstMatch
+        XCTAssertTrue(rowTitle.isHittable)
+        XCTAssertTrue(benchTitle.isHittable)
+        rowTitle.press(forDuration: 1, thenDragTo: benchTitle)
+        tap(app.buttons["workout-reorder"], in: app)
+        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        XCTAssertLessThan(bench.frame.minY, row.frame.minY)
+        capture(app, "workout-card-long-press-result")
     }
 
     func testRestFooterKeepsItsFrameAcrossStates() throws {
@@ -138,8 +188,8 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
         XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
         capture(app, "rest-footer-running")
-        tap(app.buttons["+15"], in: app)
-        tap(app.buttons["−15"], in: app)
+        tap(app.buttons["+20"], in: app)
+        tap(app.buttons["−20"], in: app)
         let status = app.descendants(matching: .any).matching(identifier: "rest-duration").firstMatch
         let finished = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@ AND value == %@", "Rest finished.", "0:00"), object: status)

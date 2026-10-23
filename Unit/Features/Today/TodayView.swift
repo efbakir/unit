@@ -23,7 +23,7 @@ struct RestDayContext {
 }
 
 struct ExerciseTarget: Identifiable {
-    let id = UUID()
+    let id: UUID
     let exerciseName: String
     let displayTarget: String
     let supportingText: String?
@@ -31,11 +31,13 @@ struct ExerciseTarget: Identifiable {
     let isEmptyHint: Bool
 
     init(
+        id: UUID,
         exerciseName: String,
         displayTarget: String,
         supportingText: String? = nil,
         isEmptyHint: Bool = false
     ) {
+        self.id = id
         self.exerciseName = exerciseName
         self.displayTarget = displayTarget
         self.supportingText = supportingText
@@ -65,7 +67,6 @@ struct TodayView: View {
     @Environment(\.appTabSelection) private var appTabSelection
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
@@ -86,6 +87,7 @@ struct TodayView: View {
     @State private var staleSessionPrompt: WorkoutSession?
     @State private var toastMessage: AppToastEvent?
     @State private var showsRoutinePickSheet = false
+    @State private var targetEdit: RoutineTargetEdit?
     @State private var reviewRequestTask: Task<Void, Never>?
     @State private var reviewRequestAttemptedForUITest = false
     /// Bumps when override storage changes so `dashboardState` recomputes.
@@ -200,6 +202,7 @@ struct TodayView: View {
         )
 
         return AppScreen(
+            primaryButton: dashboardPrimaryButton(for: state),
             showsNativeNavigationBar: true
         ) {
             // Hero: Up Next / Rest Day / Empty state — always the first, most
@@ -211,19 +214,46 @@ struct TodayView: View {
         .toolbar {
             if routinePickerAllowed(for: state) {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showsRoutinePickSheet = true
-                    } label: {
-                        Label("Choose today's routine", systemImage: AppIcon.list.systemName)
-                            .labelStyle(.iconOnly)
+                    Group {
+                        Button {
+                            showsRoutinePickSheet = true
+                        } label: {
+                            Label("Choose today's routine", systemImage: AppIcon.list.systemName)
+                                .labelStyle(.iconOnly)
+                        }
                     }
+                    .tint(AppColor.textPrimary)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(AppCopy.Nav.history) {
-                    showsHistory = true
+                Group {
+                    Button(AppCopy.Nav.history) {
+                        showsHistory = true
+                    }
+                    .appToolbarTextStyle()
                 }
-                .appToolbarTextStyle()
+                .tint(AppColor.textPrimary)
+            }
+        }
+        .sheet(item: $targetEdit) { target in
+            AppSetRepEditorSheet(
+                subject: target.exerciseName,
+                initialSets: target.setCount,
+                initialReps: target.reps,
+                initialProgression: target.progression
+            ) { sets, reps, progression in
+                guard let template = templates.first(where: { $0.id == target.templateID }),
+                      template.orderedExerciseIds.contains(target.exerciseID) else { return false }
+                template.applyTarget(setCount: sets, reps: reps, progression: progression,
+                                     for: target.exerciseID, sessions: sessions)
+                do {
+                    try modelContext.save()
+                    return true
+                } catch {
+                    modelContext.rollbackRestoringLoadedModels()
+                    AppHaptic.error.fire()
+                    return false
+                }
             }
         }
         .sheet(isPresented: $showsRoutinePickSheet) {
@@ -234,8 +264,11 @@ struct TodayView: View {
         .appNavigationBarChrome()
     }
 
-    private var todayPreviewVisibleItemLimit: Int {
-        dynamicTypeSize.isAccessibilitySize ? 1 : 3
+    private func dashboardPrimaryButton(for state: TodayDashboardState) -> PrimaryButtonConfig? {
+        guard case .readyToday(let context) = state else { return nil }
+        return PrimaryButtonConfig(label: AppCopy.Workout.startWorkout) {
+            startWorkout(templateId: context.templateId)
+        }
     }
 
     private func routinePickerAllowed(for state: TodayDashboardState) -> Bool {
@@ -300,40 +333,48 @@ struct TodayView: View {
             }
 
         case .readyToday(let context):
-            EmptyStateCard(
-                eyebrow: "Up next",
-                title: context.templateName,
-                message: context.programName,
-                note: context.scheduleNote,
-                buttonLabel: AppCopy.Workout.startWorkout,
-                action: {
-                    startWorkout(templateId: context.templateId)
-                }
-            ) {
-                if !context.previewTargets.isEmpty,
-                   let template = templates.first(where: { $0.id == context.templateId }) {
-                    PreviewListContainer(
-                        itemCount: context.previewTargets.count,
-                        visibleItemLimit: todayPreviewVisibleItemLimit,
-                        usesTwoLineRows: true
-                    ) {
-                        ForEach(Array(context.previewTargets.enumerated()), id: \.offset) { index, target in
-                            NavigationLink(value: template) {
-                                PreviewListRow(
-                                    title: target.exerciseName,
-                                    subtitle: target.displayTarget,
-                                    supportingText: target.supportingText,
-                                    isEmptyHint: target.isEmptyHint,
-                                    layout: .identityFirst,
-                                    showsDisclosure: true,
-                                    showsSeparator: index < context.previewTargets.count - 1
-                                )
-                            }
-                            .buttonStyle(ScaleButtonStyle())
-                            .accessibilityHint("Opens \(context.templateName) details.")
-                        }
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Up next")
+                        .appFont(.muted)
+                        .foregroundStyle(AppColor.textSecondary)
+                    Text(context.templateName)
+                        .appFont(.analyticsStatus)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(context.programName)
+                        .appFont(.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let note = context.scheduleNote {
+                        Text(note)
+                            .appFont(.muted)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let template = templates.first(where: { $0.id == context.templateId }) {
+                    AppCardList(context.previewTargets, rowVerticalInset: AppSpacing.sm) { target in
+                        Button {
+                            guard let exercise = exercises.first(where: { $0.id == target.id }) else { return }
+                            targetEdit = template.targetEdit(for: exercise, sessions: sessions,
+                                defaultSets: AppSetRepEditorSheet.defaultSets,
+                                defaultReps: AppSetRepEditorSheet.defaultReps)
+                        } label: {
+                            PreviewListRow(
+                                title: target.exerciseName,
+                                subtitle: target.displayTarget,
+                                supportingText: target.supportingText,
+                                isEmptyHint: target.isEmptyHint,
+                                showsDisclosure: true
+                            )
+                        }
+                        .buttonStyle(ScaleButtonStyle())
+                        .accessibilityHint("Opens exercise target.")
+                    }
                 }
             }
 
@@ -678,7 +719,7 @@ final class TodayDashboardViewModel {
             ReadyTodayContext(
                 templateId: template.id,
                 programName: split.name,
-                templateName: template.name,
+                templateName: template.displayName,
                 scheduleNote: scheduleNote,
                 previewTargets: previewTargets
             )
@@ -692,7 +733,9 @@ final class TodayDashboardViewModel {
         let splitTemplates = templates.filter { $0.splitId == split.id }
         let templateByID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
         let ordered = split.orderedTemplateIds.compactMap { templateByID[$0] }
-        return ordered.isEmpty ? splitTemplates.sorted { $0.name < $1.name } : ordered
+        let orderedIDs = Set(ordered.map(\.id))
+        return ordered + splitTemplates.filter { !orderedIDs.contains($0.id) }
+            .sorted { $0.name < $1.name }
     }
 
     private func exercisePreviews(
@@ -705,12 +748,14 @@ final class TodayDashboardViewModel {
         func emptyTarget(for exercise: Exercise) -> ExerciseTarget {
             if let plannedTarget = plannedTargetText(template: template, exerciseID: exercise.id) {
                 return ExerciseTarget(
+                    id: exercise.id,
                     exerciseName: exercise.displayName,
                     displayTarget: plannedTarget,
                     isEmptyHint: false
                 )
             }
             return ExerciseTarget(
+                id: exercise.id,
                 exerciseName: exercise.displayName,
                 displayTarget: hasAnyCompleted
                     ? AppCopy.EmptyState.noPriorSets
@@ -734,6 +779,7 @@ final class TodayDashboardViewModel {
                    reps: acceptedTarget.reps
                ) {
                 return ExerciseTarget(
+                    id: exercise.id,
                     exerciseName: exercise.displayName,
                     displayTarget: displayTarget,
                     supportingText: lastTimePreviewText(
@@ -758,6 +804,7 @@ final class TodayDashboardViewModel {
                 ?? "\(representative.reps)"
 
             return ExerciseTarget(
+                id: exercise.id,
                 exerciseName: exercise.displayName,
                 displayTarget: displayTarget,
                 isEmptyHint: false
@@ -785,23 +832,7 @@ final class TodayDashboardViewModel {
         for exercise: Exercise,
         sessions: [WorkoutSession]
     ) -> String? {
-        guard let latestSession = sessions.first(where: { session in
-            session.isCompleted
-                && session.setEntries.contains(where: {
-                    $0.exerciseId == exercise.id
-                        && $0.isCompleted
-                        && !$0.isWarmup
-                })
-        }) else {
-            return nil
-        }
-        let sets = latestSession.setEntries
-            .filter {
-                $0.exerciseId == exercise.id
-                    && $0.isCompleted
-                    && !$0.isWarmup
-            }
-            .sorted { $0.setIndex < $1.setIndex }
+        let sets = SetEntry.latestValidWorkingSets(for: exercise.id, in: sessions)
         guard let performance = WorkoutTargetFormatter.completedPerformanceText(
             weightsKg: sets.map(\.weight),
             reps: sets.map(\.reps),

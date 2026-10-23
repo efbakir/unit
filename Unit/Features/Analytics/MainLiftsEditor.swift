@@ -30,10 +30,7 @@ struct MainLiftsEditor: View {
                             ForEach(draft, id: \.self) { id in
                                 if let lift = output.lifts[id] {
                                     HStack(spacing: AppSpacing.sm) {
-                                        if let icon = AnalyticsView.icon(for: lift.exercise) {
-                                            AppMainLiftCard.iconTile(icon, side: AppSpacing.xl)
-                                        }
-                                        Text(lift.exercise.name).font(AppFont.body.font)
+                                        Text(lift.exercise.name).font(AppFont.body.font).tracking(AppFont.title.tracking)
                                             .foregroundStyle(AppColor.textPrimary).lineLimit(2)
                                     }
                                     .frame(minHeight: AppSpacing.xxl)
@@ -43,9 +40,9 @@ struct MainLiftsEditor: View {
                             .onMove { draft.move(fromOffsets: $0, toOffset: $1) }
                             .onDelete { draft.remove(atOffsets: $0) }
                         } header: {
-                            Text("Shown").font(AppFont.caption.font)
+                            Text("Shown").font(AppFont.caption.font).tracking(AppFont.title.tracking)
                         } footer: {
-                            Text("Up to 3.").font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
+                            Text("Up to 3.").font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
                         }
                         Section {
                             ForEach(available) { lift in
@@ -53,15 +50,12 @@ struct MainLiftsEditor: View {
                                     HStack(spacing: AppSpacing.sm) {
                                         AppIcon.addCircle.image(size: AppIconSize.exercise)
                                             .foregroundStyle(draft.count < 3 ? AppColor.accent : AppColor.textDisabled)
-                                        if let icon = AnalyticsView.icon(for: lift.exercise) {
-                                            AppMainLiftCard.iconTile(icon, side: AppSpacing.xl)
-                                        }
                                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                            Text(lift.exercise.name).font(AppFont.body.font)
+                                            Text(lift.exercise.name).font(AppFont.body.font).tracking(AppFont.title.tracking)
                                                 .foregroundStyle(AppColor.textPrimary).lineLimit(2)
                                             let count = AnalyticsEngine.recentSessionCount(lift, since: cutoff)
                                             Text("\(count.formatted()) \(count == 1 ? "session" : "sessions") in 8 weeks")
-                                                .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
+                                                .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
                                         }
                                     }.frame(minHeight: AppSpacing.xxl)
                                 }
@@ -73,7 +67,7 @@ struct MainLiftsEditor: View {
                             }
                             .moveDisabled(true).deleteDisabled(true)
                         } header: {
-                            Text("Exercises").font(AppFont.caption.font)
+                            Text("Exercises").font(AppFont.caption.font).tracking(AppFont.title.tracking)
                         }
                     }
                     .environment(\.editMode, .constant(.active))
@@ -90,12 +84,15 @@ struct MainLiftsEditor: View {
                 .background(AppColor.background)
                 .navigationTitle("Main lifts").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Group { Button("Cancel") { dismiss() } }.tint(AppColor.textPrimary) }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            pinnedRaw = AnalyticsEngine.storedMainIDs(draft, automatic: automaticIDs)
-                            dismiss()
+                        Group {
+                            Button("Done") {
+                                pinnedRaw = AnalyticsEngine.storedMainIDs(draft, automatic: automaticIDs)
+                                dismiss()
+                            }
                         }
+                        .tint(AppColor.textPrimary)
                     }
                 }
                 .appNavigationBarChrome()

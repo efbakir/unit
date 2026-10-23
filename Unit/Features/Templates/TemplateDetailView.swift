@@ -115,6 +115,7 @@ struct TemplateDetailView: View {
     }
 
     private func addExercise(_ exercise: Exercise) {
+        guard !template.orderedExerciseIds.contains(exercise.id) else { return }
         var ids = template.orderedExerciseIds
         ids.append(exercise.id)
         template.orderedExerciseIds = ids
@@ -132,23 +133,14 @@ struct TemplateDetailView: View {
                         .frame(minWidth: 44, minHeight: 44, alignment: .leading)
                         .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(exercise.displayName)
-                            .appFont(.title)
+                            .appFont(.sectionHeader)
                             .foregroundStyle(AppColor.textPrimary)
                             .multilineTextAlignment(.leading)
 
-                        HStack(spacing: AppSpacing.sm) {
-                            exerciseTargetSubtitle(for: exercise)
-
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, AppSpacing.sm)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                                .fill(AppColor.cardRowFill)
-                        )
+                        exerciseTargetSubtitle(for: exercise)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -196,7 +188,7 @@ struct TemplateDetailView: View {
         AppReorderDragPreview {
             HStack(spacing: AppSpacing.md) {
                 Text(exercise.displayName)
-                    .appFont(.title)
+                    .appFont(.sectionHeader)
                     .foregroundStyle(AppColor.textPrimary)
                     .lineLimit(1)
 
@@ -242,15 +234,7 @@ struct TemplateDetailView: View {
         let reps: Int
     }
 
-    private struct TargetEditPayload: Identifiable {
-        let exerciseID: UUID
-        let exerciseName: String
-        let setCount: Int
-        let reps: Int
-        let progression: DoubleProgressionConfiguration?
-
-        var id: UUID { exerciseID }
-    }
+    private typealias TargetEditPayload = RoutineTargetEdit
 
     private func plannedTargetDisplay(for exercise: Exercise) -> PlannedTargetDisplay? {
         storedPlannedTarget(for: exercise) ?? historyTargetDisplay(for: exercise)
@@ -272,21 +256,9 @@ struct TemplateDetailView: View {
     }
 
     private func targetEditPayload(for exercise: Exercise) -> TargetEditPayload {
-        let target = plannedTargetDisplay(for: exercise)
-            ?? PlannedTargetDisplay(
-                setCount: AppSetRepEditorSheet.defaultSets,
-                reps: AppSetRepEditorSheet.defaultReps
-            )
-
-        return TargetEditPayload(
-            exerciseID: exercise.id,
-            exerciseName: exercise.displayName,
-            setCount: target.setCount,
-            reps: target.reps,
-            progression: template.progressionState(for: exercise.id)?.configuration(
-                workingSetCount: target.setCount
-            )
-        )
+        template.targetEdit(for: exercise, sessions: sessions,
+                            defaultSets: AppSetRepEditorSheet.defaultSets,
+                            defaultReps: AppSetRepEditorSheet.defaultReps)
     }
 
     private func targetAccessibilityValue(for exercise: Exercise) -> String {
@@ -310,44 +282,8 @@ struct TemplateDetailView: View {
         progression: DoubleProgressionConfiguration?,
         for exerciseID: UUID
     ) -> Bool {
-        let previousSetCount = template.plannedSets(for: exerciseID)
-        template.setPlannedSets(setCount, for: exerciseID)
-
-        if let progression {
-            let previous = template.progressionState(for: exerciseID)
-            let targetReps = min(
-                max(
-                    previous?.currentAcceptedTargetReps ?? progression.lowerRepBound,
-                    progression.lowerRepBound
-                ),
-                progression.upperRepBound
-            )
-            let configurationChanged = previous?.lowerRepBound != progression.lowerRepBound
-                || previous?.upperRepBound != progression.upperRepBound
-                || previous?.weightIncrementKg != progression.weightIncrementKg
-                || previousSetCount != setCount
-            let targetChanged = previous?.currentAcceptedTargetReps != targetReps
-            let preservesAcceptedDecision = !configurationChanged && !targetChanged
-            let state = ExerciseProgressionState(
-                lowerRepBound: progression.lowerRepBound,
-                upperRepBound: progression.upperRepBound,
-                weightIncrementKg: progression.weightIncrementKg,
-                currentAcceptedTargetWeightKg: previous?.currentAcceptedTargetWeightKg
-                    ?? progressionSeedWeight(for: exerciseID),
-                currentAcceptedTargetReps: targetReps,
-                sourceWorkoutSessionID: preservesAcceptedDecision
-                    ? previous?.sourceWorkoutSessionID
-                    : nil,
-                lastAcceptedReason: preservesAcceptedDecision
-                    ? previous?.lastAcceptedReason
-                    : nil
-            )
-            template.setProgressionState(state, for: exerciseID)
-            template.setPlannedReps(targetReps, for: exerciseID)
-        } else {
-            template.setProgressionState(nil, for: exerciseID)
-            template.setPlannedReps(reps, for: exerciseID)
-        }
+        template.applyTarget(setCount: setCount, reps: reps, progression: progression,
+                             for: exerciseID, sessions: sessions)
         return persistRoutine(reportsFailure: false)
     }
 
@@ -362,33 +298,6 @@ struct TemplateDetailView: View {
             upperRepBound: state.upperRepBound,
             weightIncrementKg: state.weightIncrementKg
         )
-    }
-
-    private func progressionSeedWeight(for exerciseID: UUID) -> Double? {
-        if let planned = template.plannedWeight(for: exerciseID), planned > 0 {
-            return planned
-        }
-
-        return sessions.first(where: { candidate in
-            candidate.templateId == template.id
-                && candidate.isCompleted
-                && candidate.setEntries.contains(where: {
-                    $0.exerciseId == exerciseID
-                        && $0.isCompleted
-                        && !$0.isWarmup
-                        && $0.weight > 0
-                })
-        })?
-        .setEntries
-        .filter {
-            $0.exerciseId == exerciseID
-                && $0.isCompleted
-                && !$0.isWarmup
-                && $0.weight > 0
-        }
-        .sorted { $0.setIndex < $1.setIndex }
-        .last?
-        .weight
     }
 
     /// Snapshot of a just-removed exercise so the toast Undo can restore the

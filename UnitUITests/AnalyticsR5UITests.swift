@@ -27,6 +27,25 @@ final class AnalyticsR5UITests: XCTestCase {
     private func mainCards(_ app: XCUIApplication) -> XCUIElementQuery {
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "analytics-main-"))
     }
+    func testRootProgramNavigationRetainsRoutineAccess() {
+        let app = app()
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Programs"].waitForExistence(timeout: 20))
+        capture(app, "joi-today")
+        app.tabBars.buttons["Programs"].tap()
+        XCTAssertTrue(app.buttons["Edit program"].waitForExistence(timeout: 8))
+        capture(app, "joi-programs")
+        app.buttons["Edit program"].tap()
+        XCTAssertTrue(app.textFields["Program name"].waitForExistence(timeout: 8))
+        capture(app, "joi-program-edit")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Edit program"].waitForExistence(timeout: 8))
+        let routine = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Push A")).firstMatch
+        reveal(routine, in: app)
+        routine.tap()
+        XCTAssertTrue(app.navigationBars["Push A"].waitForExistence(timeout: 8))
+        capture(app, "joi-routine")
+    }
     func testNormalCardsSummaryAndDetails() {
         let app = app(); open(app)
         let summary = app.buttons["analytics-summary"]
@@ -46,16 +65,16 @@ final class AnalyticsR5UITests: XCTestCase {
         }
         reveal(bench, in: app); bench.tap()
         XCTAssertTrue(app.buttons["Weight"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Latest session ·")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Latest ·")).firstMatch.exists)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "4-week comparison ·")).firstMatch.exists)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Previous 4 weeks:")).firstMatch.exists)
         capture(app, "r5-detail")
         XCTAssertTrue(app.staticTexts["82.5 kg × 5"].exists)
         app.buttons["Reps"].tap()
-        XCTAssertTrue(app.staticTexts["Reps in each week's best set · 12 weeks"].exists)
+        XCTAssertTrue(app.staticTexts["Reps at weekly top weight · 12 weeks"].exists)
         capture(app, "r5-detail-reps")
         app.buttons["Volume"].tap()
-        XCTAssertTrue(app.staticTexts["Exercise volume in each week's best-set session · 12 weeks"].exists)
+        XCTAssertTrue(app.staticTexts["Session volume at weekly best · 12 weeks"].exists)
         capture(app, "r5-detail-volume")
         app.buttons["Weight"].tap()
         app.navigationBars.buttons.firstMatch.tap()
@@ -81,6 +100,23 @@ final class AnalyticsR5UITests: XCTestCase {
             capture(app, name); app.terminate()
         }
     }
+    func testSingleWeekRetainsChartAndMetricsWithoutRepeatedComparison() {
+        let app = app(["-analytics-baseline"]); open(app)
+        let bench = app.buttons["analytics-main-Bench Press"]
+        reveal(bench, in: app)
+        XCTAssertFalse(bench.label.contains("No previous comparison"))
+        XCTAssertTrue(bench.label.contains(" Best "))
+        capture(app, "analytics-simple-single-week-main")
+        bench.tap()
+        XCTAssertTrue(app.staticTexts["Bench Press"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Latest ·")).firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["analytics-trend-chart"].exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "4-week comparison ·")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["Weight"].exists)
+        XCTAssertTrue(app.staticTexts["Next"].exists)
+        capture(app, "analytics-simple-single-week-detail")
+    }
+
     func testMissingMainLiftPoundsAndLargeText() {
         for (flags, name) in [(["-analytics-missing"], "r5-never-logged"), (["-analytics-lb"], "r5-pounds"), (["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"], "r5-ax3")] {
             let app = app(flags); open(app)

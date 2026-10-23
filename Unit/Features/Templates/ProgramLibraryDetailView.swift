@@ -18,6 +18,7 @@ struct ProgramLibraryDetailView: View {
     let program: ProgramTemplate
 
     @State private var showingConfirmation = false
+    @State private var importFailed = false
 
     var body: some View {
         AppScreen(
@@ -31,8 +32,9 @@ struct ProgramLibraryDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 headerBlock
                 ForEach(program.days) { day in
-                    SettingsSection(title: day.name, contentInset: AppSpacing.sm) {
-                        AppDividedList(day.items) { item in
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        AppSectionHeader(day.name)
+                        AppCardList(day.items, rowVerticalInset: AppSpacing.sm) { item in
                             AppListRow(
                                 title: item.exerciseName,
                                 value: prescriptionText(for: item),
@@ -59,6 +61,11 @@ struct ProgramLibraryDetailView: View {
         } message: {
             Text("Adds the program to your list. Missing exercises are created automatically.")
         }
+        .alert("Couldn't import program", isPresented: $importFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your saved programs are unchanged. Try again.")
+        }
         .tint(AppColor.accent)
     }
 
@@ -81,17 +88,22 @@ struct ProgramLibraryDetailView: View {
             Text(program.description)
                 .font(AppFont.body.font)
                 .foregroundStyle(AppColor.textPrimary)
-            HStack(spacing: AppSpacing.xs) {
-                AppTag(text: program.level.displayName, style: .muted, layout: .compactCapsule)
-                AppTag(text: program.goal.displayName, style: .muted, layout: .compactCapsule)
-                AppTag(text: "\(program.daysPerWeek) days/week", style: .muted, layout: .compactCapsule)
-            }
+            Text("\(program.level.displayName) · \(program.goal.displayName) · \(program.daysPerWeek) days/week")
+                .appFont(.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func importProgram() {
         let split = ProgramImporter.importProgram(program, into: modelContext)
+        guard !modelContext.hasChanges else {
+            modelContext.rollbackRestoringLoadedModels()
+            importFailed = true
+            AppHaptic.error.fire()
+            return
+        }
         ActiveSplitStore.setCurrent(split.id)
         appTabSelection(.program)
         dismiss()

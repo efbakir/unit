@@ -14,6 +14,7 @@ struct AnalyticsView: View {
     @State private var showsExplanation = false
     @State private var showsMainLiftEditor = false
     @State private var error: AppToastEvent?
+    @State private var initialLoadFailed = false
     @State private var hasPresentedMainLifts = false
 
     var body: some View {
@@ -30,7 +31,7 @@ struct AnalyticsView: View {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Main lifts") {
                                     Button("Edit") { showsMainLiftEditor = true }
-                                        .font(AppFont.caption.font).foregroundStyle(AppColor.accent)
+                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.accent)
                                         .frame(minWidth: AppSpacing.xxl, minHeight: AppSpacing.xxl)
                                         .accessibilityLabel("Edit main lifts")
                                         .accessibilityHint("Choose up to 3 main lifts.")
@@ -58,12 +59,9 @@ struct AnalyticsView: View {
                                     if let lift = output.lifts[id], let latest = lift.latest {
                                         NavigationLink(value: id) {
                                             HStack(spacing: AppSpacing.sm) {
-                                                if let icon = Self.icon(for: lift.exercise) {
-                                                    AppMainLiftCard.iconTile(icon, side: AppSpacing.xl)
-                                                }
                                                 AppListRow(title: lift.exercise.name, style: .cardListContent, showsDisclosure: true) {
                                                     Text(WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit))
-                                                        .font(AppFont.caption.font).monospacedDigit()
+                                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
                                                         .foregroundStyle(AppColor.textSecondary)
                                                         .minimumScaleFactor(0.7)
                                                 }
@@ -79,6 +77,11 @@ struct AnalyticsView: View {
                 } else {
                     EmptyStateCard(title: "No workouts yet", message: "Finish a workout to see progress.")
                         .accessibilityIdentifier("analytics-empty")
+                }
+            } else if initialLoadFailed {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    EmptyStateCard(title: "Couldn't load progress", message: "Try again.")
+                    AppSecondaryButton("Retry") { revision += 1 }
                 }
             } else {
                 AppStatusSummaryCard(word: "Building a baseline", sentence: "LAST 4 WEEKS")
@@ -109,8 +112,15 @@ struct AnalyticsView: View {
         .onChange(of: phase) { _, phase in if phase == .active { revision += 1 } }
     }
     private func reload() async {
-        do { try await store.refresh(context: context, now: Date(), calendar: .current, pinnedMainIDs: AnalyticsEngine.parsedMainIDs(pinnedRaw)) }
-        catch { self.error = AppToastEvent(error.localizedDescription, kind: .error) }
+        initialLoadFailed = false
+        do {
+            try await store.refresh(context: context, now: Date(), calendar: .current, pinnedMainIDs: AnalyticsEngine.parsedMainIDs(pinnedRaw))
+            self.error = nil
+        } catch {
+            guard !Task.isCancelled else { return }
+            initialLoadFailed = store.output == nil
+            self.error = AppToastEvent(error.localizedDescription, kind: .error)
+        }
     }
     private func mainCard(_ lift: AnalyticsEngine.Lift, output: AnalyticsEngine.Output) -> some View {
         AppMainLiftCard(title: lift.exercise.name, icon: AnalyticsEngine.slot(for: lift.exercise).map(Self.icon(for:)) ?? Self.icon(for: lift.exercise), lift: lift,
@@ -125,10 +135,10 @@ struct AnalyticsView: View {
     private var explanationSheet: some View {
         VStack(spacing: 0) {
             NavigationStack {
-                ScrollView {
+                AppScreen(showsNativeNavigationBar: true) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("Each lift compares its best set from the last 4 weeks with the 4 weeks before.")
-                            .font(AppFont.body.font)
+                            .font(AppFont.body.font).tracking(AppFont.title.tracking)
                         AppCardList(data: [
                             ("Up", "More weight or reps, nothing less"),
                             ("Same", "No change"),
@@ -149,12 +159,11 @@ struct AnalyticsView: View {
                             }
                         }
                         Text("Warm-up sets don't count. The status changes after 3 days.")
-                            .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
-                    }.padding(AppSpacing.md)
+                            .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                    }
                 }
-                .background(AppColor.background)
                 .navigationTitle("How this works").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showsExplanation = false } } }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Group { Button("Done") { showsExplanation = false } }.tint(AppColor.textPrimary) } }
                 .appNavigationBarChrome()
             }
         }

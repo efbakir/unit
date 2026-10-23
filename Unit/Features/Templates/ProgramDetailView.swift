@@ -19,10 +19,11 @@ struct ProgramDetailView: View {
     @State private var showingActivateConfirmation = false
 
     private var orderedTemplates: [DayTemplate] {
-        let byID = Dictionary(uniqueKeysWithValues: allTemplates.map { ($0.id, $0) })
+        let owned = allTemplates.filter { $0.splitId == split.id }
+        let byID = Dictionary(uniqueKeysWithValues: owned.map { ($0.id, $0) })
         let linked = split.orderedTemplateIds.compactMap { byID[$0] }
-        if !linked.isEmpty { return linked }
-        return allTemplates.filter { $0.splitId == split.id }
+        let linkedIDs = Set(linked.map(\.id))
+        return linked + owned.filter { !linkedIDs.contains($0.id) }
     }
 
     private var displayName: String {
@@ -48,9 +49,6 @@ struct ProgramDetailView: View {
             showsNativeNavigationBar: true
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                if isActive {
-                    AppTag(text: "Active", style: .muted, layout: .compactCapsule)
-                }
                 routineDaysCard
             }
             .appScreenEnter()
@@ -72,11 +70,14 @@ struct ProgramDetailView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showingEdit = true } label: {
-                    Label("Edit program", systemImage: AppIcon.program.systemName)
-                        .labelStyle(.iconOnly)
+                Group {
+                    Button { showingEdit = true } label: {
+                        Label("Edit program", systemImage: AppIcon.edit.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel("Edit program")
                 }
-                .accessibilityLabel("Edit program")
+                .tint(AppColor.textPrimary)
             }
         }
         .appNavigationBarChrome()

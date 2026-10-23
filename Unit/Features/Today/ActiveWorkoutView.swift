@@ -9,6 +9,7 @@ import ActivityKit
 import UserNotifications
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct ActiveWorkoutView: View {
     @Bindable var session: WorkoutSession
@@ -41,6 +42,8 @@ struct ActiveWorkoutView: View {
     @State private var showsDiscardRenamePrompt = false
     @State private var renameDraft = ""
     @State private var pendingRoutineUpdates: [WorkoutLoggingState.RoutineUpdate] = []
+    @AppStorage("unit.activeWorkoutExerciseOrder") private var exerciseOrderData = Data()
+    @State private var draggedExerciseID: UUID?
     @State private var showsAddExercise = false
     @State private var pendingExerciseForSetup: Exercise?
     @State private var setLoggedPhase = 0
@@ -99,8 +102,12 @@ struct ActiveWorkoutView: View {
     private var workoutNavigationTitle: String {
         (template?.name ?? "Workout").truncatedForNavigationTitle(maxGlyphCount: 34)
     }
+    private var orderedExerciseIDs: [UUID] {
+        WorkoutLoggingState.orderedExerciseIDs(templateIDs: template?.orderedExerciseIds ?? [],
+            sessionID: session.id, saved: exerciseOrderData)
+    }
     private var orderedExercises: [Exercise] {
-        (template?.orderedExerciseIds ?? []).compactMap { id in exercises.first { $0.id == id } }
+        orderedExerciseIDs.compactMap { id in exercises.first { $0.id == id } }
     }
     private var sectionModels: [WorkoutExerciseSectionModel] {
         orderedExercises.map { exercise in
@@ -151,15 +158,25 @@ struct ActiveWorkoutView: View {
             ScrollView {
                 WorkoutDayList {
                     ForEach(sectionModels) { section in
-                        exerciseContent(section).id(section.id.uuidString)
+                        exerciseContent(section)
+                            .appReorderable(id: section.id, draggedID: $draggedExerciseID, reduceMotion: reduceMotion) {
+                                AppReorderDragPreview {
+                                    Text(section.exercise.displayName).font(AppFont.sectionHeader.font)
+                                }
+                            }
+                            .onDrop(of: [.text], delegate: WorkoutExerciseDropDelegate(
+                                targetID: section.id, draggedID: $draggedExerciseID,
+                                onMove: moveExercise))
+                            .id(section.id.uuidString)
                     }
-                    if isFreestyleSession { addExerciseButton }
+                    if isFreestyleSession && !sectionModels.isEmpty { addExerciseButton }
                     if sectionModels.isEmpty { addExercisePrompt }
-                    if isWorkoutComplete {
-                        AppPrimaryButton(AppCopy.Workout.finishWorkout, action: requestFinish)
-                    }
                 }
+                // Child-owned scrolling keeps its breathing room inside the
+                // scroll content, so the viewport ends at the rest footer.
+                .padding(.vertical, AppSpacing.md)
                 .scrollTargetLayout()
+                .appAnimation(AppMotion.collectionChange, value: orderedExerciseIDs, reduceMotion: reduceMotion)
                 .appAnimation(AppMotion.collectionChange, value: session.setEntries.map(\.id), reduceMotion: reduceMotion)
                 .appAnimation(AppMotion.collectionChange, value: currentExerciseID, reduceMotion: reduceMotion)
                 .appAnimation(AppMotion.collectionChange, value: expandedCompletedID, reduceMotion: reduceMotion)
@@ -226,8 +243,8 @@ struct ActiveWorkoutView: View {
                     endDate: restTimer.endDate,
                     totalDuration: TimeInterval(restTimer.totalDuration),
                     canDecrease: restTimer.secondsRemaining > 15,
-                    onDecrease: { adjustRestTimer(by: -15) },
-                    onIncrease: { adjustRestTimer(by: 15) },
+                    onDecrease: { adjustRestTimer(by: -20) },
+                    onIncrease: { adjustRestTimer(by: 20) },
                     onSkip: skipRest
                 )
                 .dynamicTypeSize(...DynamicTypeSize.accessibility3)
@@ -244,18 +261,26 @@ struct ActiveWorkoutView: View {
                 }
             }
             ToolbarItem(placement: .topBarLeading) {
-                Button { showsCancelConfirmation = true } label: {
-                    Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                Group {
+                    Button { showsCancelConfirmation = true } label: {
+                        Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                    }
                 }
+                .tint(AppColor.textPrimary)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                if hasLoggedSets && !isWorkoutComplete {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if hasLoggedSets {
                     Button(AppCopy.Workout.finishShort, action: requestFinish)
+                        .tint(AppColor.textPrimary)
                 }
             }
         }
         .toolbar(.hidden, for: .tabBar)
         .appNavigationBarChrome()
+        // During logging, scrolling cards must not show through the title/timer.
+        // This screen intentionally keeps the native navigation surface visible.
+        .toolbarBackground(AppColor.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .tint(AppColor.textPrimary)
         .appHaptic(.success, trigger: setLoggedPhase)
         .appHaptic(.success, trigger: workoutFinishedPhase)
@@ -367,7 +392,7 @@ struct ActiveWorkoutView: View {
     @ViewBuilder
     private func exerciseContent(_ section: WorkoutExerciseSectionModel) -> some View {
         let isCurrent = section.id == currentExerciseID
-        if isCurrent || expandedCompletedID == section.id || (!section.entries.isEmpty && !section.hasReachedPlannedSetGoal) {
+        if isCurrent || expandedCompletedID == section.id {
             ExerciseLoggingCard(
                 name: section.exercise.displayName,
                 isBodyweight: Binding(get: { section.exercise.isBodyweight }, set: { setBodyweight($0, exercise: section.exercise) }),
@@ -436,6 +461,7 @@ struct ActiveWorkoutView: View {
             PlannedSetRow(number: row.number, value: plannedValueText(section, row: row.number)) {
                 if beginEditing(section: section, row: row) { focusedField = .weight(id) }
             }
+            .allowsHitTesting(!guardActive)
         }
     }
 
@@ -463,6 +489,7 @@ struct ActiveWorkoutView: View {
         let id = rowID(section.id, row.number)
         let target = resolvedTarget(section, row: row.number)
         return HStack(spacing: AppSpacing.xs) {
+            Spacer(minLength: 0)
             if section.exercise.isBodyweight && (editor?.id == id ? parsedDisplayWeight ?? 0 : displayWeight(target?.weight ?? 0)) > 0 {
                 Text("BW +").accessibilityHidden(true)
             }
@@ -474,8 +501,8 @@ struct ActiveWorkoutView: View {
                 },
                 set: { text in guard ensureEditor(section: section, row: row) else { return }; weightText = text; editedRows.insert(id); retainInputDraft() }
             ))
-            .multilineTextAlignment(.trailing)
-            .frame(minWidth: 0, maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: true, vertical: false)
             .keyboardType(.decimalPad)
             .focused($focusedField, equals: .weight(id))
             .accessibilityLabel(AppCopy.Workout.weightLabel(isBodyweight: section.exercise.isBodyweight, unitSystem: unitSystem))
@@ -484,6 +511,7 @@ struct ActiveWorkoutView: View {
             if !section.exercise.isBodyweight || (editor?.id == id ? parsedDisplayWeight ?? 0 : displayWeight(target?.weight ?? 0)) > 0 {
                 Text(unitSystem).accessibilityHidden(true)
             }
+            Spacer(minLength: 0)
         }
         .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
         .tracking(AppFont.setValue.tracking)
@@ -650,6 +678,7 @@ struct ActiveWorkoutView: View {
         }
         guard canCommitEditor, let exercise = exercises.first(where: { $0.id == editor.exerciseID }) else {
             retainInputDraft()
+            setEditHintToast = .init("Enter a valid weight and reps.", kind: .error)
             AppHaptic.error.fire()
             return false
         }
@@ -845,6 +874,12 @@ struct ActiveWorkoutView: View {
     private func skipRest() { logging.invalidateUndo(); restTimer.stop() }
     private func jump(to id: UUID) {
         guard !guardActive, commitEditor() else { return }
+        // A first target is only saved by its explicit action. Keep its raw
+        // draft, but release the editor so it cannot disable another exercise.
+        if editor?.isSetup == true && editor?.exerciseID != id {
+            retainInputDraft()
+            editor = nil
+        }
         focusedField = nil
         logging.invalidateUndo()
         selectedExerciseID = id
@@ -857,7 +892,11 @@ struct ActiveWorkoutView: View {
         jump(to: next)
     }
     private func addSet(to section: WorkoutExerciseSectionModel) {
-        guard commitEditor() else { return }
+        guard !guardActive, commitEditor() else { return }
+        if editor?.isSetup == true && editor?.exerciseID != section.id {
+            retainInputDraft()
+            editor = nil
+        }
         focusedField = nil
         logging.invalidateUndo()
         customSetCounts[section.id] = max(section.entries.count, section.plannedSetCount) + 1
@@ -919,6 +958,7 @@ struct ActiveWorkoutView: View {
         }
         guard saveWorkoutChanges() else { return }
         clearPreparedTarget()
+        exerciseOrderData = Data()
         restTimer.stop()
         let completedSetCount = session.setEntries.filter {
             $0.isCompleted && !$0.isWarmup
@@ -938,6 +978,24 @@ struct ActiveWorkoutView: View {
         workoutFinishedPhase &+= 1
     }
 
+
+    private func saveExerciseOrder(_ ids: [UUID]) {
+        guard !guardActive else { return }
+        // Keep the active set/editor on its UUID while neighboring exercises move.
+        selectedExerciseID = currentExerciseID
+        exerciseOrderData = WorkoutLoggingState.encodeExerciseOrder(ids, sessionID: session.id)
+        restTimer.updateUpNext(upNextText)
+    }
+
+    private func moveExercise(_ sourceID: UUID, _ targetID: UUID) -> Bool {
+        guard !guardActive, let source = orderedExerciseIDs.firstIndex(of: sourceID),
+              let target = orderedExerciseIDs.firstIndex(of: targetID), source != target else { return false }
+        var ids = orderedExerciseIDs
+        ids.insert(ids.remove(at: source), at: target)
+        saveExerciseOrder(ids)
+        AppHaptic.select.fire()
+        return true
+    }
 
     private var addExerciseButton: some View {
         AppGhostButton(AppCopy.Workout.addExercise) { showsAddExercise = true }
@@ -961,6 +1019,7 @@ struct ActiveWorkoutView: View {
         modelContext.delete(session)
         guard saveWorkoutChanges() else { return }
         clearPreparedTarget()
+        exerciseOrderData = Data()
         restTimer.stop()
     }
     private func plannedSetCount(for exerciseID: UUID) -> Int {
@@ -1550,5 +1609,22 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         let currentActivity = activity
         activity = nil
         Task { await currentActivity?.end(nil, dismissalPolicy: .immediate) }
+    }
+}
+
+/// Same shared drag source as routine editing; commit order only on a real drop.
+private struct WorkoutExerciseDropDelegate: DropDelegate {
+    let targetID: UUID
+    @Binding var draggedID: UUID?
+    let onMove: (UUID, UUID) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggedID != nil && info.hasItemsConforming(to: [.text])
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+    func performDrop(info: DropInfo) -> Bool {
+        guard let source = draggedID else { return false }
+        defer { draggedID = nil }
+        return onMove(source, targetID)
     }
 }

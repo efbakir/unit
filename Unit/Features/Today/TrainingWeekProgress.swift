@@ -408,10 +408,13 @@ struct TodayWeekOverviewSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) {
-                        dismiss()
+                    Group {
+                        Button(AppCopy.Nav.done) {
+                            dismiss()
+                        }
+                        .appToolbarTextStyle()
                     }
-                    .appToolbarTextStyle()
+                    .tint(AppColor.textPrimary)
                 }
             }
             .appNavigationBarChrome()

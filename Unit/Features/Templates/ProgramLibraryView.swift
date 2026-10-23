@@ -37,7 +37,15 @@ struct ProgramLibraryView: View {
                 filterBar
 
                 if filteredPrograms.isEmpty {
-                    AppEmptyHint("No programs match these filters.")
+                    EmptyStateCard(
+                        title: "No matching programs",
+                        message: "Choose different filters.",
+                        buttonLabel: "Clear filters"
+                    ) {
+                        selectedLevel = nil
+                        selectedGoal = nil
+                        selectedDays = nil
+                    }
                         .transition(AppBlurTransition().animation(.appReveal))
                 } else {
                     AppCardList(filteredPrograms) { program in

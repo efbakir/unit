@@ -72,8 +72,7 @@ struct OnboardingScheduleView: View {
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
 
-                AppCard {
-                    Toggle(isOn: $vm.useFlexibleSchedule) {
+                Toggle(isOn: $vm.useFlexibleSchedule) {
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                             Text(AppCopy.Onboarding.flexibleToggle)
                                 .font(AppFont.sectionHeader.font)
@@ -84,13 +83,13 @@ struct OnboardingScheduleView: View {
                         }
                     }
                     .tint(AppColor.accent)
-                }
+                    .padding(.vertical, AppSpacing.sm)
 
                 if !vm.useFlexibleSchedule {
                     AppCardList(
                         data: Array(0..<vm.dayCount),
                         id: \.self,
-                        rowVerticalInset: AppSpacing.lg
+                        rowVerticalInset: AppSpacing.md
                     ) { i in
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             AppSectionHeader(rowLabel(for: i)) {

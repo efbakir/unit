@@ -1069,13 +1069,13 @@ struct AppListRow<Trailing: View>: View {
     }
 
     private var horizontalInset: CGFloat {
-        style == .cardListContent ? 0 : AppSpacing.lg
+        style == .cardListContent ? 0 : AppSpacing.md
     }
 
     private var verticalInset: CGFloat {
         switch style {
         case .tappable:
-            return AppSpacing.lg
+            return AppSpacing.md
         case .display:
             return AppSpacing.smd
         case .cardListContent:
@@ -1418,7 +1418,7 @@ struct AppPrimaryButton: View {
     }
 
     private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
-    private var isInteractive: Bool { effectiveEnabled && !isLoading }
+    private var isInteractive: Bool { effectiveEnabled && !isLoading && !isConfirmed }
 
     var body: some View {
         ZStack {
@@ -1962,7 +1962,7 @@ struct AppDropdownChip<Content: View>: View {
         } label: {
             HStack(spacing: AppSpacing.xs) {
                 Text(label)
-                    .appCapsLabel(isActive ? .overlineStrong : .overline)
+                    .font(AppFont.caption.font)
                     .appNumericValue(value: label)
                 AppIcon.chevronDown.image(size: 10, weight: .bold)
             }
@@ -2000,7 +2000,7 @@ struct AppFilterChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.xs) {
                 Text(label)
-                    .appCapsLabel(isSelected ? .overlineStrong : .overline)
+                    .font(AppFont.caption.font)
                 if isSelected && showsClearGlyphWhenSelected {
                     AppIcon.close.image(size: 10, weight: .bold)
                         .transition(.opacity.animation(AppMotion.feedback))
@@ -2040,14 +2040,14 @@ private struct AppFilterChipSurface: ViewModifier {
             }
             .padding(.leading, AppSpacing.smd)
             .padding(.trailing, hasClearGlyph ? AppSpacing.sm : AppSpacing.smd)
-            .padding(.vertical, AppSpacing.xs)
+            .padding(.vertical, AppSpacing.sm)
+            .frame(minHeight: 44)
             .background {
                 Capsule(style: .continuous)
-                    .fill(isEnabled && isSelected ? AppColor.textPrimary : AppColor.accentSoft)
+                    .fill(isEnabled && isSelected ? AppColor.textPrimary : AppColor.controlBackground)
                     .animation(AppMotion.feedback, value: isSelected)
                     .animation(AppMotion.feedback, value: isEnabled)
             }
-            .frame(minHeight: 44)
             .contentShape(Rectangle())
     }
 }
@@ -2409,7 +2409,7 @@ struct SetProgressIndicator: View {
     }
 }
 
-/// Rest countdown control — `-15` / central timer pill / `+15`. Sits inside
+/// Rest countdown control — `-20` / central timer pill / `+20`. Sits inside
 /// `SessionStateBar` (detached bottom sheet) or `WorkoutCommandCard` (inline).
 /// `.ready` state drops the capsule so the transition to "done resting" reads
 /// as a deliberate visual beat, not just a color change.
@@ -2433,7 +2433,7 @@ struct RestTimerControl: View {
             HStack(spacing: AppSpacing.lg) {
                 adjustButton(
                     icon: .remove,
-                    accessibilityLabel: "Decrease rest timer by 30 seconds",
+                    accessibilityLabel: "Decrease rest timer by 20 seconds",
                     action: onDecrease
                 )
 
@@ -2450,7 +2450,7 @@ struct RestTimerControl: View {
 
                 adjustButton(
                     icon: .add,
-                    accessibilityLabel: "Increase rest timer by 30 seconds",
+                    accessibilityLabel: "Increase rest timer by 20 seconds",
                     action: onIncrease
                 )
             }
@@ -2570,7 +2570,7 @@ extension View {
     @ViewBuilder
     func appNavigationDisclosure(_ isPresented: Bool = true) -> some View {
         if isPresented {
-            HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.md) {
                 self.frame(maxWidth: .infinity, alignment: .leading)
                 AppIcon.forward.image(size: AppIconSize.indicator, weight: .medium)
                     .foregroundStyle(AppColor.textTertiary)
@@ -2640,7 +2640,15 @@ struct PreviewListRow: View {
                 Text(subtitle)
                     .font(subtitleFont)
                     .foregroundStyle(AppColor.textSecondary)
+                if let supportingText, !supportingText.isEmpty {
+                    Text(supportingText)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, AppSpacing.sm)
             .frame(minHeight: 52)
@@ -2787,10 +2795,6 @@ struct PreviewListContainer<Content: View>: View {
         .frame(maxWidth: .infinity)
         .frame(maxHeight: viewportHeight)
         .appScrollEdgeSoft()
-        // Canonical row-on-card recipe (Figma source of truth, 2026-04-27):
-        // `cardRowFill` + `AppRadius.sm` for any element nested inside `AppCard`.
-        .background(AppColor.cardRowFill)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
     }
 }
 
@@ -2803,15 +2807,10 @@ struct PreviewListContainer<Content: View>: View {
 /// when a wrapper type is awkward (e.g. applied to an existing VStack without
 /// re-nesting). Never invent inline `.background(...).clipShape(...)` chrome.
 struct AppCard<Content: View>: View {
-    /// Outer inset for card chrome. System default is `AppSpacing.lg` (24pt) so every
-    /// card has 24pt visual breathing room from card edge to content. Use the default
-    /// when the body owns no horizontal padding of its own (text, buttons, custom
-    /// layouts). For list content where the inner row already pads itself by
-    /// `AppSpacing.md` (16pt) — `AppListRow`, or any row with explicit
-    /// `.padding(.horizontal, .md)` — pass `AppSpacing.sm` (8pt) so 8 + 16 composes
-    /// to the same 24pt offset. Use `0` only for full-bleed content (dividers
-    /// running card-edge to card-edge, media). Anything else is the wrong inset.
-    var contentInset: CGFloat = AppSpacing.lg
+    /// Shared 16pt content gutter. Rows use the same gutter through AppCardList;
+    /// do not add a second horizontal inset around already padded rows.
+    /// Zero is reserved for shared full-bleed compositions and dividers.
+    var contentInset: CGFloat = AppSpacing.md
     /// Optional vertical override. When the card's content is a list whose rows
     /// already own vertical padding (e.g. `AppDividedList` of `AppListRow` /
     /// `PreviewListRow`), pass a smaller value here so the card chrome doesn't
@@ -3541,34 +3540,34 @@ struct EmptyStateCard<Content: View>: View {
     let content: () -> Content
 
     var body: some View {
-        AppCard {
-            VStack(alignment: .center, spacing: AppSpacing.md) {
+        Group {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
                 if let eyebrow {
                     Text(eyebrow)
                         .appCapsLabel(.overline)
                         .foregroundStyle(AppColor.textSecondary)
                 }
 
-                VStack(alignment: .center, spacing: AppSpacing.xs) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(title)
                         .font(AppFont.productHeading.font)
                         .tracking(AppFont.productHeading.tracking)
                         .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
                     if let message {
                         Text(message)
                             .font(AppFont.body.font)
                             .foregroundStyle(AppColor.textSecondary)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                     }
 
                     if let note {
                         Text(note)
                             .font(AppFont.caption.font)
                             .foregroundStyle(AppColor.textTertiary)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                     }
                 }
 
@@ -3580,7 +3579,8 @@ struct EmptyStateCard<Content: View>: View {
                     AppPrimaryButton(buttonLabel, action: action)
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, AppSpacing.md)
         }
     }
 }
@@ -3835,7 +3835,7 @@ private struct AppCardRowChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.md)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 52, alignment: .leading)
             .padding(.vertical, verticalInset)
             // The row chrome sits outside caller-owned Button/NavigationLink
@@ -3847,7 +3847,7 @@ private struct AppCardRowChrome: ViewModifier {
 }
 
 extension View {
-    /// Apply the canonical card-row recipe (24pt horizontal, 16pt vertical by default,
+    /// Apply the canonical card-row recipe (16pt horizontal, 16pt vertical by default,
     /// 52pt min-height). Use `AppSpacing.lg` for relaxed setup rows with stacked controls.
     /// See `AppCardRowChrome` for layering rationale.
     func appCardRowChrome(verticalInset: CGFloat = AppSpacing.md) -> some View {
@@ -4563,8 +4563,8 @@ struct AppSectionHeader<Trailing: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
             Text(title)
-                .font(AppFont.sectionHeader.font)
-                .foregroundStyle(AppFont.sectionHeader.color)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
             Spacer(minLength: 0)
             trailing()
         }
@@ -4596,12 +4596,12 @@ extension AppSectionHeader where Trailing == EmptyView {
 /// without any list semantics.
 struct SettingsSection<Content: View>: View {
     let title: String
-    var contentInset: CGFloat = AppSpacing.lg
+    var contentInset: CGFloat = AppSpacing.md
     @ViewBuilder let content: () -> Content
 
     init(
         title: String,
-        contentInset: CGFloat = AppSpacing.lg,
+        contentInset: CGFloat = AppSpacing.md,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
@@ -4707,16 +4707,20 @@ struct AppSheetScreen<Content: View>: View {
                 showsKeyboardDismissToolbar: showsKeyboardDismissToolbar
             ) {
                 content()
+                    .padding(.vertical, usesOuterScroll ? 0 : AppSpacing.md)
             }
             .navigationBarTitleTruncated(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let onDismissAction {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(action: onDismissAction) {
-                            Label(dismissLabel == AppCopy.Nav.done ? AppCopy.Nav.close : dismissLabel, systemImage: AppIcon.close.systemName)
-                                .labelStyle(.iconOnly)
+                        Group {
+                            Button(action: onDismissAction) {
+                                Label(dismissLabel == AppCopy.Nav.done ? AppCopy.Nav.close : dismissLabel, systemImage: AppIcon.close.systemName)
+                                    .labelStyle(.iconOnly)
+                            }
                         }
+                        .tint(AppColor.textPrimary)
                     }
                 }
             }
@@ -4812,7 +4816,7 @@ struct AppSetRepEditorSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                SettingsSection(title: AppCopy.Workout.targetLabel) {
+                SettingsSection(title: AppCopy.Workout.targetLabel, contentInset: AppSpacing.sm) {
                     targetRow(
                         label: AppCopy.Workout.targetSetsLabel,
                         value: $sets,
@@ -4822,10 +4826,6 @@ struct AppSetRepEditorSheet: View {
                     AppDivider()
 
                     if progressionEnabled {
-                        Text(AppCopy.Workout.repRangeLabel)
-                            .font(AppFont.sectionHeader.font)
-                            .foregroundStyle(AppColor.textPrimary)
-
                         targetRow(
                             label: AppCopy.Workout.lowerRepsLabel,
                             value: $lowerReps,
@@ -4917,6 +4917,8 @@ struct AppSetRepEditorSheet: View {
             )
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
     }
 
     private func commit() {
@@ -5123,8 +5125,11 @@ struct AppExercisePickerSheet: View {
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(AppCopy.Nav.done) { dismiss() }
-                        .appToolbarTextStyle()
+                    Group {
+                        Button(AppCopy.Nav.done) { dismiss() }
+                            .appToolbarTextStyle()
+                    }
+                    .tint(AppColor.textPrimary)
                 }
             }
             .appNavigationBarChrome()
@@ -5280,8 +5285,10 @@ struct AppScreen<Content: View>: View {
             content()
         }
         .padding(.horizontal, AppSpacing.md)
-        .padding(.top, showsNativeNavigationBar ? AppSpacing.md : (customHeader == nil ? AppSpacing.md : AppSpacing.sm))
-        .padding(.bottom, AppSpacing.md)
+        // Child-owned scrolling must reach the safe-area boundary. Fixed
+        // sheet/onboarding content restores its own internal padding.
+        .padding(.top, usesOuterScroll ? (showsNativeNavigationBar ? AppSpacing.md : (customHeader == nil ? AppSpacing.md : AppSpacing.sm)) : 0)
+        .padding(.bottom, usesOuterScroll ? AppSpacing.md : 0)
         .frame(maxWidth: maxContentWidth)
         .frame(maxWidth: .infinity)
     }
@@ -5361,21 +5368,10 @@ struct AppScreen<Content: View>: View {
                     )
                 }
             }
-            // Tight sticky-CTA chrome — every pt of vertical padding here is
-            // a pt that the input/scroll area above doesn't get. Top `sm`
-            // (8pt) keeps the button visually separated from the scroll
-            // content fading into it; bottom `xs` (4pt) sits just above the
-            // home-indicator safe area, which already handles its own
-            // breathing room. Was `md` top + `sm` bottom (24pt total) — the
-            // chrome was eating the input area visibly on the onboarding
-            // paste step and the split-builder validation state, and there
-            // was no design reason for that extra slack. System-level: every
-            // screen routing through `AppScreen` with a primary or secondary
-            // button picks up the tighter padding (Today, Templates,
-            // History, every onboarding step, sheets that wrap `AppScreen`).
+            // Shared breathing room above native tab bars and the home safe area.
             .padding(.top, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.md)
-            .padding(.bottom, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.md)
             // Bottom chrome must never donate its CTA height to the scroll
             // view on short devices or when context copy changes line count.
             // Keep the full button and its rounded lower edge on-screen.
@@ -5525,7 +5521,7 @@ extension View {
     /// shared accent-soft fill, accent border, and checkmark used by every
     /// selectable card, including onboarding choices and paywall tiers.
     func appCardStyle(
-        contentInset: CGFloat = AppSpacing.lg,
+        contentInset: CGFloat = AppSpacing.md,
         cornerRadius: CGFloat = AppRadius.lg,
         isSelected: Bool = false
     ) -> some View {
@@ -5774,9 +5770,9 @@ struct OnboardingProgressBar: View {
 
 // MARK: - Segmented selection
 
-/// Native segmented Picker for an existing exclusive selection. Unanswered
-/// choices and per-item enablement retain the button implementation until those
-/// contracts are verified with native Picker on every supported platform.
+/// Native segmented Picker for exclusive or unanswered selection. Only
+/// per-item disabling uses the existing buttons; no production caller needs
+/// that fallback. System control sizing is intentional, not a custom reskin.
 struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     enum Size {
@@ -5788,7 +5784,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
 
         var verticalPadding: CGFloat {
             switch self {
-            case .compact: return AppSpacing.smd
+            case .compact: return AppSpacing.xs
             case .weekday: return AppSpacing.sm
             }
         }
@@ -5803,7 +5799,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
         var trackHeight: CGFloat? {
             switch self {
             case .weekday: return AppSpacing.xxl
-            case .compact: return nil
+            case .compact: return AppSpacing.xl
             }
         }
     }
@@ -5811,7 +5807,6 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     private let selection: Binding<Item?>
     let items: [Item]
     var size: Size = .compact
-    private var usesNativePicker = false
     let label: String
     let title: (Item) -> String
     /// Optional VoiceOver label override per segment. Use when `title` is a
@@ -5840,7 +5835,6 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                 }
             }
         )
-        self.usesNativePicker = true
         self.items = items
         self.size = size
         self.label = label
@@ -5887,9 +5881,10 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
 
     @ViewBuilder
     var body: some View {
-        // iOS 26 added large native segments. Earlier systems keep the
-        // existing buttons rather than shrinking the gym-sized touch targets.
-        if #available(iOS 26.0, *), usesNativePicker && isDisabled == nil && selection.wrappedValue != nil {
+        // Use the platform control on both supported iOS generations, including
+        // an unanswered optional selection. Only per-item disabling keeps the
+        // existing fallback because native segments do not reliably honor it.
+        if isDisabled == nil {
             Picker(label, selection: selection) {
                 ForEach(items) { item in
                     Text(title(item))
@@ -5898,7 +5893,7 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
                 }
             }
             .pickerStyle(.segmented)
-            .controlSize(.large)
+            .controlSize(size == .compact ? .regular : .large)
             .labelsHidden()
             .accessibilityLabel(label)
             .frame(minHeight: size.minHeight)
@@ -6006,7 +6001,6 @@ extension AppSegmentedControl {
             accessibilityLabel: accessibilityLabel,
             isDisabled: isDisabled
         )
-        self.usesNativePicker = true
     }
 }
 
@@ -6155,14 +6149,14 @@ struct AppComponentCatalog: View {
     }
 
     /// Real shared controls with matching labels for the comparison capture.
-    /// Optional state deliberately retains buttons after the first answer.
+    /// Optional state stays native before and after the first answer.
     private var selectionSamples: some View {
         SettingsSection(title: "Segmented selection", contentInset: AppSpacing.md) {
             Text("Native · existing selection")
                 .appFont(.caption)
             AppSegmentedControl(selection: $segmentMode, items: SessionHistoryMode.allCases,
-                                label: "Native history view", title: { $0.rawValue })
-            Text("Retained buttons · same content")
+                                size: .weekday, label: "Native history view", title: { $0.rawValue })
+            Text("Compact native · same content")
                 .appFont(.caption)
             AppSegmentedControl(selection: $retainedMode, items: SessionHistoryMode.allCases,
                                 label: "Retained history view", title: { $0.rawValue },
@@ -6183,12 +6177,12 @@ struct AppComponentCatalog: View {
             Text("Inherited disabled · native control")
                 .appFont(.caption)
             AppSegmentedControl(selection: $segmentMode, items: SessionHistoryMode.allCases,
-                                label: "Disabled history view", title: { $0.rawValue })
+                                size: .weekday, label: "Disabled history view", title: { $0.rawValue })
                 .disabled(true)
             Text("ID binding · same selection model as training week")
                 .appFont(.caption)
             AppSegmentedControl(selection: $segmentID, items: SessionHistoryMode.allCases,
-                                label: "ID history view", title: { $0.rawValue })
+                                size: .weekday, label: "ID history view", title: { $0.rawValue })
             AppSegmentedControl(selection: .constant("missing"), items: [SessionHistoryMode](),
                                 label: "Empty items", title: { $0.rawValue })
         }
@@ -6440,22 +6434,21 @@ struct AppMainLiftCard: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        AppCard(contentInset: 0, cornerRadius: AppRadius.md) {
+        AppCard(contentInset: 0) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    if let icon { Self.iconTile(icon, side: 30) }
-                    Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
+                    Text(title).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
                 if let lift, let latest = lift.latest {
                     Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
-                    Text("Latest session · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: now))")
-                        .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
-                    change(lift)
+                    Text("Latest · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: now))")
+                        .font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                    if lift.comparison.isComparable { change(lift) }
                     AppTrendChart(data: chart, caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", unit: unit, bodyweight: lift.bodyweight)
                 } else {
                     Text("—").font(AppFont.numericInput.font).foregroundStyle(AppColor.textSecondary)
-                    Text("No sessions yet").font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
+                    Text("No sessions yet").font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
                     AppTrendChart(data: chart, caption: "No sets in 12 weeks")
                 }
             }
@@ -6486,12 +6479,12 @@ struct AppMainLiftCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Best").appFont(.muted).foregroundStyle(AppColor.textSecondary)
             Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
-                .font(AppFont.caption.font).monospacedDigit()
+                .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
         }.frame(maxWidth: .infinity, alignment: .leading)
         if let target = lift.target {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Next").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).monospacedDigit()
+                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -6568,16 +6561,17 @@ struct ExerciseLoggingCard<Content: View>: View {
                     Label("Edit", systemImage: AppIcon.more.systemName)
                         .labelStyle(.iconOnly)
                         .frame(width: 44, height: 44)
-                        .background(AppColor.cardRowFill, in: Circle())
+                        .contentShape(Rectangle())
                 }
-                .tint(AppColor.textSecondary)
+                .buttonStyle(.plain)
+                .tint(AppColor.textPrimary)
             }
             .padding(.horizontal, AppSpacing.xs)
             content()
             Button("+ Add set", action: onAddSet)
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
                 .padding(.horizontal, AppSpacing.smd)
                 .buttonStyle(ScaleButtonStyle())
         }
@@ -6600,14 +6594,17 @@ struct CurrentSetRow<Value: View>: View {
         Group {
         if showsCTA {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Set \(number)").appFont(.muted)
-                .foregroundStyle(AppColor.textSecondary)
-            value()
-            if let supportingText {
-                Text(supportingText).appFont(.muted)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                Text("Set \(number)").appFont(.muted)
+                Spacer(minLength: AppSpacing.sm)
+                if let supportingText {
+                    Text(supportingText).appFont(.muted)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
+            .foregroundStyle(AppColor.textSecondary)
+            value()
             if showsCTA {
                 Group {
                     AppPrimaryButton(
@@ -6672,14 +6669,18 @@ struct LoggedSetRow: View {
             .accessibilityLabel("Set \(number), \(value), done")
             .accessibilityAction(named: "Edit", onEdit)
             .accessibilityAction(named: "Mark not done", onMarkNotDone)
-            Button("Undo", action: onUndo)
-                .font(AppFont.caption.font).underline()
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(minWidth: 44, minHeight: 44)
-                .opacity(showsUndo ? 1 : 0)
-                .animation(AppMotion.transition, value: showsUndo)
-                .allowsHitTesting(showsUndo)
-                .accessibilityHidden(!showsUndo)
+            Group {
+                if showsUndo {
+                    Button("Undo", action: onUndo)
+                        .font(AppFont.caption.font).underline()
+                        .foregroundStyle(AppColor.textPrimary)
+                        .frame(minWidth: 44, minHeight: 44)
+                } else {
+                    AppColor.clear.frame(width: 44, height: 44)
+                        .accessibilityHidden(true)
+                }
+            }
+            .animation(AppMotion.transition, value: showsUndo)
             AppIcon.checkmarkFilled.image(size: 20)
                 .foregroundStyle(AppColor.textPrimary).accessibilityHidden(true)
         }
@@ -6701,7 +6702,7 @@ struct PlannedSetRow: View {
                 Text(value).appFont(.performance).monospacedDigit()
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .foregroundStyle(AppColor.textDisabled)
+            .foregroundStyle(AppColor.textSecondary)
             .padding(.horizontal, AppSpacing.smd)
             .frame(minHeight: AppWorkoutMetrics.rowHeight)
             .contentShape(Rectangle())
@@ -6723,38 +6724,40 @@ struct ExerciseSummaryRow: View {
     var body: some View {
         // Match the expanded exercise header's 8pt card + 4pt title inset.
         // Each summary is its own flat card, including upcoming exercises.
-        AppCard(contentInset: AppSpacing.smd, verticalInset: 0, cornerRadius: AppRadius.md) {
+        AppCard(contentInset: AppSpacing.md, verticalInset: 0, cornerRadius: AppRadius.md) {
             HStack(spacing: AppSpacing.sm) {
                 Button(action: onSelect) {
-                    HStack(spacing: AppSpacing.sm) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(name).font(AppFont.body.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(summary).appFont(.muted).monospacedDigit()
-                            .foregroundStyle(isCompleted ? AppColor.textSecondary : AppColor.textDisabled)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        if !summary.isEmpty {
+                            Text(summary).appFont(.muted).monospacedDigit()
+                                .foregroundStyle(AppColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
+                    .padding(.vertical, AppSpacing.md)
                     .frame(minHeight: 52).contentShape(Rectangle())
                 }
                 .buttonStyle(ScaleButtonStyle())
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(name)
                 .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary]
                     .filter { !$0.isEmpty }.joined(separator: ", "))
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {
+                    if showsUndo {
                     Button("Undo", action: onUndo)
                         .font(AppFont.caption.font).underline()
                         .foregroundStyle(AppColor.textPrimary)
                         .frame(minWidth: 44, minHeight: 44)
-                        .opacity(showsUndo ? 1 : 0)
-                        .animation(AppMotion.transition, value: showsUndo)
-                        .allowsHitTesting(showsUndo)
-                        .accessibilityHidden(!showsUndo)
+                    }
                     AppIcon.checkmarkFilled.image(size: 22)
                         .accessibilityHidden(true)
                 }
             }
-            .foregroundStyle(isCompleted ? AppColor.textPrimary : AppColor.textSecondary)
+            .foregroundStyle(isCompleted ? AppColor.textSecondary : AppColor.textPrimary)
         }
     }
 }
@@ -6847,9 +6850,9 @@ struct RestBar: View {
 
     private var controls: some View {
         HStack(spacing: AppSpacing.sm) {
-            control(AppCopy.Workout.restMinus, label: "Subtract 15 seconds", action: onDecrease)
+            control(AppCopy.Workout.restMinus, label: "Subtract 20 seconds", action: onDecrease)
                 .disabled(!canDecrease)
-            control(AppCopy.Workout.restPlus, label: "Add 15 seconds", action: onIncrease)
+            control(AppCopy.Workout.restPlus, label: "Add 20 seconds", action: onIncrease)
             control(AppCopy.Workout.restSkip, label: "Skip rest", action: onSkip)
         }
         .frame(maxWidth: .infinity)

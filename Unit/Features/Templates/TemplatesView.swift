@@ -68,20 +68,26 @@ struct TemplatesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink(value: ProgramLibraryDestination()) {
-                        Text("Browse")
-                            .appToolbarTextStyle()
+                    Group {
+                        NavigationLink(value: ProgramLibraryDestination()) {
+                            Text("Browse")
+                                .appToolbarTextStyle()
+                        }
+                        .accessibilityLabel("Browse program library")
                     }
-                    .accessibilityLabel("Browse program library")
+                    .tint(AppColor.textPrimary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label("Settings", systemImage: AppIcon.settingsOutline.systemName)
-                            .labelStyle(.iconOnly)
+                    Group {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Label("Settings", systemImage: AppIcon.settingsOutline.systemName)
+                                .labelStyle(.iconOnly)
+                        }
+                        .accessibilityLabel("Settings")
                     }
-                    .accessibilityLabel("Settings")
+                    .tint(AppColor.textPrimary)
                 }
             }
             .appNavigationBarChrome()
@@ -137,7 +143,7 @@ struct TemplatesView: View {
 
             // MARK: All Programs (inactive splits)
             if !inactiveSplits.isEmpty {
-                AppSectionHeader("All Programs")
+                AppSectionHeader("Other programs")
                     .padding(.top, AppSpacing.md)
 
                 AppCardList(inactiveSplits) { split in
@@ -178,53 +184,47 @@ struct TemplatesView: View {
     private func activeProgramCard(split: Split, days: [DayTemplate]) -> some View {
         let displayName = programDisplayName(for: split)
 
-        return AppCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Text(displayName)
-                        .appFont(.largeTitle)
+        return VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                Text(displayName)
+                    .appFont(.analyticsStatus)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("\(displayName), active program")
+                    .accessibilityAddTraits(.isHeader)
+
+                Button {
+                    editingSplit = split
+                } label: {
+                    AppIcon.edit.image(size: AppIconSize.readiness, weight: .semibold)
                         .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityLabel("\(displayName), active program")
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel("Edit program")
+            }
 
-                    Spacer(minLength: 0)
-
-                    Button {
-                        editingSplit = split
-                    } label: {
-                        AppIcon.edit.image(size: AppIconSize.readiness, weight: .semibold)
-                            .foregroundStyle(AppColor.accent)
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
+            if !days.isEmpty {
+                AppCardList(days, rowVerticalInset: AppSpacing.sm) { template in
+                    NavigationLink(value: template) {
+                        PreviewListRow(
+                            title: template.displayName,
+                            subtitle: routineSummary(for: template),
+                            showsDisclosure: true
+                        )
                     }
                     .buttonStyle(ScaleButtonStyle())
-                    .accessibilityLabel("Edit program")
                 }
-
-                if !days.isEmpty {
-                    PreviewListContainer(
-                        itemCount: days.count,
-                        visibleItemLimit: 7
-                    ) {
-                        ForEach(days, id: \.id) { template in
-                            NavigationLink(value: template) {
-                                PreviewListRow(
-                                    title: template.displayName,
-                                    subtitle: routineSummary(for: template),
-                                    layout: .compactInline,
-                                    showsDisclosure: true,
-                                    showsSeparator: template.id != days.last?.id
-                                )
-                            }
-                            .buttonStyle(ScaleButtonStyle())
-                        }
-                    }
-                } else {
-                    Text("No routines yet. Edit this program to add your first routine.")
-                        .appFont(.body)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            } else {
+                EmptyStateCard(
+                    title: "No routines yet",
+                    message: "Add a routine to this program.",
+                    buttonLabel: "Add routine"
+                ) {
+                    editingSplit = split
                 }
             }
         }
@@ -236,12 +236,11 @@ struct TemplatesView: View {
     }
 
     private func orderedTemplates(for split: Split) -> [DayTemplate] {
-        let byID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
+        let owned = templates.filter { $0.splitId == split.id }
+        let byID = Dictionary(uniqueKeysWithValues: owned.map { ($0.id, $0) })
         let linked = split.orderedTemplateIds.compactMap { byID[$0] }
-        if !linked.isEmpty {
-            return linked
-        }
-        return templates.filter { $0.splitId == split.id }
+        let linkedIDs = Set(linked.map(\.id))
+        return linked + owned.filter { !linkedIDs.contains($0.id) }
     }
 
     private func routineSummary(for template: DayTemplate) -> String {
@@ -296,15 +295,18 @@ struct EditProgramView: View {
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
 
     @State private var showDeleteConfirmation = false
+    @State private var saveFailed = false
     @State private var showAddDay = false
     @State private var draggedTemplateID: UUID?
 
     private static let weekdayOrder = [2, 3, 4, 5, 6, 7, 1]
 
     private var baseTemplates: [DayTemplate] {
-        let byID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
+        let owned = templates.filter { $0.splitId == split.id }
+        let byID = Dictionary(uniqueKeysWithValues: owned.map { ($0.id, $0) })
         let linked = split.orderedTemplateIds.compactMap { byID[$0] }
-        return linked.isEmpty ? templates.filter { $0.splitId == split.id } : linked
+        let linkedIDs = Set(linked.map(\.id))
+        return linked + owned.filter { !linkedIDs.contains($0.id) }
     }
 
     /// True when any routine in this Split is pinned to a calendar weekday
@@ -320,9 +322,11 @@ struct EditProgramView: View {
         let base = baseTemplates
         guard isWeekdayScheduled else { return base }
         return base.sorted { lhs, rhs in
-            let lw = lhs.scheduledWeekday > 0 ? lhs.scheduledWeekday : Int.max
-            let rw = rhs.scheduledWeekday > 0 ? rhs.scheduledWeekday : Int.max
-            return lw < rw
+            let lw = Self.weekdayOrder.firstIndex(of: lhs.scheduledWeekday) ?? Int.max
+            let rw = Self.weekdayOrder.firstIndex(of: rhs.scheduledWeekday) ?? Int.max
+            if lw != rw { return lw < rw }
+            return (base.firstIndex(where: { $0.id == lhs.id }) ?? 0)
+                < (base.firstIndex(where: { $0.id == rhs.id }) ?? 0)
         }
     }
 
@@ -335,7 +339,7 @@ struct EditProgramView: View {
             .appScreenEnter()
         }
         .onChange(of: split.name) { _, _ in
-            try? modelContext.save()
+            _ = persistProgram()
         }
         .onAppear {
             syncTemplateOrderIfNeeded()
@@ -344,20 +348,26 @@ struct EditProgramView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    Label("Delete program", systemImage: AppIcon.trash.systemName)
-                        .labelStyle(.iconOnly)
+                Group {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label("Delete program", systemImage: AppIcon.trash.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel("Delete program")
                 }
-                .accessibilityLabel("Delete program")
+                .tint(AppColor.textPrimary)
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button { dismiss() } label: {
-                    Label(AppCopy.Nav.done, systemImage: AppIcon.checkmark.systemName)
-                        .labelStyle(.iconOnly)
+                Group {
+                    Button { dismiss() } label: {
+                        Label(AppCopy.Nav.done, systemImage: AppIcon.checkmark.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel(AppCopy.Nav.done)
                 }
-                .accessibilityLabel(AppCopy.Nav.done)
+                .tint(AppColor.textPrimary)
             }
         }
         .appNavigationBarChrome()
@@ -381,13 +391,18 @@ struct EditProgramView: View {
         } message: {
             Text("Deletes this program and its routine days. Can't be undone.")
         }
+        .alert("Couldn't save program", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.close, role: .cancel) { }
+        } message: {
+            Text("Your saved program is unchanged. Try again.")
+        }
     }
 
     // MARK: - Sections
 
     private var programNameSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader("Program Name")
+            AppSectionHeader("Program name")
 
             TextField("Program name", text: $split.name)
                 .font(AppFont.body.font)
@@ -408,6 +423,7 @@ struct EditProgramView: View {
                     applyDefaultSchedule()
                 }
             }
+            .disabled(baseTemplates.isEmpty)
         }
     }
 
@@ -415,7 +431,7 @@ struct EditProgramView: View {
         AppCardList(orderedTemplates, row: { template in
             routineRow(template)
         }, trailing: {
-            AppCardListAddRow("Add Routine") {
+            AppCardListAddRow("Add routine") {
                 showAddDay = true
             }
         })
@@ -451,7 +467,7 @@ struct EditProgramView: View {
                 ForEach(Self.weekdayOrder, id: \.self) { weekday in
                     Button {
                         template.scheduledWeekday = weekday
-                        try? modelContext.save()
+                        _ = persistProgram()
                     } label: {
                         if template.scheduledWeekday == weekday {
                             Label(weekdayName(weekday), systemImage: AppIcon.checkmark.systemName)
@@ -554,22 +570,34 @@ struct EditProgramView: View {
         for (index, template) in baseTemplates.prefix(Self.weekdayOrder.count).enumerated() {
             template.scheduledWeekday = Self.weekdayOrder[index]
         }
-        try? modelContext.save()
+        _ = persistProgram()
     }
 
     private func clearSchedule() {
         for template in baseTemplates {
             template.scheduledWeekday = 0
         }
-        try? modelContext.save()
+        _ = persistProgram()
     }
 
     private func syncTemplateOrderIfNeeded() {
-        if split.orderedTemplateIds.isEmpty {
-            split.orderedTemplateIds = templates
-                .filter { $0.splitId == split.id }
-                .map(\.id)
-            try? modelContext.save()
+        let ids = baseTemplates.map(\.id)
+        if split.orderedTemplateIds != ids {
+            split.orderedTemplateIds = ids
+            _ = persistProgram()
+        }
+    }
+
+    @discardableResult
+    private func persistProgram() -> Bool {
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            modelContext.rollbackRestoringLoadedModels()
+            saveFailed = true
+            AppHaptic.error.fire()
+            return false
         }
     }
 
@@ -587,7 +615,7 @@ struct EditProgramView: View {
             }
         }
         modelContext.delete(split)
-        try? modelContext.save()
+        guard persistProgram() else { return }
         if let onDelete {
             onDelete()
         } else {
