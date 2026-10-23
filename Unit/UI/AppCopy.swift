@@ -88,7 +88,9 @@ enum AppCopy {
         static let repeatingForNextTime = "Kept"
         static let editedForNextTime = "Edited"
         static let noAutomaticTarget = "No automatic target"
-        static let useThisTarget = "Use next workout"
+        /// "Use next workout" was misread as "go to the next workout" in the
+        /// 2026-10-23 persona panel; "Save" also matches the "Saved" status.
+        static let useThisTarget = "Save for next workout"
         /// Completed progression exercise during the workout. Read-only
         /// preview; the lifter still accepts after Finish.
         static func exerciseDoneSuggestion(_ target: String, change: String) -> String {
