@@ -65,6 +65,8 @@ Synthetic product test of Unit 2.1 before submission. 20 simulated gym-goers wal
 | Weekday step and first-day "Rest day" | 3-step setup, flexible rotation by default |
 | Region unit wrong for some lifters | kg/lb switch on review re-reads unit-free numbers |
 
+**Founder override (2026-10-23, after the panel):** Yearly is preselected again, Weekly for customers without a trial, "Save 80%" against Weekly, and no "Paid plan required after setup." line. See the decision log.
+
 ## Still open from the panel
 
 - A free look before paying (a sample workout before the paywall): conflicts with the hard-paywall decision; worth a real test later.
@@ -72,6 +74,10 @@ Synthetic product test of Unit 2.1 before submission. 20 simulated gym-goers wal
 - Percent-of-training-max and RPE in paste and logging (strength segment).
 - Gentle restart after a gap; pause instead of cancel; "your history stays on your phone" at cancel.
 - Remove Weekly entirely if real data shows nobody buys it.
+
+## Correction found in round 2
+
+- The seed said "Export is in Settings". It is not: the Settings row is hidden and has no code behind it. Lines in this round that rely on export (for example "export works") do not hold. See [round 2](2026-10-23-persona-panel-training-loop.md).
 
 ## Caveats
 

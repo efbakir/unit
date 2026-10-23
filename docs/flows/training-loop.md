@@ -4,7 +4,7 @@
 - Log one set: 1 tap when the row is prefilled ("Complete set N"). App open to first logged set: 2 taps. First set of a new exercise with no weight: 3 to 4 taps plus typing.
 - Risk 1 (was High, fixed 2026-10-23): progression was off for 26 of 27 library programs. Programs without their own ranges now give weighted lifts the standard rule (program reps to +2, then +2.5 kg, 2 kg for dumbbells, 5 lb).
 - Risk 2 (High, half fixed 2026-10-23): editing sets, rep range or weight step no longer drops an accepted target. Still open: an ignored suggestion never shows again outside History.
-- Risk 3 (Med): canceling a started workout still counts that routine as done, so Today jumps to the next routine (flexible schedule).
+- Risk 3 (was Med, fixed 2026-10-23): canceling a started workout no longer counts that routine as done; cancel restores its last-performed date.
 
 Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be704`, updated for commits `499ecaf` and `75fceb0` (2026-10-23). Nothing here was tested on a phone; the exercise-done line, summary and Finish flow were checked in Simulator UI tests.
 
@@ -69,7 +69,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Edge cases**
 - Workout left open from yesterday -> when Today appears: an empty one is deleted with toast "Discarded empty session from yesterday"; one with sets shows "Workout from yesterday" with Continue workout / Mark complete / Discard ([TodayView.swift:417](Unit/Features/Today/TodayView.swift:417)) -> Med -> partial. The check runs only when Today appears, which during an open workout means a cold launch. An app resumed from background the next day shows yesterday's workout with a long clock and no prompt.
-- Flexible schedule, workout started then canceled -> the routine still counts as started, so "Up next" moves to another routine ([DayTemplate.swift:330](Unit/Models/DayTemplate.swift:330)) -> Med -> no.
+- Flexible schedule, workout started then canceled -> the routine still counts as started, so "Up next" moved to another routine. Fixed 2026-10-23: cancel restores the last-performed date ([DayTemplate.swift:330](Unit/Models/DayTemplate.swift:330)) -> Low -> yes.
 - Scheduled routine done today -> Today says "Rest day" right after training -> Low -> partial (correct, but no "done today" state).
 - Missed scheduled day and nothing scheduled today -> "Rest day"; the missed routine is only offered in History -> Med (habit) -> partial.
 - Row with history but no accepted target -> shows last workout's set count, not the plan (plan 4 sets, row says "3 × 8"), and no weight ([TodayView.swift:799](Unit/Features/Today/TodayView.swift:799)) -> Low -> no.
@@ -103,7 +103,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Edge cases**
 - Save fails -> rollback, toast "Couldn't save workout. Your previous data is unchanged. Try again." -> Low -> yes.
 - A workout is already open -> Today blocks a second start; other start buttons are out of reach because the tab bar is hidden. The Freestyle button itself has no check ([TemplatesView.swift:134](Unit/Features/Templates/TemplatesView.swift:134)) -> Low -> partial.
-- Accidental start -> only exit is X, then "Cancel workout"; a flexible schedule then skips this routine (flow 1) -> Med -> no.
+- Accidental start -> only exit is X, then "Cancel workout"; the routine stays up next (fixed 2026-10-23, flow 1) -> Low -> yes.
 - History catch-up row starts a workout on one tap, no confirm -> Low -> no.
 - Freestyle save result is not checked ([FreestyleSessionSupport.swift:53](Unit/Features/Templates/FreestyleSessionSupport.swift:53)) -> Low -> no.
 - Unused freestyle routines are deleted when Today or Programs appears ([FreestyleSessionSupport.swift:24](Unit/Features/Templates/FreestyleSessionSupport.swift:24)) -> Low -> yes.
@@ -171,7 +171,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Set 1 misses reps -> set 2 copies the lower reps; the accepted target is no longer visible for sets 2 and up -> Med -> partial (no target on the row, by design).
 - Source text says "Last time" even when the prefill is the accepted target, so the higher number has no explanation -> Med -> no.
 - Bodyweight source text reads "Last time 0 × 12", not "BW × 12"; weighted rows show no unit ([ActiveWorkoutView.swift:654](Unit/Features/Today/ActiveWorkoutView.swift:654)) -> Low -> no.
-- lb users: some values show as "155.0" in fields and source text, because of rounding ([DesignSystem.swift:858](Unit/UI/DesignSystem.swift:858)) -> Low -> no.
+- lb users saw "155.0" in fields and source text -> fixed 2026-10-23: weights round to one decimal and drop ".0" ([DesignSystem.swift:1087](Unit/UI/DesignSystem.swift:1087)) -> Low -> yes.
 - Long-press anywhere on the open card can start a drag while typing -> Low -> unclear from code (needs a device check).
 - Notifications off -> one self-dismissing notice per workout: "Rest alerts are off. Enable notifications in Settings." (fixed 2026-10-23; it used to return after every set and stay until closed) ([ActiveWorkoutView.swift:379](Unit/Features/Today/ActiveWorkoutView.swift:379)).
 - Bodyweight switched mid-workout -> past workouts of that exercise also display as BW -> Low -> partial.
@@ -189,7 +189,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Steps**
 - Complete set -> rest starts with the default length (120 s at first, never under 15 s) ([ActiveWorkoutView.swift:923](Unit/Features/Today/ActiveWorkoutView.swift:923)).
-- Rest bar -> blue progress line, "Rest" + countdown, buttons "-30", "+30", "Skip" (30-second steps since 2026-10-23; were 20). Buttons work only while running; "-20" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
+- Rest bar -> blue progress line, "Rest" + countdown, buttons "-30", "+30", "Skip" (30-second steps since 2026-10-23; were 20). Buttons work only while running; "-30" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
 - "+30" or "-30" -> new end time; the new length also becomes the default for every later rest. There is no rest setting in Settings ([ActiveWorkoutView.swift:926](Unit/Features/Today/ActiveWorkoutView.swift:926)).
 - "Skip" -> bar back to idle, no "finished" state, no alert; it also removes the set's Undo ([ActiveWorkoutView.swift:931](Unit/Features/Today/ActiveWorkoutView.swift:931)).
 - Ends with the app open -> "Rest finished." + 0:00 for 30 s, success haptic, VoiceOver line, plus an iOS banner with sound -> idle ([ActiveWorkoutView.swift:1384](Unit/Features/Today/ActiveWorkoutView.swift:1384)).
@@ -450,7 +450,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Unschedule one routine in weekly mode -> not possible (no "none" in the menu) -> Low -> no.
 - Same library program imported twice -> two copies -> Low -> no.
 - Import confirm says "Adds the program to your list", but it also becomes the active program -> Low -> no.
-- Target sheet changed after accepting a suggestion -> accepted target dropped (flow 7) -> High -> no.
+- Target sheet changed after accepting a suggestion -> accepted weight kept, reps clamp into the new range (fixed 2026-10-23, flow 7) -> Low -> yes.
 - Swipe down on the target sheet -> edits dropped, no question -> Low -> partial.
 - Exercise library screen (delete, rename, bodyweight) exists in code, but nothing opens it ([ExercisesListView.swift:21](Unit/Features/Templates/ExercisesListView.swift:21)) -> Low -> no.
 - Program edits during a workout -> not reachable (tab bar hidden) -> Low -> yes.

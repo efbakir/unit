@@ -62,6 +62,7 @@
 | `docs/flows/README.md` | Every user flow step by step with rated edge cases (first run and paywall, training loop) | Changing a flow, triaging a bug, or checking an edge case |
 | `docs/handoffs/2026-10-23-app-finalization.md` | 2.1 finalization: done / open / next, founder actions, quick wins, data plan | Picking up after the 2026-10-23 release work |
 | `docs/research/2026-10-23-persona-panel.md` | MiroFish-method persona panel: 20 simulated lifters through setup, paywall and weeks 1-12 | Weighing onboarding, paywall or pricing changes |
+| `docs/research/2026-10-23-persona-panel-training-loop.md` | Round 2 of the panel: the same 20 lifters through logging, rest, suggestions, History and Analytics, workout 1 to month 3 | Weighing changes to the training loop |
 | `docs/app-store-submission/final-submit-checklist.md` | v2.1 (build 67) ASC handoff — clean-main provenance gate + screenshot capture runbook | Submitting v2.1 to App Review |
 
 ## Agent harness & Claude
