@@ -80,7 +80,11 @@ enum ProgramImporter {
                 exerciseIds.append(exercise.id)
                 if item.setCount > 0 { plannedSets[exercise.id] = item.setCount }
                 if item.repTarget > 0 { plannedReps[exercise.id] = item.repTarget }
-                if let configuration = progressionConfiguration(for: item) {
+                if let configuration = libraryProgressionConfiguration(
+                    for: item,
+                    in: template,
+                    unitSystem: UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
+                ) {
                     progressionPlan[exercise.id] = ExerciseProgressionState(
                         lowerRepBound: configuration.lowerRepBound,
                         upperRepBound: configuration.upperRepBound,
@@ -162,6 +166,40 @@ enum ProgramImporter {
     /// Returns progression only when the catalog item contains a complete,
     /// explicit range and increment. Fixed prescriptions remain fixed; no
     /// range or equipment-specific increment is derived here.
+    /// The rule a ready-made program item starts with. Explicit catalog
+    /// ranges win. Programs that define no ranges of their own get Unit's
+    /// standard rule on weighted lifts (decision log 2026-10-23): start at the
+    /// program's reps, build up to two more, then add the smallest step
+    /// (2.5 kg, 2 kg for dumbbells, 5 lb). Bodyweight moves, timed or 20+ rep
+    /// work and 5/3/1 percentage sets keep no rule. Every suggestion still
+    /// needs the lifter's acceptance.
+    static func libraryProgressionConfiguration(
+        for item: ProgramItem,
+        in program: ProgramTemplate,
+        unitSystem: String
+    ) -> DoubleProgressionConfiguration? {
+        if let explicit = progressionConfiguration(for: item) { return explicit }
+        let definesOwnProgression = program.days.contains { day in
+            day.items.contains { progressionConfiguration(for: $0) != nil }
+        }
+        let isPercentCycle = program.name.contains("5/3/1") && item.startingWeightPct != nil
+        guard !definesOwnProgression,
+              !isPercentCycle,
+              item.setCount > 0,
+              (1...20).contains(item.repTarget),
+              !OnboardingViewModel.isBodyweightExercise(named: item.exerciseName) else {
+            return nil
+        }
+        let isDumbbell = item.exerciseName.contains("DB")
+            || item.exerciseName.localizedCaseInsensitiveContains("dumbbell")
+        return DoubleProgressionConfiguration(
+            workingSetCount: item.setCount,
+            lowerRepBound: item.repTarget,
+            upperRepBound: item.repTarget + 2,
+            weightIncrementKg: unitSystem == "lb" ? 5 / 2.20462 : (isDumbbell ? 2 : 2.5)
+        )
+    }
+
     static func progressionConfiguration(
         for item: ProgramItem
     ) -> DoubleProgressionConfiguration? {

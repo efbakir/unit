@@ -855,8 +855,12 @@ enum AppIconSize {
 }
 
 extension Double {
+    /// One decimal at most, trailing ".0" dropped. Rounds first: pounds are
+    /// stored as converted kilograms, so 155 lb comes back as 154.99999 and an
+    /// exact whole-number test printed "155.0".
     var weightString: String {
-        self == floor(self) ? "\(Int(self))" : String(format: "%.1f", self)
+        let rounded = (self * 10).rounded() / 10
+        return rounded == rounded.rounded() ? "\(Int(rounded))" : String(format: "%.1f", rounded)
     }
 }
 

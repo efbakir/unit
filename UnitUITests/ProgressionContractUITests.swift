@@ -318,6 +318,17 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts["Upper A"].waitForExistence(timeout: 20),
             "US App Store seed did not open the completed workout"
         )
+        // Exercise-done preview (2026-10-23): a finished progression exercise
+        // shows the same suggestion the summary will offer, before Finish.
+        let exerciseDoneSuggestion = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@",
+                        "Suggested next: 140 lb × 8", "Suggested next: 140 lb × 8")
+        ).firstMatch
+        XCTAssertTrue(
+            exerciseDoneSuggestion.waitForExistence(timeout: 10),
+            "Finished Bench Press card did not show its suggested next target"
+        )
+        attachScreenshot(of: app, named: "exercise-done-suggestion")
         let finishWorkout = app.buttons[AppCopy.Workout.finishShort].firstMatch
         tap(finishWorkout, "finish US screenshot workout", timeout: 12)
         tap(
@@ -391,9 +402,12 @@ final class ProgressionContractUITests: XCTestCase {
         let exerciseProgress = button(in: app, containing: "Bench Press")
         scrollTo(exerciseProgress, in: app, maximumSwipes: 4)
         tap(exerciseProgress, "Bench Press progress — US screenshot")
+        // October Analytics layout: "Best set" is a row title with the value
+        // beside it (thin spaces between number, unit and ×).
         XCTAssertTrue(
-            staticText(in: app, containing: "Best set · 135 lb × 10")
-                .waitForExistence(timeout: 10),
+            staticText(in: app, containing: "Best set").waitForExistence(timeout: 10)
+                && staticText(in: app, containing: "135").exists
+                && staticText(in: app, containing: "lb").exists,
             "US History evidence did not use pounds"
         )
         attachScreenshot(of: app, named: "store-05-strength-progress")

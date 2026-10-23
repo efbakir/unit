@@ -24,7 +24,7 @@ Gym Workout Log & Tracker
 ## Promotional text (170, editable anytime without review)
 
 ```
-Log each set in one tap. Unit remembers last time, then suggests one clear next target after your workout. Accept it, repeat it, or change it.
+Log each set in one tap. Unit remembers last time and shows one clear next target as soon as an exercise is done. Accept it, repeat it, or change it.
 ```
 
 Evergreen and explicit about the mechanism. It promises a suggestion, not coaching or automatic program control.
@@ -36,14 +36,14 @@ Log a set in 3 seconds and know what to aim for next time.
 
 Choose a ready-made program or paste your own. Unit keeps your previous weights and reps ready, so each set is quick to confirm or adjust.
 
-For exercises with a rep range, Unit can suggest one clear target after your workout. Reach the top of the range on every set to add weight. Otherwise, keep the weight and build reps. Every suggestion can be accepted, repeated, or edited.
+For exercises with a rep range, Unit suggests one clear next target as soon as the exercise is done. Reach the top of the range on every set to add weight. Otherwise, keep the weight and build reps. Every suggestion can be accepted, repeated, or edited after your workout.
 
 • One-tap set logging
 • Transparent progressive overload targets
 • Ready-made programs
 • Paste your routine
 • Automatic rest timer on the Lock Screen
-• Workout history and personal records
+• Workout history, personal records, and main-lift analytics
 
 No account. No ads. No social feed. Raw workout details stay on your iPhone. Unit sends limited anonymous product-usage events to help improve the app. Analytics are not linked to your identity, are not used for tracking, and can be disabled in Settings.
 
@@ -68,10 +68,13 @@ reps,barbell,sets,strength,lifting,weights,routine,history,rest,timer,personal,r
 ```
 Unit 2.1 adds transparent progressive overload without slowing down your workout.
 
-• See one clear next target after each completed workout
+• See your suggested next target as soon as an exercise is done
 • Increase reps, then weight, using your own rep range and increment
-• Accept, repeat, or edit every suggestion
-• Improved logging, history, feedback, and purchase reliability
+• Accept, repeat, or edit every suggestion after your workout
+• New workout screen: every exercise on one page, one tap per set, 5-second undo
+• New Analytics tab for your main lifts
+• Faster setup: three steps from install to your program
+• Rest timer adjusts by 20 seconds; drag to reorder exercises
 ```
 
 ## Screenshots
@@ -93,21 +96,21 @@ Screenshots must use production data and names, not the Progression QA harness.
 Unit 2.1 is a local-first gym logger with optional transparent double progression. It requires a paid purchase to access workout-logging features. Onboarding runs free — the reviewer can complete the opener, value carousel, and full program setup without paying. After setup is saved, the paywall appears full-screen and cannot be dismissed.
 
 To evaluate:
-1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then program setup. No personal information is requested.
-2. After onboarding completes, the paywall appears with these StoreKit products: Weekly com.unit.weekly $2.99/week, Monthly com.unit.monthly $4.99/month, Yearly com.unit.annual $29.99/year, and Lifetime com.unit.lifetime $44.99 one-time only if that non-consumable is configured and returned by StoreKit. An eligible new customer defaults to Monthly; an ineligible customer defaults to Weekly. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
+1. Open the app. Onboarding starts with a standalone opener, then a three-slide value carousel with the "Set up your program" CTA, then three setup steps: choose a path (paste a program or answer three questions to match a ready-made one), set up the program, and review it. The weight unit is preset from the device region and can be changed on the review step or in Settings. No personal information is requested.
+2. After onboarding completes, the paywall appears with these StoreKit products: Weekly com.unit.weekly $2.99/week, Monthly com.unit.monthly $4.99/month, Yearly com.unit.annual $29.99/year, and Lifetime com.unit.lifetime $44.99 one-time only if that non-consumable is configured and returned by StoreKit. An eligible new customer sees Monthly or Yearly preselected (a fixed per-install test of the default plan; both carry the same 7-day trial and every plan stays visible); an ineligible customer defaults to Weekly. There is no "Not now" affordance; the only ways out are to purchase through StoreKit sandbox or close the app.
 3. When StoreKit returns a valid Free introductory offer and reports the sandbox customer eligible, Monthly and Yearly show a 7-day free trial. Weekly and Lifetime never show a trial. Start a trial, subscribe to another recurring tier, or buy Lifetime if visible. A verified purchase dismisses the paywall and unlocks Today. Log a set; the rest timer starts automatically and appears on the Lock Screen / Dynamic Island.
 4. To verify cancellation flow for subscriptions: Settings (visible only when entitled) → Manage Subscription → cancel. Lifetime entitlement has no Manage Subscription row because it is a one-time purchase.
 
-Progressive overload in 2.1 is optional and configured per routine and exercise. It evaluates completed straight working sets at one consistent load after the workout. A recommendation shows the complete next target and its reason. The user must explicitly use, repeat, or edit the target; Unit never rewrites the routine automatically and never interrupts active set logging. Mixed working-set loads, incomplete configured sets, invalid increments, and unsupported bodyweight sessions produce an explanation instead of an invented target.
+Progressive overload in 2.1 is optional and configured per routine and exercise. It evaluates completed straight working sets at one consistent load. When every planned set of a configured exercise is logged, the exercise's collapsed card shows the suggested next target (read-only). After Finish, the workout summary shows the complete next target and its reason. The user must explicitly use, repeat, or edit the target; Unit never rewrites the routine automatically and never interrupts active set logging. Mixed working-set loads, incomplete configured sets, invalid increments, and unsupported bodyweight sessions produce an explanation instead of an invented target.
 
-Engagement prompts in version 2.1 count only workouts completed after installing this version:
-- After the first new completed workout, close its workout summary. Two seconds after Today is active, Unit makes one standard StoreKit review-request attempt. iOS may suppress the visible prompt.
-- On the third new completed workout’s summary, Unit shows a one-time “Help improve Unit” card. “Book a 15-minute call” opens https://calendar.notion.so/meet/efbakir/unit-feedback and “Email feedback” opens a prefilled email to support@unitlift.app.
-- Neither prompt appears during an active workout. Both attempt/shown states persist locally and do not repeat.
+Engagement prompts count only workouts completed in this version:
+- After the first completed workout's summary closes, Unit makes one standard StoreKit review request (iOS may suppress it).
+- The third completed workout's summary shows a one-time "Help improve Unit" card: "Book a 15-minute call" opens https://calendar.notion.so/meet/efbakir/unit-feedback and "Email feedback" opens a prefilled email to support@unitlift.app.
+- Neither prompt appears during an active workout, and neither repeats.
 
-Trial text is conditional: the selected product must be an auto-renewable subscription with a valid StoreKit Free introductory offer, and Apple must report the customer eligible. Eligibility alone does not produce a trial claim. The selected billed amount remains visible directly above the CTA; trial duration, post-trial price, auto-renewal, and cancel-via-App-Store copy appear on the paywall. Ineligible customers receive the standard subscription disclosure with no trial text.
+Trial text appears only when StoreKit returns a valid Free introductory offer and Apple reports the customer eligible. The billed amount stays visible above the CTA; trial length, post-trial price, auto-renewal, and cancel-via-App-Store copy appear on the paywall. Ineligible customers see the standard disclosure with no trial text.
 
-Raw workout details remain on-device via SwiftData. Unit sends a small allowlist of anonymous product-interaction and purchase-state events through TelemetryDeck. TelemetryDeck processes a privacy-preserving app-scoped identifier so anonymous activity can be counted. Analytics are not linked to identity, are not used for tracking, and can be disabled immediately in Settings → Anonymous analytics. Unit remains fully functional offline and when analytics configuration is unavailable.
+Workout details stay on-device (SwiftData). Unit sends a small allowlist of anonymous product-interaction and purchase-state events through TelemetryDeck, using a privacy-preserving app-scoped identifier. Analytics are not linked to identity, are not used for tracking, and can be turned off in Settings → Anonymous analytics. Unit works fully offline.
 
 If you have questions during review, please email support@unitlift.app.
 ```

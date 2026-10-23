@@ -17,9 +17,9 @@ private enum ProgramPasteFormatGuide {
 
     /// Placeholder is examples only — short, by design (long rules live in the format examples sheet).
     /// Bare numbers (no `kg` / `lb`) are easier for the user to type; the parser
-    /// reads any trailing number after `setsxreps` as a weight in the user's
-    /// chosen unit (set in step 1, the unit picker). `BW` stays for
-    /// bodyweight-only moves where no number applies.
+    /// reads any trailing number after `setsxreps` as a weight in the unit
+    /// guessed from the pasted text or the phone region (changeable on
+    /// review). `BW` stays for bodyweight-only moves where no number applies.
     static let placeholderExamples = [
         "Push",
         "Bench press 4x8 60",
@@ -142,6 +142,10 @@ struct OnboardingProgramImportView: View {
         isParsing = true
         defer { isParsing = false }
 
+        vm.unitSystem = OnboardingViewModel.inferredUnitSystem(
+            from: vm.pastedProgramText,
+            current: vm.unitSystem
+        )
         let result = ProgramImportParser.parseWithWarnings(
             vm.pastedProgramText,
             defaultUnit: vm.unitSystem
@@ -183,7 +187,7 @@ private struct ProgramFormatGuideSheet: View {
                 )
                 ruleSection(
                     title: "Weight",
-                    body: "Plain numbers use your chosen unit. Add kg or lb to override per line. Use BW for bodyweight moves."
+                    body: "Add kg or lb after a weight to set the unit. Plain numbers use the same unit. Use BW for bodyweight moves."
                 )
             }
             .frame(maxWidth: .infinity, alignment: .leading)

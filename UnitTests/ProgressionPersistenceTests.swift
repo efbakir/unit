@@ -211,6 +211,39 @@ final class ProgressionPersistenceTests: XCTestCase {
         XCTAssertNil(template.progressionState(for: UUID()))
     }
 
+    func testEditingTheRuleKeepsTheAcceptedTargetWeight() {
+        let exerciseID = UUID()
+        let sourceID = UUID()
+        let template = DayTemplate(
+            name: "Push",
+            plannedSetsByExerciseId: [exerciseID: 3],
+            progressionStateByExerciseId: [
+                exerciseID: progressionState(weightKg: 62.5, sourceSessionID: sourceID)
+            ]
+        )
+        XCTAssertEqual(template.progressionState(for: exerciseID)?.acceptedTarget?.weightKg, 62.5)
+
+        // Wider rep range, one more set, smaller weight step.
+        template.applyTarget(
+            setCount: 4,
+            reps: 8,
+            progression: DoubleProgressionConfiguration(
+                workingSetCount: 4,
+                lowerRepBound: 10,
+                upperRepBound: 12,
+                weightIncrementKg: 1.25
+            ),
+            for: exerciseID,
+            sessions: []
+        )
+
+        let edited = template.progressionState(for: exerciseID)
+        XCTAssertEqual(edited?.acceptedTarget?.weightKg ?? 0, 62.5, accuracy: 0.000_001)
+        XCTAssertEqual(edited?.acceptedTarget?.reps, 10, "reps clamp into the new range")
+        XCTAssertEqual(edited?.sourceWorkoutSessionID, sourceID)
+        XCTAssertEqual(template.plannedSets(for: exerciseID), 4)
+    }
+
     func testDismissedRecommendationDoesNotMutateRoutine() throws {
         let storeURL = temporaryStoreURL(named: "dismissed-target")
         let templateID = UUID()

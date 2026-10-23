@@ -9,7 +9,8 @@ import StoreKit
 import SwiftUI
 import UIKit
 
-private enum SettingsWeightUnit: String, CaseIterable, Identifiable, Hashable {
+/// kg / lb segments shared by Settings and the onboarding review step.
+enum WeightUnitOption: String, CaseIterable, Identifiable, Hashable {
     case kg
     case lb
 
@@ -212,10 +213,10 @@ struct SettingsView: View {
                     AppListRow(title: row) {
                         AppSegmentedControl(
                             selection: Binding(
-                                get: { SettingsWeightUnit(rawValue: unitSystem) ?? .kg },
+                                get: { WeightUnitOption(rawValue: unitSystem) ?? .kg },
                                 set: { unitSystem = $0.rawValue }
                             ),
-                            items: SettingsWeightUnit.allCases,
+                            items: WeightUnitOption.allCases,
                             label: "Weight unit",
                             title: { $0.rawValue }
                         )

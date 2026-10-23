@@ -433,6 +433,8 @@ struct TodayView: View {
         // Auto-discard truly empty sessions; surface a toast so the user knows.
         let hasLoggedSets = session.setEntries.contains(where: { $0.isCompleted })
         if !hasLoggedSets {
+            templates.first(where: { $0.id == session.templateId })?
+                .restoreLastPerformedDate(removing: session, sessions: sessions)
             modelContext.delete(session)
             guard persistSessionChange() else { return }
             toastMessage = .init(AppCopy.Session.staleEmptyDiscardedToast)

@@ -101,7 +101,15 @@ enum OnboardingPreferences {
             .flatMap(OnboardingStep.init(rawValue:)) ?? .splash
         let history = defaults.stringArray(forKey: OnboardingPreferencesKeys.stepHistory)?
             .compactMap(OnboardingStep.init(rawValue:)) ?? []
-        return (step, history)
+        // Drafts saved by earlier builds may sit on the retired unit or
+        // weekday steps (2026-10-23 simplification). Resume on the step that
+        // replaced them and drop them from Back history.
+        let resumed: OnboardingStep = switch step {
+        case .unitPicker: .importMethod
+        case .schedule: .exercises
+        default: step
+        }
+        return (resumed, history.filter { $0 != .unitPicker && $0 != .schedule })
     }
 
     static func clear(defaults: UserDefaults = .standard) {
@@ -272,6 +280,19 @@ enum OnboardingStep: String, Hashable {
     case splitBuilder
     case schedule
     case exercises
+
+    /// Controlled step name for the anonymous onboarding funnel.
+    var analyticsStep: AnalyticsOnboardingStep? {
+        switch self {
+        case .splash, .splitBuilder: nil
+        case .unitPicker: .unit
+        case .importMethod: .method
+        case .programImport: .paste
+        case .libraryPicker: .library
+        case .schedule: .schedule
+        case .exercises: .review
+        }
+    }
 }
 
 // MARK: - Root View
@@ -320,7 +341,9 @@ struct OnboardingView: View {
                 UnitAnalytics.shared.track(.onboardingStarted)
             }
             guard !didLoadPreferences else { return }
-            vm.unitSystem = storedUnitSystem
+            vm.unitSystem = UserDefaults.standard.object(forKey: "unitSystem") == nil
+                ? OnboardingViewModel.regionDefaultUnitSystem
+                : storedUnitSystem
             OnboardingPreferences.load(into: vm)
             let navigation = OnboardingPreferences.loadNavigation()
             step = navigation.step
@@ -353,10 +376,12 @@ struct OnboardingView: View {
                 onSlideViewed: { id in
                     UnitAnalytics.shared.track(.onboardingSlideViewed(id: id))
                 },
-                onGetStarted: { push(.unitPicker) }
+                onGetStarted: { push(.importMethod) }
             )
 
         case .unitPicker:
+            // Retired from the flow on 2026-10-23; only reachable from a
+            // legacy draft, which `loadNavigation` already remaps.
             OnboardingUnitPickerView(
                 progressStep: 1,
                 progressTotal: totalRequiredSteps,
@@ -377,7 +402,7 @@ struct OnboardingView: View {
 
         case .importMethod:
             OnboardingImportMethodView(
-                progressStep: 2,
+                progressStep: 1,
                 progressTotal: totalRequiredSteps,
                 selectedMethod: vm.hasSelectedImportMethod ? vm.importMethod : nil,
                 onSelect: { method in
@@ -398,32 +423,34 @@ struct OnboardingView: View {
 
         case .programImport:
             OnboardingProgramImportView(
-                progressStep: 3,
+                progressStep: 2,
                 progressTotal: totalRequiredSteps,
-                onContinue: { push(.schedule) },
+                onContinue: { push(.exercises) },
                 onBack: pop
             )
 
         case .libraryPicker:
             OnboardingLibraryPickerView(
-                progressStep: 3,
+                progressStep: 2,
                 progressTotal: totalRequiredSteps,
                 onUpdate: persistProgress,
-                onContinue: { push(.schedule) },
+                onContinue: { push(.exercises) },
                 onBack: pop
             )
 
         case .splitBuilder:
             OnboardingSplitBuilderView(
-                progressStep: 3,
+                progressStep: 2,
                 progressTotal: totalRequiredSteps,
-                onContinue: { push(.schedule) },
+                onContinue: { push(.exercises) },
                 onBack: pop
             )
 
         case .schedule:
+            // Retired from the flow on 2026-10-23 (new programs start on a
+            // flexible rotation); only reachable from a legacy draft.
             OnboardingScheduleView(
-                progressStep: 4,
+                progressStep: 2,
                 progressTotal: totalRequiredSteps,
                 onContinue: { push(.exercises) },
                 onBack: pop
@@ -440,10 +467,11 @@ struct OnboardingView: View {
         }
     }
 
-    /// Both paths use five stable steps. Library programs now review their
-    /// supplied weekdays in the same schedule screen instead of changing the
-    /// progress denominator halfway through onboarding.
-    private var totalRequiredSteps: Int { 5 }
+    /// Both paths use three stable steps: path, program, review (2026-10-23).
+    /// The weight unit comes from the phone region or the pasted text and can
+    /// be changed on review; weekdays default to a flexible rotation so Today
+    /// offers the first workout right after purchase.
+    private var totalRequiredSteps: Int { 3 }
 
     private var exercisesProgressStep: Int { totalRequiredSteps }
 
@@ -462,6 +490,9 @@ struct OnboardingView: View {
         history.append(step)
         direction = .forward
         step = next
+        if let analyticsStep = next.analyticsStep {
+            UnitAnalytics.shared.track(.onboardingStepViewed(step: analyticsStep))
+        }
         // Snapshot on every transition: a quit-and-relaunch (notably mid-paste,
         // after the Vision OCR parse populated the viewmodel) restores the
         // user's work on the next entry instead of dropping them at splash.
@@ -490,6 +521,10 @@ struct OnboardingView: View {
 
     private func performCommit() {
         isCommitting = true
+        // No weekday step: every new program starts as a flexible rotation,
+        // so Today always shows the next workout. Weekdays can be set later
+        // in Programs.
+        vm.useFlexibleSchedule = true
         do {
             try vm.commit(modelContext: modelContext)
             ProgramSetupContextStore.save(

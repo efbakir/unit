@@ -365,6 +365,7 @@ enum AppCopy {
         static let scheduleSubtitle = "Choose fixed weekdays or use a flexible schedule."
         static let flexibleToggle = "Flexible schedule"
         static let flexibleSubtext = "No fixed weekdays."
+        static let reviewUnitLabel = "Weight unit"
         static let previewTitle = "Review program"
         static let previewSubtitle = "Check the details before saving your program."
         static let previewCTA = "Save program"

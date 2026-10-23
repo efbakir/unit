@@ -1,9 +1,12 @@
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import sharp from "/Users/efbakir/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp/lib/index.js"
+import { createRequire } from "node:module"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+// sharp ships with Next.js (pnpm keeps it nested), so resolve it from next.
+const requireFromRoot = createRequire(path.join(root, "package.json"))
+const sharp = createRequire(requireFromRoot.resolve("next/package.json"))("sharp")
 const sourceDir = path.join(root, "docs/app-store-assets/2.1/source")
 const outputDir = path.join(root, "docs/app-store-assets/2.1/exports/6.9-inch")
 const width = 1290

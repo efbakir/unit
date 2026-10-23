@@ -105,6 +105,8 @@ struct OnboardingProgramPreviewView: View {
     @ViewBuilder
     private var content: some View {
         VStack(spacing: AppSpacing.md) {
+            weightUnitRow
+
             warningBanner
 
             ForEach(Array(vm.dayExercises.enumerated()), id: \.offset) { dayIndex, exercises in
@@ -123,6 +125,32 @@ struct OnboardingProgramPreviewView: View {
                 }
             }
         }
+    }
+
+    /// The unit used to be its own onboarding step. It is now guessed from
+    /// the phone region or the pasted text and confirmed here, where weights
+    /// first appear. Stored values stay in kg; only the display changes.
+    private var weightUnitRow: some View {
+        AppCard(contentInset: AppSpacing.md, verticalInset: AppSpacing.xs) {
+            AppListRow(title: AppCopy.Onboarding.reviewUnitLabel, style: .display) {
+                AppSegmentedControl(
+                    selection: Binding(
+                        get: { WeightUnitOption(rawValue: vm.unitSystem) ?? .kg },
+                        set: { option in
+                            vm.unitSystem = option.rawValue
+                            vm.hasSelectedUnit = true
+                            vm.convertDefaultWeightSteps(to: option.rawValue)
+                            UnitAnalytics.shared.track(.weightUnitSelected(unit: option.rawValue))
+                        }
+                    ),
+                    items: WeightUnitOption.allCases,
+                    label: AppCopy.Onboarding.reviewUnitLabel,
+                    title: { $0.rawValue }
+                )
+                .fixedSize()
+            }
+        }
+        .accessibilityIdentifier("onboarding-review-weight-unit")
     }
 
     private var dayName: (Int) -> String {

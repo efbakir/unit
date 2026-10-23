@@ -52,6 +52,10 @@ struct ActiveWorkoutView: View {
     @State private var saveFailed = false
     @State private var didTrackWorkoutStart = false
     @State private var trackedPreviewExerciseIDs: Set<UUID> = []
+    /// Rest-alert problems (notifications off) are reported once per workout.
+    /// Every set restarts the timer, so repeating it would cover the logging
+    /// row after each set.
+    @State private var didReportRestAlertIssue = false
     @State private var noKeyboardSetCount = 0
     @State private var editedRows: Set<String> = []
     @State private var removedSet: SetEntrySnapshot?
@@ -235,6 +239,16 @@ struct ActiveWorkoutView: View {
                 }
                 .background(AppColor.background.ignoresSafeArea(edges: .bottom))
                 .overlay(alignment: .top) { AppDivider() }
+            } else if isWorkoutComplete {
+                // Every planned set is logged: rest is over, and the summary
+                // (where next targets are accepted) is one tap away. The small
+                // toolbar Finish alone was easy to miss.
+                AppPrimaryButton(AppCopy.Workout.finishWorkout, isEnabled: !guardActive, action: requestFinish)
+                    .accessibilityIdentifier("workout-complete-finish")
+                    .padding(AppSpacing.md)
+                    .background(AppColor.background.ignoresSafeArea(edges: .bottom))
+                    .overlay(alignment: .top) { AppDivider() }
+                    .transition(AppBlurTransition().animation(.appReveal))
             } else {
                 RestBar(
                     timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
@@ -363,7 +377,9 @@ struct ActiveWorkoutView: View {
         .onAppear(perform: restoreWorkout)
         .onChange(of: upNextText) { _, next in restTimer.updateUpNext(next) }
         .onChange(of: restTimer.notificationIssue) { _, message in
-            if let message { setEditHintToast = .init(message, kind: .error) }
+            guard let message, !didReportRestAlertIssue else { return }
+            didReportRestAlertIssue = true
+            setEditHintToast = .init(message, kind: .information)
         }
         .onChange(of: restTimer.completionCount) { _, _ in
             AccessibilityNotification.Announcement(AppCopy.Workout.restFinishedInline).post()
@@ -635,7 +651,11 @@ struct ActiveWorkoutView: View {
     private func supportingText(for section: WorkoutExerciseSectionModel, row: Int) -> String {
         if needsStartingTarget(section, row: row) { return AppCopy.Workout.noStartingTarget }
         if let prior = SetEntry.latestValidWorkingSets(for: section.id, in: sessions, excluding: session.id).last {
-            return AppCopy.Workout.lastTimeValue(displayWeight(prior.weight).weightString, prior.reps)
+            let load = displayWeight(prior.weight).weightString
+            let weight = section.exercise.isBodyweight
+                ? (prior.weight > 0 ? "\(AppCopy.Workout.bodyweightAbbrev) + \(load)" : AppCopy.Workout.bodyweightAbbrev)
+                : load
+            return AppCopy.Workout.lastTimeValue(weight, prior.reps)
         }
         return AppCopy.Workout.startingTargetLabel
     }
@@ -1057,6 +1077,7 @@ struct ActiveWorkoutView: View {
         pendingExerciseForSetup = exercise
     }
     private func cancelWorkout() {
+        template?.restoreLastPerformedDate(removing: session, sessions: sessions)
         modelContext.delete(session)
         guard saveWorkoutChanges() else { return }
         clearPreparedTarget()

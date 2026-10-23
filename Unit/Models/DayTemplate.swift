@@ -331,6 +331,18 @@ final class DayTemplate {
         try? modelContext.save()
         return session
     }
+
+    /// Undo the start stamp when `removed` (a cancelled or auto-discarded
+    /// start) is deleted. A flexible rotation picks the routine with the
+    /// oldest `lastPerformedDate`, so a cancelled start must not move it on.
+    @MainActor
+    func restoreLastPerformedDate(removing removed: WorkoutSession, sessions: [WorkoutSession]) {
+        guard lastPerformedDate == removed.date else { return }
+        lastPerformedDate = sessions
+            .filter { $0.templateId == id && $0.isCompleted && $0.id != removed.id }
+            .map(\.date)
+            .max()
+    }
 }
 
 /// Shared target-editor input for Today and routine details.
@@ -362,7 +374,6 @@ extension DayTemplate {
     /// Callers save and restore their model context on failure.
     func applyTarget(setCount: Int, reps: Int, progression: DoubleProgressionConfiguration?,
                      for exerciseID: UUID, sessions: [WorkoutSession]) {
-        let previousSetCount = plannedSets(for: exerciseID)
         setPlannedSets(setCount, for: exerciseID)
 
         if let progression {
@@ -374,12 +385,10 @@ extension DayTemplate {
                 ),
                 progression.upperRepBound
             )
-            let configurationChanged = previous?.lowerRepBound != progression.lowerRepBound
-                || previous?.upperRepBound != progression.upperRepBound
-                || previous?.weightIncrementKg != progression.weightIncrementKg
-                || previousSetCount != setCount
-            let targetChanged = previous?.currentAcceptedTargetReps != targetReps
-            let preservesAcceptedDecision = !configurationChanged && !targetChanged
+            // Editing sets, the rep range or the weight step keeps an accepted
+            // target: its weight still applies and its reps are clamped into
+            // the new range above. Clearing its source here used to drop the
+            // accepted weight jump from the next workout without any message.
             let state = ExerciseProgressionState(
                 lowerRepBound: progression.lowerRepBound,
                 upperRepBound: progression.upperRepBound,
@@ -387,12 +396,8 @@ extension DayTemplate {
                 currentAcceptedTargetWeightKg: previous?.currentAcceptedTargetWeightKg
                     ?? progressionSeedWeight(for: exerciseID, sessions: sessions),
                 currentAcceptedTargetReps: targetReps,
-                sourceWorkoutSessionID: preservesAcceptedDecision
-                    ? previous?.sourceWorkoutSessionID
-                    : nil,
-                lastAcceptedReason: preservesAcceptedDecision
-                    ? previous?.lastAcceptedReason
-                    : nil
+                sourceWorkoutSessionID: previous?.sourceWorkoutSessionID,
+                lastAcceptedReason: previous?.lastAcceptedReason
             )
             setProgressionState(state, for: exerciseID)
             setPlannedReps(targetReps, for: exerciseID)

@@ -93,10 +93,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "onboarding CTA")
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Onboarding.unitTitle].waitForExistence(timeout: 5),
-            "onboarding CTA introduced an extra step before weight-unit selection"
+            app.staticTexts[AppCopy.Onboarding.methodTitle].waitForExistence(timeout: 5),
+            "onboarding CTA introduced an extra step before the program path choice"
         )
-        tap(button(in: app, containing: "Kilograms"), "weight unit")
+        XCTAssertFalse(
+            app.staticTexts[AppCopy.Onboarding.unitTitle].exists,
+            "the retired weight-unit step reappeared"
+        )
         XCTAssertTrue(
             staticText(in: app, containing: AppCopy.Onboarding.methodPasteOption)
                 .waitForExistence(timeout: 5),
@@ -157,7 +160,6 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
-        tap(button(in: app, containing: "Pounds"), "unit picker — Pounds")
 
         XCTAssertTrue(
             app.staticTexts[AppCopy.Onboarding.methodTitle].waitForExistence(timeout: 8),
@@ -173,7 +175,6 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
-        tap(button(in: app, containing: "Kilograms"), "unit picker — Kilograms")
         tap(
             button(in: app, containing: AppCopy.Onboarding.methodLibraryOption),
             "program source — ready-made"
@@ -184,7 +185,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         XCTAssertEqual(
             descendant(in: app, identifier: "onboarding-progress").label,
-            "Step 3 of 5, question 1 of 3"
+            "Step 2 of 3, question 1 of 3"
         )
         tap(button(in: app, containing: "Strength"), "goal — Strength")
         XCTAssertTrue(
@@ -192,7 +193,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         XCTAssertEqual(
             descendant(in: app, identifier: "onboarding-progress").label,
-            "Step 3 of 5, question 2 of 3"
+            "Step 2 of 3, question 2 of 3"
         )
         tap(button(in: app, containing: "New"), "experience — New")
         XCTAssertTrue(
@@ -200,7 +201,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         XCTAssertEqual(
             descendant(in: app, identifier: "onboarding-progress").label,
-            "Step 3 of 5, question 3 of 3"
+            "Step 2 of 3, question 3 of 3"
         )
         XCTAssertTrue(
             button(in: app, containing: AppCopy.Onboarding.trainingDays(3)).isSelected,
@@ -266,16 +267,22 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(button(in: app, containing: "Full Body 2-Day"), "select best match")
         tap(app.buttons[AppCopy.Onboarding.libraryCTA], "review matched program")
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Onboarding.scheduleTitle].waitForExistence(timeout: 8),
-            "matched program did not continue into its schedule review"
+            app.staticTexts[AppCopy.Onboarding.previewTitle].waitForExistence(timeout: 8),
+            "matched program did not continue straight into review"
         )
-        attachScreenshot(named: "native-13-weekday-defaults", app: app)
-        let wednesday = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Wednesday"))
-        tap(wednesday.firstMatch, "First routine on Wednesday")
-        XCTAssertTrue(wednesday.firstMatch.isSelected)
-        XCTAssertEqual(wednesday.matching(NSPredicate(format: "enabled == false")).count, 1,
-                       "The other routine must disable the occupied Wednesday")
-        attachScreenshot(named: "native-14-weekday-disabled", app: app)
+        XCTAssertFalse(
+            app.staticTexts[AppCopy.Onboarding.scheduleTitle].exists,
+            "the retired weekday step reappeared"
+        )
+        XCTAssertEqual(
+            descendant(in: app, identifier: "onboarding-progress").label,
+            "Step 3 of 3"
+        )
+        XCTAssertTrue(
+            descendant(in: app, identifier: "onboarding-review-weight-unit").exists,
+            "review must let the lifter confirm kg or lb"
+        )
+        attachScreenshot(named: "native-13-review-with-unit", app: app)
     }
 
     func testPasteEditorFocusIsStableOnCompactScreen() {
@@ -283,7 +290,6 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
-        tap(button(in: app, containing: "Kilograms"), "unit picker — Kilograms")
         tap(button(in: app, containing: AppCopy.Onboarding.methodPasteOption), "import method — paste")
 
         let editor = app.textViews.firstMatch
@@ -298,12 +304,11 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         let session = try freshStoreKitSession()
         defer { session.clearTransactions() }
 
-        // ── Launch 1: splash → unit → import → parser failure + recovery ──
+        // ── Launch 1: splash → import → parser failure + recovery ──
         var app = makeApp(reset: true)
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
-        tap(button(in: app, containing: "Kilograms"), "unit picker — Kilograms")
         tap(button(in: app, containing: AppCopy.Onboarding.methodPasteOption), "import method — paste")
 
         let editor = app.textViews.firstMatch
@@ -337,9 +342,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         editor2.typeText(Self.demoProgram)
         tap(app.buttons["Read program"], "Read program (valid)")
 
-        tap(app.buttons["Continue"], "schedule — Continue", timeout: 10)
-
-        XCTAssertTrue(app.staticTexts[AppCopy.Onboarding.previewTitle].waitForExistence(timeout: 8), "preview title missing")
+        // No weekday step: the parsed program goes straight to review.
+        XCTAssertTrue(app.staticTexts[AppCopy.Onboarding.previewTitle].waitForExistence(timeout: 10), "preview title missing")
         XCTAssertTrue(
             staticText(in: app, containing: "Bench Press").waitForExistence(timeout: 5),
             "parsed exercise missing from preview"
@@ -423,8 +427,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             tap(button(in: app, containing: "Push"), "choose Push routine")
         }
         tap(startWorkout, "start workout", timeout: 10)
-        let complete = app.buttons[AppCopy.Workout.completeSet]
-        XCTAssertTrue(complete.waitForExistence(timeout: 10), "Complete set CTA missing")
+        // Final B logging labels each row's action ("Complete set 1") and
+        // exposes a stable per-row identifier.
+        XCTAssertTrue(
+            app.buttons["complete-set-1"].waitForExistence(timeout: 10),
+            "Complete set CTA missing"
+        )
         XCTAssertFalse(
             app.staticTexts[AppCopy.Engagement.feedbackTitle].exists,
             "Feedback invitation must never interrupt active logging"
@@ -433,6 +441,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // Two consecutive logs exercise the fast path without assuming the
         // active routine exposes a third set before advancing its state.
         for setIndex in 1...2 {
+            let complete = app.buttons["complete-set-\(setIndex)"]
             XCTAssertTrue(complete.waitForExistence(timeout: 8), "Complete set missing before set \(setIndex)")
             let start = Date()
             complete.tap()
@@ -442,7 +451,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             )
         }
 
-        tap(app.buttons[AppCopy.Workout.finishWorkout], "finish workout (toolbar)", timeout: 10)
+        tap(app.buttons[AppCopy.Workout.finishShort].firstMatch, "finish workout (toolbar)", timeout: 10)
         let confirm = app.alerts.firstMatch.buttons[AppCopy.Workout.finishWorkout]
         XCTAssertTrue(confirm.waitForExistence(timeout: 8), "finish confirmation missing")
         confirm.tap()

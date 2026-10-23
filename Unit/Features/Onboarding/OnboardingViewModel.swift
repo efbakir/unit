@@ -166,6 +166,48 @@ final class OnboardingViewModel {
 
     /// "kg" or "lb". Written to AppStorage("unitSystem") after commit.
     var unitSystem: String = "kg"
+
+    /// First-run guess from the phone's region: pounds only where the region
+    /// measures in US units. Changeable on review and in Settings.
+    static var regionDefaultUnitSystem: String {
+        Locale.current.measurementSystem == .us ? "lb" : "kg"
+    }
+
+    /// Unit's default weight steps follow the chosen unit (2.5 kg, 2 kg for
+    /// dumbbells, or 5 lb). Called when the unit changes on review, so a
+    /// pounds lifter never sees "+5.5 lb" from a kg default. Custom steps
+    /// are left alone.
+    func convertDefaultWeightSteps(to newUnit: String) {
+        let pound = 5 / 2.20462
+        dayExercises = dayExercises.map { day in
+            day.map { exercise in
+                guard let rule = exercise.progressionConfiguration,
+                      [2.5, 2, pound].contains(where: { abs(rule.weightIncrementKg - $0) < 0.000_1 })
+                else { return exercise }
+                let isDumbbell = exercise.name.contains("DB")
+                    || exercise.name.localizedCaseInsensitiveContains("dumbbell")
+                var converted = exercise
+                converted.progressionConfiguration = DoubleProgressionConfiguration(
+                    workingSetCount: rule.workingSetCount,
+                    lowerRepBound: rule.lowerRepBound,
+                    upperRepBound: rule.upperRepBound,
+                    weightIncrementKg: newUnit == "lb" ? pound : (isDumbbell ? 2 : 2.5)
+                )
+                return converted
+            }
+        }
+    }
+
+    /// When pasted text names only one unit (`60kg`, `135 lb`, `135#`), use
+    /// it for plain numbers too. Mixed or unit-free text keeps `current`.
+    static func inferredUnitSystem(from text: String, current: String) -> String {
+        let lowered = text.lowercased()
+        let mentionsPounds = lowered.range(of: #"\d\s*(lbs?\b|#)"#, options: .regularExpression) != nil
+        let mentionsKilograms = lowered.range(of: #"\d\s*kgs?\b"#, options: .regularExpression) != nil
+        if mentionsPounds && !mentionsKilograms { return "lb" }
+        if mentionsKilograms && !mentionsPounds { return "kg" }
+        return current
+    }
     /// `unitSystem` has a parser-safe default, but the onboarding card should
     /// not read as chosen until the lifter taps it.
     var hasSelectedUnit = false
@@ -548,7 +590,11 @@ extension OnboardingViewModel {
 
         dayExercises = Array(templateDays.prefix(dayCount).map { day in
             day.items.map { item in
-                let progressionConfiguration = ProgramImporter.progressionConfiguration(for: item)
+                let progressionConfiguration = ProgramImporter.libraryProgressionConfiguration(
+                    for: item,
+                    in: template,
+                    unitSystem: unitSystem
+                )
                 return OnboardingExercise(
                     name: item.exerciseName,
                     plannedSets: clampPlannedSets(item.setCount > 0 ? item.setCount : OnboardingExercise.defaultPlannedSets),

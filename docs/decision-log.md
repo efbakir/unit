@@ -7,6 +7,23 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-23 — Finalize 2.1 for the App Store (founder delegated all decisions)
+
+Efe asked for the app to be finalized and shipped while away, with full decision authority. Each item below is a decision, its reason, and how to undo it.
+
+- **Release source:** Version 2.1 ships as build **94**, built from the build-90 phone state (uncommitted in the main checkout, now committed on `claude/app-finalization-launch-34a116`) plus this session's changes. Build 74 (August) was not used because it lacks all October work.
+- **Release type:** Manual release after approval. No person has tested build 94 on a phone; the founder checks it, then taps Release.
+- **Exercise-done suggestion (founder request):** When every planned set of a progression exercise is logged, its collapsed card shows "Suggested next: 62.5 kg × 8 · +2.5 kg" (or "+1 rep", "same target"). Read-only; acceptance stays on the summary after Finish. This explicitly overrides the "post-workout only" wording in CLAUDE.md for this read-only preview. The finished card stays on screen when the next exercise sits right below it.
+- **Finish workout button:** When every planned set is logged, the rest bar becomes a full-width "Finish workout" button. Why: the small toolbar Finish was easy to miss, and the summary is where next targets are accepted.
+- **Ready-made programs get next-target rules:** 26 of 27 catalog programs had no rep ranges, so most lifters never saw a suggestion. Programs that define no ranges now give weighted lifts Unit's standard rule at import: start at the program's reps, build up to two more, then add 2.5 kg (2 kg for dumbbells, 5 lb in pounds). Bodyweight moves, timed or 20+ rep work and 5/3/1 percentage sets keep no rule. Catalog data is unchanged; Combat Power keeps its own ranges. Undo: `ProgramImporter.libraryProgressionConfiguration`.
+- **Accepted targets survive rule edits:** Changing sets, rep range or weight step no longer drops an accepted target; its weight stays and reps clamp into the new range.
+- **Onboarding 5 steps to 3:** Path, program, review. The weight unit comes from the phone region (pounds only for US-measurement regions) or the pasted text, and can be changed on review and in Settings. The weekday step is removed: new programs start as a flexible rotation, so Today offers the first workout right after purchase instead of "Rest day" on 4 of 7 days. Weekdays can still be set in Programs. Drafts saved on retired steps resume on their replacement.
+- **Cancelled starts:** Cancelling a started workout (or the empty-yesterday cleanup) restores the routine's last-performed date, so a flexible rotation does not skip it.
+- **Rest-alert notice:** With notifications off, the notice shows once per workout and dismisses itself; it used to stay after every set.
+- **Paywall:** Hard paywall, prices, 7-day trial, Lifetime $44.99 and all copy stay. New: a sticky 50/50 per-install test of the preselected plan for trial-eligible customers, Monthly or Yearly (both carry the same trial; every plan stays visible). Read it in TelemetryDeck by `default_plan`. Decision rule: after about 300 eligible paywall views per arm, keep the arm with more trial starts × paid conversion; if Yearly has fewer trial starts but more revenue per view, keep Yearly. Ineligible customers keep Weekly.
+- **Data, no new backend:** Supabase and any server stay deferred (local-first; no account; the privacy promise). Data collection is TelemetryDeck plus App Store Connect: added anonymous events for onboarding steps, purchase cancel/pending/fail, restore result and the exercise-done suggestion, plus TelemetryDeck's session-start signal for active users and retention. Pulling revenue reports automatically needs an App Store Connect API key with the Finance role; the current App Manager key cannot read Sales or Analytics reports.
+- **MiroFish:** The real tool cannot run here (needs a Zep Cloud key and an LLM key, and it simulates social-media opinion rather than app use). Its method was replicated with Claude agents; results are in `docs/research/2026-10-23-persona-panel.md`.
+
 ## 2026-08-13 — Put the trial decision on one complete purchase surface
 
 - **Decision:** Replace the two-page paywall with one scrolling `AppScreen`. Keep the personalized program payoff, grouped Weekly/Monthly/Yearly/Lifetime choices, selected-offer timeline, optional reminder, included features, renewal disclosure, legal actions, and sticky purchase CTA together.

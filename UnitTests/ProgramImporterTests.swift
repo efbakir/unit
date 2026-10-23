@@ -26,6 +26,52 @@ import SwiftData
 /// class runs on MainActor so callers don't need per-method `await`.
 @MainActor
 final class ProgramImporterTests: XCTestCase {
+    func testPastedUnitsDecideThePlainNumberUnit() {
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Bench 3x8 135 lbs\nRow 3x10 95", current: "kg"),
+            "lb"
+        )
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Squat 5x5 100kg", current: "lb"),
+            "kg"
+        )
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Deadlift 1x5 315#", current: "kg"),
+            "lb"
+        )
+        // Unit-free or mixed text keeps the region guess.
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Bench press 4x8 60", current: "lb"),
+            "lb"
+        )
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Bench 60kg\nCurl 25 lb", current: "kg"),
+            "kg"
+        )
+        // Words that merely contain the letters never count as units.
+        XCTAssertEqual(
+            OnboardingViewModel.inferredUnitSystem(from: "Kettlebell swing 3x15", current: "kg"),
+            "kg"
+        )
+    }
+
+    func testLegacyDraftOnRetiredStepsResumesOnTheirReplacement() {
+        let suiteName = "OnboardingDraftMigration.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set("unitPicker", forKey: OnboardingPreferencesKeys.currentStep)
+        defaults.set(["splash"], forKey: OnboardingPreferencesKeys.stepHistory)
+        XCTAssertEqual(OnboardingPreferences.loadNavigation(defaults: defaults).step, .importMethod)
+
+        defaults.set("schedule", forKey: OnboardingPreferencesKeys.currentStep)
+        defaults.set(["splash", "unitPicker", "importMethod", "programImport"],
+                     forKey: OnboardingPreferencesKeys.stepHistory)
+        let navigation = OnboardingPreferences.loadNavigation(defaults: defaults)
+        XCTAssertEqual(navigation.step, .exercises)
+        XCTAssertEqual(navigation.history, [.splash, .importMethod, .programImport])
+    }
+
     func testPickedCatalogProgramKeepsCatalogName() {
         guard let program = ProgramCatalog.all.first else {
             return XCTFail("Expected at least one catalog program")
@@ -452,7 +498,8 @@ final class ProgramImporterTests: XCTestCase {
 
         XCTAssertEqual(restored.programMatchProfile, original.programMatchProfile)
         XCTAssertEqual(navigation.step, .libraryPicker)
-        XCTAssertEqual(navigation.history, [.splash, .unitPicker, .importMethod])
+        // The retired unit step (2026-10-23) is dropped from Back history.
+        XCTAssertEqual(navigation.history, [.splash, .importMethod])
     }
 
     func testCombatPowerProgramPreservesScheduleAndContrastOrder() throws {
@@ -552,6 +599,57 @@ final class ProgramImporterTests: XCTestCase {
                     XCTAssertNil(ProgramImporter.progressionConfiguration(for: item))
                 }
             }
+        }
+    }
+
+    func testReadyMadeProgramsWithoutRangesGetTheStandardRule() throws {
+        let ppl = try XCTUnwrap(ProgramCatalog.all.first { $0.name == "Push Pull Legs" })
+        let items = ppl.days.flatMap(\.items)
+        let weighted = try XCTUnwrap(items.first {
+            !OnboardingViewModel.isBodyweightExercise(named: $0.exerciseName)
+                && (1...20).contains($0.repTarget)
+                && !$0.exerciseName.contains("DB")
+        })
+        let rule = try XCTUnwrap(
+            ProgramImporter.libraryProgressionConfiguration(for: weighted, in: ppl, unitSystem: "kg")
+        )
+        XCTAssertEqual(rule.lowerRepBound, weighted.repTarget)
+        XCTAssertEqual(rule.upperRepBound, weighted.repTarget + 2)
+        XCTAssertEqual(rule.weightIncrementKg, 2.5, accuracy: 0.000_1)
+        XCTAssertEqual(
+            ProgramImporter.libraryProgressionConfiguration(for: weighted, in: ppl, unitSystem: "lb")?
+                .weightIncrementKg ?? 0,
+            5 / 2.20462,
+            accuracy: 0.000_1
+        )
+
+        if let bodyweight = items.first(where: { OnboardingViewModel.isBodyweightExercise(named: $0.exerciseName) }) {
+            XCTAssertNil(ProgramImporter.libraryProgressionConfiguration(for: bodyweight, in: ppl, unitSystem: "kg"))
+        }
+
+        let fiveThreeOne = try XCTUnwrap(ProgramCatalog.all.first { $0.name == "5/3/1" })
+        let percentItem = try XCTUnwrap(fiveThreeOne.days.flatMap(\.items).first { $0.startingWeightPct != nil })
+        XCTAssertNil(
+            ProgramImporter.libraryProgressionConfiguration(for: percentItem, in: fiveThreeOne, unitSystem: "kg"),
+            "5/3/1 percentage work keeps its own cycle"
+        )
+
+        let combat = try XCTUnwrap(ProgramCatalog.all.first { $0.name == "Combat Power" })
+        for item in combat.days.flatMap(\.items) {
+            XCTAssertEqual(
+                ProgramImporter.libraryProgressionConfiguration(for: item, in: combat, unitSystem: "kg"),
+                ProgramImporter.progressionConfiguration(for: item),
+                "a program with its own ranges keeps them exactly"
+            )
+        }
+
+        for program in ProgramCatalog.all {
+            XCTAssertTrue(
+                program.days.flatMap(\.items).contains {
+                    ProgramImporter.libraryProgressionConfiguration(for: $0, in: program, unitSystem: "kg") != nil
+                },
+                "\(program.name) offers no next-target suggestion on any lift"
+            )
         }
     }
 
