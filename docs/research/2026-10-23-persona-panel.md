@@ -1,4 +1,4 @@
-# Persona panel, MiroFish method — 2026-10-23
+# Persona panel, MiroFish method, 2026-10-23
 
 Synthetic product test of Unit 2.1 before submission. 20 simulated gym-goers walked through the real flows, then argued about Unit in a Reddit-style thread. Treat everything here as hypotheses to check with real data, not as user research.
 
@@ -16,7 +16,15 @@ Synthetic product test of Unit 2.1 before submission. 20 simulated gym-goers wal
   - O-A current 5-step setup vs O-B 3-step setup (unit guessed, no weekday step).
   - P-A Monthly preselected vs P-B Yearly preselected.
 
-SOCIAL_BLOCK
+## Social round (Reddit-style thread)
+
+- 19 agents in a made-up r/liftingapps thread: 15 personas plus 4 outside voices (Hevy power user, self-promo skeptic, sports-science nerd, beginner). 4 rounds. Round 3 dropped in the build-94 changes as a founder update.
+- Top 3 comments were all about the wall: "6 minutes of setup and it asks for a card before i log one set" (163 points), "free with a paywall after setup is not free" (128), "can anyone see the app before putting a card in?" (103). They kept gaining votes after the update.
+- After the update: approval of the founder's replies went from 53% to 67%. 2 agents moved up one step, nobody moved down. A small lift, not a turn.
+- What landed: Monthly preselected, reminder on by default, shorter setup, suggestions on ready-made programs.
+- What did not move: no look before a card, free-only users, RPE and percent lifters, the cancel-on-day-0 trial trick.
+- Two new risks came out of the thread, both handled in build 94: returners saw Weekly preselected (now Monthly), and a Canadian lb lifter saw kg (the review switch now re-reads plain numbers).
+- Accepted as is: the public "cheapest path" (start the trial, cancel renewal, buy Lifetime on day 7).
 
 ## What the panel said (all 4 segments)
 
@@ -59,7 +67,7 @@ SOCIAL_BLOCK
 
 ## Still open from the panel
 
-- A free look before paying (a sample workout before the paywall) — conflicts with the hard-paywall decision; worth a real test later.
+- A free look before paying (a sample workout before the paywall): conflicts with the hard-paywall decision; worth a real test later.
 - History import from Hevy and Strong (CSV) for switchers.
 - Percent-of-training-max and RPE in paste and logging (strength segment).
 - Gentle restart after a gap; pause instead of cancel; "your history stays on your phone" at cancel.
