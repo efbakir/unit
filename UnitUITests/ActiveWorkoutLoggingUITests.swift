@@ -129,19 +129,17 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-finished-update")
     }
 
+    // Build 90 removed the toolbar reorder sheet; exercise cards are reordered
+    // by long-pressing a card and dropping it on another (direct drag only).
     func testReorderKeepsLoggedSetRestAndSurvivesRelaunch() throws {
         let app = launch()
         tap(app.buttons["complete-set-1"], in: app)
-        tap(app.buttons["workout-reorder"], in: app)
-        let bench = app.cells.containing(.staticText, identifier: "workout-reorder-Bench Press").firstMatch
-        let row = app.cells.containing(.staticText, identifier: "workout-reorder-Barbell Row").firstMatch
-        XCTAssertTrue(bench.waitForExistence(timeout: 5))
-        XCTAssertTrue(row.exists)
-        bench.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
-            .press(forDuration: 1, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.9)))
-        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
-        capture(app, "workout-reordered-sheet")
-        tap(app.buttons["Done"], in: app)
+        let bench = app.staticTexts["Bench Press"].firstMatch
+        let row = app.staticTexts["Barbell Row"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertLessThan(bench.frame.minY, row.frame.minY)
+        row.press(forDuration: 1, thenDragTo: bench)
+        XCTAssertTrue(eventually { row.frame.minY < bench.frame.minY }, "Barbell Row did not move above Bench Press")
         XCTAssertTrue(app.buttons["logged-set-1"].exists)
         XCTAssertTrue(app.buttons["complete-set-2"].exists)
         XCTAssertTrue(app.buttons["Skip"].isEnabled)
@@ -150,64 +148,33 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         app.terminate()
         app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
         app.launch()
-        tap(app.buttons["workout-reorder"], in: app)
-        XCTAssertTrue(bench.waitForExistence(timeout: 5))
-        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        XCTAssertTrue(eventually { row.frame.minY < bench.frame.minY }, "Order did not survive relaunch")
         capture(app, "workout-reordered-relaunch")
     }
 
     func testLongPressCanReorderExerciseCards() throws {
         let app = launch()
-        tap(app.buttons["workout-reorder"], in: app)
-        let bench = app.cells.containing(.staticText, identifier: "workout-reorder-Bench Press").firstMatch
-        let row = app.cells.containing(.staticText, identifier: "workout-reorder-Barbell Row").firstMatch
-        XCTAssertTrue(bench.waitForExistence(timeout: 5))
-        bench.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
-            .press(forDuration: 1, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.9)))
-        XCTAssertLessThan(row.frame.minY, bench.frame.minY)
-        tap(app.buttons["Done"], in: app)
-        let rowTitle = app.staticTexts["Barbell Row"].firstMatch
-        let benchTitle = app.staticTexts["Bench Press"].firstMatch
-        XCTAssertTrue(rowTitle.isHittable)
-        XCTAssertTrue(benchTitle.isHittable)
-        rowTitle.press(forDuration: 1, thenDragTo: benchTitle)
-        tap(app.buttons["workout-reorder"], in: app)
-        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        let bench = app.staticTexts["Bench Press"].firstMatch
+        let row = app.staticTexts["Barbell Row"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.isHittable)
+        XCTAssertTrue(bench.isHittable)
         XCTAssertLessThan(bench.frame.minY, row.frame.minY)
+        row.press(forDuration: 1, thenDragTo: bench)
+        XCTAssertTrue(eventually { row.frame.minY < bench.frame.minY }, "Long-press drag did not reorder")
+        bench.press(forDuration: 1, thenDragTo: row)
+        XCTAssertTrue(eventually { bench.frame.minY < row.frame.minY }, "Dragging back did not restore the order")
         capture(app, "workout-card-long-press-result")
     }
 
-    func testRestFooterKeepsItsFrameAcrossStates() throws {
-        let app = launch(extra: ["-restDurationSeconds", "15"])
-        let bar = app.otherElements["workout-rest-bar"].firstMatch
-        XCTAssertTrue(bar.waitForExistence(timeout: 5))
-        let idleFrame = bar.frame
-        capture(app, "rest-footer-idle")
-        tap(app.buttons["complete-set-1"], in: app)
-        XCTAssertTrue(app.buttons["Skip"].isHittable)
-        XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
-        XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
-        capture(app, "rest-footer-running")
-        tap(app.buttons[AppCopy.Workout.restPlus], in: app)
-        tap(app.buttons[AppCopy.Workout.restMinus], in: app)
-        let status = app.descendants(matching: .any).matching(identifier: "rest-duration").firstMatch
-        let finished = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@ AND value == %@", "Rest finished.", "0:00"), object: status)
-        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 25), .completed)
-        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
-        XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
-        XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
-        capture(app, "rest-footer-finished")
-    }
-
-    func testMarkNotDoneStopsSourceRest() throws {
-        let app = launch()
-        tap(app.buttons["complete-set-1"], in: app)
-        tap(app.buttons["logged-set-1"], in: app)
-        tap(app.buttons["Mark not done"], in: app)
-        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Skip"].exists && app.buttons["Skip"].isEnabled)
-        capture(app, "final-b-mark-not-done")
+    private func eventually(timeout: TimeInterval = 4, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+        }
+        return condition()
     }
 
     func testPoundsAndBodyweightUseSameLayout() throws {

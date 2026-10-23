@@ -30,15 +30,26 @@ struct MainLiftsEditor: View {
                             ForEach(draft, id: \.self) { id in
                                 if let lift = output.lifts[id] {
                                     HStack(spacing: AppSpacing.sm) {
+                                        // Explicit remove: the list's native delete
+                                        // controls did not render in this editor, so a
+                                        // full top 3 could not be changed (2026-10-23).
+                                        Button { draft.removeAll { $0 == id } } label: {
+                                            AppIcon.minusCircle.image(size: AppIconSize.exercise)
+                                                .foregroundStyle(AppColor.error)
+                                                .frame(minWidth: 44, minHeight: 44)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Delete \(lift.exercise.name)")
                                         Text(lift.exercise.name).font(AppFont.body.font).tracking(AppFont.title.tracking)
                                             .foregroundStyle(AppColor.textPrimary).lineLimit(2)
+                                            .accessibilityIdentifier("analytics-shown-\(lift.exercise.name)")
                                     }
                                     .frame(minHeight: AppSpacing.xxl)
-                                    .accessibilityIdentifier("analytics-shown-\(lift.exercise.name)")
                                 }
                             }
                             .onMove { draft.move(fromOffsets: $0, toOffset: $1) }
-                            .onDelete { draft.remove(atOffsets: $0) }
+                            .deleteDisabled(true)
                         } header: {
                             Text("Shown").font(AppFont.caption.font).tracking(AppFont.title.tracking)
                         } footer: {

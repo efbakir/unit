@@ -438,6 +438,32 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "store-02-one-tap-workout")
     }
 
+    /// Records every celebration look in the real Finish → Save flow for
+    /// side-by-side review (2026-10-23 confetti redesign). Runs only when
+    /// UNIT_RECORD_CELEBRATIONS=1 is passed to the test runner.
+    func testRecordCelebrationLooks() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["UNIT_RECORD_CELEBRATIONS"] == "1")
+        for look in ["classic", "plates", "color", "ribbons"] {
+            let app = makeAppStoreScreenshotApp(reset: true)
+            app.launchArguments += ["-celebration-look", look]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Upper A"].waitForExistence(timeout: 20))
+            sleep(1)
+            tap(app.buttons[AppCopy.Workout.finishShort].firstMatch, "finish \(look)", timeout: 12)
+            tap(app.alerts.firstMatch.buttons[AppCopy.Workout.finishWorkout], "confirm \(look)")
+            usleep(500_000)
+            attachScreenshot(of: app, named: "celebration-\(look)-finish-early")
+            usleep(500_000)
+            attachScreenshot(of: app, named: "celebration-\(look)-finish-late")
+            sleep(3)
+            tap(button(in: app, containing: AppCopy.Workout.useThisTarget), "save \(look)")
+            usleep(150_000)
+            attachScreenshot(of: app, named: "celebration-\(look)-saved")
+            sleep(2)
+            app.terminate()
+        }
+    }
+
     func testPastedStartingTargetSurvivesRelaunchAndLogsInOneTap() throws {
         var app = makeStartingTargetApp(reset: true)
         app.launch()
@@ -552,7 +578,8 @@ final class ProgressionContractUITests: XCTestCase {
         attachScreenshot(of: app, named: "13-catalog-default-states")
 
         let success = app.buttons["Success message"]
-        scrollTo(app.buttons["Error message"], in: app)
+        // The catalog keeps growing; give the scroll enough room to reach it.
+        scrollTo(app.buttons["Error message"], in: app, maximumSwipes: 20)
         tap(success, "Success toast")
         tap(app.buttons["Error message"], "Replacement error toast")
         let error = app.staticTexts["Sample failed. Try again."]
@@ -704,7 +731,12 @@ final class ProgressionContractUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts[AppCopy.Workout.setCountQuestion].waitForExistence(timeout: 8))
         tap(app.buttons["5"], "Five sets")
         XCTAssertTrue(app.buttons["5"].isSelected)
-        XCTAssertGreaterThanOrEqual(app.buttons["5"].frame.height, 44)
+        // Large native segments exist from iOS 26; iOS 18 keeps the platform height.
+        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26 {
+            XCTAssertGreaterThanOrEqual(app.buttons["5"].frame.height, 44)
+        } else {
+            XCTAssertTrue(app.segmentedControls[AppCopy.Workout.setCountQuestion].exists, "iOS 18 must also use the native picker")
+        }
         attachScreenshot(of: app, named: "native-11-set-count")
         tap(app.buttons[AppCopy.Nav.done].firstMatch, "Commit set count")
         XCTAssertTrue(app.staticTexts[AppCopy.Workout.setCountQuestion].waitForNonExistence(timeout: 5))

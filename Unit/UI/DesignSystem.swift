@@ -59,6 +59,13 @@ enum AppColor {
     static let accentForeground = Color(uiColor: uicolor(0xF6F6F6))
     static let accentSoft = Color(uiColor: uicolor(0xEAF2FF))
 
+    // Celebration pieces only (never UI chrome). Brand: Unit blues plus ink.
+    // Color: the Family-style multi-color option kept for comparison.
+    static let celebrationBrand: [Color] = [0x0068E0, 0x4D9BFF, 0x0A0A0A, 0xA9CCFF, 0x0068E0]
+        .map { Color(uiColor: uicolor($0)) }
+    static let celebrationColor: [Color] = [0x0068E0, 0x34C759, 0xFFCC00, 0xFF9500, 0xFF3B30, 0xAF52DE]
+        .map { Color(uiColor: uicolor($0)) }
+
     // Status
     static let success = Color(uiColor: uicolor(0x34C759))
     static let warning = Color(uiColor: uicolor(0xFF9500))
@@ -390,14 +397,38 @@ enum AppMotion {
                height: limit.height + give(proposed.height - limit.height))
     }
 
-    /// Deterministic inputs for the later celebration renderer, with Unit colors only.
+    /// Celebration tokens. Chunky lifting-themed pieces fired from the bottom
+    /// corners with launch, air drag, gravity, flutter and a 3D flip; the target
+    /// burst pops from its card. Deterministic per moment, so a remount
+    /// continues the same moment instead of replaying it.
     enum Confetti {
+        static let showerCount = 56
+        static let popperCount = 36
+        static let burstCount = 14
+        static let lifetime: Double = 2.8
+        static let stagger: Double = 0.18
+        static let burstLifetime: Double = 0.9
+        /// Points per second squared and per second: a fast launch that
+        /// settles into a slow, fluttering fall (about 250 pt/s).
+        static let gravity: Double = 700
+        static let drag: Double = 2.8
+        static let launchSpeed: ClosedRange<Double> = 1650...2500
+        static let launchSpreadDegrees: ClosedRange<Double> = 8...38
+        static let burstSpeed: ClosedRange<Double> = 300...560
+        static let pieceSize: ClosedRange<Double> = 16...28
+        static let burstPieceSize: ClosedRange<Double> = 10...16
+        static let popIn: Double = 0.16
+        static let fadeOut: Double = 0.5
+        static let ringStart: Double = 10
+        static let ringEnd: Double = 64
+
+        // Previous renderer, kept only as the comparison baseline.
         static let count = 32
-        static let popperCount = 12
-        static let lifetime: Double = 1.8
-        static let stagger: Double = 0.2
+        static let classicPopperCount = 12
+        static let classicLifetime: Double = 1.8
+        static let classicStagger: Double = 0.2
         static let colors: [Color] = [AppColor.accent, AppColor.textSecondary, AppColor.textDisabled]
-        static let pieceSize = CGSize(width: 6, height: 10)
+        static let classicPieceSize = CGSize(width: 6, height: 10)
         static let spread: CGFloat = 160
         static let rise: CGFloat = 120
         static let fall: CGFloat = 320
@@ -585,23 +616,79 @@ extension View {
 
 /// Immutable event time and seed: remounting continues the same moment, never replays it.
 struct AppCelebrationMoment: Identifiable, Equatable {
+    /// `shower`: first workout ever. `popper`: every later finished workout.
+    /// `burst`: a saved next target, popping from its card.
     enum Style: Equatable { case shower, popper, burst }
     let id: UUID
     let startedAt: Date
     let seed: UInt64
     let style: Style
+    let look: AppCelebrationLook
 
-    init(style: Style, id: UUID = UUID(), startedAt: Date = .now) {
+    init(style: Style, id: UUID = UUID(), startedAt: Date = .now, look: AppCelebrationLook = .current) {
         self.id = id
         self.startedAt = startedAt
         self.style = style
+        self.look = look
         self.seed = id.uuidString.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) }
     }
 
     var duration: Double {
-        style == .burst ? AppMotion.Duration.burst : AppMotion.Confetti.lifetime + AppMotion.Confetti.stagger
+        if look == .classic {
+            return style == .burst ? AppMotion.Duration.burst : AppMotion.Confetti.classicLifetime + AppMotion.Confetti.classicStagger
+        }
+        return style == .burst ? AppMotion.Confetti.burstLifetime : AppMotion.Confetti.lifetime + AppMotion.Confetti.stagger
     }
     var endsAt: Date { startedAt.addingTimeInterval(duration) }
+}
+
+/// How a celebration looks. One renderer draws every look; production uses
+/// `current`. The others stay for side-by-side review in the debug component
+/// catalog (2026-10-23 confetti redesign).
+enum AppCelebrationLook: String, CaseIterable, Identifiable, Hashable {
+    /// Chunky lifting pieces (plates, dumbbells, checks, plus signs) in Unit blues and ink.
+    case plates
+    /// The same pieces and physics in a multi-color palette.
+    case color
+    /// Curled streamers mixed with plates.
+    case ribbons
+    /// The previous small capsules and checkmarks (baseline).
+    case classic
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .plates: "Plates"
+        case .color: "Color"
+        case .ribbons: "Ribbons"
+        case .classic: "Old"
+        }
+    }
+
+    static let production: AppCelebrationLook = .plates
+
+#if DEBUG
+    /// Debug-only comparison override (component catalog chips, or the
+    /// `-celebration-look <name>` launch argument used for recordings).
+    static var debugOverride: AppCelebrationLook? = {
+        let arguments = CommandLine.arguments
+        guard let index = arguments.firstIndex(of: "-celebration-look"),
+              arguments.indices.contains(index + 1) else { return nil }
+        return AppCelebrationLook(rawValue: arguments[index + 1])
+    }()
+    static var current: AppCelebrationLook { debugOverride ?? production }
+#else
+    static var current: AppCelebrationLook { production }
+#endif
+
+    var palette: [Color] {
+        switch self {
+        case .color: AppColor.celebrationColor
+        case .classic: AppMotion.Confetti.colors
+        case .plates, .ribbons: AppColor.celebrationBrand
+        }
+    }
 }
 
 /// The single celebration renderer. All particles share one Canvas and clock.
@@ -612,15 +699,22 @@ struct AppCelebration: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var landedID: UUID?
 
+    private enum Piece: CaseIterable { case plate, dumbbell, check, plus, capsule, dot, ribbon }
+
     var body: some View {
         ZStack {
             if let moment, landedID != moment.id, moment.endsAt > .now,
                AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) {
                 TimelineView(.animation) { timeline in
                     Canvas { context, size in
-                        draw(moment, elapsed: timeline.date.timeIntervalSince(moment.startedAt), in: context, size: size)
+                        let elapsed = timeline.date.timeIntervalSince(moment.startedAt)
+                        if moment.look == .classic {
+                            drawClassic(moment, elapsed: elapsed, in: context, size: size)
+                        } else {
+                            draw(moment, elapsed: elapsed, in: context, size: size)
+                        }
                     } symbols: {
-                        AppIcon.checkmark.image(size: AppMotion.Confetti.pieceSize.height, weight: .bold)
+                        AppIcon.checkmark.image(size: AppMotion.Confetti.classicPieceSize.height, weight: .bold)
                             .foregroundStyle(AppColor.accent)
                             .tag(0)
                     }
@@ -641,8 +735,141 @@ struct AppCelebration: View {
         }
     }
 
+    // MARK: Physics renderer
+
     private func draw(_ moment: AppCelebrationMoment, elapsed: Double, in context: GraphicsContext, size: CGSize) {
-        let count = moment.style == .burst ? AppMotion.burstDots : (moment.style == .shower ? AppMotion.Confetti.count : AppMotion.Confetti.popperCount)
+        typealias C = AppMotion.Confetti
+        let isBurst = moment.style == .burst
+        let count = isBurst ? C.burstCount : (moment.style == .shower ? C.showerCount : C.popperCount)
+        let palette = moment.look.palette
+
+        if isBurst {
+            // A soft ring marks the save before the pieces pop out of it.
+            let ringProgress = min(1, max(0, elapsed / (C.burstLifetime * 0.55)))
+            if ringProgress < 1 {
+                let radius = C.ringStart + (C.ringEnd - C.ringStart) * (1 - pow(1 - ringProgress, 3))
+                var ring = context
+                ring.opacity = 0.55 * (1 - ringProgress)
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                ring.stroke(Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)),
+                            with: .color(AppColor.accent), lineWidth: 3)
+            }
+        }
+
+        for index in 0..<count {
+            let sample = { (channel: Int) in C.sample(seed: moment.seed, index: index, channel: channel) }
+            let lifetime = isBurst ? C.burstLifetime : C.lifetime
+            let t = elapsed - (isBurst ? 0 : sample(0) * C.stagger)
+            guard t >= 0, t < lifetime else { continue }
+
+            // Launch point and velocity (screen y grows downward).
+            var origin: CGPoint
+            var velocity: CGVector
+            if isBurst {
+                origin = CGPoint(x: size.width / 2, y: size.height / 2)
+                let angle = (Double(index) + sample(1) * 0.6) / Double(count) * .pi * 2
+                let speed = C.burstSpeed.lowerBound + (C.burstSpeed.upperBound - C.burstSpeed.lowerBound) * sample(2)
+                velocity = CGVector(dx: cos(angle) * speed, dy: sin(angle) * speed)
+            } else {
+                let fromLeft = index.isMultiple(of: 2)
+                origin = CGPoint(x: fromLeft ? -8 : size.width + 8, y: size.height + 12)
+                let spread = (C.launchSpreadDegrees.lowerBound + (C.launchSpreadDegrees.upperBound - C.launchSpreadDegrees.lowerBound) * sample(1)) * .pi / 180
+                let speed = (C.launchSpeed.lowerBound + (C.launchSpeed.upperBound - C.launchSpeed.lowerBound) * sample(2))
+                    * min(1.15, max(0.75, size.height / 874))
+                velocity = CGVector(dx: (fromLeft ? 1 : -1) * sin(spread) * speed, dy: -cos(spread) * speed)
+            }
+            if moment.look == .ribbons, moment.style == .shower, index.isMultiple(of: 3) {
+                // Ribbons also rain from the top on a first workout.
+                origin = CGPoint(x: sample(1) * size.width, y: -20)
+                velocity = CGVector(dx: (sample(2) - 0.5) * 80, dy: 60)
+            }
+
+            // Linear drag with gravity: fast launch, slow fluttering fall.
+            let drag = C.drag * (0.8 + 0.4 * sample(5)) * (isBurst ? 1.6 : 1)
+            let gravity = C.gravity * (isBurst ? 0.6 : 1)
+            let decay = 1 - exp(-drag * t)
+            var x = origin.x + velocity.dx / drag * decay
+            let y = origin.y + gravity / drag * t + (velocity.dy - gravity / drag) / drag * decay
+            if !isBurst {
+                let swayAmplitude = 8 + 14 * sample(6)
+                x += sin(t * (3 + 3 * sample(7)) + sample(8) * .pi * 2) * swayAmplitude * min(1, t / 0.9)
+            }
+
+            // 3D flip: squash one axis and shade the back face.
+            let flip = cos(t * (5 + 7 * sample(9)) + sample(10) * .pi * 2)
+            let spin = (sample(11) - 0.5) * 12
+            let pieceRange = isBurst ? C.burstPieceSize : C.pieceSize
+            let side = pieceRange.lowerBound + (pieceRange.upperBound - pieceRange.lowerBound) * sample(12)
+            let fade = isBurst ? 1 - pow(t / lifetime, 2) : min(1, (lifetime - t) / C.fadeOut)
+
+            // Pieces pop to full size as they leave the cannon.
+            let pop = 0.55 + 0.45 * min(1, t / C.popIn)
+            var particle = context
+            particle.opacity = max(0, fade) * (flip < 0 ? 0.78 : 1)
+            particle.addFilter(.shadow(color: AppColor.textPrimary.opacity(0.12), radius: 1.5, x: 0, y: 1))
+            particle.translateBy(x: x, y: y)
+            particle.rotate(by: .radians(sample(13) * .pi * 2 + spin * t))
+            particle.scaleBy(x: pop, y: pop * max(0.14, abs(flip)))
+            let color = palette[Int(sample(14) * Double(palette.count)) % palette.count]
+            fill(piece(for: moment.look, burst: isBurst, roll: sample(15)), side: side, color: color, in: &particle)
+        }
+    }
+
+    private func piece(for look: AppCelebrationLook, burst: Bool, roll: Double) -> Piece {
+        if burst { return roll < 0.45 ? .plus : (roll < 0.8 ? .plate : .dot) }
+        if look == .ribbons {
+            return roll < 0.5 ? .ribbon : (roll < 0.75 ? .plate : .capsule)
+        }
+        switch roll {
+        case ..<0.30: return .plate
+        case ..<0.48: return .check
+        case ..<0.62: return .plus
+        case ..<0.74: return .dumbbell
+        case ..<0.90: return .capsule
+        default: return .dot
+        }
+    }
+
+    private func fill(_ piece: Piece, side: Double, color: Color, in context: inout GraphicsContext) {
+        let s = side
+        switch piece {
+        case .plate:
+            var path = Path(ellipseIn: CGRect(x: -s / 2, y: -s / 2, width: s, height: s))
+            path.addEllipse(in: CGRect(x: -s * 0.17, y: -s * 0.17, width: s * 0.34, height: s * 0.34))
+            context.fill(path, with: .color(color), style: FillStyle(eoFill: true))
+        case .dumbbell:
+            var path = Path(roundedRect: CGRect(x: -s * 0.5, y: -s * 0.08, width: s, height: s * 0.16), cornerRadius: s * 0.08)
+            path.addRoundedRect(in: CGRect(x: -s * 0.62, y: -s * 0.3, width: s * 0.24, height: s * 0.6), cornerSize: CGSize(width: s * 0.08, height: s * 0.08))
+            path.addRoundedRect(in: CGRect(x: s * 0.38, y: -s * 0.3, width: s * 0.24, height: s * 0.6), cornerSize: CGSize(width: s * 0.08, height: s * 0.08))
+            context.fill(path, with: .color(color))
+        case .check:
+            var path = Path()
+            path.move(to: CGPoint(x: -s * 0.38, y: s * 0.02))
+            path.addLine(to: CGPoint(x: -s * 0.1, y: s * 0.3))
+            path.addLine(to: CGPoint(x: s * 0.4, y: -s * 0.28))
+            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: s * 0.22, lineCap: .round, lineJoin: .round))
+        case .plus:
+            var path = Path(roundedRect: CGRect(x: -s * 0.14, y: -s * 0.45, width: s * 0.28, height: s * 0.9), cornerRadius: s * 0.14)
+            path.addRoundedRect(in: CGRect(x: -s * 0.45, y: -s * 0.14, width: s * 0.9, height: s * 0.28), cornerSize: CGSize(width: s * 0.14, height: s * 0.14))
+            context.fill(path, with: .color(color))
+        case .capsule:
+            context.fill(Path(roundedRect: CGRect(x: -s * 0.22, y: -s * 0.55, width: s * 0.44, height: s * 1.1), cornerRadius: s * 0.22), with: .color(color))
+        case .dot:
+            context.fill(Path(ellipseIn: CGRect(x: -s * 0.32, y: -s * 0.32, width: s * 0.64, height: s * 0.64)), with: .color(color))
+        case .ribbon:
+            var path = Path()
+            path.move(to: CGPoint(x: -s * 0.2, y: -s * 0.9))
+            path.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: s * 0.5, y: -s * 0.5))
+            path.addQuadCurve(to: CGPoint(x: s * 0.2, y: s * 0.9), control: CGPoint(x: -s * 0.5, y: s * 0.5))
+            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: s * 0.24, lineCap: .round))
+        }
+    }
+
+    // MARK: Previous renderer (comparison baseline)
+
+    private func drawClassic(_ moment: AppCelebrationMoment, elapsed: Double, in context: GraphicsContext, size: CGSize) {
+        typealias C = AppMotion.Confetti
+        let count = moment.style == .burst ? AppMotion.burstDots : (moment.style == .shower ? C.count : C.classicPopperCount)
         for index in 0..<count {
             if moment.style == .burst {
                 let progress = min(1, max(0, elapsed / AppMotion.Duration.burst))
@@ -656,19 +883,18 @@ struct AppCelebration: View {
                 particle.fill(Path(ellipseIn: CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)), with: .color(AppColor.accent))
                 continue
             }
-            let sample = { (channel: Int) in AppMotion.Confetti.sample(seed: moment.seed, index: index, channel: channel) }
-            let local = elapsed - sample(0) * AppMotion.Confetti.stagger
-            guard local >= 0, local < AppMotion.Confetti.lifetime else { continue }
-            let progress = local / AppMotion.Confetti.lifetime
-            let spread = AppMotion.Confetti.spread
+            let sample = { (channel: Int) in C.sample(seed: moment.seed, index: index, channel: channel) }
+            let local = elapsed - sample(0) * C.classicStagger
+            guard local >= 0, local < C.classicLifetime else { continue }
+            let progress = local / C.classicLifetime
             let x: Double
             let y: Double
             if moment.style == .shower {
-                x = sample(1) * size.width + (sample(2) - 0.5) * spread * progress
-                y = -AppMotion.Confetti.pieceSize.height + (size.height + AppMotion.Confetti.pieceSize.height * 2) * progress
+                x = sample(1) * size.width + (sample(2) - 0.5) * C.spread * progress
+                y = -C.classicPieceSize.height + (size.height + C.classicPieceSize.height * 2) * progress
             } else {
-                x = size.width / 2 + (sample(1) - 0.5) * spread * 2 * (1 - pow(1 - progress, 3))
-                y = size.height / 3 - sin(progress * .pi) * AppMotion.Confetti.rise + progress * progress * AppMotion.Confetti.fall
+                x = size.width / 2 + (sample(1) - 0.5) * C.spread * 2 * (1 - pow(1 - progress, 3))
+                y = size.height / 3 - sin(progress * .pi) * C.rise + progress * progress * C.fall
             }
             var particle = context
             particle.opacity = min(1, (1 - progress) * 4)
@@ -677,8 +903,8 @@ struct AppCelebration: View {
             if index.isMultiple(of: 3), let check = particle.resolveSymbol(id: 0) {
                 particle.draw(check, at: .zero)
             } else {
-                let piece = AppMotion.Confetti.pieceSize
-                particle.fill(Path(roundedRect: CGRect(x: -piece.width / 2, y: -piece.height / 2, width: piece.width, height: piece.height), cornerRadius: piece.width / 2), with: .color(AppMotion.Confetti.colors[index % AppMotion.Confetti.colors.count]))
+                let piece = C.classicPieceSize
+                particle.fill(Path(roundedRect: CGRect(x: -piece.width / 2, y: -piece.height / 2, width: piece.width, height: piece.height), cornerRadius: piece.width / 2), with: .color(C.colors[index % C.colors.count]))
             }
         }
     }
@@ -5781,9 +6007,9 @@ struct AppSegmentedControl<Item: Hashable & Identifiable>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     enum Size {
         case compact
-        /// Shared training-day / weekday picker. Uses the 48pt spacing-grid
-        /// token so both onboarding selectors have a comfortable control
-        /// height without introducing a screen-specific measurement.
+        /// Shared large picker (training days, weekdays, set count). Uses the
+        /// 48pt spacing-grid token and the native large size, so taps reach
+        /// 44pt on iOS 26 without a screen-specific measurement.
         case weekday
 
         var verticalPadding: CGFloat {
@@ -6063,6 +6289,7 @@ struct AppComponentCatalog: View {
     @State private var field = ""
     @State private var toast: AppToastEvent?
     @State private var celebration: AppCelebrationMoment?
+    @State private var celebrationLook = AppCelebrationLook.current
     @State private var showsEditor = false
     @State private var failSave = true
     @State private var segmentMode = SessionHistoryMode.list
@@ -6224,7 +6451,16 @@ struct AppComponentCatalog: View {
                     toast = AppToastEvent("Sample restored", kind: .success)
                 })
             }
-            AppSecondaryButton("Celebration") { celebration = AppCelebrationMoment(style: .shower) }
+            AppSegmentedControl(
+                selection: $celebrationLook,
+                items: AppCelebrationLook.allCases,
+                label: "Celebration look",
+                title: { $0.title }
+            )
+            .onChange(of: celebrationLook) { _, look in AppCelebrationLook.debugOverride = look }
+            AppSecondaryButton("First workout") { celebration = AppCelebrationMoment(style: .shower) }
+            AppSecondaryButton("Workout finished") { celebration = AppCelebrationMoment(style: .popper) }
+            AppSecondaryButton("Target saved") { celebration = AppCelebrationMoment(style: .burst) }
             Toggle("Fail the next sample save", isOn: $failSave).font(AppFont.body.font)
             AppSecondaryButton("Target editor") { showsEditor = true }
         }
@@ -6508,7 +6744,11 @@ struct AppMainLiftCard: View {
     }
     private var spokenLabel: String {
         guard let lift, let latest = lift.latest else { return "\(title). No sessions yet" }
-        var text = "\(title). Latest session: \(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit)), \(latest.date.formatted(.dateTime.month(.wide).day())). Four-week comparison: \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))."
+        var text = "\(title). Latest session: \(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit)), \(latest.date.formatted(.dateTime.month(.wide).day()))."
+        // Spoken like the card reads: the comparison only when there is one.
+        if lift.comparison.isComparable {
+            text += " Four-week comparison: \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))."
+        }
         if let best = lift.best { text += " Best \(WorkoutTargetFormatter.analyticsSpokenSet(best, bodyweight: lift.bodyweight, unit: unit))." }
         if let target = lift.target { text += " Next \(WorkoutTargetFormatter.analyticsSpokenTarget(target, unit: unit))." }
         return text

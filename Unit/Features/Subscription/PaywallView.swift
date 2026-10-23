@@ -693,7 +693,7 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 49%" — Yearly against 12 months at the live Monthly price, the
+    /// "Save 49%": Yearly against 12 months at the live Monthly price, the
     /// plan most people compare it with (2026-10-23). The weekly base gave
     /// "Save 80%", which read as an inflated anchor. Weekly is the fallback
     /// only when Monthly fails to load.

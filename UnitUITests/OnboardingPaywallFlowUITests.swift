@@ -46,10 +46,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
     Barbell Row 4x6 70
     """
 
-    func testProgressionLedOnboardingSlidesAreReadable() {
+    func testProgressionLedOnboardingSlidesAreReadable() throws {
         let app = makeApp(reset: true)
         app.launchArguments += ["-AppleLocale", "en_US"]
         app.launch()
+        try XCTSkipIf(
+            app.windows.firstMatch.frame.width > 375,
+            "Compact CTA check: run on the smallest iPhone (Unit Logging Compact) destination."
+        )
 
         XCTAssertTrue(
             app.staticTexts[AppCopy.Onboarding.splashTagline]
@@ -818,14 +822,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             eligibilityArgument: "-ui-testing-intro-eligible"
         )
         app.launch()
+        try XCTSkipIf(
+            app.windows.firstMatch.frame.width > 390,
+            "Compact-layout check: run on the iPhone SE (or Unit Logging Compact) destination."
+        )
         XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].waitForExistence(timeout: 20))
         openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
-        XCTAssertLessThanOrEqual(
-            app.windows.firstMatch.frame.width,
-            390,
-            "Run this compact-layout verification on the iPhone SE destination"
-        )
         positionFeatureTableForScreenshot(in: app, requiresLastRow: true)
         attachScreenshot(named: "05-feature-table-iphone-se", app: app)
 
@@ -983,12 +986,15 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // so the captured evidence shows the whole compact table instead of
         // only its last row and the plan cards below it.
         let window = app.windows.firstMatch
-        let start = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32))
-        let end = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
-        start.press(forDuration: 0.1, thenDragTo: end)
-
         let firstRow = descendant(in: app, identifier: "paywall-feature-row-0")
         let lastRow = descendant(in: app, identifier: "paywall-feature-row-5")
+        // Lazy rows leave the hierarchy when scrolled away; drag back until
+        // the first row is on screen again.
+        for _ in 0..<6 {
+            if firstRow.exists && firstRow.frame.minY > window.frame.minY + 120 { break }
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32))
+                .press(forDuration: 0.1, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        }
         XCTAssertTrue(firstRow.frame.intersects(window.frame), "feature table top is outside the screenshot")
         if requiresLastRow {
             XCTAssertTrue(lastRow.frame.intersects(window.frame), "feature table bottom is outside the screenshot")

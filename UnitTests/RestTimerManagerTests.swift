@@ -70,7 +70,7 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: "unit.restTimer.endDate") as? Date, deadline)
     }
 
-    func testTwentySecondAdjustmentsKeepElapsedTimeAndMinimum() async throws {
+    func testRestStepAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()
         var now = Date(timeIntervalSince1970: 2_000_000_000)
