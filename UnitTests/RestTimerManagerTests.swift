@@ -78,12 +78,16 @@ final class RestTimerManagerTests: XCTestCase {
         defer { timer.stop() }
         await notifications.waitForRequest { timer.start(totalSeconds: 120) }
         now = now.addingTimeInterval(20)
-        await notifications.waitForRequest { timer.adjust(by: 20) }
-        XCTAssertEqual(timer.secondsRemaining, 120)
-        XCTAssertEqual(timer.totalDuration, 140)
-        XCTAssertEqual(timer.endDate, now.addingTimeInterval(120))
-        XCTAssertEqual((notifications.requests.last?.trigger as? UNTimeIntervalNotificationTrigger)?.timeInterval, 120)
-        await notifications.waitForRequest { timer.adjust(by: -20) }
+        let step = AppCopy.Workout.restStepSeconds
+        await notifications.waitForRequest { timer.adjust(by: step) }
+        XCTAssertEqual(timer.secondsRemaining, 100 + step)
+        XCTAssertEqual(timer.totalDuration, 120 + step)
+        XCTAssertEqual(timer.endDate, now.addingTimeInterval(TimeInterval(100 + step)))
+        XCTAssertEqual(
+            (notifications.requests.last?.trigger as? UNTimeIntervalNotificationTrigger)?.timeInterval,
+            TimeInterval(100 + step)
+        )
+        await notifications.waitForRequest { timer.adjust(by: -step) }
         XCTAssertEqual(timer.secondsRemaining, 100)
         XCTAssertEqual(timer.totalDuration, 120)
         XCTAssertEqual(timer.endDate, now.addingTimeInterval(100))

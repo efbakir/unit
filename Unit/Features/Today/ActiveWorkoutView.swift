@@ -258,8 +258,8 @@ struct ActiveWorkoutView: View {
                     endDate: restTimer.endDate,
                     totalDuration: TimeInterval(restTimer.totalDuration),
                     canDecrease: restTimer.secondsRemaining > 15,
-                    onDecrease: { adjustRestTimer(by: -20) },
-                    onIncrease: { adjustRestTimer(by: 20) },
+                    onDecrease: { adjustRestTimer(by: -AppCopy.Workout.restStepSeconds) },
+                    onIncrease: { adjustRestTimer(by: AppCopy.Workout.restStepSeconds) },
                     onSkip: skipRest
                 )
                 .dynamicTypeSize(...DynamicTypeSize.accessibility3)

@@ -189,8 +189,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Steps**
 - Complete set -> rest starts with the default length (120 s at first, never under 15 s) ([ActiveWorkoutView.swift:923](Unit/Features/Today/ActiveWorkoutView.swift:923)).
-- Rest bar -> blue progress line, "Rest" + countdown, buttons "-20", "+20", "Skip". Buttons work only while running; "-20" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
-- "+20" or "-20" -> new end time; the new length also becomes the default for every later rest. There is no rest setting in Settings ([ActiveWorkoutView.swift:926](Unit/Features/Today/ActiveWorkoutView.swift:926)).
+- Rest bar -> blue progress line, "Rest" + countdown, buttons "-30", "+30", "Skip" (30-second steps since 2026-10-23; were 20). Buttons work only while running; "-20" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
+- "+30" or "-30" -> new end time; the new length also becomes the default for every later rest. There is no rest setting in Settings ([ActiveWorkoutView.swift:926](Unit/Features/Today/ActiveWorkoutView.swift:926)).
 - "Skip" -> bar back to idle, no "finished" state, no alert; it also removes the set's Undo ([ActiveWorkoutView.swift:931](Unit/Features/Today/ActiveWorkoutView.swift:931)).
 - Ends with the app open -> "Rest finished." + 0:00 for 30 s, success haptic, VoiceOver line, plus an iOS banner with sound -> idle ([ActiveWorkoutView.swift:1384](Unit/Features/Today/ActiveWorkoutView.swift:1384)).
 - Phone locked or app in background -> Lock Screen and Dynamic Island Live Activity: "Rest timer", countdown, progress bar, "Up next: Bench Press · Set 2" ([RestTimerLiveActivity.swift:16](UnitWidget/RestTimerLiveActivity.swift:16)).
@@ -207,7 +207,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Plan changes during rest (add set, jump, edit) -> "Up next" text updates, end time unchanged -> Low -> yes.
 - App killed during rest -> timer restored from saved state or the Live Activity ([ActiveWorkoutView.swift:1521](Unit/Features/Today/ActiveWorkoutView.swift:1521)) -> Med -> yes.
 - Notifications off -> warning toast in the app (flow 3), no alert when the phone is locked; the Live Activity still counts down -> Med -> partial.
-- Live Activity has no buttons: no Skip, +20 or Complete from the Lock Screen -> Low -> by design.
+- Live Activity has no buttons: no Skip, +30 or Complete from the Lock Screen -> Low -> by design.
 - Finish or cancel during rest -> timer stopped, Live Activity closed -> Low -> yes.
 - Rest ends while the app stays closed -> "Rest finished" stays on the Lock Screen until the app opens -> Low -> partial.
 - One rest length for all exercises -> Low -> by design.

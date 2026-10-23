@@ -74,7 +74,7 @@ Unit 2.1 adds transparent progressive overload without slowing down your workout
 • New workout screen: every exercise on one page, one tap per set, 5-second undo
 • New Analytics tab for your main lifts
 • Faster setup: three steps from install to your program
-• Rest timer adjusts by 20 seconds; drag to reorder exercises
+• Rest timer adjusts by 30 seconds; drag to reorder exercises
 ```
 
 ## Screenshots

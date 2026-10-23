@@ -6872,9 +6872,9 @@ struct RestBar: View {
 
     private var controls: some View {
         HStack(spacing: AppSpacing.sm) {
-            control(AppCopy.Workout.restMinus, label: "Subtract 20 seconds", action: onDecrease)
+            control(AppCopy.Workout.restMinus, label: AppCopy.Workout.restMinusLabel, action: onDecrease)
                 .disabled(!canDecrease)
-            control(AppCopy.Workout.restPlus, label: "Add 20 seconds", action: onIncrease)
+            control(AppCopy.Workout.restPlus, label: AppCopy.Workout.restPlusLabel, action: onIncrease)
             control(AppCopy.Workout.restSkip, label: "Skip rest", action: onSkip)
         }
         .frame(maxWidth: .infinity)

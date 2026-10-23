@@ -40,17 +40,17 @@ The local `Unit.storekit` configuration contains the two seven-day offers for de
 
 Everything. Hard paywall = full app gated.
 
-The onboarding flow (splash → unit picker → import method → program build → schedule) runs free so the user sees their program in the app before being asked to pay. Once onboarding saves the program, the paywall appears before the user can use the main app.
+The onboarding flow (opener → path choice → paste or ready-made program → review) runs free so the user sees their program before being asked to pay. A line under the setup button says a paid plan is required after setup. Once onboarding saves the program, the paywall appears before the user can use the main app.
 
 **Free pre-paywall surfaces:**
-- All onboarding steps (program entry, day naming, schedule)
+- All onboarding steps (path choice, program entry or matching, review)
 - The post-onboarding "your program is ready" hand-off
 
 **Paid post-paywall surfaces:**
 - Today tab (start workout, log sets, rest timer)
 - Programs tab (view / edit / reorder templates)
-- History (browse the chronological session list and PR chart)
-- Settings (manage subscription, export, theming, etc.)
+- Analytics tab and History (sessions, PRs, lift progress)
+- Settings (manage subscription, weight unit, analytics opt-out, feedback)
 
 ## App Review metadata checklist
 

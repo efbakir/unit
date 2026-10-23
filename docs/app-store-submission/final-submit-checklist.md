@@ -1,4 +1,10 @@
-> **October 19 development checkpoint:** The connected phone started on 2.1 (65); this isolated release branch targets **2.1 (68), development-only and unreserved**. Public lookup still reports 2.0. Live App Store Connect build numbers could not be read, so do not upload or attach 68 until the highest uploaded number is checked. The August status and build-67 checklist below are historical, not current release proof. See `docs/handoffs/2026-10-19-unit-motion-release.md` for this pass and its evidence.
+> **2026-10-23 — build 94 is the 2.1 release candidate.** Built from `claude/app-finalization-launch-34a116` (tag `v2.1-build94`), which contains the build-90 phone state plus the finalization changes in `docs/handoffs/2026-10-23-app-finalization.md`. Release type: manual. Sections below that mention builds 66–68 are history.
+>
+> Build 94 differs from the August checklist in four ways that matter for review: (1) the trial button says "Start free trial" and the line above it leads with the billed price; (2) "Paid plan required after setup." sits under "Set up your program" again; (3) Monthly is preselected for every customer and the trial reminder defaults on; (4) setup is three steps (path, program, review). The reviewer notes in `docs/app-store-copy.md` describe this build.
+>
+> Still not done by a person: the physical-device sandbox purchase test (§4, §11) and the device gauntlet in `docs/release-qa.md`. Founder action before tapping Release.
+>
+> History: **October 19 development checkpoint:** The connected phone started on 2.1 (65); this isolated release branch targets **2.1 (68), development-only and unreserved**. Public lookup still reports 2.0. Live App Store Connect build numbers could not be read, so do not upload or attach 68 until the highest uploaded number is checked. The August status and build-67 checklist below are historical, not current release proof. See `docs/handoffs/2026-10-19-unit-motion-release.md` for this pass and its evidence.
 
 # Final submit checklist — Unit v2.1 (build 67)
 

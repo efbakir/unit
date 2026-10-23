@@ -59,6 +59,9 @@
 |---|---|---|
 | `docs/release-qa.md` | The gauntlet — manual on-device checklist for state persistence, keyboard, lifecycle, empty/max data | Before every TestFlight or App Store submission. Pairs with the `/state-audit` skill. |
 | `docs/next-app-playbook.md` | Portable retrospective — what Unit taught, distilled for app #2's day one | Starting the next app. Self-deleting: absorb, then remove. |
+| `docs/flows/README.md` | Every user flow step by step with rated edge cases (first run and paywall, training loop) | Changing a flow, triaging a bug, or checking an edge case |
+| `docs/handoffs/2026-10-23-app-finalization.md` | 2.1 finalization: done / open / next, founder actions, quick wins, data plan | Picking up after the 2026-10-23 release work |
+| `docs/research/2026-10-23-persona-panel.md` | MiroFish-method persona panel: 20 simulated lifters through setup, paywall and weeks 1-12 | Weighing onboarding, paywall or pricing changes |
 | `docs/app-store-submission/final-submit-checklist.md` | v2.1 (build 67) ASC handoff — clean-main provenance gate + screenshot capture runbook | Submitting v2.1 to App Review |
 
 ## Agent harness & Claude

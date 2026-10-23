@@ -188,8 +188,8 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertEqual(bar.frame.height, idleFrame.height, accuracy: 1)
         XCTAssertEqual(bar.frame.minY, idleFrame.minY, accuracy: 1)
         capture(app, "rest-footer-running")
-        tap(app.buttons["+20"], in: app)
-        tap(app.buttons["−20"], in: app)
+        tap(app.buttons[AppCopy.Workout.restPlus], in: app)
+        tap(app.buttons[AppCopy.Workout.restMinus], in: app)
         let status = app.descendants(matching: .any).matching(identifier: "rest-duration").firstMatch
         let finished = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@ AND value == %@", "Rest finished.", "0:00"), object: status)

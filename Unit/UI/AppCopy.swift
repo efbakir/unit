@@ -18,8 +18,13 @@ enum AppCopy {
         static let addSet = "+ Add set"
         static func restIdle(_ time: String) -> String { "Rest \(time)" }
         static let restLabel = "Rest"
-        static let restMinus = "−20"
-        static let restPlus = "+20"
+        /// Rest adjustment step, one source for buttons, VoiceOver and logic
+        /// (30 seconds since 2026-10-23; was 20).
+        static let restStepSeconds = 30
+        static let restMinus = "−\(restStepSeconds)"
+        static let restPlus = "+\(restStepSeconds)"
+        static let restMinusLabel = "Subtract \(restStepSeconds) seconds"
+        static let restPlusLabel = "Add \(restStepSeconds) seconds"
         static let restSkip = "Skip"
         static let restFinishedInline = "Rest finished."
         static func stepDown(unitSystem: String, reps: Bool) -> String { reps ? "−1" : (unitSystem == "lb" ? "−5" : "−2.5") }
