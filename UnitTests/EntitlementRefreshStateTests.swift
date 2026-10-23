@@ -417,23 +417,37 @@ final class StorePlanPresentationTests: XCTestCase {
 
 @MainActor
 final class PaywallPlanSelectionStateTests: XCTestCase {
-    func testEligibleNewCustomerDefaultsToMonthly() {
+    func testEligibleNewCustomerDefaultsToYearly() {
         var selection = PaywallPlanSelectionState()
 
         selection.applyInitialDefault(
             availableTiers: [.weekly, .monthly, .annual],
-            monthlyHasEligibleTrial: true
+            monthlyHasEligibleTrial: true,
+            annualHasEligibleTrial: true
         )
 
-        XCTAssertEqual(selection.selectedTier, .monthly)
+        XCTAssertEqual(selection.selectedTier, .annual)
     }
 
-    func testIneligibleCustomerDefaultsToMonthly() {
+    func testIneligibleCustomerDefaultsToWeekly() {
         var selection = PaywallPlanSelectionState()
 
         selection.applyInitialDefault(
             availableTiers: [.weekly, .monthly, .annual],
             monthlyHasEligibleTrial: false
+        )
+
+        XCTAssertEqual(selection.selectedTier, .weekly)
+    }
+
+    func testMonthlyArmPreselectsMonthly() {
+        var selection = PaywallPlanSelectionState()
+
+        selection.applyInitialDefault(
+            availableTiers: [.weekly, .monthly, .annual],
+            monthlyHasEligibleTrial: true,
+            annualHasEligibleTrial: true,
+            preferredTrialTier: .monthly
         )
 
         XCTAssertEqual(selection.selectedTier, .monthly)
@@ -508,7 +522,7 @@ final class PaywallPlanSelectionStateTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         XCTAssertFalse(PaywallDefaultPlanExperiment.isRunning)
-        XCTAssertEqual(PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { true }), .monthly)
+        XCTAssertEqual(PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { false }), .annual)
         XCTAssertNil(defaults.string(forKey: PaywallDefaultPlanExperiment.key))
     }
 

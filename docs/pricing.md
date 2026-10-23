@@ -6,9 +6,9 @@
 
 | Tier     | Price       | Billing       | Product ID         | Notes                                                   |
 | -------- | ----------- | ------------- | ------------------ | ------------------------------------------------------- |
-| Weekly   | **$2.99**   | auto-renewing | `com.unit.weekly`  | No trial. Listed, never preselected (since 2026-10-23). |
-| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | Seven-day introductory trial. Preselected for every customer. |
-| Yearly   | **$29.99**  | auto-renewing | `com.unit.annual`  | Seven-day introductory trial; best value.               |
+| Weekly   | **$2.99**   | auto-renewing | `com.unit.weekly`  | No trial. Preselected for customers without a trial. |
+| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | Seven-day introductory trial. |
+| Yearly   | **$29.99**  | auto-renewing | `com.unit.annual`  | Seven-day introductory trial; preselected when eligible; "Save 80%" vs 52 weeks of Weekly. |
 | Lifetime | **$44.99**  | one-time      | `com.unit.lifetime` | No trial. Optional non-consumable; show only if configured in ASC and returned by StoreKit. |
 
 Version 2.1 supports a seven-day Free introductory offer on Monthly and Yearly. Unit shows trial language only when the selected product is an auto-renewable subscription, StoreKit returns a valid free-trial offer, and Apple reports the customer eligible. Eligibility alone never creates trial copy. Weekly and Lifetime never carry a trial. Lifetime is not a fallback price: it appears only when `Product.products(for:)` returns `com.unit.lifetime`.
@@ -27,8 +27,8 @@ The local `Unit.storekit` configuration contains the two seven-day offers for de
 
 - **Hard paywall** (resolved 2026-06-16, see `docs/decision-log.md`). All app functionality is gated behind a paid purchase. Onboarding completes free so the user sees their program built; the paywall appears immediately after setup is saved, no dismissal.
 - **Seven-day introductory trial, not a free tier.** Eligible new customers may try all of Unit through Monthly or Yearly. After the offer, the selected subscription renews at its displayed StoreKit price unless cancelled. Ineligible customers see no trial claims. The hard paywall remains and there is no permanent free access.
-- **Monthly is the default.** Every customer starts on Monthly; eligible customers see its trial. Once the customer chooses a plan, later asynchronous eligibility results must not replace that choice (2026-10-23; Weekly is no longer preselected for customers without a trial).
-- **Default-plan test, built but off.** `PaywallDefaultPlanExperiment.isRunning` switches on a sticky 50/50 Monthly-vs-Yearly default for trial-eligible installs. Turn it on once Unit has about 50 ratings.
+- **Yearly is the default for trial-eligible customers, Weekly for everyone else** (founder decision 2026-10-23). Once the customer chooses a plan, later asynchronous eligibility results must not replace that choice.
+- **Default-plan test, built but off.** `PaywallDefaultPlanExperiment.isRunning` switches on a sticky 50/50 Yearly-vs-Monthly default for trial-eligible installs. Off by founder decision; when off, trial-eligible customers get Yearly.
 - **Reading the default-plan test.** TelemetryDeck: filter `trial_eligibility = eligible`, split by `default_plan`, compare `trial_started ÷ paywall_viewed` and the plan mix of `purchase_completed`; check App Store Connect for trial-to-paid conversion. After about 300 eligible paywall views per arm, keep the arm with more revenue per paywall view and log the result in `docs/decision-log.md`.
 - **Timing stays with the decision.** One scrolling paywall keeps the personalized program payoff, grouped plans, StoreKit-derived Day 0 → Day 5 → Day 7 timeline, included features, renewal disclosure, Restore, Terms, Privacy, and sticky purchase action together. The selected plan expands; unselected plans remain compact. Configured Lifetime stays in the same group without a separate heading.
 - **The reminder defaults on and stays optional.** `Remind me 2 days before` starts on (2026-10-23) and appears only for a selected, eligible introductory trial. Toggling it never asks for permission; permission is requested only after a verified trial purchase, and denial never blocks access.

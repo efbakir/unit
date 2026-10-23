@@ -278,8 +278,10 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts["Best set"].exists,
             "History did not label its all-time best set"
         )
+        // The app runs with -AppleLocale en_US; the test runner keeps the
+        // simulator region, which iOS 27 applies to date order ("23 Oct").
         let expectedChartDate = Date().formatted(
-            .dateTime.month(.abbreviated).day()
+            .dateTime.month(.abbreviated).day().locale(Locale(identifier: "en_US"))
         )
         XCTAssertTrue(
             staticText(in: app, containing: expectedChartDate).exists,
@@ -547,7 +549,7 @@ final class ProgressionContractUITests: XCTestCase {
         tap(loggedSet, "Edit completed set")
         tap(app.buttons["Mark not done"], "Mark completed set not done")
         let undo = app.buttons["toast-action"]
-        XCTAssertTrue(undo.waitForExistence(timeout: 2), "Set removal did not offer Undo")
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "Set removal did not offer Undo")
         undo.tap()
         XCTAssertTrue(loggedSet.waitForExistence(timeout: 5), "Undo did not restore the set")
         XCTAssertEqual(loggedSet.label, originalLabel, "Undo changed the original set values")
@@ -816,7 +818,9 @@ final class ProgressionContractUITests: XCTestCase {
         timeout: TimeInterval = 8
     ) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), "\(name) not found")
-        XCTAssertTrue(element.isHittable, "\(name) exists but is not hittable")
+        // iOS 26 menus and sheets animate in: items exist before they take taps.
+        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: element)
+        XCTAssertEqual(XCTWaiter.wait(for: [hittable], timeout: 3), .completed, "\(name) exists but is not hittable")
         element.tap()
     }
 

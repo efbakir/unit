@@ -7,6 +7,18 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-23 — Founder override: paywall defaults and the setup notice
+
+Efe reviewed the persona-panel changes and reverted four of them. The panel's warnings stay on record in `docs/research/2026-10-23-persona-panel.md`.
+
+- **Yearly is preselected** for every trial-eligible customer (was Monthly). The default-plan test stays built and off; off now means Yearly.
+- **Weekly is preselected for customers without a trial** (returning or lapsed), as before build 94.
+- **"Save 80%":** Yearly is compared with 52 weeks of Weekly again (was 12 months of Monthly, "Save 49%").
+- **No "Paid plan required after setup." line** under "Set up your program". Supersedes the 2026-08-05 disclosure decision.
+- **Open:** "Try for $0.00" on the trial button. Held because Apple rejects paywalls where the trial price stands out more than the billed amount (3.1.2), and 2.1 is the first paywall Apple reviews. Waiting on Efe.
+- **Kept:** trial reminder on by default; the billed price leads the line above the button; Restore, Terms, Privacy and Support in every paywall state.
+- **Undo:** `PaywallDefaultPlanExperiment.arm()` (off value), `PaywallPlanSelectionState.applyInitialDefault`, `PaywallView.annualSavingsBadgeText`, the CTA block in `OnboardingSplashView`.
+
 ## 2026-10-23 — Finalize 2.1 for the App Store (founder delegated all decisions)
 
 Efe asked for the app to be finalized and shipped while away, with full decision authority. Each item below is a decision, its reason, and how to undo it.

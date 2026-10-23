@@ -748,7 +748,7 @@ final class StoreManager {
             annualHasEligibleTrial: annualHasEligibleTrial,
             preferredTrialTier: monthlyHasEligibleTrial || annualHasEligibleTrial
                 ? PaywallDefaultPlanExperiment.arm()
-                : .monthly
+                : .annual
         )
     }
 
@@ -1129,9 +1129,9 @@ final class StoreManager {
 enum PaywallDefaultPlanExperiment {
     nonisolated static let key = "paywall.defaultPlanArm.v1"
 
-    /// Off at launch: a Yearly default risks surprise $29.99 charges, refunds
-    /// and 1-star reviews while Unit has few ratings. Turn on once the app has
-    /// about 50 ratings; everything else is ready.
+    /// Off: Yearly is the default for every trial-eligible customer (founder
+    /// decision 2026-10-23). Turning this on splits new installs 50/50 between
+    /// Yearly and Monthly.
     static let isRunning = false
 
     /// The default plan for a trial-eligible customer.
@@ -1139,14 +1139,7 @@ enum PaywallDefaultPlanExperiment {
         defaults: UserDefaults = .standard,
         coinFlip: () -> Bool = { Bool.random() }
     ) -> StoreManager.Tier {
-#if DEBUG
-        // UI tests keep the deterministic Monthly default unless they ask
-        // for the Yearly arm explicitly.
-        let arguments = CommandLine.arguments
-        if arguments.contains("-ui-testing-default-plan-annual") { return .annual }
-        if arguments.contains(where: { $0.hasPrefix("-ui-testing") }) { return .monthly }
-#endif
-        guard isRunning else { return .monthly }
+        guard isRunning else { return .annual }
         return assignedArm(defaults: defaults, coinFlip: coinFlip)
     }
 
@@ -1165,10 +1158,9 @@ enum PaywallDefaultPlanExperiment {
 }
 
 /// Keeps the async eligibility result from undoing a choice the user already
-/// made. Eligible new customers default to Monthly (or the experiment arm when
-/// that test runs). Customers without a trial also default to Monthly
-/// (2026-10-23): a preselected Weekly plan read as a trap to returning users.
-/// Weekly stays available.
+/// made. Trial-eligible customers default to Yearly (founder decision
+/// 2026-10-23), or to the experiment arm when that test runs. Customers
+/// without a trial keep the Weekly default whenever it is available.
 struct PaywallPlanSelectionState: Equatable, Sendable {
     private(set) var selectedTier: StoreManager.Tier = .weekly
     private(set) var hasUserSelectedTier = false
@@ -1182,13 +1174,13 @@ struct PaywallPlanSelectionState: Equatable, Sendable {
         availableTiers: Set<StoreManager.Tier>,
         monthlyHasEligibleTrial: Bool,
         annualHasEligibleTrial: Bool = false,
-        preferredTrialTier: StoreManager.Tier = .monthly
+        preferredTrialTier: StoreManager.Tier = .annual
     ) {
         guard !hasUserSelectedTier else { return }
 
         if preferredTrialTier == .annual, annualHasEligibleTrial, availableTiers.contains(.annual) {
             selectedTier = .annual
-        } else if availableTiers.contains(.monthly) {
+        } else if monthlyHasEligibleTrial, availableTiers.contains(.monthly) {
             selectedTier = .monthly
         } else if availableTiers.contains(.weekly) {
             selectedTier = .weekly

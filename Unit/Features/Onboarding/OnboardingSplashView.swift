@@ -172,15 +172,7 @@ struct OnboardingSplashView: View {
             VStack(spacing: AppSpacing.lg) {
                 PageDots(count: slides.count, selection: selection)
 
-                VStack(spacing: AppSpacing.sm) {
-                    AppPrimaryButton(AppCopy.Onboarding.splashCTA, action: onGetStarted)
-
-                    Text(AppCopy.Onboarding.paidAccessDisclosure)
-                        .appFont(.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                AppPrimaryButton(AppCopy.Onboarding.splashCTA, action: onGetStarted)
                 // Horizontal + bottom insets mirror `AppScreen`'s canonical
                 // sticky-CTA chrome (md sides, xs above the home-indicator
                 // safe area) so the button doesn't jump — inward OR downward —

@@ -15,7 +15,7 @@ Every user flow in Unit 2.1 (build 94), how it works in code, and its edge cases
 
 ## Setup at a glance (build 94)
 
-- Opener (2 s) -> carousel -> "Set up your program" ("Paid plan required after setup." under it).
+- Opener (2 s) -> carousel -> "Set up your program".
 - Step 1 of 3: I have a program / I need a program.
 - Step 2 of 3: paste the program, or answer goal, experience and days, then pick a match (best match preselected).
 - Step 3 of 3: review (weight unit switch here) -> Save program -> paywall.

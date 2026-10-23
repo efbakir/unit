@@ -693,22 +693,16 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 49%": Yearly against 12 months at the live Monthly price, the
-    /// plan most people compare it with (2026-10-23). The weekly base gave
-    /// "Save 80%", which read as an inflated anchor. Weekly is the fallback
-    /// only when Monthly fails to load.
+    /// "Save 80%": calculated against 52 weeks at the live Weekly price
+    /// (founder decision 2026-10-23 keeps this anchor). The compact badge
+    /// omits the comparison label; the yearly card already shows its
+    /// per-week equivalent directly beneath the price.
     private var annualSavingsBadgeText: String? {
-        guard let annual = store.product(for: .annual) else { return nil }
-        let comparisonYearTotal: Decimal
-        if let monthly = store.product(for: .monthly) {
-            comparisonYearTotal = monthly.price * 12
-        } else if let weekly = store.product(for: .weekly) {
-            comparisonYearTotal = weekly.price * 52
-        } else {
-            return nil
-        }
-        guard comparisonYearTotal > annual.price, comparisonYearTotal > 0 else { return nil }
-        let fraction = (comparisonYearTotal - annual.price) / comparisonYearTotal
+        guard let annual = store.product(for: .annual),
+              let weekly = store.product(for: .weekly) else { return nil }
+        let annualizedWeekly = weekly.price * 52
+        guard annualizedWeekly > annual.price, annualizedWeekly > 0 else { return nil }
+        let fraction = (annualizedWeekly - annual.price) / annualizedWeekly
         let percent = Int((NSDecimalNumber(decimal: fraction).doubleValue * 100).rounded(.down))
         guard percent >= 10 else { return nil }
         return "Save \(percent)%"

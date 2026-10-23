@@ -1,6 +1,6 @@
 > **2026-10-23: build 95 is attached to version 2.1, not submitted.** Built from `claude/app-finalization-launch-34a116` (tag `v2.1-build95`), which contains the build-90 phone state plus the finalization changes in `docs/handoffs/2026-10-23-app-finalization.md`. Release type: manual. Build 96 replaces it once the celebration look and the screenshot set are picked: it adds the new celebration, delete buttons in the main-lift editor, a VoiceOver fix on main-lift cards, and a large set-count picker. Sections below that mention builds 66–68 are history.
 >
-> Builds 94 to 96 differ from the August checklist in four ways that matter for review: (1) the trial button says "Start free trial" and the line above it leads with the billed price; (2) "Paid plan required after setup." sits under "Set up your program" again; (3) Monthly is preselected for every customer and the trial reminder defaults on; (4) setup is three steps (path, program, review). The reviewer notes in `docs/app-store-copy.md` describe this build.
+> Builds 94 to 96 differ from the August checklist in four ways that matter for review: (1) the trial button says "Start free trial" and the line above it leads with the billed price; (2) there is no paid-access line under "Set up your program" (founder decision 2026-10-23); (3) Yearly is preselected for trial-eligible customers, Weekly for everyone else, and the trial reminder defaults on; (4) setup is three steps (path, program, review). The reviewer notes in `docs/app-store-copy.md` describe this build.
 >
 > Still not done by a person: the physical-device sandbox purchase test (§4, §11) and the device gauntlet in `docs/release-qa.md`. Founder action before tapping Release.
 >
@@ -19,7 +19,7 @@
 
 - **Trial is not release-ready yet.** The app supports a seven-day offer, but App Store Connect must carry the matching Monthly and Yearly offers and an Apple sandbox purchase sheet must confirm the free period before submission.
 - **No permanent free tier.** Unit remains a hard paywall after onboarding. Weekly and Lifetime have no introductory offer.
-- **Paid access is disclosed before setup.** The onboarding carousel shows `Paid plan required after setup. Prices and any eligible trial are shown before purchase.` directly beneath `Set up your program`; the CTA still opens weight-unit selection with no added step.
+- **Paid access shows at the paywall, not before setup.** The founder removed the onboarding line on 2026-10-23 (supersedes 2026-08-05). The App Store description states the subscription, and the paywall shows every plan and price before purchase.
 - **No fake prices.** Every visible in-app price is StoreKit-derived. ASC product config is the only place prices exist.
 - **Do not select build 66.** Its source/archive provenance cannot be established. Build 67 replaces it and must be archived from the clean tagged commit below.
 - **The app UI is English-only.** Do not claim or imply localization anywhere. Localized *metadata* is a separate, optional step (§8).

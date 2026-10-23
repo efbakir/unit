@@ -336,9 +336,6 @@ enum AppCopy {
     enum Onboarding {
         static let splashTagline = "Progressive overload made simple."
         static let splashCTA = "Set up your program"
-        /// Restores the 2026-08-05 decision (lost in the 2026-08-13 layout
-        /// pass): people learn before setup that it ends at a paid plan.
-        static let paidAccessDisclosure = "Paid plan required after setup."
         static let unitTitle = "Choose weight unit"
         static let unitSubtitle = "You can change this later in Settings."
         static let methodTitle = "Choose your path"
