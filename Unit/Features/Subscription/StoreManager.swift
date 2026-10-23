@@ -1129,7 +1129,12 @@ final class StoreManager {
 enum PaywallDefaultPlanExperiment {
     nonisolated static let key = "paywall.defaultPlanArm.v1"
 
-    /// The stored arm, assigned 50/50 on first use.
+    /// Off at launch: a Yearly default risks surprise $29.99 charges, refunds
+    /// and 1-star reviews while Unit has few ratings. Turn on once the app has
+    /// about 50 ratings; everything else is ready.
+    static let isRunning = false
+
+    /// The default plan for a trial-eligible customer.
     static func arm(
         defaults: UserDefaults = .standard,
         coinFlip: () -> Bool = { Bool.random() }
@@ -1141,6 +1146,15 @@ enum PaywallDefaultPlanExperiment {
         if arguments.contains("-ui-testing-default-plan-annual") { return .annual }
         if arguments.contains(where: { $0.hasPrefix("-ui-testing") }) { return .monthly }
 #endif
+        guard isRunning else { return .monthly }
+        return assignedArm(defaults: defaults, coinFlip: coinFlip)
+    }
+
+    /// The stored arm, assigned 50/50 on first use and kept for the install.
+    static func assignedArm(
+        defaults: UserDefaults = .standard,
+        coinFlip: () -> Bool = { Bool.random() }
+    ) -> StoreManager.Tier {
         if let stored = defaults.string(forKey: key) {
             return stored == StoreManager.Tier.annual.analyticsValue ? .annual : .monthly
         }
@@ -1151,9 +1165,10 @@ enum PaywallDefaultPlanExperiment {
 }
 
 /// Keeps the async eligibility result from undoing a choice the user already
-/// made. Eligible new customers default to their experiment arm (Monthly or
-/// Yearly); everyone else keeps the existing Weekly default whenever it is
-/// available.
+/// made. Eligible new customers default to Monthly (or the experiment arm when
+/// that test runs). Customers without a trial also default to Monthly
+/// (2026-10-23): a preselected Weekly plan read as a trap to returning users.
+/// Weekly stays available.
 struct PaywallPlanSelectionState: Equatable, Sendable {
     private(set) var selectedTier: StoreManager.Tier = .weekly
     private(set) var hasUserSelectedTier = false
@@ -1173,7 +1188,7 @@ struct PaywallPlanSelectionState: Equatable, Sendable {
 
         if preferredTrialTier == .annual, annualHasEligibleTrial, availableTiers.contains(.annual) {
             selectedTier = .annual
-        } else if monthlyHasEligibleTrial, availableTiers.contains(.monthly) {
+        } else if availableTiers.contains(.monthly) {
             selectedTier = .monthly
         } else if availableTiers.contains(.weekly) {
             selectedTier = .weekly

@@ -428,11 +428,22 @@ final class PaywallPlanSelectionStateTests: XCTestCase {
         XCTAssertEqual(selection.selectedTier, .monthly)
     }
 
-    func testIneligibleCustomerKeepsWeeklyDefault() {
+    func testIneligibleCustomerDefaultsToMonthly() {
         var selection = PaywallPlanSelectionState()
 
         selection.applyInitialDefault(
             availableTiers: [.weekly, .monthly, .annual],
+            monthlyHasEligibleTrial: false
+        )
+
+        XCTAssertEqual(selection.selectedTier, .monthly)
+    }
+
+    func testWeeklyIsTheFallbackWhenMonthlyIsMissing() {
+        var selection = PaywallPlanSelectionState()
+
+        selection.applyInitialDefault(
+            availableTiers: [.weekly, .annual],
             monthlyHasEligibleTrial: false
         )
 
@@ -483,16 +494,22 @@ final class PaywallPlanSelectionStateTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let first = PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { true })
-        let second = PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { false })
+        let first = PaywallDefaultPlanExperiment.assignedArm(defaults: defaults, coinFlip: { true })
+        let second = PaywallDefaultPlanExperiment.assignedArm(defaults: defaults, coinFlip: { false })
 
-        // UI-test launch arguments force Monthly in Debug, so only assert
-        // stickiness when the arm came from the stored coin flip.
-        if !CommandLine.arguments.contains(where: { $0.hasPrefix("-ui-testing") }) {
-            XCTAssertEqual(first, .annual)
-            XCTAssertEqual(defaults.string(forKey: PaywallDefaultPlanExperiment.key), "annual")
-        }
+        XCTAssertEqual(first, .annual)
+        XCTAssertEqual(defaults.string(forKey: PaywallDefaultPlanExperiment.key), "annual")
         XCTAssertEqual(first, second)
+    }
+
+    func testDefaultPlanTestIsOffAtLaunchAndStoresNothing() {
+        let suiteName = "PaywallDefaultPlanExperimentOff.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertFalse(PaywallDefaultPlanExperiment.isRunning)
+        XCTAssertEqual(PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { true }), .monthly)
+        XCTAssertNil(defaults.string(forKey: PaywallDefaultPlanExperiment.key))
     }
 
     func testPartialLoadFallsBackToFirstAvailableRequiredTier() {

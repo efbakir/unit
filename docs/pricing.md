@@ -6,8 +6,8 @@
 
 | Tier     | Price       | Billing       | Product ID         | Notes                                                   |
 | -------- | ----------- | ------------- | ------------------ | ------------------------------------------------------- |
-| Weekly   | **$2.99**   | auto-renewing | `com.unit.weekly`  | No trial. Default for ineligible customers.             |
-| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | Seven-day introductory trial. Default for half of eligible new customers (test arm A). |
+| Weekly   | **$2.99**   | auto-renewing | `com.unit.weekly`  | No trial. Listed, never preselected (since 2026-10-23). |
+| Monthly  | **$4.99**   | auto-renewing | `com.unit.monthly` | Seven-day introductory trial. Preselected for every customer. |
 | Yearly   | **$29.99**  | auto-renewing | `com.unit.annual`  | Seven-day introductory trial; best value.               |
 | Lifetime | **$44.99**  | one-time      | `com.unit.lifetime` | No trial. Optional non-consumable; show only if configured in ASC and returned by StoreKit. |
 
@@ -27,11 +27,12 @@ The local `Unit.storekit` configuration contains the two seven-day offers for de
 
 - **Hard paywall** (resolved 2026-06-16, see `docs/decision-log.md`). All app functionality is gated behind a paid purchase. Onboarding completes free so the user sees their program built; the paywall appears immediately after setup is saved, no dismissal.
 - **Seven-day introductory trial, not a free tier.** Eligible new customers may try all of Unit through Monthly or Yearly. After the offer, the selected subscription renews at its displayed StoreKit price unless cancelled. Ineligible customers see no trial claims. The hard paywall remains and there is no permanent free access.
-- **Eligibility controls the default.** An eligible new customer starts on Monthly or Yearly, assigned 50/50 per install and kept for that install (test started 2026-10-23, `PaywallDefaultPlanExperiment`). Both carry the same trial and every plan stays visible. An ineligible customer retains the existing Weekly default. Once the customer chooses a plan, later asynchronous eligibility results must not replace that choice.
+- **Monthly is the default.** Every customer starts on Monthly; eligible customers see its trial. Once the customer chooses a plan, later asynchronous eligibility results must not replace that choice (2026-10-23; Weekly is no longer preselected for customers without a trial).
+- **Default-plan test, built but off.** `PaywallDefaultPlanExperiment.isRunning` switches on a sticky 50/50 Monthly-vs-Yearly default for trial-eligible installs. Turn it on once Unit has about 50 ratings.
 - **Reading the default-plan test.** TelemetryDeck: filter `trial_eligibility = eligible`, split by `default_plan`, compare `trial_started ÷ paywall_viewed` and the plan mix of `purchase_completed`; check App Store Connect for trial-to-paid conversion. After about 300 eligible paywall views per arm, keep the arm with more revenue per paywall view and log the result in `docs/decision-log.md`.
 - **Timing stays with the decision.** One scrolling paywall keeps the personalized program payoff, grouped plans, StoreKit-derived Day 0 → Day 5 → Day 7 timeline, included features, renewal disclosure, Restore, Terms, Privacy, and sticky purchase action together. The selected plan expands; unselected plans remain compact. Configured Lifetime stays in the same group without a separate heading.
-- **The reminder is explicit and optional.** `Remind me 2 days before` defaults off and appears only for a selected, eligible introductory trial. Toggling it does not request notification permission. After StoreKit verifies the purchase, Unit requests permission and schedules one local reminder 48 hours before the verified expiration only when the customer opted in. Denial never blocks access. Reconciliation restores only an opted-in, already-authorized reminder without prompting; stale reminders are cancelled after expiration, revocation, upgrade, or a non-trial replacement purchase.
-- **The CTA mirrors the selected StoreKit offer.** Eligible trials show `Try for [localized zero]`, non-trial subscriptions show `Subscribe for [full billed price]`, and Lifetime shows `Buy for [price]`. Tapping it purchases the selected product through Apple's native StoreKit confirmation sheet.
+- **The reminder defaults on and stays optional.** `Remind me 2 days before` starts on (2026-10-23) and appears only for a selected, eligible introductory trial. Toggling it never asks for permission; permission is requested only after a verified trial purchase, and denial never blocks access.
+- **The CTA mirrors the selected StoreKit offer.** Eligible trials show `Start free trial` with the billed price leading the line above it (no `$0.00`, 2026-10-23); non-trial subscriptions show `Subscribe for [full billed price]`; Lifetime shows `Buy for [price]`.
 - **All subscription plans stay visible.** Weekly, Monthly, and Yearly cards render even while StoreKit is loading. Missing products show loading/unavailable copy, never fake prices.
 - **Lifetime is optional.** If the existing non-consumable is configured and StoreKit returns it, Unit shows it as a one-time purchase. If ASC does not return it, the card is hidden.
 

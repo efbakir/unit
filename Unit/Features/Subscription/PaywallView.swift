@@ -23,7 +23,11 @@ struct PaywallView: View {
     @State private var showingManageSubscriptions = false
     @State private var revealSession = AppRevealSession()
     @State private var didTrackView = false
-    @State private var reminderRequested = false
+    /// On by default for a trial (2026-10-23): a reminder before the first
+    /// charge prevents surprise renewals. Permission is still asked only
+    /// after a verified trial purchase, and one tap turns it off.
+    @State private var reminderRequested = true
+    @State private var didChooseReminder = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -49,6 +53,8 @@ struct PaywallView: View {
         .onChange(of: store.selectedTier) { _, _ in
             if selectedTrial == nil {
                 reminderRequested = false
+            } else if !didChooseReminder {
+                reminderRequested = true
             }
         }
         .onChange(of: store.isPurchased) { _, purchased in
@@ -376,6 +382,7 @@ struct PaywallView: View {
         Binding(
             get: { reminderRequested },
             set: { newValue in
+                didChooseReminder = true
                 reminderRequested = newValue
                 UnitAnalytics.shared.track(
                     .trialReminderPreferenceChanged(isEnabled: newValue)

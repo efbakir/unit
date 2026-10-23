@@ -403,8 +403,8 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // legitimately return either configured local presentation; both must
         // preserve the hard gate and verified purchase path.
         let trialCTA = button(in: app, containing: AppCopy.Paywall.startFreeTrial)
-        let weeklyCTA = button(in: app, containing: "Subscribe for $2.99/week")
-        let purchaseCTA = trialCTA.exists ? trialCTA : weeklyCTA
+        let subscribeCTA = button(in: app, containing: "Subscribe for")
+        let purchaseCTA = trialCTA.exists ? trialCTA : subscribeCTA
         tap(purchaseCTA, "purchase CTA")
 
         // ── Unlock ──
@@ -512,11 +512,11 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         XCTAssertEqual(
             app.switches[AppCopy.Paywall.trialReminderLabel].value as? String,
-            "0",
-            "trial reminder must default off"
+            "1",
+            "trial reminder must default on (2026-10-23)"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOffMessage).exists
+            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOnMessage).exists
         )
         attachScreenshot(named: "01-eligible-monthly-single-page", app: app)
 
@@ -539,9 +539,9 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         let reminder = app.switches[AppCopy.Paywall.trialReminderLabel]
         scrollTo(reminder, in: app)
         tap(reminder, "trial reminder preference")
-        XCTAssertEqual(reminder.value as? String, "1")
+        XCTAssertEqual(reminder.value as? String, "0")
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOnMessage).exists
+            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOffMessage).exists
         )
 
         let yearly = descendant(in: app, identifier: "paywall-plan-com.unit.annual")
@@ -614,7 +614,9 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             "ineligible paywall headline missing"
         )
         openPurchasePage(in: app)
-        XCTAssertTrue(button(in: app, containing: "Subscribe for $2.99/week").exists)
+        // No-trial customers default to Monthly (2026-10-23); Weekly stays listed.
+        XCTAssertTrue(button(in: app, containing: "Subscribe for $4.99/month").exists)
+        XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.weekly").exists)
         XCTAssertFalse(
             staticText(in: app, containing: "free trial").exists,
             "ineligible customer saw trial copy"
