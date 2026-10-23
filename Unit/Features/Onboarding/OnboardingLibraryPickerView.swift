@@ -368,6 +368,15 @@ struct OnboardingLibraryPickerView: View {
             preselectDefaultDaysIfNeeded()
             displayedStage = .days
         case .days where vm.preferredDaysPerWeek != nil:
+            // Preselect the best match so "Review program" works in one tap;
+            // any card tap still changes the choice.
+            if vm.pickedProgram == nil, let best = recommendedPrograms.first {
+                vm.applyPickedProgram(best)
+                if let profile = vm.programMatchProfile {
+                    UnitAnalytics.shared.track(.programMatchSelected(profile: profile, rank: 1))
+                }
+                onUpdate()
+            }
             displayedStage = .results
         case .results where vm.pickedProgram != nil:
             onContinue()

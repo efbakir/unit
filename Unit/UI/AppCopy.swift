@@ -94,6 +94,9 @@ enum AppCopy {
         static func exerciseDoneSuggestion(_ target: String, change: String) -> String {
             "Suggested next: \(target) · \(change)"
         }
+        static func exerciseDoneNoSuggestion(_ reason: String) -> String {
+            "No suggestion · \(reason)"
+        }
         static let suggestionAddOneRep = "+1 rep"
         static let suggestionSameTarget = "same target"
         static let repeatPreviousTarget = "Repeat previous target"
@@ -232,6 +235,8 @@ enum AppCopy {
         /// subscription metadata checklist.
         static let termsOfServiceURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
         static let privacyPolicyURL = URL(string: "https://unitlift.app/privacy")
+        static let support = "Support"
+        static let supportURL = URL(string: "mailto:support@unitlift.app")
     }
 
     enum Session {
@@ -324,6 +329,9 @@ enum AppCopy {
     enum Onboarding {
         static let splashTagline = "Progressive overload made simple."
         static let splashCTA = "Set up your program"
+        /// Restores the 2026-08-05 decision (lost in the 2026-08-13 layout
+        /// pass): people learn before setup that it ends at a paid plan.
+        static let paidAccessDisclosure = "Paid plan required after setup."
         static let unitTitle = "Choose weight unit"
         static let unitSubtitle = "You can change this later in Settings."
         static let methodTitle = "Choose your path"
@@ -398,9 +406,10 @@ enum AppCopy {
             count == 1 ? "1-day program" : "\(count)-day program"
         }
         static let choosePlan = "Choose your plan"
-        static func tryFor(_ localizedZeroPrice: String) -> String {
-            "Try for \(localizedZeroPrice)"
-        }
+        /// Trial CTA. Never "$0.00": the billed amount must stay the most
+        /// prominent price (App Review 3.1.2), so the context line above the
+        /// button leads with it.
+        static let startFreeTrial = "Start free trial"
         static func subscribeFor(_ billedPrice: String) -> String {
             "Subscribe for \(billedPrice)"
         }
@@ -411,7 +420,7 @@ enum AppCopy {
             duration: String,
             billedPrice: String
         ) -> String {
-            "No charge today. Then \(billedPrice) after \(duration). Auto-renews unless cancelled."
+            "\(billedPrice) after \(duration) free. No charge today. Auto-renews unless cancelled."
         }
         static func subscriptionPurchaseContext(_ price: String) -> String {
             "\(price). Auto-renews unless cancelled."
@@ -419,7 +428,8 @@ enum AppCopy {
         static func lifetimePurchaseContext(_ price: String) -> String {
             "\(price). One-time purchase."
         }
-        static let pendingPurchaseContext = "Purchase pending approval."
+        static let pendingPurchaseContext =
+            "Purchase pending approval. If it was declined, tap Restore Purchases."
 
         static let includedFeatures = [
             "Next-workout targets",

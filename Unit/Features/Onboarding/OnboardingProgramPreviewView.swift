@@ -137,8 +137,10 @@ struct OnboardingProgramPreviewView: View {
                     selection: Binding(
                         get: { WeightUnitOption(rawValue: vm.unitSystem) ?? .kg },
                         set: { option in
+                            guard option.rawValue != vm.unitSystem else { return }
                             vm.unitSystem = option.rawValue
                             vm.hasSelectedUnit = true
+                            vm.rereadPlainPastedWeights()
                             vm.convertDefaultWeightSteps(to: option.rawValue)
                             UnitAnalytics.shared.track(.weightUnitSelected(unit: option.rawValue))
                         }
@@ -359,10 +361,8 @@ struct OnboardingProgramPreviewView: View {
     private func formatted(_ kg: Double?) -> String {
         guard let kg, kg > 0 else { return "" }
         let display = vm.unitSystem == "lb" ? kg * 2.20462 : kg
-        if display == display.rounded() {
-            return String(format: "%.0f", display)
-        }
-        return String(format: "%.1f", display)
+        // Shared rounding: 155 lb round-trips through kg as 154.99999.
+        return display.weightString
     }
 
     private func commit(weight raw: String, dayIndex: Int, exerciseID: UUID) {
@@ -373,7 +373,8 @@ struct OnboardingProgramPreviewView: View {
             vm.dayExercises[dayIndex][idx].plannedWeightKg = nil
             return
         }
-        guard let value = Double(trimmed), value > 0 else { return }
+        // Comma-decimal regions type "62,5".
+        guard let value = Double(trimmed.replacingOccurrences(of: ",", with: ".")), value > 0 else { return }
         let kg = vm.unitSystem == "lb" ? value / 2.20462 : value
         vm.dayExercises[dayIndex][idx].plannedWeightKg = kg
     }
@@ -391,8 +392,14 @@ struct OnboardingProgramPreviewView: View {
     private var warningBanner: some View {
         let noisy = noisyLinesCount
         let conditioningLines = skippedConditioningLines
-        if noisy > 0 || conditioningLines.isEmpty == false {
+        let droppedDays = droppedDayNames
+        if noisy > 0 || conditioningLines.isEmpty == false || droppedDays.isEmpty == false {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                if droppedDays.isEmpty == false {
+                    Text("Only the first 6 days were imported.")
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
                 if noisy > 0 {
                     Text(noisy == 1
                          ? "1 line didn't parse."
@@ -425,6 +432,15 @@ struct OnboardingProgramPreviewView: View {
             }
         }
         return 0
+    }
+
+    private var droppedDayNames: [String] {
+        for warning in vm.importWarnings {
+            if case .truncatedAtSixDays(let names) = warning {
+                return names
+            }
+        }
+        return []
     }
 
     private var skippedConditioningLines: [String] {

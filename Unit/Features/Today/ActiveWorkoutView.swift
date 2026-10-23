@@ -432,12 +432,14 @@ struct ActiveWorkoutView: View {
     }
 
     private func exerciseSummary(_ section: WorkoutExerciseSectionModel) -> some View {
-        ExerciseSummaryRow(
+        let suggestion = progressionSuggestion(for: section)
+        return ExerciseSummaryRow(
             name: section.exercise.displayName, summary: summary(for: section),
             isCompleted: section.hasReachedPlannedSetGoal,
             showsUndo: showsInlineUndo(for: section.id),
             onUndo: undoLastLog, onSelect: { jump(to: section.id) },
-            detail: progressionSuggestion(for: section)?.text
+            detail: suggestion?.text,
+            detailIsSuggestion: suggestion?.outcome != .unsupported
         )
         .allowsHitTesting(!guardActive)
     }
@@ -618,9 +620,24 @@ struct ActiveWorkoutView: View {
     private func progressionSuggestion(for section: WorkoutExerciseSectionModel)
         -> (text: String, outcome: AnalyticsProgressionOutcome)? {
         guard section.hasReachedPlannedSetGoal, let template,
-              case .recommendation(let recommendation)? = session.progressionEvaluation(
+              let evaluation = session.progressionEvaluation(
                   for: section.id, template: template, isBodyweight: section.exercise.isBodyweight
               ) else { return nil }
+        let recommendation: DoubleProgressionRecommendation
+        switch evaluation {
+        case .recommendation(let value):
+            recommendation = value
+        case .unavailable(let reason):
+            // Say why a progression exercise got no suggestion, so "the rule
+            // said no" never looks like "progression is off".
+            let explanation: String? = switch reason {
+            case .mixedWorkingSetWeights: AppCopy.Workout.mixedWeightsUnavailable
+            case .unsupportedBodyweightOnly: AppCopy.Workout.bodyweightUnavailable
+            case .invalidWeightIncrement: AppCopy.Workout.invalidIncrementUnavailable
+            default: nil
+            }
+            return explanation.map { (AppCopy.Workout.exerciseDoneNoSuggestion($0), .unsupported) }
+        }
         let target = valueText(weight: recommendation.target.weightKg, reps: recommendation.target.reps,
                                exercise: section.exercise)
         switch recommendation.reason {

@@ -127,6 +127,12 @@ struct SessionDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+                // Right after Finish, decisions come first: the next targets
+                // are the payoff of the workout and were below the whole log.
+                if completionMoment != nil, !progressionRecommendations.isEmpty {
+                    progressionCard
+                }
+
                 if !exerciseSnapshots.isEmpty {
                     AppCardList(exerciseSnapshots) { exercise in
                         NavigationLink {
@@ -148,7 +154,7 @@ struct SessionDetailView: View {
                     }
                 }
 
-                if !progressionRecommendations.isEmpty {
+                if completionMoment == nil, !progressionRecommendations.isEmpty {
                     progressionCard
                 }
 

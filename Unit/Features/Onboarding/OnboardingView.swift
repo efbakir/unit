@@ -336,9 +336,13 @@ struct OnboardingView: View {
             Text("Try again in a moment.")
         }
         .onAppear {
+            // Once per install: a relaunch mid-setup is not a new start.
             if !didTrackOnboardingStart {
                 didTrackOnboardingStart = true
-                UnitAnalytics.shared.track(.onboardingStarted)
+                if !UserDefaults.standard.bool(forKey: "analytics.onboardingStartedSent") {
+                    UserDefaults.standard.set(true, forKey: "analytics.onboardingStartedSent")
+                    UnitAnalytics.shared.track(.onboardingStarted)
+                }
             }
             guard !didLoadPreferences else { return }
             vm.unitSystem = UserDefaults.standard.object(forKey: "unitSystem") == nil

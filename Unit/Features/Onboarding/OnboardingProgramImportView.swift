@@ -151,7 +151,7 @@ struct OnboardingProgramImportView: View {
             defaultUnit: vm.unitSystem
         )
         guard !result.days.isEmpty else {
-            errorMessage = "Couldn't find exercises. Put each day on its own line, then list each exercise below it."
+            errorMessage = "Couldn't find sets and reps. Write each exercise like \"Bench press 3x8 60\", with each day's name on its own line above."
             parseErrorTrigger &+= 1
             return
         }

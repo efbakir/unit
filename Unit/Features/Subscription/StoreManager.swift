@@ -871,7 +871,7 @@ final class StoreManager {
 
     @MainActor
     func restore() async {
-        guard !isBusy else { return }
+        guard !isLoading, !isPurchasing else { return }
         purchaseError = nil
         infoMessage = nil
         isLoading = true
@@ -891,6 +891,10 @@ final class StoreManager {
             await checkEntitlement()
             if !isPurchased {
                 infoMessage = "No purchases to restore."
+                // A declined Ask to Buy never reports back. An explicit
+                // restore that finds nothing ends the pending wait so the
+                // customer can choose again.
+                if purchaseAttempt.isPending { purchaseAttempt.finish() }
             }
             UnitAnalytics.shared.track(
                 .restoreOutcome(outcome: isPurchased ? .restored : .nothingFound)
@@ -1059,18 +1063,25 @@ final class StoreManager {
             isReminderEnabled: isReminderEnabled
         )
 
+        // Reconciliation also runs on every launch; only the purchase-time
+        // pass (the one that may ask permission) reports an outcome, so the
+        // event counts decisions rather than app launches.
         switch action {
         case .schedule(let expirationDate):
             let result = await trialReminderScheduler.scheduleReminder(
                 expirationDate: expirationDate,
                 requestAuthorizationIfNeeded: requestAuthorizationIfNeeded
             )
-            UnitAnalytics.shared.track(
-                .trialReminderAuthorization(outcome: analyticsOutcome(for: result))
-            )
+            if requestAuthorizationIfNeeded {
+                UnitAnalytics.shared.track(
+                    .trialReminderAuthorization(outcome: analyticsOutcome(for: result))
+                )
+            }
         case .cancel:
             await trialReminderScheduler.cancelReminder()
-            UnitAnalytics.shared.track(.trialReminderAuthorization(outcome: .cancelled))
+            if requestAuthorizationIfNeeded {
+                UnitAnalytics.shared.track(.trialReminderAuthorization(outcome: .cancelled))
+            }
         }
     }
 

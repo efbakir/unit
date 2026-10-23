@@ -198,6 +198,23 @@ final class OnboardingViewModel {
         }
     }
 
+    /// Plain pasted numbers mean the unit the lifter had in mind. When the
+    /// paste names no unit at all, switching kg/lb on review re-reads those
+    /// numbers in the new unit instead of converting them (60 stays 60).
+    func rereadPlainPastedWeights() {
+        guard importMethod == .paste, pickedProgram == nil,
+              !pastedProgramText.isEmpty,
+              !Self.mentionsWeightUnit(pastedProgramText) else { return }
+        let result = ProgramImportParser.parseWithWarnings(pastedProgramText, defaultUnit: unitSystem)
+        guard !result.days.isEmpty else { return }
+        applyImportedProgram(result.days)
+        importWarnings = result.warnings
+    }
+
+    static func mentionsWeightUnit(_ text: String) -> Bool {
+        text.lowercased().range(of: #"\d\s*(kgs?\b|lbs?\b|#)"#, options: .regularExpression) != nil
+    }
+
     /// When pasted text names only one unit (`60kg`, `135 lb`, `135#`), use
     /// it for plain numbers too. Mixed or unit-free text keeps `current`.
     static func inferredUnitSystem(from text: String, current: String) -> String {

@@ -6729,6 +6729,8 @@ struct ExerciseSummaryRow: View {
     /// target once a progression exercise is done. Primary ink so the
     /// outcome reads before the muted set summary is re-read.
     var detail: String? = nil
+    /// False for an explanation (no suggestion): muted, without the trend icon.
+    var detailIsSuggestion = true
     var body: some View {
         // Match the expanded exercise header's 8pt card + 4pt title inset.
         // Each summary is its own flat card, including upcoming exercises.
@@ -6746,12 +6748,14 @@ struct ExerciseSummaryRow: View {
                         }
                         if let detail, !detail.isEmpty {
                             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                                AppIcon.chart.image(size: AppIconSize.compact)
-                                    .accessibilityHidden(true)
+                                if detailIsSuggestion {
+                                    AppIcon.chart.image(size: AppIconSize.compact)
+                                        .accessibilityHidden(true)
+                                }
                                 Text(detail).appFont(.muted).monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .foregroundStyle(AppColor.textPrimary)
+                            .foregroundStyle(detailIsSuggestion ? AppColor.textPrimary : AppColor.textSecondary)
                             .transition(AppBlurTransition().animation(.appReveal))
                         }
                     }

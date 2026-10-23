@@ -135,18 +135,26 @@ struct PaywallView: View {
             }
             .transition(AppBlurTransition().animation(.appReveal))
         } else if hasNoLoadedProducts {
+            // Restore, Terms, Privacy and Support stay reachable when the
+            // App Store can't load plans (offline, outage).
             VStack(alignment: .leading, spacing: 0) {
                 loadFailureBanner
+                    .padding(.top, AppSpacing.xl)
+                footer
                     .padding(.top, AppSpacing.xl)
             }
             .transition(AppBlurTransition().animation(.appReveal))
         } else {
-            ProgressView()
-                .tint(AppColor.accent)
-                .frame(maxWidth: .infinity, minHeight: AppSpacing.xxl)
-                .padding(.top, AppSpacing.xxl)
-                .accessibilityLabel("Loading subscription details")
-                .transition(.opacity.animation(AppMotion.reveal))
+            VStack(spacing: 0) {
+                ProgressView()
+                    .tint(AppColor.accent)
+                    .frame(maxWidth: .infinity, minHeight: AppSpacing.xxl)
+                    .padding(.top, AppSpacing.xxl)
+                    .accessibilityLabel("Loading subscription details")
+                footer
+                    .padding(.top, AppSpacing.xl)
+            }
+            .transition(.opacity.animation(AppMotion.reveal))
         }
     }
 
@@ -520,10 +528,8 @@ struct PaywallView: View {
             return "Subscribe to continue"
         }
 
-        if selectedTrial != nil,
-           let product = store.selectedProduct {
-            let localizedZero = Decimal.zero.formatted(product.priceFormatStyle)
-            return AppCopy.Paywall.tryFor(localizedZero)
+        if selectedTrial != nil, store.selectedProduct != nil {
+            return AppCopy.Paywall.startFreeTrial
         }
 
         guard let presentation = selectedPresentation else {
@@ -680,15 +686,22 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 80%" — calculated against 52 weeks at the live Weekly price.
-    /// The compact badge omits the comparison label; the yearly card already
-    /// shows its per-week equivalent directly beneath the price.
+    /// "Save 49%" — Yearly against 12 months at the live Monthly price, the
+    /// plan most people compare it with (2026-10-23). The weekly base gave
+    /// "Save 80%", which read as an inflated anchor. Weekly is the fallback
+    /// only when Monthly fails to load.
     private var annualSavingsBadgeText: String? {
-        guard let annual = store.product(for: .annual),
-              let weekly = store.product(for: .weekly) else { return nil }
-        let annualizedWeekly = weekly.price * 52
-        guard annualizedWeekly > annual.price, annualizedWeekly > 0 else { return nil }
-        let fraction = (annualizedWeekly - annual.price) / annualizedWeekly
+        guard let annual = store.product(for: .annual) else { return nil }
+        let comparisonYearTotal: Decimal
+        if let monthly = store.product(for: .monthly) {
+            comparisonYearTotal = monthly.price * 12
+        } else if let weekly = store.product(for: .weekly) {
+            comparisonYearTotal = weekly.price * 52
+        } else {
+            return nil
+        }
+        guard comparisonYearTotal > annual.price, comparisonYearTotal > 0 else { return nil }
+        let fraction = (comparisonYearTotal - annual.price) / comparisonYearTotal
         let percent = Int((NSDecimalNumber(decimal: fraction).doubleValue * 100).rounded(.down))
         guard percent >= 10 else { return nil }
         return "Save \(percent)%"
@@ -793,6 +806,9 @@ struct PaywallView: View {
                     privacyLink
                 }
             }
+            // The paywall is the only screen a locked or charged-but-locked
+            // customer can reach, so support lives here too.
+            supportLink
         }
         .font(AppFont.metadata.font)
         .foregroundStyle(AppColor.textSecondary)
@@ -807,7 +823,20 @@ struct PaywallView: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
-        .disabled(store.isBusy)
+        // A pending (Ask to Buy) purchase must not block Restore: a declined
+        // request never reports back, and Restore is the way out.
+        .disabled(store.isLoading || store.isPurchasing)
+    }
+
+    @ViewBuilder
+    private var supportLink: some View {
+        if let supportURL = AppCopy.Legal.supportURL {
+            Link(destination: supportURL) {
+                Text(AppCopy.Legal.support)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+        }
     }
 
     @ViewBuilder
