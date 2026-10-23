@@ -21,6 +21,13 @@ enum WorkoutTargetFormatter {
 
     private static let englishNumberLocale = Locale(identifier: "en_US")
 
+    /// Positive weight step in the same number style (`+2.5 kg`, `+5 lb`).
+    static func loggingIncrementText(weightKg: Double, unitSystem: String) -> String {
+        let display = unitSystem == "lb" ? weightKg * 2.20462 : weightKg
+        let number = display.formatted(.number.locale(englishNumberLocale).grouping(.never).precision(.fractionLength(0...1)))
+        return "+\(number) \(unitSystem)"
+    }
+
     /// Unit token beside the active set-entry weight field. Bodyweight means
     /// `BW` only while added load is blank or zero; a positive external load
     /// keeps the user's chosen kg/lb meaning.

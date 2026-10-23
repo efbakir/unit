@@ -50,11 +50,13 @@ final class UnitAnalyticsTests: XCTestCase {
 
     func testCustomEventAllowlistIsExact() {
         XCTAssertEqual(UnitAnalyticsEvent.allowedNames, [
-            "onboarding_started", "onboarding_slide_viewed", "weight_unit_selected",
+            "onboarding_started", "onboarding_slide_viewed", "onboarding_step_viewed", "weight_unit_selected",
             "program_source_selected", "program_match_selected", "program_setup_completed", "paywall_viewed",
             "trial_reminder_preference_changed", "trial_reminder_authorization",
-            "purchase_started", "trial_started", "purchase_completed", "workout_started", "workout_completed",
-            "progression_recommendation_shown", "progression_decision", "feedback_action"
+            "purchase_started", "trial_started", "purchase_completed", "purchase_outcome", "restore_outcome",
+            "workout_started", "workout_completed",
+            "progression_recommendation_shown", "progression_preview_shown", "progression_decision",
+            "feedback_action"
         ])
     }
 
@@ -93,7 +95,11 @@ final class UnitAnalyticsTests: XCTestCase {
                     )
                 )
             ),
+            .onboardingStepViewed(step: .review),
+            .purchaseOutcome(tier: "monthly", outcome: .cancelled),
+            .restoreOutcome(outcome: .nothingFound),
             .workoutCompleted(duration: .from30To60, setCount: .from11To20, noKeyboardRatio: .from90To99),
+            .progressionPreviewShown(outcome: .addWeight),
             .progressionDecision(action: .edit, outcome: .addWeight),
             .feedbackAction(action: .book)
         ]
@@ -159,6 +165,34 @@ final class UnitAnalyticsTests: XCTestCase {
         XCTAssertEqual(
             UnitAnalyticsEvent.trialReminderAuthorization(outcome: .denied).payload.parameters,
             ["outcome": "denied"]
+        )
+    }
+
+    func testPaywallAndPurchaseEventsCarryTheDefaultPlanArm() {
+        let fixture = makeFixture(appIDProvider: { [appID] in appID })
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        fixture.defaults.set("annual", forKey: PaywallDefaultPlanExperiment.key)
+        fixture.analytics.configure()
+
+        fixture.analytics.track(.paywallViewed(trialEligibility: "eligible"))
+        fixture.analytics.track(.workoutStarted)
+
+        XCTAssertEqual(fixture.transport.signals.first?.1["default_plan"], "annual")
+        XCTAssertNil(fixture.transport.signals.last?.1["default_plan"])
+    }
+
+    func testFunnelOutcomePayloadsStayControlled() {
+        XCTAssertEqual(
+            UnitAnalyticsEvent.purchaseOutcome(tier: "unexpected", outcome: .pending).payload.parameters,
+            ["tier": "unknown", "outcome": "pending"]
+        )
+        XCTAssertEqual(
+            UnitAnalyticsEvent.restoreOutcome(outcome: .nothingFound).payload.parameters,
+            ["outcome": "nothing_found"]
+        )
+        XCTAssertEqual(
+            UnitAnalyticsEvent.onboardingStepViewed(step: .paste).payload.parameters,
+            ["step": "paste"]
         )
     }
 

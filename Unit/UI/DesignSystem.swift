@@ -6721,6 +6721,10 @@ struct ExerciseSummaryRow: View {
     let showsUndo: Bool
     let onUndo: () -> Void
     let onSelect: () -> Void
+    /// Optional result line under the summary, e.g. the suggested next
+    /// target once a progression exercise is done. Primary ink so the
+    /// outcome reads before the muted set summary is re-read.
+    var detail: String? = nil
     var body: some View {
         // Match the expanded exercise header's 8pt card + 4pt title inset.
         // Each summary is its own flat card, including upcoming exercises.
@@ -6736,6 +6740,16 @@ struct ExerciseSummaryRow: View {
                                 .foregroundStyle(AppColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        if let detail, !detail.isEmpty {
+                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                                AppIcon.chart.image(size: AppIconSize.compact)
+                                    .accessibilityHidden(true)
+                                Text(detail).appFont(.muted).monospacedDigit()
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .foregroundStyle(AppColor.textPrimary)
+                            .transition(AppBlurTransition().animation(.appReveal))
+                        }
                     }
                     .padding(.vertical, AppSpacing.md)
                     .frame(minHeight: 52).contentShape(Rectangle())
@@ -6743,7 +6757,7 @@ struct ExerciseSummaryRow: View {
                 .buttonStyle(ScaleButtonStyle())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(name)
-                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary]
+                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary, detail ?? ""]
                     .filter { !$0.isEmpty }.joined(separator: ", "))
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {

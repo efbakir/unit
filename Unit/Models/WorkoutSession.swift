@@ -116,6 +116,46 @@ final class WorkoutSession {
         return true
     }
 
+    /// The double-progression result for one exercise, calculated from this
+    /// session's current sets. The finish-time capture and the live
+    /// exercise-done preview both call this, so the target shown when an
+    /// exercise is done is the same target the summary later offers.
+    /// Returns nil when the routine has no progression rule for the exercise.
+    @MainActor
+    func progressionEvaluation(
+        for exerciseID: UUID,
+        template: DayTemplate,
+        isBodyweight: Bool
+    ) -> DoubleProgressionEvaluation? {
+        guard let progressionState = template.progressionState(for: exerciseID) else {
+            return nil
+        }
+        let exerciseEntries = setEntries
+            .filter { $0.exerciseId == exerciseID }
+            .sorted { $0.setIndex < $1.setIndex }
+        let isBodyweightOnly = isBodyweight
+            && !exerciseEntries.contains(where: { $0.isCompleted && !$0.isWarmup && $0.weight > 0 })
+        return DoubleProgressionEngine.evaluation(
+            for: DoubleProgressionInput(
+                configuration: progressionState.configuration(
+                    workingSetCount: template.plannedSets(for: exerciseID) ?? 0
+                ),
+                currentTargetReps: progressionState.currentAcceptedTargetReps,
+                sourceWorkoutSessionID: id,
+                isBodyweightOnly: isBodyweightOnly,
+                sets: exerciseEntries.map {
+                    DoubleProgressionSet(
+                        weightKg: $0.weight,
+                        reps: $0.reps,
+                        isWarmup: $0.isWarmup,
+                        isCompleted: $0.isCompleted,
+                        setIndex: $0.setIndex
+                    )
+                }
+            )
+        )
+    }
+
     /// Captures each configured exercise once, at the post-workout boundary.
     /// Re-running this method is intentionally a no-op for existing records so
     /// reopening a summary cannot recalculate or duplicate an earlier result.
@@ -195,30 +235,12 @@ final class WorkoutSession {
                 continue
             }
 
-            guard evaluatePendingRecommendations else { continue }
-
-            let inputSets = exerciseEntries.map {
-                DoubleProgressionSet(
-                    weightKg: $0.weight,
-                    reps: $0.reps,
-                    isWarmup: $0.isWarmup,
-                    isCompleted: $0.isCompleted,
-                    setIndex: $0.setIndex
-                )
-            }
-            let isBodyweightOnly = exercise.isBodyweight
-                && !completedWorkingSets.contains(where: { $0.weight > 0 })
-            let evaluation = DoubleProgressionEngine.evaluation(
-                for: DoubleProgressionInput(
-                    configuration: progressionState.configuration(
-                        workingSetCount: configuredSetCount
-                    ),
-                    currentTargetReps: progressionState.currentAcceptedTargetReps,
-                    sourceWorkoutSessionID: id,
-                    isBodyweightOnly: isBodyweightOnly,
-                    sets: inputSets
-                )
-            )
+            guard evaluatePendingRecommendations,
+                  let evaluation = progressionEvaluation(
+                      for: exerciseID,
+                      template: template,
+                      isBodyweight: exercise.isBodyweight
+                  ) else { continue }
 
             let suggestedTarget: DoubleProgressionTarget?
             let recommendationReason: DoubleProgressionReason?

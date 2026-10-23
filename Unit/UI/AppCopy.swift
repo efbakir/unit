@@ -89,6 +89,13 @@ enum AppCopy {
         static let editedForNextTime = "Edited"
         static let noAutomaticTarget = "No automatic target"
         static let useThisTarget = "Use next workout"
+        /// Completed progression exercise during the workout. Read-only
+        /// preview; the lifter still accepts after Finish.
+        static func exerciseDoneSuggestion(_ target: String, change: String) -> String {
+            "Suggested next: \(target) · \(change)"
+        }
+        static let suggestionAddOneRep = "+1 rep"
+        static let suggestionSameTarget = "same target"
         static let repeatPreviousTarget = "Repeat previous target"
         static let edit = "Edit"
         static let editNextTarget = "Edit next target"

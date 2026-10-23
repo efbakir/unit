@@ -11,7 +11,10 @@ final class TelemetryDeckAnalyticsTransport: AnalyticsTransport {
     func initialize(appID: String) {
         let configuration = TelemetryDeck.Config(appID: appID)
         configuration.sessionStatsEnabled = false
-        configuration.sendNewSessionBeganSignal = false
+        // One anonymous session-start signal per app session. Without it,
+        // daily/weekly active users and retention can't be measured for
+        // people who open Unit but don't finish a workout that day.
+        configuration.sendNewSessionBeganSignal = true
         configuration.logHandler = nil
         TelemetryDeck.initialize(config: configuration)
     }
@@ -104,6 +107,27 @@ enum AnalyticsOnboardingSlide: String, CaseIterable, Hashable {
     case oneTapLogging = "one_tap_logging"
 }
 
+enum AnalyticsOnboardingStep: String, CaseIterable, Hashable {
+    case unit
+    case method
+    case paste
+    case library
+    case schedule
+    case review
+}
+
+enum AnalyticsPurchaseOutcome: String, CaseIterable, Hashable {
+    case cancelled
+    case pending
+    case failed
+}
+
+enum AnalyticsRestoreOutcome: String, CaseIterable, Hashable {
+    case restored
+    case nothingFound = "nothing_found"
+    case failed
+}
+
 enum AnalyticsTrialReminderOutcome: String, CaseIterable, Hashable {
     case scheduled
     case denied
@@ -116,6 +140,7 @@ enum AnalyticsTrialReminderOutcome: String, CaseIterable, Hashable {
 enum UnitAnalyticsEvent {
     case onboardingStarted
     case onboardingSlideViewed(id: AnalyticsOnboardingSlide)
+    case onboardingStepViewed(step: AnalyticsOnboardingStep)
     case weightUnitSelected(unit: String)
     case programSourceSelected(source: String)
     case programMatchSelected(profile: ProgramMatchProfile, rank: Int)
@@ -126,15 +151,19 @@ enum UnitAnalyticsEvent {
     case purchaseStarted(tier: String, hasTrial: Bool, reminderRequested: Bool)
     case trialStarted(tier: String, context: ProgramSetupContext?)
     case purchaseCompleted(tier: String, context: ProgramSetupContext?)
+    case purchaseOutcome(tier: String, outcome: AnalyticsPurchaseOutcome)
+    case restoreOutcome(outcome: AnalyticsRestoreOutcome)
     case workoutStarted
     case workoutCompleted(duration: AnalyticsDurationBucket, setCount: AnalyticsSetCountBucket, noKeyboardRatio: AnalyticsNoKeyboardRatioBucket)
     case progressionRecommendationShown(outcome: AnalyticsProgressionOutcome)
+    case progressionPreviewShown(outcome: AnalyticsProgressionOutcome)
     case progressionDecision(action: AnalyticsProgressionDecision, outcome: AnalyticsProgressionOutcome)
     case feedbackAction(action: AnalyticsFeedbackAction)
 
     static let allowedNames: Set<String> = [
         "onboarding_started",
         "onboarding_slide_viewed",
+        "onboarding_step_viewed",
         "weight_unit_selected",
         "program_source_selected",
         "program_match_selected",
@@ -145,9 +174,12 @@ enum UnitAnalyticsEvent {
         "purchase_started",
         "trial_started",
         "purchase_completed",
+        "purchase_outcome",
+        "restore_outcome",
         "workout_started",
         "workout_completed",
         "progression_recommendation_shown",
+        "progression_preview_shown",
         "progression_decision",
         "feedback_action"
     ]
@@ -158,6 +190,8 @@ enum UnitAnalyticsEvent {
             ("onboarding_started", [:])
         case .onboardingSlideViewed(let id):
             ("onboarding_slide_viewed", ["slide": id.rawValue])
+        case .onboardingStepViewed(let step):
+            ("onboarding_step_viewed", ["step": step.rawValue])
         case .weightUnitSelected(let unit):
             ("weight_unit_selected", ["unit": unit == "lb" ? "lb" : "kg"])
         case .programSourceSelected(let source):
@@ -196,6 +230,10 @@ enum UnitAnalyticsEvent {
             ("trial_started", Self.purchaseParameters(tier: tier, context: context))
         case .purchaseCompleted(let tier, let context):
             ("purchase_completed", Self.purchaseParameters(tier: tier, context: context))
+        case .purchaseOutcome(let tier, let outcome):
+            ("purchase_outcome", ["tier": Self.validTier(tier), "outcome": outcome.rawValue])
+        case .restoreOutcome(let outcome):
+            ("restore_outcome", ["outcome": outcome.rawValue])
         case .workoutStarted:
             ("workout_started", [:])
         case .workoutCompleted(let duration, let setCount, let noKeyboardRatio):
@@ -209,6 +247,8 @@ enum UnitAnalyticsEvent {
             )
         case .progressionRecommendationShown(let outcome):
             ("progression_recommendation_shown", ["outcome": outcome.rawValue])
+        case .progressionPreviewShown(let outcome):
+            ("progression_preview_shown", ["outcome": outcome.rawValue])
         case .progressionDecision(let action, let outcome):
             ("progression_decision", ["action": action.rawValue, "outcome": outcome.rawValue])
         case .feedbackAction(let action):
@@ -306,12 +346,24 @@ final class UnitAnalytics {
         }
     }
 
+    /// Events that carry the install's paywall default-plan arm, so trial and
+    /// purchase rates can be compared between the Monthly and Yearly defaults.
+    static let experimentEventNames: Set<String> = [
+        "paywall_viewed", "purchase_started", "purchase_outcome", "trial_started", "purchase_completed"
+    ]
+
     @MainActor
     func track(_ event: UnitAnalyticsEvent) {
         guard isEnabled, isConfigured else { return }
         let payload = event.payload
         guard UnitAnalyticsEvent.allowedNames.contains(payload.name) else { return }
-        transport.send(name: payload.name, parameters: payload.parameters)
+        var parameters = payload.parameters
+        if Self.experimentEventNames.contains(payload.name),
+           let arm = defaults.string(forKey: PaywallDefaultPlanExperiment.key),
+           ["monthly", "annual"].contains(arm) {
+            parameters["default_plan"] = arm
+        }
+        transport.send(name: payload.name, parameters: parameters)
     }
 
     @MainActor

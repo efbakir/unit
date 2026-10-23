@@ -741,9 +741,14 @@ final class StoreManager {
             (Self.requiredTiers + [Tier.lifetime]).filter { product(for: $0) != nil }
         )
         let monthlyHasEligibleTrial = presentation(for: .monthly)?.trial != nil
+        let annualHasEligibleTrial = presentation(for: .annual)?.trial != nil
         planSelection.applyInitialDefault(
             availableTiers: availableTiers,
-            monthlyHasEligibleTrial: monthlyHasEligibleTrial
+            monthlyHasEligibleTrial: monthlyHasEligibleTrial,
+            annualHasEligibleTrial: annualHasEligibleTrial,
+            preferredTrialTier: monthlyHasEligibleTrial || annualHasEligibleTrial
+                ? PaywallDefaultPlanExperiment.arm()
+                : .monthly
         )
     }
 
@@ -841,9 +846,14 @@ final class StoreManager {
                 await transaction.finish()
             case .userCancelled:
                 trialReminderPreferences.clearStagedPreference()
-                break
+                UnitAnalytics.shared.track(
+                    .purchaseOutcome(tier: tier.analyticsValue, outcome: .cancelled)
+                )
             case .pending:
                 purchaseAttempt.markPending()
+                UnitAnalytics.shared.track(
+                    .purchaseOutcome(tier: tier.analyticsValue, outcome: .pending)
+                )
             @unknown default:
                 break
             }
@@ -851,6 +861,9 @@ final class StoreManager {
             trialReminderPreferences.clearStagedPreference()
             logger.error("Purchase failed: \(error.localizedDescription)")
             purchaseError = "Purchase failed. Try again in a moment."
+            UnitAnalytics.shared.track(
+                .purchaseOutcome(tier: tier.analyticsValue, outcome: .failed)
+            )
         }
     }
 
@@ -879,6 +892,9 @@ final class StoreManager {
             if !isPurchased {
                 infoMessage = "No purchases to restore."
             }
+            UnitAnalytics.shared.track(
+                .restoreOutcome(outcome: isPurchased ? .restored : .nothingFound)
+            )
         } catch StoreKitError.userCancelled {
             // User dismissed the Apple ID sign-in prompt. Intentional back-out,
             // not an error — surfacing an alert here punishes the user for
@@ -887,9 +903,11 @@ final class StoreManager {
         } catch StoreKitError.networkError(_) {
             logger.error("Restore failed: network error")
             purchaseError = "Couldn't reach the App Store. Check your connection and try again."
+            UnitAnalytics.shared.track(.restoreOutcome(outcome: .failed))
         } catch {
             logger.error("Restore failed: \(error.localizedDescription)")
             purchaseError = "Couldn't restore purchases. Try again in a moment."
+            UnitAnalytics.shared.track(.restoreOutcome(outcome: .failed))
         }
     }
 
@@ -1093,9 +1111,38 @@ final class StoreManager {
     }
 }
 
+/// Install-scoped paywall test (decision log 2026-10-23). Trial-eligible
+/// customers start on Monthly or Yearly; both carry the same free trial and
+/// every plan stays visible, so only the preselected card differs. The arm is
+/// attached to paywall and purchase analytics as `default_plan`.
+enum PaywallDefaultPlanExperiment {
+    nonisolated static let key = "paywall.defaultPlanArm.v1"
+
+    /// The stored arm, assigned 50/50 on first use.
+    static func arm(
+        defaults: UserDefaults = .standard,
+        coinFlip: () -> Bool = { Bool.random() }
+    ) -> StoreManager.Tier {
+#if DEBUG
+        // UI tests keep the deterministic Monthly default unless they ask
+        // for the Yearly arm explicitly.
+        let arguments = CommandLine.arguments
+        if arguments.contains("-ui-testing-default-plan-annual") { return .annual }
+        if arguments.contains(where: { $0.hasPrefix("-ui-testing") }) { return .monthly }
+#endif
+        if let stored = defaults.string(forKey: key) {
+            return stored == StoreManager.Tier.annual.analyticsValue ? .annual : .monthly
+        }
+        let tier: StoreManager.Tier = coinFlip() ? .annual : .monthly
+        defaults.set(tier.analyticsValue, forKey: key)
+        return tier
+    }
+}
+
 /// Keeps the async eligibility result from undoing a choice the user already
-/// made. Eligible new customers default to Monthly; everyone else keeps the
-/// existing Weekly default whenever it is available.
+/// made. Eligible new customers default to their experiment arm (Monthly or
+/// Yearly); everyone else keeps the existing Weekly default whenever it is
+/// available.
 struct PaywallPlanSelectionState: Equatable, Sendable {
     private(set) var selectedTier: StoreManager.Tier = .weekly
     private(set) var hasUserSelectedTier = false
@@ -1107,11 +1154,15 @@ struct PaywallPlanSelectionState: Equatable, Sendable {
 
     mutating func applyInitialDefault(
         availableTiers: Set<StoreManager.Tier>,
-        monthlyHasEligibleTrial: Bool
+        monthlyHasEligibleTrial: Bool,
+        annualHasEligibleTrial: Bool = false,
+        preferredTrialTier: StoreManager.Tier = .monthly
     ) {
         guard !hasUserSelectedTier else { return }
 
-        if monthlyHasEligibleTrial, availableTiers.contains(.monthly) {
+        if preferredTrialTier == .annual, annualHasEligibleTrial, availableTiers.contains(.annual) {
+            selectedTier = .annual
+        } else if monthlyHasEligibleTrial, availableTiers.contains(.monthly) {
             selectedTier = .monthly
         } else if availableTiers.contains(.weekly) {
             selectedTier = .weekly

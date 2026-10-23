@@ -452,6 +452,49 @@ final class PaywallPlanSelectionStateTests: XCTestCase {
         XCTAssertTrue(selection.hasUserSelectedTier)
     }
 
+    func testYearlyArmPreselectsYearlyWhenItsTrialIsEligible() {
+        var selection = PaywallPlanSelectionState()
+
+        selection.applyInitialDefault(
+            availableTiers: [.weekly, .monthly, .annual],
+            monthlyHasEligibleTrial: true,
+            annualHasEligibleTrial: true,
+            preferredTrialTier: .annual
+        )
+
+        XCTAssertEqual(selection.selectedTier, .annual)
+    }
+
+    func testYearlyArmFallsBackToMonthlyWithoutAYearlyTrial() {
+        var selection = PaywallPlanSelectionState()
+
+        selection.applyInitialDefault(
+            availableTiers: [.weekly, .monthly, .annual],
+            monthlyHasEligibleTrial: true,
+            annualHasEligibleTrial: false,
+            preferredTrialTier: .annual
+        )
+
+        XCTAssertEqual(selection.selectedTier, .monthly)
+    }
+
+    func testDefaultPlanArmIsAssignedOnceAndStaysSticky() {
+        let suiteName = "PaywallDefaultPlanExperiment.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let first = PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { true })
+        let second = PaywallDefaultPlanExperiment.arm(defaults: defaults, coinFlip: { false })
+
+        // UI-test launch arguments force Monthly in Debug, so only assert
+        // stickiness when the arm came from the stored coin flip.
+        if !CommandLine.arguments.contains(where: { $0.hasPrefix("-ui-testing") }) {
+            XCTAssertEqual(first, .annual)
+            XCTAssertEqual(defaults.string(forKey: PaywallDefaultPlanExperiment.key), "annual")
+        }
+        XCTAssertEqual(first, second)
+    }
+
     func testPartialLoadFallsBackToFirstAvailableRequiredTier() {
         var selection = PaywallPlanSelectionState()
 
