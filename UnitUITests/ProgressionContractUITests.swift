@@ -353,6 +353,8 @@ final class ProgressionContractUITests: XCTestCase {
 
         let useSuggestion = button(in: app, containing: AppCopy.Workout.useThisTarget)
         scrollTo(useSuggestion, in: app)
+        // Store screenshots: let the finish celebration settle first.
+        sleep(4)
         attachScreenshot(of: app, named: "store-01-real-next-target")
 
         // Additional real recommendation variants for founder-composed App
@@ -386,6 +388,11 @@ final class ProgressionContractUITests: XCTestCase {
                 .waitForExistence(timeout: 8),
             "Accepted recommendation state was not visible"
         )
+        // Let the "Next targets saved" toast and burst finish, then return to
+        // the top, where "Next time" opens with the saved Bench Press card.
+        sleep(5)
+        for _ in 0..<3 { app.swipeDown() }
+        sleep(1)
         attachScreenshot(of: app, named: "store-03-real-double-progression-result")
 
         // Capture the real History surface before starting the next workout.
