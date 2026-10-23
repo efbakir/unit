@@ -61,10 +61,13 @@ final class AppFeedbackPolicyTests: XCTestCase {
         XCTAssertEqual(sample, AppMotion.Confetti.sample(seed: 42, index: 2))
         XCTAssertNotEqual(sample, AppMotion.Confetti.sample(seed: 42, index: 3))
         XCTAssertNotEqual(sample, AppMotion.Confetti.sample(seed: 42, index: 2, channel: 1))
-        for index in 0..<AppMotion.Confetti.count {
-            let value = AppMotion.Confetti.sample(seed: 42, index: index)
-            XCTAssertGreaterThanOrEqual(value, 0)
-            XCTAssertLessThan(value, 1)
+        // Every piece and every channel the renderer reads (0 to 15).
+        for index in 0..<AppMotion.Confetti.showerCount {
+            for channel in 0..<16 {
+                let value = AppMotion.Confetti.sample(seed: 42, index: index, channel: channel)
+                XCTAssertGreaterThanOrEqual(value, 0)
+                XCTAssertLessThan(value, 1)
+            }
         }
     }
     func testIdenticalToastMessagesAreSeparateOccurrences() {
@@ -97,13 +100,20 @@ final class AppFeedbackPolicyTests: XCTestCase {
         XCTAssertGreaterThan(first.endsAt, start)
     }
 
-    func testAcceptanceBurstHasEightDotsAndExactLifetime() {
+    func testAcceptanceBurstStaysShortAndSmallerThanWorkoutMoments() {
         let start = Date(timeIntervalSince1970: 100)
-        let burst = AppCelebrationMoment(style: .burst, startedAt: start)
+        let burst = AppCelebrationMoment(style: .burst, startedAt: start, look: .plates)
+        XCTAssertEqual(burst.duration, AppMotion.Confetti.burstLifetime)
+        XCTAssertEqual(burst.endsAt.timeIntervalSince(start), AppMotion.Confetti.burstLifetime, accuracy: 0.0001)
+        XCTAssertLessThan(burst.duration, 1)
+        XCTAssertLessThan(AppMotion.Confetti.burstCount, AppMotion.Confetti.popperCount)
+        XCTAssertLessThan(AppMotion.Confetti.popperCount, AppMotion.Confetti.showerCount)
+
+        // The old renderer stays as the comparison baseline.
+        let classic = AppCelebrationMoment(style: .burst, startedAt: start, look: .classic)
         XCTAssertEqual(AppMotion.burstDots, 8)
-        XCTAssertEqual(burst.duration, 0.45)
-        XCTAssertEqual(burst.endsAt.timeIntervalSince(start), 0.45, accuracy: 0.0001)
-        XCTAssertLessThan(AppMotion.Confetti.popperCount, AppMotion.Confetti.count)
+        XCTAssertEqual(classic.duration, 0.45)
+        XCTAssertLessThan(AppMotion.Confetti.classicPopperCount, AppMotion.Confetti.count)
     }
 
     func testStaleToastTimeoutAndActionCannotConsumeReplacement() {
