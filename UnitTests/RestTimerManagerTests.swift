@@ -126,6 +126,38 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertEqual(RestTimerManager.clockText(15), "0:15")
     }
 
+    func testLockScreenIntentsDriveTheTimerAndSaveRestPerExercise() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let timer = timer(defaults, notifications, now: { now })
+        let squat = UUID()
+        let appAdjust = RestTimerIntentHandler.adjust, appSkip = RestTimerIntentHandler.skip
+        defer {
+            RestTimerIntentHandler.adjust = appAdjust
+            RestTimerIntentHandler.skip = appSkip
+            timer.stop()
+        }
+        RestTimerIntentHandler.adjust = { timer.adjustAndRemember(by: $0) }
+        RestTimerIntentHandler.skip = { timer.stop() }
+        await notifications.waitForRequest { timer.start(totalSeconds: 120, sourceExerciseID: squat) }
+        let step = RestTimerAttributes.stepSeconds
+        XCTAssertEqual(AppCopy.Workout.restStepSeconds, step)
+        await notifications.waitForRequest {
+            Task { _ = try? await AddRestIntent().perform() }
+        }
+        XCTAssertEqual(timer.totalDuration, 120 + step)
+        XCTAssertEqual(timer.restSeconds(for: squat), 120 + step)
+        await notifications.waitForRequest {
+            Task { _ = try? await SubtractRestIntent().perform() }
+        }
+        XCTAssertEqual(timer.totalDuration, 120)
+        XCTAssertEqual(timer.restSeconds(for: squat), 120)
+        _ = try await SkipRestIntent().perform()
+        XCTAssertFalse(timer.isRunning)
+        XCTAssertEqual(timer.completionCount, 0, "Skip never counts as a finished rest")
+    }
+
     func testRestStepAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()

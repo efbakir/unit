@@ -19,7 +19,9 @@ enum AppCopy {
         static func restIdle(_ time: String) -> String { "Rest \(time)" }
         static let restLabel = "Rest"
         /// Rest adjustment step, one source for buttons, VoiceOver and logic
-        /// (30 seconds since 2026-10-23; was 20).
+        /// (30 seconds since 2026-10-23; was 20). The Lock Screen buttons use
+        /// `RestTimerAttributes.stepSeconds`; a unit test keeps the two equal
+        /// (this file is also built into the UI tests, which lack that type).
         static let restStepSeconds = 30
         static let restMinus = "−\(restStepSeconds)"
         static let restPlus = "+\(restStepSeconds)"

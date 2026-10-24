@@ -39,6 +39,9 @@ struct UnitApp: App {
         let start = ContinuousClock.now
         self.sharedModelContainer = Self.makeSharedModelContainer()
         UnitAnalytics.shared.configure()
+        // Lock Screen rest buttons run in this process and drive the same timer.
+        RestTimerIntentHandler.adjust = { RestTimerManager.shared.adjustAndRemember(by: $0) }
+        RestTimerIntentHandler.skip = { RestTimerManager.shared.stop() }
 #if DEBUG
         if CommandLine.arguments.contains(Self.uiTestingArgument), CommandLine.arguments.contains("-ui-testing-analytics-r5") {
             do { try ProgressionContractUITestSeeder.seedAnalytics(in: sharedModelContainer.mainContext) }

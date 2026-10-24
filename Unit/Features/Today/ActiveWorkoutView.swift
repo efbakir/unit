@@ -27,7 +27,8 @@ struct ActiveWorkoutView: View {
     @AppStorage("unit.preparedSetTargets") private var preparedSetTargetsData = Data()
     @SceneStorage("unit.loggingInputDrafts") private var inputDraftsData = Data()
     @State private var viewModel = ActiveWorkoutViewModel()
-    @State private var restTimer = RestTimerManager()
+    /// The app's one rest timer, shared with the Lock Screen buttons.
+    @State private var restTimer = RestTimerManager.shared
     @State private var logging = WorkoutLoggingState()
     @State private var selectedExerciseID: UUID?
     @State private var expandedCompletedID: UUID?
@@ -1553,6 +1554,10 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
 
     // Keep deallocation nonisolated for the existing back-deployment shim.
     nonisolated deinit {}
+
+    /// One timer for the workout screen and the Lock Screen intents, so a
+    /// button on either side changes the same rest.
+    static let shared = RestTimerManager()
 
     override convenience init() {
 #if DEBUG

@@ -211,7 +211,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Plan changes during rest (add set, jump, edit) -> "Up next" text updates, end time unchanged -> Low -> yes.
 - App killed during rest -> timer restored from saved state or the Live Activity ([ActiveWorkoutView.swift:1521](Unit/Features/Today/ActiveWorkoutView.swift:1521)) -> Med -> yes.
 - Notifications off -> warning toast in the app (flow 3), no alert when the phone is locked; the Live Activity still counts down -> Med -> partial.
-- Live Activity has no buttons: no Skip, +30 or Complete from the Lock Screen -> Low -> by design.
+- Lock Screen and expanded Dynamic Island: −30 / +30 / Skip during rest (2026-10-24), the same steps as the app; they run after Face ID unlocks the phone. No "Complete set" from the Lock Screen yet -> Low -> partial.
 - Finish or cancel during rest -> timer stopped, Live Activity closed -> Low -> yes.
 - Rest ends while the app stays closed -> "Rest finished" stays on the Lock Screen until the app opens -> Low -> partial.
 - Rest length per exercise -> remembered from −30 / +30 (2026-10-24) -> Low -> yes.

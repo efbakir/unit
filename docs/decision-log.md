@@ -7,6 +7,13 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 — Lock Screen rest buttons (PR C)
+
+- **What changed (founder override of Final B §2 and §10, "keep the Live Activity display-only"):** the rest Live Activity on the Lock Screen and in the expanded Dynamic Island has −30 / +30 / Skip, the same steps as the in-app rest bar. A step saves to that exercise's rest, as in the app.
+- **How:** three `LiveActivityIntent`s (no parameters) run in the app's process and drive the app's one rest timer (`RestTimerManager.shared`; each workout screen used to create its own). They are hidden from Shortcuts. iOS runs them only after Face ID unlocks the phone; developers report up to 1 to 2 s before the Live Activity redraws.
+- **Not in this change:** "Complete set" from the Lock Screen. It needs one Live Activity for the whole workout and a shared "log this exact set" path; planned after the founder tests these buttons on a phone.
+- **Undo:** remove `RestTimerLiveActivityControls` from `RestTimerLiveActivity.swift`.
+
 ## 2026-10-24 — Rest per exercise; swap and add exercise for one workout (PR B)
 
 - **Rest per exercise (founder override of Final B §2 and §9).** −30 / +30 during a rest now save the new length for the exercise whose set started that rest; next time that exercise rests that long. Exercises without their own length use the global default (`restDurationSeconds`, 120 s at first), which no longer moves. No new control: the idle rest bar shows the current exercise's length. Steps stay ±30 (2026-10-23). Stored in settings storage (`unit.restSecondsByExercise`), no schema change. Undo: start rest from `restDurationSeconds` again in `RestTimerManager.restSeconds(for:)`.
