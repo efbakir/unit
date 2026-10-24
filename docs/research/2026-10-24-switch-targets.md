@@ -80,7 +80,7 @@ US App Store ratings count, read 2026-10-24 from Apple's public search API. It s
 
 ## Gap benchmark prompt
 
-Paste it into the Grok bot or a Claude chat with web search. No attachments needed.
+Paste it into the Grok bot or a Claude chat with web search. No attachments needed. It ranks the features Unit skips on purpose too, marked "yes" in the "Skipped on purpose today" column.
 
 ```text
 Research the feature gaps between my iOS app, Unit, and the biggest gym logging apps. Goal: a ranked list of features Unit should add so lifters can switch to it, each in its simplest form. Unit stays simple: every addition must keep a set at 3 seconds or less, one hand.
@@ -126,7 +126,7 @@ COMPARE WITH
 
 WHAT TO DO
 1. Build a feature matrix. Rows: features. Columns: the apps above plus Unit. Mark each cell Free, Paid or No. Use each app's own site, help center and App Store page.
-2. Tag each feature Unit lacks:
+2. Tag each feature Unit lacks, including the ones it skips on purpose today (list below):
    - Switch blocker: a Strong or Hevy user would not switch without it.
    - Expected: most big apps have it, and users notice when it is missing.
    - Nice to have.
@@ -134,19 +134,22 @@ WHAT TO DO
 4. For each gap, describe the simplest version that fits Unit: one hand, 3 seconds per set, no new tab, few words. Say what to leave out.
 
 ANSWER FORMAT (use exactly this, nothing before it)
-1. Gaps, ranked by how much they stop people from switching, 10 to 20 rows:
-| # | Feature | Big apps that have it (free or paid) | Demand (quote, link, date) | Tag | Simplest Unit version | Leave out | Effort |
+1. Gaps, ranked by how much they stop people from switching, 15 to 25 rows. Rank the skipped features by the same rules, one row per line of the list below:
+| # | Feature | Big apps that have it (free or paid) | Demand (quote, link, date) | Tag | Skipped on purpose today | Simplest Unit version | Leave out | Effort |
+- Skipped on purpose today: "yes" for a line from the list below, else "no".
 - Effort: S = copy or small layout change. M = new control, state or screen section. L = new feature, new screen or data model change.
-2. Out of scope today: Unit skips the features below on purpose. One line each: which apps have it and how often users ask. Do not rank them.
-3. Build order: the first 5 gaps to build, one line each, with the reason.
-4. Do not copy: up to 5 things the big apps do that Unit should not, each with the reason.
+2. Build order: the first 5 gaps to build, one line each, with the reason.
+3. Do not copy: up to 5 things the big apps do that Unit should not, each with the reason.
 
-UNIT SKIPS THESE ON PURPOSE (section 2 only)
-- Social feed, following, sharing, leaderboards, streaks, badges.
-- AI or generated workout plans, exercise recommendations, form videos.
+FEATURES UNIT SKIPS ON PURPOSE TODAY (rank them like any other gap)
+- Social: feed, following, sharing.
+- Game features: leaderboards, streaks, badges.
+- AI or generated workout plans, and exercise recommendations.
+- Form videos.
 - Plate calculator.
-- Cycles, periodization blocks, deload rules, RPE-based auto-adjusting.
-- Dark mode, iPad, landscape.
+- Periodization: cycles, blocks, deload rules, RPE-based auto-adjusting.
+- Dark mode.
+- iPad and landscape.
 
 RULES
 - Evidence only. Each claim names the app's screen, setting or plan, with a source and date. If you cannot verify it, write "unverified".
