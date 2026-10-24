@@ -117,7 +117,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(templateName)
-                        .font(AppFont.title.font)
+                        .appFont(.productHeading)
                         .foregroundStyle(AppColor.textPrimary)
                         .lineLimit(2)
                         .truncationMode(.tail)

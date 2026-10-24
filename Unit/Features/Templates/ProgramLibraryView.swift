@@ -61,6 +61,7 @@ struct ProgramLibraryView: View {
         }
         .navigationTitle("Program library")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .navigationDestination(for: ProgramTemplate.self) { program in
             ProgramLibraryDetailView(program: program)
         }

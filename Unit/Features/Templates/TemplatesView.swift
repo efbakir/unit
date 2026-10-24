@@ -375,14 +375,11 @@ struct EditProgramView: View {
                 .appBottomSheetChrome()
                 .presentationDetents([.medium])
         }
-        .confirmationDialog(
-            "Delete program",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert("Delete program?", isPresented: $showDeleteConfirmation) {
             Button("Delete program", role: .destructive) {
                 deleteProgram()
             }
+            Button(AppCopy.Nav.cancel, role: .cancel) { }
         } message: {
             Text("Deletes this program and its routines. Can’t be undone.")
         }

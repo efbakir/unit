@@ -34,6 +34,7 @@
   - Plan without weight: "3 × 8–10"
   - Bodyweight: "BW × 12", "BW + 10 kg × 8"
   - Last time: "Last time · 80 kg × 8"
+  - A next target reads like a plan, with the change after a middle dot: "Suggested next: 3 × 8 at 62.5 kg · +2.5 kg" (also "· +1 rep", "· same target"). One performed set stays "62.5 kg × 8".
 - **Colors:** blue only for things you can tap or that are selected. Status checkmarks are black. Text is black, supporting text gray.
 - **Type scale:** `AppFont` tokens only, each with its own tracking. No borrowed tracking, no `.bold()` or `.weight()` overrides. In-page titles are 24pt (`productHeading`).
 - **Capitalization:** sentence case for every label, button, title and header. Names keep their capitals (Unit Pro, App Store, Terms of Service, exercise and program names). Caps only through `appCapsLabel`, never on text the lifter typed. Apple uses title case for buttons; Unit's recorded rule is sentence case and almost every string already follows it.
@@ -75,13 +76,13 @@ All in `Unit/UI/DesignSystem.swift` unless noted.
 | 1 | "Edit" blue in Analytics, gray in the workout summary | [Analytics](../qa/consistency-audit-2026-10-24/before/02-analytics.png), [summary](../qa/consistency-audit-2026-10-24/before/01-summary-next-time.png) | [Analytics](../qa/consistency-audit-2026-10-24/after-pr1/02-analytics.png), [summary](../qa/consistency-audit-2026-10-24/after-pr1/01-summary-next-time.png) |
 | 2 | "Add exercise" black in a workout, blue row in a routine | [workout](../qa/consistency-audit-2026-10-24/before/03d-active-add-exercise.png), [routine](../qa/consistency-audit-2026-10-24/before/03-routine-detail.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr1/03d-active-add-exercise.png), [routine](../qa/consistency-audit-2026-10-24/after-pr1/03-routine-detail.png) |
 | 3 | Black underlined "Undo" and black "+ Add set" | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr1/03c-active-undo-add-set.png) |
-| 4 | Paywall links 11pt gray; Settings "Restore Purchases" looks like static text | [paywall](../qa/consistency-audit-2026-10-24/before/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | [paywall](../qa/consistency-audit-2026-10-24/after-pr1/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/after-pr1/04b-settings.png) |
+| 4 | Paywall links 11pt gray; Settings "Restore Purchases" looks like static text | [paywall](../qa/consistency-audit-2026-10-24/before/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | [paywall](../qa/consistency-audit-2026-10-24/after-pr1/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/after-pr1/04b-settings.png); with PR 5 words: [paywall](../qa/consistency-audit-2026-10-24/after-pr6/04-paywall-footer.png) |
 | 5 | Same numbers in SF Mono (summary) and SF Pro (Analytics) | [summary](../qa/consistency-audit-2026-10-24/before/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/before/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/before/11-ax3-summary-evidence.png) | [summary](../qa/consistency-audit-2026-10-24/after-pr2/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/after-pr2/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/after-pr2/11-ax3-summary-evidence.png) |
 | 6 | SF Mono rows next to 13pt summaries on one screen | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr2/03c-active-undo-add-set.png) |
 | 7 | "3 × 60 kg × 10" vs "3 × 10 at 60 kg" vs "3 × 10"; "62.5" next to "62,5" in region Italy | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/before/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/before/12-italy-active.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr3/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/after-pr3/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/after-pr3/12-italy-active.png) |
 | 8 | Sheet close: X vs "Done" vs "Cancel" and "Done" | [picker](../qa/consistency-audit-2026-10-24/before/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/before/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/before/08c-main-lifts-sheet.png) | [picker](../qa/consistency-audit-2026-10-24/after-pr4/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/after-pr4/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/after-pr4/08c-main-lifts-sheet.png) |
-| 9 | Analytics switch: caption in setup, none in Settings | [setup](../qa/consistency-audit-2026-10-24/before/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | PR 6 |
-| 10 | Empty filter result: centered box, other empty states left on the page | [History](../qa/consistency-audit-2026-10-24/before/10-history-filter-empty.png) | PR 6 |
+| 9 | Analytics switch: caption in setup, none in Settings | [setup](../qa/consistency-audit-2026-10-24/before/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | [setup](../qa/consistency-audit-2026-10-24/after-pr6/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/after-pr6/04b-settings.png) |
+| 10 | Empty filter result: centered box, other empty states left on the page | [History](../qa/consistency-audit-2026-10-24/before/10-history-filter-empty.png) | [History](../qa/consistency-audit-2026-10-24/after-pr6/10-history-filter-empty.png) |
 
 ## Issues and fixes
 
@@ -153,15 +154,25 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Fix | Effort | Status |
 |---|---|---|---|---|---|
-| 38 | Borrowed -0.3 tracking on body text | ~30 sites in Analytics, Main lifts, Exercise detail, DS:6680-6727; `Today/ActiveWorkoutView.swift:537, 564` | each font's own tracking | S | Planned |
-| 39 | Dash placeholder and a weight override | DS:6690, DS:6714 | remove | S | Planned |
-| 40 | Detail titles 20 vs 24 | `History/SessionDetailView.swift:119` vs Exercise detail | 24 (`productHeading`) | S | Planned |
-| 41 | Empty states: centered box vs left on the page | `AppEmptyHint` DS:3914; `Onboarding/OnboardingProgramPreviewView.swift:458-473` | left-aligned, no box; `EmptyStateCard` | S | Planned |
-| 42 | Done mark 20 vs 22 on one screen; reorder icon 16 vs 15 | DS:6928 vs DS:7018; `Templates/TemplateDetailView.swift:131` vs DS:4177 | 20; 16 | S | Planned |
-| 43 | Blue on checks you can't tap | DS:3532, `Subscription/PaywallView.swift:413`, DS:3686 | black | S | Planned |
-| 44 | Tab bar pops back in | `Templates/ProgramLibraryView.swift`, `History/ExerciseProgressView.swift` | hide like other pushed screens | S | Planned |
-| 45 | Delete confirm is a dialog, others are alerts | `Templates/TemplatesView.swift:383` vs `Today/ActiveWorkoutView.swift:307, 311` | alert | S | Planned |
-| 46 | Same setting, two looks | `AnonymousAnalyticsToggle` (setup, paywall) vs `Settings/SettingsView.swift:224-230` | one owner built from `AppListRow` and a native toggle | S | Planned |
+| 38 | Borrowed -0.3 tracking on body text | ~30 sites in Analytics, Main lifts, Exercise detail, DS:6680-6727; `Today/ActiveWorkoutView.swift:537, 564` | each font's own tracking | S | Fixed (PR 6) |
+| 39 | Dash placeholder and a weight override | DS:6690, DS:6714 | remove | S | Fixed (PR 6) |
+| 40 | Detail titles 20 vs 24 | `History/SessionDetailView.swift:119` vs Exercise detail | 24 (`productHeading`) | S | Fixed (PR 6) |
+| 41 | Empty states: centered box vs left on the page | `AppEmptyHint` DS:3914; `Onboarding/OnboardingProgramPreviewView.swift:458-473` | left-aligned, no box; `EmptyStateCard` | S | Fixed (PR 6) |
+| 42 | Done mark 20 vs 22 on one screen; reorder icon 16 vs 15 | DS:6928 vs DS:7018; `Templates/TemplateDetailView.swift:131` vs DS:4177 | 20; 16 | S | Fixed (PR 6) |
+| 43 | Blue on checks you can't tap | DS:3532, `Subscription/PaywallView.swift:413`, DS:3686 | black | S | Fixed (PR 6) |
+| 44 | Tab bar pops back in | `Templates/ProgramLibraryView.swift`, `History/ExerciseProgressView.swift` | hide like other pushed screens | S | Fixed (PR 6) |
+| 45 | Delete confirm is a dialog, others are alerts | `Templates/TemplatesView.swift:383` vs `Today/ActiveWorkoutView.swift:307, 311` | alert | S | Fixed (PR 6) |
+| 46 | Same setting, two looks | `AnonymousAnalyticsToggle` (setup, paywall) vs `Settings/SettingsView.swift:224-230` | one owner built from `AppListRow` and a native toggle | S | Fixed (PR 6) |
+
+### Added on 2026-10-24 from the Grok benchmarks (`docs/research/2026-10-24-benchmarks/`)
+
+| # | Issue | Where | Now | Fix | Effort | Status |
+|---|---|---|---|---|---|---|
+| 47 | The same next target is written two ways (benchmark report 4, row 8) | Exercise-done card (`Today/ActiveWorkoutView.swift` `exerciseDoneSuggestion`) vs Today and the summary; Analytics "Next" | "Suggested next: 62.5 kg × 8 · +2.5 kg" / "3 × 8 at 62.5 kg" / "Next 62.5 kg × 8" | targets read like a plan (rule above) | S | Rule set. Done card handed to the progression-loop chat; Analytics "Next" needs the planned set count (follow-up) |
+
+## Needs your call
+
+- **"Last time" on a saved target** (persona panel round 2; `docs/flows/training-loop.md` "Source text"): the current set's source line says "Last time · 60 kg × 8" even when the row is prefilled from the saved next target, so the higher number has no label. You kept "Last time" as the label earlier. Default: keep it. Counter: say "Target" when the row shows the saved target.
 
 ## Noted, not fixed here
 

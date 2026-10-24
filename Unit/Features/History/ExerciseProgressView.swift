@@ -47,7 +47,7 @@ struct ExerciseProgressView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
                             Text(lift.exercise.name).appFont(.productHeading).fixedSize(horizontal: false, vertical: true)
                             if !metadata(lift.exercise).isEmpty {
-                                Text(metadata(lift.exercise)).font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                Text(metadata(lift.exercise)).font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                             }
                         }
                     }
@@ -57,7 +57,7 @@ struct ExerciseProgressView: View {
                             AppMainLiftCard.metric(latest, bodyweight: lift.bodyweight, unit: unit, numberStyle: .splashTitle)
                                 .accessibilityLabel(WorkoutTargetFormatter.analyticsSpokenSet(latest, bodyweight: lift.bodyweight, unit: unit))
                             Text("Latest · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: output.today))")
-                                .font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                     }
                     let chart = AnalyticsEngine.chart(lift: lift, weekStarts: output.weekStarts, metric: lift.bodyweight ? .reps : metric, unit: unit)
                     Group {
@@ -66,7 +66,7 @@ struct ExerciseProgressView: View {
                                 if let current = lift.currentWindowBest, let previous = lift.previousWindowBest {
                                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                         Text("4-week comparison · \(Self.comparisonText(for: lift, unit: unit))")
-                                            .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                            .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                                         Text("\(WorkoutTargetFormatter.analyticsPerformance(previous, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)) → \(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight))")
                                             .font(AppFont.performance.font).monospacedDigit()
                                             .fixedSize(horizontal: false, vertical: true)
@@ -85,10 +85,10 @@ struct ExerciseProgressView: View {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Next")
                                 Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight))
-                                    .font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
+                                    .font(AppFont.sectionHeader.font).monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                                 Text(target.templateName)
-                                    .font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                    .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -98,17 +98,17 @@ struct ExerciseProgressView: View {
                         if row == "Best set", let best = lift.best {
                             AppListRow(title: "Best set", style: .cardListContent) {
                                 VStack(alignment: .trailing, spacing: AppSpacing.xs) {
-                                    Text(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
-                                    Text(WorkoutTargetFormatter.analyticsDate(best.date, now: output.today)).font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                    Text(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.sectionHeader.font).monospacedDigit()
+                                    Text(WorkoutTargetFormatter.analyticsDate(best.date, now: output.today)).font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                                 }
                             }
                         } else if let estimate = AnalyticsEngine.estimatedOneRM(for: lift, unit: unit) {
                             Button { showsEstimate = true } label: {
                                 HStack(spacing: AppSpacing.sm) {
-                                    Text("Est. 1RM").font(AppFont.caption.font).tracking(AppFont.title.tracking)
+                                    Text("Est. 1RM").font(AppFont.caption.font)
                                     AppIcon.info.image(size: AppIconSize.compact).accessibilityHidden(true)
                                     Spacer(minLength: AppSpacing.sm)
-                                    Text(WorkoutTargetFormatter.analyticsWeight(estimate, unit: unit)).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
+                                    Text(WorkoutTargetFormatter.analyticsWeight(estimate, unit: unit)).font(AppFont.sectionHeader.font).monospacedDigit()
                                 }.foregroundStyle(AppColor.textPrimary).frame(minHeight: AppSpacing.xxl)
                             }
                             .buttonStyle(ScaleButtonStyle())
@@ -116,7 +116,6 @@ struct ExerciseProgressView: View {
                             .popover(isPresented: $showsEstimate) {
                                 Text("Estimated from your best set. Not a tested max.")
                                     .font(AppFont.body.font)
-                                    .tracking(AppFont.title.tracking)
                                     .foregroundStyle(AppColor.textPrimary)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .padding(AppSpacing.md)
@@ -130,7 +129,6 @@ struct ExerciseProgressView: View {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 Text(WorkoutTargetFormatter.analyticsDate(session.best.date, now: output.today))
                                     .font(AppFont.body.font)
-                                    .tracking(AppFont.title.tracking)
                                     .foregroundStyle(AppColor.textPrimary)
                                 // Same set-block wording as History, with the unit.
                                 Text(WorkoutTargetFormatter.completedPerformanceText(
@@ -158,6 +156,7 @@ struct ExerciseProgressView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .appNavigationBarChrome()
         .appToast(event: $error)
         .task(id: revision) {

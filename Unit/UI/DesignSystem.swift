@@ -3577,7 +3577,7 @@ struct AppFeatureAccessTable: View {
     private func featureRow(_ label: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             AppIcon.checkmarkFilled.image(size: AppIconSize.readiness, weight: .semibold)
-                .foregroundStyle(AppColor.accent)
+                .foregroundStyle(AppColor.textPrimary)
                 .accessibilityHidden(true)
 
             Text(label)
@@ -3731,7 +3731,7 @@ private struct AppToastPill: View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
             if event.kind == .success {
                 AppIcon.checkmark.image(size: AppIconSize.readiness, weight: .bold)
-                    .foregroundStyle(AppColor.accent)
+                    .foregroundStyle(AppColor.textPrimary)
                     .opacity(markVisible ? 1 : 0)
                     .scaleEffect(markVisible || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
                         ? 1 : AppMotion.markPopScale)
@@ -3968,14 +3968,15 @@ struct AppEmptyHint: View {
         self.message = message
     }
 
+    /// Left-aligned on the page like `EmptyStateCard` (JOI rule: no
+    /// centered boxed empty states).
     var body: some View {
         Text(message)
             .font(AppFont.caption.font)
             .foregroundStyle(AppColor.textSecondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 120)
-            .appCardStyle()
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -4224,7 +4225,7 @@ struct AppReorderDragPreview<Content: View>: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            AppIcon.reorder.image(size: 15, weight: .semibold)
+            AppIcon.reorder.image(size: AppIconSize.readiness, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
                 .frame(width: 44, alignment: .leading)
 
@@ -6724,18 +6725,17 @@ struct AppMainLiftCard: View {
         AppCard(contentInset: 0) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    Text(title).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).lineLimit(2)
+                    Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
                 if let lift, let latest = lift.latest {
                     Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
                     Text("Latest · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: now))")
-                        .font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                        .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                     if lift.comparison.isComparable { change(lift) }
                     AppTrendChart(data: chart, caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", unit: unit, bodyweight: lift.bodyweight)
                 } else {
-                    Text("—").font(AppFont.numericInput.font).foregroundStyle(AppColor.textSecondary)
-                    Text("No sessions yet").font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                    Text("No sessions yet").font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                     AppTrendChart(data: chart, caption: "No sets in 12 weeks")
                 }
             }
@@ -6758,7 +6758,7 @@ struct AppMainLiftCard: View {
     }
     private func change(_ lift: AnalyticsEngine.Lift) -> some View {
         Text("4-week comparison · \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))")
-            .font(AppFont.caption.font.weight(.semibold)).monospacedDigit()
+            .font(AppFont.caption.font).monospacedDigit()
             .foregroundStyle(lift.comparison.isUp ? AppColor.textPrimary : AppColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -6766,12 +6766,12 @@ struct AppMainLiftCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Best").appFont(.muted).foregroundStyle(AppColor.textSecondary)
             Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
-                .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
+                .font(AppFont.caption.font).monospacedDigit()
         }.frame(maxWidth: .infinity, alignment: .leading)
         if let target = lift.target {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Next").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
+                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.caption.font).monospacedDigit()
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -7053,7 +7053,7 @@ struct ExerciseSummaryRow: View {
                     if showsUndo {
                         AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                     }
-                    AppIcon.checkmarkFilled.image(size: 22)
+                    AppIcon.checkmarkFilled.image(size: 20)
                         .accessibilityHidden(true)
                 }
             }

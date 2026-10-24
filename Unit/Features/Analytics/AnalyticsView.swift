@@ -134,7 +134,7 @@ struct AnalyticsView: View {
                 AppScreen(showsNativeNavigationBar: true) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("Each lift compares its best set from the last 4 weeks with the 4 weeks before.")
-                            .font(AppFont.body.font).tracking(AppFont.title.tracking)
+                            .font(AppFont.body.font)
                         AppCardList(data: [
                             ("Up", "More weight or reps, nothing less"),
                             ("Same", "No change"),
@@ -155,7 +155,7 @@ struct AnalyticsView: View {
                             }
                         }
                         Text("Warm-up sets don’t count. The status changes after 3 days.")
-                            .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                            .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                     }
                 }
                 .navigationTitle("How this works").navigationBarTitleDisplayMode(.inline)

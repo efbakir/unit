@@ -534,8 +534,8 @@ struct ActiveWorkoutView: View {
             }
             Spacer(minLength: 0)
         }
-        .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
-        .tracking(AppFont.setValue.tracking)
+        .font(valueFont(for: id).font)
+        .tracking(valueFont(for: id).tracking)
         .monospacedDigit()
         .foregroundStyle(AppColor.textPrimary)
         .frame(minWidth: AppWorkoutMetrics.weightChipWidth, maxWidth: .infinity)
@@ -561,8 +561,8 @@ struct ActiveWorkoutView: View {
         .frame(minWidth: 0, maxWidth: .infinity)
         .keyboardType(.numberPad)
         .focused($focusedField, equals: .reps(id))
-        .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
-        .tracking(AppFont.setValue.tracking)
+        .font(valueFont(for: id).font)
+        .tracking(valueFont(for: id).tracking)
         .monospacedDigit()
         .multilineTextAlignment(.center)
         .foregroundStyle(AppColor.textPrimary)
@@ -584,6 +584,12 @@ struct ActiveWorkoutView: View {
     }
 
     private var isCompact: Bool { listWidth > 0 && listWidth <= AppWorkoutMetrics.compactWidth }
+
+    /// Inline edits of a done row use the row size; the current set uses the
+    /// large value. Each keeps its own tracking.
+    private func valueFont(for id: String) -> AppFont {
+        editor?.id == id && editor?.isCurrent == false ? .performance : (isCompact ? .setValueCompact : .setValue)
+    }
 
     private func rowID(_ exerciseID: UUID, _ number: Int) -> String {
         InlineEditor.id(exerciseID: exerciseID, number: number)

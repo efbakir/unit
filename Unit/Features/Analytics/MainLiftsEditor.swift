@@ -41,7 +41,7 @@ struct MainLiftsEditor: View {
                                         }
                                         .buttonStyle(.plain)
                                         .accessibilityLabel("Delete \(lift.exercise.name)")
-                                        Text(lift.exercise.name).font(AppFont.body.font).tracking(AppFont.title.tracking)
+                                        Text(lift.exercise.name).font(AppFont.body.font)
                                             .foregroundStyle(AppColor.textPrimary).lineLimit(2)
                                             .accessibilityIdentifier("analytics-shown-\(lift.exercise.name)")
                                     }
@@ -51,9 +51,9 @@ struct MainLiftsEditor: View {
                             .onMove { draft.move(fromOffsets: $0, toOffset: $1) }
                             .deleteDisabled(true)
                         } header: {
-                            Text("Shown").font(AppFont.caption.font).tracking(AppFont.title.tracking)
+                            Text("Shown").font(AppFont.caption.font)
                         } footer: {
-                            Text("Up to 3.").font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                            Text("Up to 3.").font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                         }
                         Section {
                             ForEach(available) { lift in
@@ -62,11 +62,11 @@ struct MainLiftsEditor: View {
                                         AppIcon.addCircle.image(size: AppIconSize.exercise)
                                             .foregroundStyle(draft.count < 3 ? AppColor.accent : AppColor.textDisabled)
                                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                            Text(lift.exercise.name).font(AppFont.body.font).tracking(AppFont.title.tracking)
+                                            Text(lift.exercise.name).font(AppFont.body.font)
                                                 .foregroundStyle(AppColor.textPrimary).lineLimit(2)
                                             let count = AnalyticsEngine.recentSessionCount(lift, since: cutoff)
                                             Text("\(count.formatted()) \(count == 1 ? "session" : "sessions") in 8 weeks")
-                                                .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                                .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                                         }
                                     }.frame(minHeight: AppSpacing.xxl)
                                 }
@@ -78,7 +78,7 @@ struct MainLiftsEditor: View {
                             }
                             .moveDisabled(true).deleteDisabled(true)
                         } header: {
-                            Text("Exercises").font(AppFont.caption.font).tracking(AppFont.title.tracking)
+                            Text("Exercises").font(AppFont.caption.font)
                         }
                     }
                     .environment(\.editMode, .constant(.active))
