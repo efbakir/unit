@@ -4,6 +4,10 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Unit does not read your Apple Health data. It only saves finished workouts there when you turn this on in Settings.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Unit saves each finished workout to Apple Health as strength training.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>TelemetryDeckAppID</key>

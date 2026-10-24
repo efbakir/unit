@@ -40,6 +40,7 @@
 		DPTST100000000000000001 /* DoubleProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DPTST200000000000000001 /* DoubleProgressionEngineTests.swift */; };
 		DBE02AEB864A65860041BAC2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B4994CEC26AC15587254F6D4 /* Foundation.framework */; };
 		ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECAT200000000000000000001 /* ExerciseCatalog.swift */; };
+		8F26084A31574AFCB0EF6F83 /* HealthWorkoutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8FCACD7ED9432DA6156D09 /* HealthWorkoutStore.swift */; };
 		EWK100000000000000000001 /* EarlierWeekCatchup.swift in Sources */ = {isa = PBXBuildFile; fileRef = EWK200000000000000000001 /* EarlierWeekCatchup.swift */; };
 		FT100000000000000000001 /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000001 /* Geist-Medium.ttf */; };
 		FT100000000000000000002 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FT000000000000000000002 /* Geist-SemiBold.ttf */; };
@@ -89,6 +90,7 @@
 		978ABAE042AB735F1585EB91 /* AnalyticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86E6B92A45BF7EFFC8F4F1B /* AnalyticsEngine.swift */; };
 		5984E5FA51CDE7DE10A95A7E /* AnalyticsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266B0D9D8F85DCFA3658F850 /* AnalyticsSnapshot.swift */; };
 		11133D3987E11AFC2FED1A27 /* AnalyticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */; };
+		50BD3D0A49C6492FB4E58F5C /* HealthWorkoutStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8A721218AD47BFB0B4BCB3 /* HealthWorkoutStoreTests.swift */; };
 		DDF5A7E4C221443092E6BC44 /* ExerciseIconResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */; };
 		3587D3ADE48DC774203C3C99 /* AnalyticsFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B996A9E2DBB3201556B4C6 /* AnalyticsFormatting.swift */; };
 		EC5DFA95D6B67F403B8E34EF /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */; };
@@ -189,6 +191,7 @@
 		DPENG200000000000000001 /* DoubleProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleProgressionEngine.swift; sourceTree = "<group>"; };
 		DPTST200000000000000001 /* DoubleProgressionEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DoubleProgressionEngineTests.swift; sourceTree = "<group>"; };
 		ECAT200000000000000000001 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
+		DA8FCACD7ED9432DA6156D09 /* HealthWorkoutStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkoutStore.swift; sourceTree = "<group>"; };
 		EWK200000000000000000001 /* EarlierWeekCatchup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlierWeekCatchup.swift; sourceTree = "<group>"; };
 		FD3F6404A55923CE345F9422 /* UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FT000000000000000000001 /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Geist-Medium.ttf"; sourceTree = "<group>"; };
@@ -237,6 +240,7 @@
 		D86E6B92A45BF7EFFC8F4F1B /* AnalyticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsEngine.swift; sourceTree = "<group>"; };
 		266B0D9D8F85DCFA3658F850 /* AnalyticsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsSnapshot.swift; sourceTree = "<group>"; };
 		18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsEngineTests.swift; sourceTree = "<group>"; };
+		7D8A721218AD47BFB0B4BCB3 /* HealthWorkoutStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkoutStoreTests.swift; sourceTree = "<group>"; };
 		5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExerciseIconResolverTests.swift"; sourceTree = "<group>"; };
 		F8B996A9E2DBB3201556B4C6 /* AnalyticsFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsFormatting.swift; sourceTree = "<group>"; };
 		3E2068F0005A5B4C1EDA6967 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Analytics/AnalyticsView.swift; sourceTree = "<group>"; };
@@ -306,6 +310,7 @@
 				UT200000000000000000006 /* FeedbackPortalConfigurationTests.swift */,
 				C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */,
 				18BA8770046915956AFB4B59 /* AnalyticsEngineTests.swift */,
+				7D8A721218AD47BFB0B4BCB3 /* HealthWorkoutStoreTests.swift */,
 				DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */,
 				5A38FE942F9B48B0AE92F318 /* ExerciseIconResolverTests.swift */,
 				UT200000000000000000007 /* UnitAnalyticsTests.swift */,
@@ -502,6 +507,7 @@
 			isa = PBXGroup;
 			children = (
 				ECAT200000000000000000001 /* ExerciseCatalog.swift */,
+				DA8FCACD7ED9432DA6156D09 /* HealthWorkoutStore.swift */,
 				PTPL200000000000000000001 /* ProgramTemplate.swift */,
 				PCAT200000000000000000001 /* ProgramCatalog.swift */,
 				PIMP200000000000000000001 /* ProgramImporter.swift */,
@@ -759,6 +765,7 @@
 				A10000000000000000000003 /* Exercise.swift in Sources */,
 				140300CE9E064ADAAE05AF08 /* Exercise+Icon.swift in Sources */,
 				ECAT100000000000000000001 /* ExerciseCatalog.swift in Sources */,
+				8F26084A31574AFCB0EF6F83 /* HealthWorkoutStore.swift in Sources */,
 				PTPL100000000000000000001 /* ProgramTemplate.swift in Sources */,
 				PCAT100000000000000000001 /* ProgramCatalog.swift in Sources */,
 				PIMP100000000000000000001 /* ProgramImporter.swift in Sources */,
@@ -826,6 +833,7 @@
 				UT100000000000000000006 /* FeedbackPortalConfigurationTests.swift in Sources */,
 				C04A1F20D44C4A33AA558672 /* RestTimerManagerTests.swift in Sources */,
 				11133D3987E11AFC2FED1A27 /* AnalyticsEngineTests.swift in Sources */,
+				50BD3D0A49C6492FB4E58F5C /* HealthWorkoutStoreTests.swift in Sources */,
 				4559761791D9015B415F61F3 /* WorkoutLoggingStateTests.swift in Sources */,
 				DDF5A7E4C221443092E6BC44 /* ExerciseIconResolverTests.swift in Sources */,
 				UT100000000000000000007 /* UnitAnalyticsTests.swift in Sources */,

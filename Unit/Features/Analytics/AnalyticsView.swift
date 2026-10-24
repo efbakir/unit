@@ -52,6 +52,25 @@ struct AnalyticsView: View {
                                 .onAppear { hasPresentedMainLifts = true }
                             }
                         }
+                        // Above Other exercises: that list grows with every exercise logged.
+                        if output.muscleSets.contains(where: { $0.sets > 0 }) {
+                            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                                AppSectionHeader("Sets per muscle · last 4 weeks")
+                                AppCardList(output.muscleSets, rowVerticalInset: AppSpacing.xs) { row in
+                                    AppListRow(
+                                        title: MuscleGroup(rawValue: row.muscle)?.displayName ?? "Other",
+                                        value: "\(row.sets.formatted()) \(row.sets == 1 ? "set" : "sets")",
+                                        subtitle: row.muscle.isEmpty ? "Muscle unknown" : nil,
+                                        style: .cardListContent
+                                    )
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityIdentifier("analytics-muscle-\(row.muscle.isEmpty ? "other" : row.muscle)")
+                                }
+                                Text("Each set counts once, for its main muscle.")
+                                    .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
                         if !output.other.isEmpty {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Other exercises")

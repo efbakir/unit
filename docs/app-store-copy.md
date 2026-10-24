@@ -55,6 +55,16 @@ Privacy Policy: https://unitlift.app/privacy
 
 Short on purpose: iOS descriptions are conversion-only (not search-indexed) and only ~3 lines show before "more". The paid-purchase paragraph + both legal URLs are Guideline 3.1.2(b) compliance — **never trim them**.
 
+### 2.2 change (draft, not pasted)
+
+When 2.2 ships with Apple Health, add one bullet after "Workout history, personal records, and main-lift analytics". Guideline 2.5.1 requires the description to mention the integration.
+
+```
+• Saves finished workouts to Apple Health
+```
+
+Every locale needs the same line. Paste each locale only after Efe approves it.
+
 ## Keywords (100, comma-separated, no spaces)
 
 ```

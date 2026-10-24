@@ -266,6 +266,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Freestyle -> alert "Name this workout" -> "Use name" or "Skip". Skip with a typed name asks "Discard workout name?" ([ActiveWorkoutView.swift:319](Unit/Features/Today/ActiveWorkoutView.swift:319)).
 - No "Update routine with today's weights?" dialog since 2026-10-24 ([ActiveWorkoutView.swift:1004](Unit/Features/Today/ActiveWorkoutView.swift:1004)).
 - Save -> workout marked done, progression evidence captured once per exercise with progression on, every suggested target saved to the routine (2026-10-24), typed targets and order cleared, rest stopped ([ActiveWorkoutView.swift:1016](Unit/Features/Today/ActiveWorkoutView.swift:1016), [WorkoutSession.swift:156](Unit/Models/WorkoutSession.swift:156)).
+- "Save to Apple Health" on (Settings > Preferences) -> the workout is saved to Apple Health as strength training, from its start to the Finish tap, in the background. Skipped under 1 minute or over 4 hours ([ActiveWorkoutView.swift:1039](Unit/Features/Today/ActiveWorkoutView.swift:1039), [HealthWorkoutStore.swift:25](Unit/Data/HealthWorkoutStore.swift:25)).
 - Today -> confetti (first workout: shower, later: popper) + success haptic -> post-workout summary opens ([TodayView.swift:459](Unit/Features/Today/TodayView.swift:459)).
 - Summary -> routine name, date, exercise cards with PR tags, "Next time" section (flow 7), feedback card on the 3rd workout -> back arrow returns to Today. After the first workout, the iOS review prompt shows 2 s after returning ([TodayView.swift:480](Unit/Features/Today/TodayView.swift:480)).
 - Nothing logged -> no "Finish"; only X.
@@ -276,6 +277,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Saved data**
 - Workout marked finished, plus progression evidence per exercise (database).
 - Routine next target, planned weight and reps, for every exercise with a suggestion.
+- Apple Health workout (strength training, start and end), only if "Save to Apple Health" is on and iOS allows it.
 - Engagement counters: review ask after the 1st workout, feedback card on the 3rd.
 
 **Edge cases**
@@ -286,6 +288,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - App resumed from background the next day -> no yesterday alert until a cold launch -> Med -> no.
 - Subscription ends mid-workout -> paywall covers the app; the workout is kept ([ContentView.swift:35](Unit/ContentView.swift:35)) -> Low -> partial.
 - Workout crossing midnight -> listed on the start day -> Low -> by design.
+- Workout saved with "Mark complete" from the "Workout from yesterday" alert -> not saved to Apple Health: Unit stores no end time -> Low -> by design.
+- Workout deleted later -> its Apple Health copy stays until the delete flow calls `HealthWorkoutSync.removeWorkout` -> Low -> no (waits on History delete).
 
 ---
 
@@ -414,7 +418,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Analytics -> "Last 4 weeks" card: "Getting stronger", "Holding steady", "Fewer sessions lately" or "Building a baseline", plus one line ("2 of 3 lifts up. 7 of 12 sessions done.") -> tap -> "How this works" ([AnalyticsView.swift:23](Unit/Features/Analytics/AnalyticsView.swift:23)).
 - "Main lifts" (up to 3) -> card: latest best set, date, 4-week change, 12-week chart, Best, Next (accepted target) -> tap -> detail ([AnalyticsView.swift:30](Unit/Features/Analytics/AnalyticsView.swift:30), [DesignSystem.swift:6427](Unit/UI/DesignSystem.swift:6427)).
 - "Edit" -> Main lifts editor: reorder or remove shown lifts, add from the list (max 3), "Use automatic", Cancel or Done ([MainLiftsEditor.swift:4](Unit/Features/Analytics/MainLiftsEditor.swift:4)).
-- "Other exercises" -> name + latest best set -> detail ([AnalyticsView.swift:55](Unit/Features/Analytics/AnalyticsView.swift:55)).
+- "Sets per muscle · last 4 weeks" -> one row per muscle, most sets first, "Other" ("Muscle unknown") last; a muscle trained in the last 12 weeks but not the last 4 shows "0 sets". Read-only ([AnalyticsView.swift:55](Unit/Features/Analytics/AnalyticsView.swift:55)).
+- "Other exercises" -> name + latest best set -> detail ([AnalyticsView.swift:74](Unit/Features/Analytics/AnalyticsView.swift:74)).
 - Detail -> latest set (large), "4-week comparison" with "60 kg × 8 -> 62.5 kg × 8", Weight / Reps / Volume picker (not for bodyweight), chart you can scrub, "Next" card, Best set, Est. 1RM with an info popover, Recent (last 2 workouts) ([ExerciseProgressView.swift:42](Unit/Features/History/ExerciseProgressView.swift:42)).
 
 **Rules**
@@ -423,6 +428,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Status: under 14 days or 1 workout -> baseline; under half of planned workouts (routines × 4) -> fewer; at least 2 lifts compared, half or more up, and 75% of planned workouts done -> stronger; else steady. A new status must hold 3 days in a row ([AnalyticsEngine.swift:290](Unit/Features/Analytics/AnalyticsEngine.swift:290)).
 - Main lifts: Squat, Bench Press and Deadlift found by name (barbell or no equipment set), trained in the last 12 weeks; then the most trained compound lifts of the last 8 weeks ([AnalyticsEngine.swift:342](Unit/Features/Analytics/AnalyticsEngine.swift:342)).
 - Est. 1RM: weight × (1 + reps / 30), for 1 to 12 reps ([AnalyticsEngine.swift:231](Unit/Features/Analytics/AnalyticsEngine.swift:231)).
+- Sets per muscle: completed working sets (no warm-ups) in the same 28 days as the status, each counted once for the exercise's main muscle ([AnalyticsEngine.swift:239](Unit/Features/Analytics/AnalyticsEngine.swift:239)).
+- Muscle: the saved one unless it is the default Full Body (onboarding saves names only); then the exercise library by name or alias, ignoring spacing, plurals, "bicep/tricep" and "DB/BB"; else unknown. Nothing is saved. The detail page shows the muscle only when known ([ExerciseCatalog.swift:1099](Unit/Data/ExerciseCatalog.swift:1099)).
 
 **Saved data**
 - Chosen main lifts: settings storage `unit.analytics.mainLiftIDs`. Everything else is calculated.

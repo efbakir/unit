@@ -6,7 +6,9 @@ import SwiftData
 enum AnalyticsSnapshot {
     static func make(sessions: [WorkoutSession], exercises: [Exercise], templates: [DayTemplate], plannedDaysPerWeek: Int, pinnedMainIDs: [UUID] = []) -> AnalyticsEngine.Input {
         AnalyticsEngine.Input(
-            exercises: exercises.map { .init(id: $0.id, name: $0.displayName, isBodyweight: $0.isBodyweight, equipment: Equipment(rawValue: $0.equipmentRaw).flatMap { $0 == .other ? nil : $0.rawValue }, muscleGroup: $0.muscleGroupRaw, aliases: $0.aliases) },
+            // Muscle comes from the catalog when the saved one is the default;
+            // empty means unknown. Nothing is written back.
+            exercises: exercises.map { .init(id: $0.id, name: $0.displayName, isBodyweight: $0.isBodyweight, equipment: Equipment(rawValue: $0.equipmentRaw).flatMap { $0 == .other ? nil : $0.rawValue }, muscleGroup: ExerciseCatalog.muscleGroup(forName: $0.displayName, aliases: $0.aliases, saved: $0.muscleGroup)?.rawValue ?? "", aliases: $0.aliases) },
             sessions: sessions.filter(\.isCompleted).map { session in
                 .init(id: session.id, date: session.date, templateID: session.templateId, sets: session.setEntries.filter(\.isValidCompletedWorkingSet).map {
                     .init(exerciseID: $0.exerciseId, weight: $0.weight, reps: $0.reps, index: $0.setIndex)

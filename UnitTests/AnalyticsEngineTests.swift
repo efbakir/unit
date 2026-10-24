@@ -258,6 +258,60 @@ final class AnalyticsEngineTests: XCTestCase {
         XCTAssertEqual(exercise.equipmentRaw, "other")
         XCTAssertFalse(context.hasChanges)
     }
+    func testMuscleSetsCountTheLastFourWeeksByMainMuscle() {
+        let bench = UUID(), row = UUID(), curl = UUID(), unknown = UUID(), calf = UUID()
+        let exercises: [AnalyticsEngine.ExerciseInput] = [
+            .init(id: bench, name: "Bench Press", isBodyweight: false, equipment: "barbell", muscleGroup: "chest"),
+            .init(id: row, name: "Barbell Row", isBodyweight: false, equipment: "barbell", muscleGroup: "back"),
+            .init(id: curl, name: "Biceps Curl", isBodyweight: false, equipment: nil, muscleGroup: "biceps"),
+            .init(id: unknown, name: "Wave 1", isBodyweight: false, equipment: nil, muscleGroup: ""),
+            .init(id: calf, name: "Calf Raise", isBodyweight: true, equipment: nil, muscleGroup: "calves")
+        ]
+        func sets(_ id: UUID, _ count: Int, weight: Double = 60) -> [AnalyticsEngine.SetInput] {
+            (0..<count).map { .init(exerciseID: id, weight: weight, reps: 8, index: $0) }
+        }
+        let skipped: [AnalyticsEngine.SetInput] = [.init(exerciseID: row, weight: 40, reps: 10, isWarmup: true), .init(exerciseID: row, weight: 60, reps: 8, isCompleted: false)]
+        let sessions = [
+            session(0, sets: sets(bench, 3) + sets(row, 2) + skipped),
+            session(-27, sets: sets(bench, 2) + sets(unknown, 2) + sets(calf, 4, weight: 0)),
+            // Day 28 is outside the window: curls show 0 sets instead of vanishing.
+            session(-28, sets: sets(row, 5) + sets(curl, 3)),
+            session(2, sets: sets(bench, 9))
+        ]
+        let result = AnalyticsEngine.compute(input(sessions, exercises: exercises), now: now, calendar: calendar)
+        XCTAssertEqual(result.muscleSets.map(\.muscle), ["chest", "calves", "back", "biceps", ""])
+        XCTAssertEqual(result.muscleSets.map(\.sets), [5, 4, 2, 0, 2])
+        let stale = AnalyticsEngine.compute(input([session(-35, sets: sets(unknown, 2))], exercises: exercises), now: now, calendar: calendar)
+        XCTAssertEqual(stale.muscleSets, [])
+        let old = AnalyticsEngine.compute(input([session(-120, sets: sets(bench, 2))], exercises: exercises), now: now, calendar: calendar)
+        XCTAssertEqual(old.muscleSets, [])
+    }
+    func testOnboardingExercisesUseCatalogMuscleWithoutChangingSavedMetadata() throws {
+        let schema = Schema([Exercise.self, DayTemplate.self, WorkoutSession.self, SetEntry.self, Split.self])
+        let container = try ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = container.mainContext
+        // Onboarding saves names only, so every muscle is the default Full Body.
+        let rows: [(String, Int)] = [("Bicep Curls", 10), ("Overhead Press", 8), ("Barbell Row", 6), ("Leg Press", 5), ("Wave 1", 4)]
+        let exercises = rows.map { Exercise(displayName: $0.0) }
+        var workouts: [WorkoutSession] = []
+        for (exercise, row) in zip(exercises, rows) {
+            context.insert(exercise)
+            for offset in 1...row.1 {
+                let workout = WorkoutSession(date: date(-offset), templateId: templateID, isCompleted: true)
+                context.insert(workout)
+                workout.setEntries = [SetEntry(sessionId: workout.id, exerciseId: exercise.id, weight: 40, reps: 8, isCompleted: true)]
+                workouts.append(workout)
+            }
+        }
+        try context.save()
+        let snapshot = AnalyticsSnapshot.make(sessions: workouts, exercises: exercises, templates: [], plannedDaysPerWeek: 0)
+        XCTAssertEqual(snapshot.exercises.map(\.muscleGroup), ["biceps", "shoulders", "back", "quads", ""])
+        let result = AnalyticsEngine.compute(snapshot, now: now, calendar: calendar)
+        // Curls are isolation work, so compound lifts fill the main slots first.
+        XCTAssertEqual(result.mainIDs.compactMap { result.lifts[$0]?.exercise.name }, ["Overhead Press", "Barbell Row", "Leg Press"])
+        XCTAssertEqual(exercises.map(\.muscleGroupRaw), Array(repeating: "fullBody", count: rows.count))
+        XCTAssertFalse(context.hasChanges)
+    }
     func testValidityWeeklyGapsRecordsAndMixedBodyweight() {
         let sets: [AnalyticsEngine.SetInput] = [.init(exerciseID: exerciseID, weight: 100, reps: 20, isWarmup: true), .init(exerciseID: exerciseID, weight: 200, reps: 5, isCompleted: false), .init(exerciseID: exerciseID, weight: 0, reps: 50), .init(exerciseID: exerciseID, weight: 82.5, reps: 3)]
         let result = compute([session(-100, weight: 82.5, reps: 3), session(-14, weight: 81.25), session(0, sets: sets)])

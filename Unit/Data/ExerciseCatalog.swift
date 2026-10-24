@@ -1092,4 +1092,75 @@ enum ExerciseCatalog {
             return entry.aliases.contains { normalize($0) == needle }
         }
     }
+
+    /// The muscle Analytics uses for an exercise. A saved muscle wins unless it
+    /// is the model's default Full Body: onboarding creates exercises from names
+    /// only, so most of them still carry that default. Otherwise the catalog
+    /// answers by name or alias. Nil means no entry matches. Read-only.
+    static func muscleGroup(forName name: String, aliases: [String], saved: MuscleGroup) -> MuscleGroup? {
+        if saved != .fullBody { return saved }
+        let names = [name] + aliases
+        // A lift listed twice on one day is saved as "Bench Press · BBB @ 50%"
+        // (`ProgramImporter.repeatedExerciseDisplayName`).
+        let baseNames = names.compactMap { $0.components(separatedBy: " · ").first }.filter { !names.contains($0) }
+        for candidate in names + baseNames {
+            for key in muscleKeys(candidate) {
+                if let muscle = muscleIndex[key] { return muscle }
+            }
+        }
+        return nil
+    }
+
+    /// Common pasted names the catalog spells differently. They only answer
+    /// "which muscle"; picker search and imported names stay unchanged.
+    private static let muscleOnlyAliases: [(String, MuscleGroup)] = [
+        ("Chest Press", .chest),
+        ("Decline Bench Press", .chest),
+        ("Shoulder Press", .shoulders),
+        ("Arnold Press", .shoulders),
+        ("Upright Row", .shoulders),
+        ("Shrug", .shoulders),
+        ("Back Extension", .back)
+    ]
+
+    /// Exact spellings go in first, so a folded plural never hides another
+    /// entry's own name. Curated entries lead `all`, so they win ties.
+    private static let muscleIndex: [String: MuscleGroup] = {
+        var index: [String: MuscleGroup] = [:]
+        let signatures = all.flatMap { entry in
+            ([entry.displayName] + entry.aliases).map { ($0, entry.muscleGroup) }
+        } + muscleOnlyAliases
+        for (signature, muscle) in signatures {
+            if let key = muscleKeys(signature).first, index[key] == nil { index[key] = muscle }
+        }
+        for (signature, muscle) in signatures {
+            for key in muscleKeys(signature).dropFirst() where index[key] == nil { index[key] = muscle }
+        }
+        return index
+    }()
+
+    /// Letters and digits only, so spacing, hyphens and apostrophes don't
+    /// matter ("Push-ups", "Farmers Walk"), with common shorthand spelled out.
+    /// Returns the key, then the key without a final "s" or "es".
+    nonisolated private static func muscleKeys(_ value: String) -> [String] {
+        let words = value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map { word -> String in
+                switch word {
+                case "bicep": "biceps"
+                case "tricep": "triceps"
+                case "db": "dumbbell"
+                case "bb": "barbell"
+                default: String(word)
+                }
+            }
+        let key = words.joined()
+        guard !key.isEmpty else { return [] }
+        var keys = [key]
+        if key.hasSuffix("s"), !key.hasSuffix("ss") { keys.append(String(key.dropLast())) }
+        if key.hasSuffix("es") { keys.append(String(key.dropLast(2))) }
+        return keys
+    }
 }

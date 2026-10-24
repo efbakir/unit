@@ -454,6 +454,58 @@ final class ProgramImporterTests: XCTestCase {
         XCTAssertEqual(ExerciseCatalog.lookup("Dumbbell Bench Press")?.displayName, "DB Bench Press")
     }
 
+    func testMuscleLookupPrefersSavedMuscleThenCatalog() {
+        XCTAssertEqual(ExerciseCatalog.muscleGroup(forName: "My Press", aliases: [], saved: .shoulders), .shoulders)
+        XCTAssertEqual(ExerciseCatalog.muscleGroup(forName: "Bench Press", aliases: [], saved: .fullBody), .chest)
+        XCTAssertEqual(ExerciseCatalog.muscleGroup(forName: "Kettlebell Swing", aliases: [], saved: .fullBody), .fullBody)
+        XCTAssertEqual(ExerciseCatalog.muscleGroup(forName: "Mystery Lift", aliases: ["Barbell Row"], saved: .fullBody), .back)
+        XCTAssertNil(ExerciseCatalog.muscleGroup(forName: "Wave 1", aliases: [], saved: .fullBody))
+    }
+
+    func testMuscleLookupReadsPastedSpellings() {
+        let expected: [(String, MuscleGroup)] = [
+            ("Bicep Curls", .biceps), ("Tricep Pushdowns", .triceps), ("Skull Crushers", .triceps),
+            ("Pull-ups", .back), ("Pullups", .back), ("Farmers Walk", .forearms),
+            ("Lying Leg Curl", .hamstrings), ("Cable Flyes", .chest), ("Lunges", .quads),
+            ("Dumbbell Row", .back), ("Shrugs", .shoulders), ("Chest Press", .chest),
+            ("Bench Press · BBB @ 50%", .chest), ("Squat · 2", .quads)
+        ]
+        for (name, muscle) in expected {
+            XCTAssertEqual(ExerciseCatalog.muscleGroup(forName: name, aliases: [], saved: .fullBody), muscle, name)
+        }
+    }
+
+    func testMuscleLookupCoversCommonProgramNames() {
+        let names = [
+            "Bench Press", "Squat", "Deadlift", "Overhead Press", "Barbell Row", "Pull-ups", "Pullups", "Chin-ups",
+            "Lat Pulldown", "Lat Pulldowns", "Seated Cable Row", "Face Pulls", "Face Pull", "Lateral Raises",
+            "Lateral Raise", "Tricep Pushdowns", "Triceps Pushdown", "Tricep Pushdown", "Overhead Tricep Extension",
+            "Bicep Curls", "Biceps Curl", "Hammer Curls", "Dumbbell Curl", "Incline Dumbbell Press", "Incline DB Press",
+            "Dumbbell Bench Press", "DB Bench Press", "Leg Press", "Leg Curls", "Leg Curl", "Leg Extensions",
+            "Leg Extension", "Calf Raises", "Standing Calf Raise", "Romanian Deadlift", "RDL", "Front Squat",
+            "Hip Thrust", "Hip Thrusts", "Bulgarian Split Squat", "Walking Lunges", "Lunges", "Dips", "Push-ups",
+            "Pushups", "Plank", "Hanging Leg Raises", "Cable Crunch", "Cable Flyes", "Cable Fly", "Pec Deck",
+            "Chest Press", "Shoulder Press", "Dumbbell Shoulder Press", "Arnold Press", "Rear Delt Fly", "Reverse Fly",
+            "Shrugs", "Barbell Shrug", "T-Bar Row", "Pendlay Row", "Dumbbell Row", "One Arm Dumbbell Row",
+            "Good Mornings", "Back Extension", "Glute Bridge", "Goblet Squat", "Hack Squat", "Skull Crushers",
+            "Skullcrusher", "Close Grip Bench Press", "EZ Bar Curl", "Preacher Curl", "Cable Lateral Raise",
+            "Upright Row", "Sumo Deadlift", "Trap Bar Deadlift", "Incline Bench Press", "Decline Bench Press",
+            "Machine Row", "Chest Supported Row", "Seated Leg Curl", "Lying Leg Curl", "Nordic Curl", "Ab Wheel",
+            "Farmer's Walk", "Farmers Walk", "Kettlebell Swing"
+        ]
+        let unknown = names.filter { ExerciseCatalog.muscleGroup(forName: $0, aliases: [], saved: .fullBody) == nil }
+        XCTAssertEqual(unknown, [])
+    }
+
+    func testMuscleLookupKeepsEachCatalogEntrysMuscle() {
+        let changed = ExerciseCatalog.all
+            .filter { ExerciseCatalog.muscleGroup(forName: $0.displayName, aliases: [], saved: .fullBody) != $0.muscleGroup }
+            .map(\.displayName)
+        // Unit's own "DB Shrug" (shoulders) also answers for the public
+        // "Dumbbell Shrug" (back): Unit's entries win where both exist.
+        XCTAssertEqual(changed, ["Dumbbell Shrug"])
+    }
+
     func testProgramSetupContextRoundTripsWithoutWorkoutContent() throws {
         let suiteName = "ProgramSetupContextStoreTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
