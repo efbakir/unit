@@ -63,7 +63,8 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-target-prepared-not-logged")
         tap(app.buttons["complete-set-1"], in: app)
         tap(app.buttons["Finish"], in: app)
-        tap(app.alerts.buttons["Finish workout"], in: app)
+        // Sets are still open, so Finish asks first (2026-10-24 round 2).
+        tap(app.alerts.buttons["Finish anyway"], in: app)
         // No "Update routine with today's weights?" step since 2026-10-24.
         XCTAssertTrue(app.staticTexts["Next time"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Keep routine"].exists)
