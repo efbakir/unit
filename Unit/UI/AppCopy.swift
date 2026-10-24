@@ -513,6 +513,17 @@ enum AppCopy {
                 ? "Unit reminds you on \(timelineDate(date))."
                 : "Turn on a reminder for \(timelineDate(date))."
         }
+        /// "How do I cancel?" under the timeline (2026-10-24, Blinkist
+        /// pattern). Unit's own path first, then the iPhone path.
+        static let cancelHelpTitle = "How do I cancel?"
+        static let cancelHelpInApp = "In Unit: Programs, then Settings, then Manage Subscription."
+        static let cancelHelpOnPhone = "On your iPhone: Settings, then your name, then Subscriptions."
+        static func cancelHelpDeadline(trialEnd: Date?) -> String {
+            guard let trialEnd else {
+                return "Cancel at least 24 hours before your next charge to stop it."
+            }
+            return "Cancel at least 24 hours before \(timelineDate(trialEnd)) and you pay nothing."
+        }
         static let trialReminderLabel = "Remind me 2 days before"
         static let trialReminderCaption =
             "Optional. Notification permission is requested after purchase."

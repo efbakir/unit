@@ -32,6 +32,7 @@ struct PaywallView: View {
     /// it on (step 1, or Settings before a plan lapsed), as their way to turn
     /// it off; read once so it does not vanish mid-visit.
     @State private var showsAnalyticsToggle = UnitAnalytics.shared.isEnabled
+    @State private var isCancelHelpExpanded = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -130,6 +131,11 @@ struct PaywallView: View {
                     reminderPreferenceCard
                         .transition(AppBlurTransition().animation(.appReveal))
                         .padding(.top, AppSpacing.xl)
+                }
+
+                if store.selectedTier != .lifetime {
+                    cancelHelpCard
+                        .padding(.top, AppSpacing.md)
                 }
 
                 includedFeaturesSection
@@ -386,6 +392,37 @@ struct PaywallView: View {
             }
         }
         .accessibilityIdentifier("paywall-trial-reminder-preference")
+    }
+
+    /// Closed by default: the question alone reassures, the steps are one
+    /// tap away. Lifetime has nothing to cancel.
+    private var cancelHelpCard: some View {
+        AppDisclosureCard(isExpanded: $isCancelHelpExpanded, cornerRadius: AppRadius.lg) {
+            Text(AppCopy.Paywall.cancelHelpTitle)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+        } content: {
+            VStack(spacing: 0) {
+                AppDivider()
+                AppDividedList(data: cancelHelpRows, id: \.self) { row in
+                    Text(row)
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCardRowChrome()
+                }
+            }
+        }
+        .accessibilityIdentifier("paywall-cancel-help")
+    }
+
+    private var cancelHelpRows: [String] {
+        [
+            AppCopy.Paywall.cancelHelpInApp,
+            AppCopy.Paywall.cancelHelpOnPhone,
+            AppCopy.Paywall.cancelHelpDeadline(trialEnd: selectedTrial?.endDate(from: .now))
+        ]
     }
 
     private var reminderPreferenceBinding: Binding<Bool> {

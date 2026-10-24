@@ -604,6 +604,18 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(
             staticText(in: app, containing: "Turn on a reminder for \(trialTimelineDate(daysFromToday: 5)).").exists
         )
+        // "How do I cancel?" answers before purchase (2026-10-24).
+        let cancelHelp = button(in: app, containing: AppCopy.Paywall.cancelHelpTitle)
+        scrollTo(cancelHelp, in: app)
+        tap(cancelHelp, "How do I cancel?")
+        XCTAssertTrue(
+            staticText(in: app, containing: "Manage Subscription").waitForExistence(timeout: 5),
+            "cancel steps missing"
+        )
+        XCTAssertTrue(
+            staticText(in: app, containing: "before \(trialTimelineDate(daysFromToday: 7)) and you pay nothing").exists,
+            "cancel deadline does not name the trial end"
+        )
 
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
         scrollTo(monthly, in: app)
