@@ -3,10 +3,10 @@
 - 10 flows below: Today, Start, Logging, Rest timer, Exercise done, Finish, Progression, History, Analytics, Programs.
 - Log one set: 1 tap when the row is prefilled ("Complete set N"). App open to first logged set: 2 taps. First set of a new exercise with no weight: 3 to 4 taps plus typing.
 - Risk 1 (was High, fixed 2026-10-23): progression was off for 26 of 27 library programs. Programs without their own ranges now give weighted lifts the standard rule (program reps to +2, then +2.5 kg, 2 kg for dumbbells, 5 lb).
-- Risk 2 (High, half fixed 2026-10-23): editing sets, rep range or weight step no longer drops an accepted target. Still open: an ignored suggestion never shows again outside History.
+- Risk 2 (was High, fixed 2026-10-24): editing sets, rep range or weight step no longer drops a saved target (2026-10-23), and Finish now saves every suggestion, so a skipped summary loses nothing.
 - Risk 3 (was Med, fixed 2026-10-23): canceling a started workout no longer counts that routine as done; cancel restores its last-performed date.
 
-Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be704`, updated for commits `499ecaf` and `75fceb0` (2026-10-23). Nothing here was tested on a phone; the exercise-done line, summary and Finish flow were checked in Simulator UI tests.
+Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be704`, updated for commits `499ecaf` and `75fceb0` (2026-10-23) and for the 2026-10-24 progression changes on `claude/progression-loop-7006dd`. Nothing here was tested on a phone; the exercise-done line, summary and Finish flow were checked in Simulator UI tests.
 
 ## How to read this doc
 
@@ -23,7 +23,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Workout: one session (code name `WorkoutSession`). Set: one logged set (`SetEntry`).
 - Prefill: the numbers already in the set row before you tap.
 - Typed target: numbers typed during a workout. Kept for that workout only.
-- Suggestion: next-time numbers the app proposes. Accepted target: a suggestion the lifter approved. It prefills next time.
+- Suggestion: next-time numbers the app proposes. Saved target: the next target saved for the routine, by Finish or by the lifter on the summary (Keep previous target, Edit). It prefills next time.
 - Progression on: an exercise with "Increase reps, then weight" switched on in its target sheet.
 - Database (SwiftData): permanent storage. Settings storage (UserDefaults): small permanent values. Screen memory (SceneStorage): survives iOS closing the app, not a force quit. Memory only (@State): gone when the app restarts.
 
@@ -57,8 +57,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Manual pick: list icon (top left) or "Choose routine" -> pick -> used for today only, with a note: "Different routine for today", "Usually Push today" or "Not in your weekly plan". "Use scheduled day" or "Use the next routine" removes the pick ([TodayView.swift:849](Unit/Features/Today/TodayView.swift:849), [TodayRoutineOverride.swift:21](Unit/Features/Today/TodayRoutineOverride.swift:21)).
 
 **What each exercise row shows (first match wins)** ([TodayView.swift:741](Unit/Features/Today/TodayView.swift:741))
-1. Accepted target: "3 × 9 at 60 kg", second line "Last time · 3 × 8 at 60 kg".
-2. Last workout with this exercise, any routine: "3 × 8" (sets and reps, no weight).
+1. Saved target: "3 × 9 at 60 kg", second line "Last time · 3 × 8 at 60 kg" (this routine's last workout first).
+2. Last workout with this exercise, this routine first, else any routine: "3 × 8" (sets and set 1 reps, no weight).
 3. Starting target from the program: "3 × 8 at 60 kg" or "3 × 8".
 4. Nothing: "No history yet" (no workouts at all) or "No prior sets".
 
@@ -129,12 +129,12 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 1. Typed for this exact set in this workout.
 2. Typed for this exercise in this workout.
 3. Your last logged set of this exercise in this workout (set 2 copies set 1).
-4. Accepted target, this routine only ([ActiveWorkoutView.swift:1242](Unit/Features/Today/ActiveWorkoutView.swift:1242)).
-5. Last time: the last set of the newest finished workout with this exercise, any routine.
+4. Saved target, this routine only ([ActiveWorkoutView.swift:1254](Unit/Features/Today/ActiveWorkoutView.swift:1254)).
+5. Last time: set 1 of this routine's newest finished workout with this exercise, else set 1 of the newest from any routine. Until 2026-10-24 it used the last set, often the weakest ([ActiveWorkoutView.swift:1294](Unit/Features/Today/ActiveWorkoutView.swift:1294)).
 6. Starting target from the program: planned reps, plus planned weight if any. No weight -> row says "No starting target yet" and needs "Save target".
 7. Empty fields.
 - This matches the expected order (accepted target -> last time -> starting target -> empty), with 3 extra layers on top (1 to 3).
-- Source text, top right of the current row: "Last time 60 × 8" whenever any history exists (also when the prefill is the accepted target), "Starting target" when only the plan exists, "No starting target yet" when weight is missing ([ActiveWorkoutView.swift:651](Unit/Features/Today/ActiveWorkoutView.swift:651)).
+- Source text, top right of the current row: "Last time 60 × 8" from the same workout as step 5, set N on row N, nothing on a set that did not exist then (also when the prefill is the saved target); "Starting target" when only the plan exists; "No starting target yet" when weight is missing ([ActiveWorkoutView.swift:659](Unit/Features/Today/ActiveWorkoutView.swift:659)).
 
 **Steps**
 - Log a set: current row -> "Complete set N" -> set saved -> success haptic, 0.4 s tap lock, "Undo" for 5 s, rest starts, next row becomes current ([ActiveWorkoutView.swift:808](Unit/Features/Today/ActiveWorkoutView.swift:808), [ActiveWorkoutView.swift:820](Unit/Features/Today/ActiveWorkoutView.swift:820)).
@@ -167,15 +167,15 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Save fails -> alert "Couldn't save workout", nothing logged -> Med -> yes.
 - Skip on the last unfinished exercise -> confirm does nothing ([ActiveWorkoutView.swift:946](Unit/Features/Today/ActiveWorkoutView.swift:946)) -> Low -> no.
 - Accidental "+ Add set" -> the extra row cannot be removed; the exercise does not auto-advance or get its check until that set is logged -> Med -> no.
-- Numbers edited on the current row (any set) -> at Finish the app asks "Update routine with today's weights?" for that exercise; "Update" writes set 1 numbers, not the edited ones ([WorkoutLoggingState.swift:180](Unit/Features/Today/WorkoutLoggingState.swift:180), [ActiveWorkoutView.swift:992](Unit/Features/Today/ActiveWorkoutView.swift:992)) -> Low -> partial.
+- Numbers edited on the current row (any set) -> kept for this workout; the next workout starts from set 1 of this one. The "Update routine with today's weights?" dialog was removed 2026-10-24: its answer never changed the next workout -> Low -> yes.
 - Set 1 misses reps -> set 2 copies the lower reps; the accepted target is no longer visible for sets 2 and up -> Med -> partial (no target on the row, by design).
-- Source text says "Last time" even when the prefill is the accepted target, so the higher number has no explanation -> Med -> no.
+- Source text says "Last time" even when the prefill is the saved target, so the higher number has no explanation -> Med -> no.
 - Bodyweight source text reads "Last time 0 × 12", not "BW × 12"; weighted rows show no unit ([ActiveWorkoutView.swift:654](Unit/Features/Today/ActiveWorkoutView.swift:654)) -> Low -> no.
 - lb users saw "155.0" in fields and source text -> fixed 2026-10-23: weights round to one decimal and drop ".0" ([DesignSystem.swift:1087](Unit/UI/DesignSystem.swift:1087)) -> Low -> yes.
 - Long-press anywhere on the open card can start a drag while typing -> Low -> unclear from code (needs a device check).
 - Notifications off -> one self-dismissing notice per workout: "Rest alerts are off. Enable notifications in Settings." (fixed 2026-10-23; it used to return after every set and stay until closed) ([ActiveWorkoutView.swift:379](Unit/Features/Today/ActiveWorkoutView.swift:379)).
 - Bodyweight switched mid-workout -> past workouts of that exercise also display as BW -> Low -> partial.
-- "Last time" is the last set of the last workout, often the weakest -> the prefill starts low after a fatigue drop -> Low -> by design.
+- "Last time" used the last set of the last workout, often the weakest -> fixed 2026-10-24: set 1 starts from set 1 of this routine's last workout -> Low -> yes.
 
 ---
 
@@ -227,15 +227,15 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Steps (what the lifter sees, in order)**
 - "Complete set 3" -> same success haptic as any set. No special sound or motion for "exercise done" ([ActiveWorkoutView.swift:855](Unit/Features/Today/ActiveWorkoutView.swift:855)).
 - Card closes into a small card with grey text: name, "3 × 60 kg × 10" (or "3 sets" when sets differ), "Undo" for 5 s, check ([ActiveWorkoutView.swift:639](Unit/Features/Today/ActiveWorkoutView.swift:639), [DesignSystem.swift:6717](Unit/UI/DesignSystem.swift:6717)).
-- Progression on and the rule gives a suggestion -> one dark line with a chart icon: "Suggested next: 62.5 kg × 8 · +2.5 kg", or "· +1 rep", or "· same target". Read-only ([ActiveWorkoutView.swift:618](Unit/Features/Today/ActiveWorkoutView.swift:618)). Added in commit `94be704`.
+- Progression on and the rule gives a suggestion -> one dark line with a chart icon: "Next time: 3 × 8 at 62.5 kg · +2.5 kg", or "· +1 rep", or "· same target". Read-only; Finish saves it ([ActiveWorkoutView.swift:603](Unit/Features/Today/ActiveWorkoutView.swift:603)). Added in commit `94be704`; same-set wording and "Next time" since 2026-10-24.
 - No line when progression is off. When the rule gives no suggestion, a muted line without the icon says why: "No suggestion · Weights varied.", "· Added weight is required." or "· Set a weight increase." (2026-10-23).
 - Next unfinished exercise opens. If it is the next card in the list, the screen scrolls so the finished card stays on top; otherwise it scrolls to the next exercise ([ActiveWorkoutView.swift:834](Unit/Features/Today/ActiveWorkoutView.swift:834)).
 - Rest starts; the Lock Screen "Up next" names the next exercise, Set 1.
-- After 0.4 s the tap lock lifts. VoiceOver hears "Set 3 logged. Bench Press done. Suggested next: ... Rest 2:00" ([ActiveWorkoutView.swift:858](Unit/Features/Today/ActiveWorkoutView.swift:858)).
+- After 0.4 s the tap lock lifts. VoiceOver hears "Set 3 logged. Bench Press done. Next time: ... Rest 2:00" ([ActiveWorkoutView.swift:858](Unit/Features/Today/ActiveWorkoutView.swift:858)).
 - Last exercise of the day -> every card closed with checks (and suggestion lines), no rest. The rest bar becomes a full-width "Finish workout" button (2026-10-23); the small "Finish" stays in the nav bar.
 
 **Saved data**
-- The set only. The suggestion line is calculated live and saved nowhere until Finish.
+- The set only. The suggestion line is calculated live; Finish saves it to the routine.
 
 **Edge cases**
 - Undo within 5 s -> exercise reopens, the line disappears -> Low -> yes.
@@ -243,7 +243,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Next unfinished exercise is not directly below (after a skip) -> finished card and its Undo scroll out of view -> Low -> partial.
 - Tap a finished card -> it opens with its sets, no suggestion line inside; you must tap the next exercise to continue -> Low -> partial.
 - Sets with different numbers -> card says "3 sets", the numbers are hidden -> Low -> no.
-- Suggestion format differs from the summary page ("62.5 kg × 8" here, "3 × 8 at 62.5 kg" there) -> Low -> no.
+- Suggestion format differed from the summary page ("62.5 kg × 8" here, "3 × 8 at 62.5 kg" there) -> fixed 2026-10-24: "3 × 8 at 62.5 kg" on both -> Low -> yes.
 - All exercises done -> full-width "Finish workout" replaces the rest bar -> Low -> yes (2026-10-23).
 - "+ Add set" used -> no line until the extra set is logged -> Low -> yes.
 
@@ -260,8 +260,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Steps**
 - All or some sets done -> "Finish" -> any open edit saved first -> alert "Finish workout? Saves and ends your session." -> "Finish workout" ([ActiveWorkoutView.swift:979](Unit/Features/Today/ActiveWorkoutView.swift:979), [ActiveWorkoutView.swift:315](Unit/Features/Today/ActiveWorkoutView.swift:315)).
 - Freestyle -> alert "Name this workout" -> "Use name" or "Skip". Skip with a typed name asks "Discard workout name?" ([ActiveWorkoutView.swift:319](Unit/Features/Today/ActiveWorkoutView.swift:319)).
-- Routine with typed targets -> dialog "Update routine with today's weights?" + exercise names -> "Update", "Keep routine" or "Cancel" ([ActiveWorkoutView.swift:362](Unit/Features/Today/ActiveWorkoutView.swift:362)).
-- Save -> workout marked done, progression evidence captured once per exercise with progression on, typed targets and order cleared, rest stopped ([ActiveWorkoutView.swift:1007](Unit/Features/Today/ActiveWorkoutView.swift:1007), [WorkoutSession.swift:164](Unit/Models/WorkoutSession.swift:164)).
+- No "Update routine with today's weights?" dialog since 2026-10-24 ([ActiveWorkoutView.swift:1004](Unit/Features/Today/ActiveWorkoutView.swift:1004)).
+- Save -> workout marked done, progression evidence captured once per exercise with progression on, every suggested target saved to the routine (2026-10-24), typed targets and order cleared, rest stopped ([ActiveWorkoutView.swift:1016](Unit/Features/Today/ActiveWorkoutView.swift:1016), [WorkoutSession.swift:156](Unit/Models/WorkoutSession.swift:156)).
 - Today -> confetti (first workout: shower, later: popper) + success haptic -> post-workout summary opens ([TodayView.swift:459](Unit/Features/Today/TodayView.swift:459)).
 - Summary -> routine name, date, exercise cards with PR tags, "Next time" section (flow 7), feedback card on the 3rd workout -> back arrow returns to Today. After the first workout, the iOS review prompt shows 2 s after returning ([TodayView.swift:480](Unit/Features/Today/TodayView.swift:480)).
 - Nothing logged -> no "Finish"; only X.
@@ -271,7 +271,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Saved data**
 - Workout marked finished, plus progression evidence per exercise (database).
-- Routine planned weight and reps, only if "Update".
+- Routine next target, planned weight and reps, for every exercise with a suggestion.
 - Engagement counters: review ask after the 1st workout, feedback card on the 3rd.
 
 **Edge cases**
@@ -288,7 +288,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 ## 7. Post-workout progression
 
 **Purpose**
-- Suggest the smallest next step. The lifter decides.
+- Save the smallest next step at Finish. The lifter can keep the previous target or edit it.
 
 **Entry**
 - Summary right after Finish.
@@ -307,7 +307,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 3. Fewer completed sets than planned -> no target, "Some sets are unfinished."
 4. Any set with 0 kg or 0 reps -> no target, "No target available."
 5. Not every set at the same weight (extra or back-off sets count) -> no target, "Weights varied."
-6. Any planned set below the target reps -> same weight you lifted, same target reps, "Keep this target."
+6. Any planned set below the target reps -> same weight you lifted, same target reps, "Keep this target." The summary names the short sets: "Set 3: 6 of 8 reps. Keep this target." (2026-10-24).
 7. Every set, extra sets too, at or above top reps -> weight + step, reps back to start reps, "Every set reached the top."
 8. Otherwise -> same weight, target reps + 1, "Same weight. Add one rep." Already at top reps -> "Keep this target."
 - "Weights varied", "Some sets are unfinished" and "No target available" also add "Set a target next workout." ([SessionDetailView.swift:633](Unit/Features/History/SessionDetailView.swift:633)).
@@ -319,16 +319,16 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Where it appears**
 - At exercise done: read-only line (flow 5).
-- Summary page, section "Next time". Right after Finish it is the first section (2026-10-23); from History it sits below the exercise list ([SessionDetailView.swift:151](Unit/Features/History/SessionDetailView.swift:151)). The only place to accept.
-- Not on Today. Not inside the next workout before acceptance.
+- Summary page, section "Next time". Right after Finish it is the first section (2026-10-23); from History it sits below the exercise list ([SessionDetailView.swift:151](Unit/Features/History/SessionDetailView.swift:151)). The place to keep the previous target or edit.
+- Today: the saved target is the row's main line, "Last time" under it. Inside the workout only as set 1's prefill.
 
 **Steps**
-- Summary -> one block per exercise: status ("Suggested"), name + "Edit", "Previous target", "Logged", "Suggested target", reason, blue "Save for next workout", grey "Repeat previous target" (hidden when the reason is "Keep this target") ([SessionDetailView.swift:194](Unit/Features/History/SessionDetailView.swift:194)).
-- "Save for next workout" -> routine target saved as fixed numbers (tapping twice cannot add a second step), routine planned weight and reps updated -> status "Saved", label "Next target", toast "Next targets saved", burst + haptic ([SessionDetailView.swift:476](Unit/Features/History/SessionDetailView.swift:476), [DayTemplate.swift:210](Unit/Models/DayTemplate.swift:210)).
-- "Repeat previous target" -> previous target saved -> status "Kept".
-- "Edit" -> sheet "Edit next target" with weight and reps -> "Save changes" (weight above 0, reps inside the range) -> status "Edited"; a "Suggested" line stays for comparison ([SessionDetailView.swift:347](Unit/Features/History/SessionDetailView.swift:347)).
-- Back arrow without deciding -> nothing changes; the next workout prefills from last time.
-- Next workout -> set 1 of that exercise prefills the accepted target ([ActiveWorkoutView.swift:1242](Unit/Features/Today/ActiveWorkoutView.swift:1242)); Today row shows "3 × 9 at 60 kg"; Analytics shows "Next 60 kg × 9".
+- Summary -> one block per exercise: status ("Saved"), name + "Edit", "Previous target", "Logged", "Next target", reason, "Keep previous target" (hidden when the target did not change) ([SessionDetailView.swift:217](Unit/Features/History/SessionDetailView.swift:217)).
+- Finish already saved the target as fixed numbers (saving twice cannot add a second step) and updated the routine's planned weight and reps ([WorkoutSession.swift:156](Unit/Models/WorkoutSession.swift:156), [DayTemplate.swift:210](Unit/Models/DayTemplate.swift:210)). "Save for next workout" remains only for a suggestion Finish could not save.
+- "Keep previous target" -> previous target saved -> status "Kept", toast "Next targets saved", haptic. The action becomes "Use suggested target", which saves the suggestion again with a burst.
+- "Edit" -> sheet "Edit next target" with weight and reps -> "Save changes" (weight above 0, reps inside the range) -> status "Edited"; a "Suggested" line stays for comparison, and "Use suggested target" goes back ([SessionDetailView.swift:347](Unit/Features/History/SessionDetailView.swift:347)).
+- Back arrow without deciding -> the saved targets stay; the next workout starts from them.
+- Next workout -> set 1 of that exercise prefills the saved target ([ActiveWorkoutView.swift:1254](Unit/Features/Today/ActiveWorkoutView.swift:1254)); Today row shows "3 × 9 at 60 kg"; Analytics shows "Next 60 kg × 9".
 - History -> open that workout -> same block with the decision and its evidence.
 
 **Saved data**
@@ -338,11 +338,11 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Edge cases**
 - Ready-made programs: only Combat Power defines ranges (10 of 245 catalog items). Since 2026-10-23 every other program gives weighted lifts the standard rule at import (program reps to +2, then +2.5 kg / 2 kg dumbbells / 5 lb); bodyweight, timed or 20+ rep work and 5/3/1 percentage sets get none ([ProgramImporter.swift:165](Unit/Data/ProgramImporter.swift:165)) -> Med -> yes.
 - Sets, rep range or weight step changed in the target sheet after accepting -> the accepted weight is kept and reps clamp into the new range (fixed 2026-10-23; it used to be dropped silently) ([DayTemplate.swift:377](Unit/Models/DayTemplate.swift:377)) -> Low -> yes.
-- Suggestion ignored -> shown nowhere else; after the next workout of this routine it can no longer be accepted ([SessionDetailView.swift:582](Unit/Features/History/SessionDetailView.swift:582)) -> Med -> partial.
+- Summary skipped -> nothing lost: Finish already saved the suggestion (2026-10-24). After the next workout of this routine the old block can no longer be changed ([SessionDetailView.swift:589](Unit/Features/History/SessionDetailView.swift:589)) -> Med -> yes.
 - Bodyweight-only exercises never get a suggestion -> Med -> no (by design today).
 - One back-off set at another weight -> no suggestion for the whole exercise -> Med -> no.
 - Skipped exercise with progression on -> listed as "No automatic target. Some sets are unfinished." -> Low -> partial.
-- No-target blocks say "Set a target next workout." but have no Edit button ([SessionDetailView.swift:204](Unit/Features/History/SessionDetailView.swift:204)) -> Med -> no.
+- No-target blocks (weights varied, sets unfinished, no target available) have Edit since 2026-10-24, starting from the previous target ([SessionDetailView.swift:58](Unit/Features/History/SessionDetailView.swift:58)) -> Med -> yes.
 - Edit sheet: reps outside the range keep "Save changes" grey, with no message ([SessionDetailView.swift:673](Unit/Features/History/SessionDetailView.swift:673)) -> Low -> no.
 - First evaluated workout shows a "Previous target" the lifter never set (start reps + first set weight) -> Low -> no.
 - Rule changed after the workout -> that old block shows no buttons -> Low -> yes.

@@ -7,6 +7,20 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Founder override: next targets apply at Finish
+
+Efe chose this in the progression-loop session, after benchmark 4 (`docs/research/2026-10-24-benchmarks/4-exercise-done-summary.md`) and persona panel round 2.
+
+- **Next targets apply at Finish.** Finishing a workout saves every suggested next target to the routine. The summary shows each as "Saved", with "Keep previous target" (then "Use suggested target") and "Edit". Why: lifters who skipped the summary lost their suggestions (about 3 of 5 per persona segment), and Efe wants the next workout to move forward by itself. Supersedes 2026-08-03 "Nothing changes automatically", the "accept or edit it" step of 2026-08-12 and the compass line "never changes a routine before acceptance". Still true: opt-in per exercise, evaluated after the workout, reason shown, no deloads, nothing changes during a set.
+- **Set 1 prefill:** saved target, then set 1 of this routine's last workout with the lift, then set 1 of the last workout in any routine, then the routine's starting target. Set 2 and later still copy the set just logged. "Last time" on row N shows set N of that same workout. Refines the "latest completed session" step of 2026-08-04, which used the last set of the newest workout from any routine, often the weakest.
+- **Finish dialog removed.** "Update routine with today's weights?" wrote the routine's planned numbers, which the next workout never reads once a lift has history.
+- **Summary.** Blocks without a suggestion (weights varied, sets unfinished) get Edit. A repeated target names the short sets ("Set 3: 6 of 8 reps. Keep this target."). Going back to the previous target plays no burst.
+- **Done card:** "Next time: 3 × 8 at 62.5 kg · +2.5 kg", the same-set wording as Today and History.
+- **Analytics:** no new event. A target saved at Finish sends no decision event; "Keep previous target", "Edit" and "Use suggested target" send `progressionDecision` (repeat, edit, accept). Read accept counts as returns to the suggestion, not as approvals.
+- **Copy:** the website FAQ and compare pages, the App Review notes (`docs/app-store-copy.md`), CLAUDE.md, PRODUCT.md principle 2, goals, scope, compass and flow docs now say targets are saved at Finish. The App Review note ships in the same upload as the build with this change; the frozen listing lines stay true and unchanged.
+- **Not changed:** lifts pasted with fixed reps ("3x8") still have no rule, so they never move up by themselves.
+- **Undo:** remove the `applySuggestedTargets` calls in `ActiveWorkoutView.finishWorkout` and `TodayView.saveStaleSession`; the summary then falls back to "Save for next workout".
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

@@ -25,7 +25,7 @@ Other source-of-truth docs:
 - **Gym Test**: one-handed, sweaty, ≤ 3 seconds to log a set.
 - **Last time** values (pre-fill from last session; formerly "ghost values", still `metricIsGhost` in code) are the primary logging mechanism.
 - **Templates** are the program unit — not cycles, not weeks, not engines.
-- **Local-first, light-only, quiet UI.** The recorded two-second black onboarding opener is a transition, not dark mode. No social or feeds. Progression guidance is opt-in, transparent, post-workout, and never mutates a routine without acceptance.
+- **Local-first, light-only, quiet UI.** The recorded two-second black onboarding opener is a transition, not dark mode. No social or feeds. Progression is opt-in and transparent: the next target is saved when the workout is finished, never during it, and the summary offers Keep previous target and Edit.
 
 ---
 

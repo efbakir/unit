@@ -6,7 +6,7 @@
 
 - **Keep the primary promise:** Log each set in seconds.
 - **Strengthen the second-order value:** Finish the workout knowing the next small progression step.
-- **Progression boundary:** One opt-in double-progression suggestion, shown after the workout, explained, editable, and never applied without acceptance.
+- **Progression boundary:** One opt-in double-progression suggestion, shown after the workout, explained, saved at Finish, and one tap to keep the previous target or edit.
 - **Later trust work:** Clean export and explicit Apple Health sync.
 - **Not Unit's wedge:** Stretch recommendations, cardio programming, social features, or exercise discovery.
 
@@ -16,7 +16,7 @@
 |---|---|---|---|
 | **Now** | “What should I do next time?” requires thought | Transparent post-workout double-progression suggestion | v2.1 |
 | **Now** | Previous performance is hard to use mid-workout | Last time or accepted-target prefill | v2.1 |
-| **Guardrail** | Suggested loads can be confusing or impossible | User-defined increment, clear units, edit before acceptance | v2.1 quality |
+| **Guardrail** | Suggested loads can be confusing or impossible | User-defined increment, clear units, Edit or Keep previous target on the summary | v2.1 quality |
 | **Later** | Export and sync exist but are not trustworthy | Clear boundaries, status, and usable output | Later |
 | **No new scope** | Users want stretches matched to a plan | Custom exercises cover self-added mobility | Existing capability |
 
@@ -46,7 +46,7 @@
 
 - The athlete defines the increment per routine and exercise.
 - Label weight and increment units clearly enough to prevent total-versus-per-hand mistakes.
-- Let the athlete edit the proposed target before acceptance.
+- Let the athlete edit the saved target, or keep the previous one, on the summary.
 - Do not add an equipment inventory or plate calculator in v2.1.
 
 **Research check:** Test dumbbell exercises specifically. Add a loading-type model only if users still create infeasible targets despite clear configuration.

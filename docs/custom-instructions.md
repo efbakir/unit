@@ -30,7 +30,7 @@ Apply the most specific source: `docs/pricing.md` for access and paywall questio
 - First-run onboarding has exactly two program-entry paths: **text-paste import** and **starter program library**. Manual template editing remains available after onboarding. Manual-builder and redo-from-history are not first-run paths.
 - Onboarding may assign templates to weekdays or choose flexible rotation. Scheduling helps Today choose a routine; it does not turn templates into a calendar, cycle, or rigid weekly program. History is a chronological list, not a calendar view.
 - Unit has a **non-dismissible hard paywall after onboarding**. Onboarding is free so the user can build and review a program; post-onboarding app access requires an active purchase or entitlement. Eligible Monthly or Yearly customers may receive the StoreKit introductory trial defined in `docs/pricing.md`. There is no permanent free core.
-- Version 2.1 adds one **opt-in double-progression** rule per routine/exercise. It evaluates completed working sets after the workout, explains the smallest next target, allows edit or dismissal, and changes nothing until explicit acceptance. An accepted target may prefill the next matching workout.
+- Version 2.1 adds one **opt-in double-progression** rule per routine/exercise. It evaluates completed working sets after the workout, explains the smallest next target, and saves it when the workout is finished; the summary offers Keep previous target and Edit. The saved target prefills the next matching workout.
 
 ## Explicitly rejected directions
 

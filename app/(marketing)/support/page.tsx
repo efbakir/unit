@@ -49,11 +49,11 @@ export default function SupportPage() {
           />
           <FAQItem
             question="How do I see what I logged last time?"
-            answer="When you start an exercise, Unit first shows any target you accepted for that routine and exercise. Otherwise, it uses your latest completed set or saved starting values. Tap Done to log it, or adjust before you tap."
+            answer="When you start an exercise, Unit first shows the next target saved for that routine and exercise. Otherwise, it uses your first set from last time, or your saved starting values. Tap Done to log it, or adjust before you tap."
           />
           <FAQItem
             question="How does Unit choose my next target?"
-            answer="For an exercise with progressive overload enabled, Unit checks the completed working sets after your workout. Reaching the top of the rep range on every set suggests your chosen weight increase. Otherwise, Unit suggests building reps or repeating. Nothing changes until you accept it."
+            answer="For an exercise with progressive overload enabled, Unit checks the completed working sets after your workout. Reaching the top of the rep range on every set adds your chosen weight increase. Otherwise, Unit builds reps or repeats the target. The new target is saved when you finish, and the workout summary lets you keep the previous one or edit it."
           />
           <FAQItem
             question="Can I change my program after setup?"

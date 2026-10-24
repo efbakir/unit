@@ -47,8 +47,8 @@
 - PR detection and notification
 - Current access model follows `docs/pricing.md`: onboarding is free; post-onboarding app access is gated
 - Opt-in double progression per routine/exercise
-- Post-workout next-target suggestions with explanation, edit, and explicit acceptance
-- Accepted-target prefill before the global Last time fallback
+- Post-workout next targets with explanation, saved at Finish, with Keep previous target and Edit
+- Saved-target prefill before Last time (set 1 of this routine's last workout, then any routine's)
 
 **Does not ship:**
 - Legacy ProgressionEngine behavior (cycles, fail modes, deloads, periodisation)

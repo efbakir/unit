@@ -23,7 +23,7 @@
 - Haptic confirmation on set logged
 - PR detection + notification
 - Opt-in double progression configured per routine/exercise
-- Post-workout suggestions that require acceptance and prefill the next matching workout
+- Post-workout next targets saved at Finish (Keep previous target and Edit on the summary) that prefill the next matching workout
 
 ## v2.1 does not ship (from `docs/goals.md` + compass decisions)
 

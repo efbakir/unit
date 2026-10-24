@@ -48,7 +48,7 @@ The shared failure mode across all four is **decoration that pretends to be util
 Strategic principles that should guide every product and design decision. Visual rules live in DESIGN.md — these are about *posture*, not paint.
 
 1. **Speed is the feature.** Every decision is judged against *seconds per set logged under fatigue*. A faster path beats a smarter path. A shorter screen beats a more informative one.
-2. **Transparent suggestions, final control.** Surface what the lifter did last time, then offer the smallest next-session change when they explicitly configure double progression. Explain the calculation, require acceptance, and never rewrite the program automatically.
+2. **Transparent targets, final say.** Surface what the lifter did last time, then save the smallest next-session change when they explicitly configure double progression. Explain the calculation, save it when the workout is finished, and keep the previous target or an edit one tap away.
 3. **Invisible UI.** The best interaction is one the user doesn't notice. Anticipate (auto-fill, auto-timer, haptic confirm) instead of interrogating (confirmations, dialogs, "are you sure?"). The hot loop has no friction.
 4. **Local trust.** Data lives on-device. The app works in airplane mode, in basement gyms, in elevators. No account required, no cloud dependency at v1, no telemetry that gates core function.
 5. **Earn attention through utility.** No social pressure, no streaks, no engagement gamification, no notifications that aren't directly useful (PR detected, rest finished). The product earns its dock spot every day by being faster than paper — not by guilt-tripping the user back in.

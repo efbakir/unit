@@ -31,7 +31,7 @@ const faqs = [
   {
     question: "How does progressive overload work in Unit?",
     answer:
-      "Choose a rep range and your smallest available weight increase for an exercise. If every working set reaches the top of the range, Unit suggests adding weight. Otherwise, it suggests building reps or repeating the target. Nothing changes until you accept it.",
+      "Choose a rep range and your smallest available weight increase for an exercise. If every working set reaches the top of the range, the next target adds weight. Otherwise, it builds reps or repeats the target. The new target is saved when you finish your workout, and you can keep the previous one or edit it.",
   },
   {
     question: "How does Unit fill in my numbers?",

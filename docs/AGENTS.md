@@ -36,7 +36,7 @@ Unit is a **zero-friction, progression-guided gym logging tool** for beginner-to
 | **"No history yet"** | Shown only when no accepted target, valid prior session, or explicit starting value exists. Fields are empty; user fills in manually. | Not "0 kg". Never show 0 as a default. |
 | **Rest timer** | Auto-starts on "Done" tap. Visible on Lock Screen and Dynamic Island. | Not optional / hidden. |
 | **Cycles** | Retired legacy container; out of scope for v2.1. | Templates are the program unit. Do not restore week/cycle UI. |
-| **DoubleProgressionEngine** | One pure, deterministic v2.1 calculator. It evaluates completed working sets and proposes the smallest next target after a workout. | Not the old cycle/failure/deload engine. It never mutates a routine before acceptance. |
+| **DoubleProgressionEngine** | One pure, deterministic v2.1 calculator. It evaluates completed working sets and proposes the smallest next target after a workout. | Not the old cycle/failure/deload engine. It never changes a routine during a workout; Finish saves its result and the summary can undo it. |
 | **Schedule** | Optional weekday assignment or flexible rotation that helps Today choose the next template. Editable after onboarding. | Not a cycle, mandatory calendar, or rigid program container. History remains list-only. |
 
 ---

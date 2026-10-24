@@ -53,7 +53,7 @@ People often default to the Notes app or a paper notebook because every tracker 
 |----|-------|
 | Speak directly: "Log a set. One tap." | Hype: "Revolutionary AI-powered training" |
 | Be specific: "Under 3 seconds" | Be vague: "Fast and easy" |
-| Preserve control: "See the next target. Accept or edit it." | Patronise: "We'll tell you what's best" |
+| Preserve control: "See the next target and why. Change it in one tap." | Patronise: "We'll tell you what's best" |
 | Name the problem: "Your tracker is slower than paper" | Attack competitors by name on the site |
 | Keep it short. Every word earns its place. | Write paragraphs where a sentence will do |
 

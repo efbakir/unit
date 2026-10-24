@@ -70,7 +70,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
     whenCompetitor:
       "If you want a deep stats screen with charts, body measurements, and cross-device sync that updates between phone and tablet, Strong is well-built and widely supported. It is the right choice if you like a richer dashboard and you do not mind making an account.",
     whenUnit:
-      "Pick Unit if you want the log and the next decision in one quiet flow. Paste your program or choose a ready-made match, log each set in one tap, then accept or edit one transparent target for next time.",
+      "Pick Unit if you want the log and the next decision in one quiet flow. Paste your program or choose a ready-made match, log each set in one tap, then see one transparent target for next time, with its reason.",
     closing:
       "Unit is the calmer Strong alternative for lifters who want fast logging and one clear next step.",
   },
@@ -96,7 +96,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
       },
       {
         feature: "Next target",
-        unit: "One post-workout suggestion that changes nothing until you accept it.",
+        unit: "One post-workout target with its reason, saved for you and easy to undo.",
         competitor: "History, charts, and routine tools support your own progression choices.",
       },
       {
@@ -149,7 +149,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
       },
       {
         feature: "Next target",
-        unit: "One post-workout suggestion with a visible reason and explicit acceptance.",
+        unit: "One post-workout target with a visible reason and one-tap undo.",
         competitor: "Plans, logs, and reports support broader training decisions.",
       },
       {
@@ -166,7 +166,7 @@ export const compareSlugs: Record<string, CompareSlug> = {
     whenCompetitor:
       "If you want exercise images, animations, and a deep library you can browse on the gym floor, Jefit has spent years building that. It is the right tool for a lifter who wants a coach-like reference inside the same app.",
     whenUnit:
-      "Pick Unit if you want fast logging and a smaller next decision. No account, no ads, and no automatic program changes. One target appears after the workout and waits for your approval.",
+      "Pick Unit if you want fast logging and a smaller next decision. No account and no ads. One target appears after the workout, with its reason, and you can change it in one tap.",
     closing:
       "Unit is the quieter Jefit alternative for one-tap logging and transparent next targets.",
   },

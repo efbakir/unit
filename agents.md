@@ -55,7 +55,7 @@ The **Gym Test** applies: logging a set (weight, reps) in **under 3 seconds** un
 - **Adaptive appearance via tokens only.** Use `AppColor` / `AppFont` / `AppSpacing` / `AppRadius` / `AppIcon` from `Unit/UI/DesignSystem.swift`. No raw `Color(...)`, hex literals, `.font(.system(...))`, or hardcoded paddings/radii in feature code. The harness PreToolUse hook (`.claude/hooks/ui-banned-list.sh`) enforces this mechanically.
 - **Reuse > extend > create.** Before any new `struct X: View` / `ViewModifier` / variant, grep `DesignSystem.swift` and run the [`/component-reuse-check`](.claude/skills/component-reuse-check/) skill. Parallel implementations are the #1 drift in this codebase.
 - **HIG compliance:** all interactive elements ≥ 44×44pt; never color alone for meaning; honor `accessibilityReduceMotion`.
-- **No social features, no exercise discovery feed, or progression controls in the active logging flow.** Suggestions appear only after the exercise or workout and require acceptance.
+- **No social features, no exercise discovery feed, or progression controls in the active logging flow.** Suggestions appear only after the exercise or workout; Finish saves them, and the summary offers Keep previous target and Edit.
 
 ## Conventions
 
