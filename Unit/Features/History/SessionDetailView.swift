@@ -2,7 +2,7 @@
 //  SessionDetailView.swift
 //  Unit
 //
-//  Read-only session detail grouped by exercise.
+//  Session detail grouped by exercise. The pencil opens Edit workout.
 //
 
 import SwiftUI
@@ -38,6 +38,9 @@ struct SessionDetailView: View {
     @State private var editingRepsText = ""
     @FocusState private var editingTargetField: String?
     @State private var didTrackRecommendations = false
+    @State private var showsEditWorkout = false
+    /// Set just before the workout is deleted, so the screen never reads it again.
+    @State private var isDeleted = false
 
     private struct ProgressionRecommendationRow: Identifiable {
         let exerciseID: UUID
@@ -53,35 +56,12 @@ struct SessionDetailView: View {
     }
 
     private var exerciseSnapshots: [SessionExerciseSnapshot] {
-        let prIDs = PRHistory.prSetEntryIDs(in: allSessions)
-        let templateOrder = templates.first(where: { $0.id == session.templateId })?.orderedExerciseIds ?? []
-        let orderByID = exerciseOrderIndex(for: templateOrder)
-        let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
-        return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
-            guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
-            let sortedEntries = entries.sorted { $0.setIndex < $1.setIndex }
-            let sets = sortedEntries.map { entry in
-                SessionSetSnapshot(
-                    id: entry.id,
-                    setIndex: entry.setIndex,
-                    actualWeight: entry.weight,
-                    actualReps: entry.reps,
-                    note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines),
-                    isPR: prIDs.contains(entry.id)
-                )
-            }
-            return SessionExerciseSnapshot(
-                id: exerciseID,
-                name: exercise.displayName,
-                isBodyweight: exercise.isBodyweight,
-                sets: sets
-            )
-        }
-        .sorted { lhs, rhs in
-            let left = orderByID[lhs.id] ?? Int.max
-            let right = orderByID[rhs.id] ?? Int.max
-            return left == right ? lhs.name < rhs.name : left < right
-        }
+        makeSessionDetailExerciseSnapshots(
+            for: session,
+            exercises: exercises,
+            templates: templates,
+            prSetEntryIDs: PRHistory.prSetEntryIDs(in: allSessions)
+        )
     }
 
     private var progressionTemplate: DayTemplate? {
@@ -111,6 +91,15 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
+        if isDeleted {
+            // The workout is gone; nothing here may read it while the screen leaves.
+            AppScreen(showsNativeNavigationBar: true) { EmptyView() }
+        } else {
+            detailContent
+        }
+    }
+
+    private var detailContent: some View {
         AppScreen(
             showsNativeNavigationBar: true
         ) {
@@ -167,8 +156,25 @@ struct SessionDetailView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Same entry as Programs > Edit program.
+            ToolbarItem(placement: .topBarTrailing) {
+                Group {
+                    Button { showsEditWorkout = true } label: {
+                        Label(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName)
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityLabel(AppCopy.History.editWorkout)
+                    .accessibilityIdentifier("edit-workout")
+                }
+                .tint(AppColor.textPrimary)
+            }
+        }
         .appNavigationBarChrome()
         .toolbar(.hidden, for: .tabBar)
+        .navigationDestination(isPresented: $showsEditWorkout) {
+            EditWorkoutView(session: session, onDeleteWorkout: deleteWorkout)
+        }
         .overlay { AppCelebration(moment: completionMoment) }
         .appToast(event: editingRecommendationID == nil ? $toastMessage : .constant(nil))
         .sheet(
@@ -587,17 +593,26 @@ struct SessionDetailView: View {
     }
 
     private func hasNewerCompletedSession(for exerciseID: UUID) -> Bool {
-        allSessions.contains { candidate in
-            candidate.id != session.id
-                && candidate.templateId == session.templateId
-                && candidate.isCompleted
-                && candidate.date > session.date
-                && candidate.setEntries.contains(where: {
-                    $0.exerciseId == exerciseID
-                        && $0.isCompleted
-                        && !$0.isWarmup
-                })
+        session.hasNewerCompletedWorkout(for: exerciseID, in: allSessions)
+    }
+
+    /// Edit workout calls this after its confirm. The screen stops reading
+    /// the workout first, then deletes it and leaves (with Edit workout on
+    /// top). False when the save failed and nothing was deleted.
+    private func deleteWorkout() -> Bool {
+        isDeleted = true
+        let context = PastWorkoutEditor.Context(
+            modelContext: modelContext,
+            sessions: allSessions,
+            templates: templates,
+            exercises: exercises
+        )
+        guard PastWorkoutEditor.deleteWorkout(session, context) else {
+            isDeleted = false
+            return false
         }
+        dismiss()
+        return true
     }
 
     private func statusText(_ record: SessionProgressionRecord) -> String {

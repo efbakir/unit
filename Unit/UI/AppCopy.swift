@@ -133,6 +133,13 @@ enum AppCopy {
             return "Weight (\(unitSystem))"
         }
 
+        /// Row title beside a field that already shows the unit.
+        static func weightTitle(isBodyweight: Bool) -> String {
+            isBodyweight ? "Added weight" : "Weight"
+        }
+        /// Unit beside the reps field in Edit set.
+        static let repsUnit = "reps"
+
         /// Field caption above the reps input in `AdjustResultSheet`. Tokenized
         /// alongside `weightLabel` so all set-entry copy lives in one place
         /// instead of split between the design system and the view.
@@ -151,6 +158,8 @@ enum AppCopy {
         static let saveChanges = "Save changes"
         /// Destructive secondary in edit mode — removes the logged set.
         static let deleteSet = "Delete set"
+        /// Edit workout menu action that opens a logged set's weight and reps.
+        static let editSetAction = "Edit set"
         /// Prefix for the PR milestone delta line. Pairs with a kg×rep token (`Beat 145 kg × 8`).
         static func priorBest(_ priorBestText: String) -> String { "Beat \(priorBestText)" }
 
@@ -287,6 +296,20 @@ enum AppCopy {
     enum History {
         /// Neutral label for routines scheduled earlier in the week that are still available to do.
         static let earlierThisWeek = "Earlier this week"
+
+        /// Edit workout: correct or remove what was logged after Finish.
+        static let editWorkout = "Edit workout"
+        static let deleteWorkout = "Delete workout"
+        static let deleteWorkoutMessage = "Removes this workout from History, PRs and Analytics. Can't be undone."
+        /// Shown in Edit workout when a next target was saved from it: editing
+        /// a logged set never changes a target the lifter saved.
+        static let savedTargetsStay = "Next targets you saved stay the same."
+        static let setRemoved = "Set removed"
+        static let noLoggedSets = "No logged sets"
+        static let setSaveFailedTitle = "Couldn't save set"
+        static let setSaveFailedMessage = "Your changes are still here. Try saving again."
+        static let saveFailed = "Couldn't save. Your workout is unchanged. Try again."
+        static let invalidSetValues = "Enter a valid weight and reps."
     }
 
     /// Settings > Data: export, backup and import of workout history.

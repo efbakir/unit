@@ -636,6 +636,43 @@ func makeHistorySessionSnapshot(
     )
 }
 
+/// Every logged set of one workout, grouped by exercise in routine order,
+/// warm-ups included. Workout detail and Edit workout show the same list.
+func makeSessionDetailExerciseSnapshots(
+    for session: WorkoutSession,
+    exercises: [Exercise],
+    templates: [DayTemplate],
+    prSetEntryIDs: Set<UUID>
+) -> [SessionExerciseSnapshot] {
+    let templateOrder = templates.first(where: { $0.id == session.templateId })?.orderedExerciseIds ?? []
+    let orderByID = exerciseOrderIndex(for: templateOrder)
+    let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
+    return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
+        guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
+        let sets = entries.sorted { $0.setIndex < $1.setIndex }.map { entry in
+            SessionSetSnapshot(
+                id: entry.id,
+                setIndex: entry.setIndex,
+                actualWeight: entry.weight,
+                actualReps: entry.reps,
+                note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines),
+                isPR: prSetEntryIDs.contains(entry.id)
+            )
+        }
+        return SessionExerciseSnapshot(
+            id: exerciseID,
+            name: exercise.displayName,
+            isBodyweight: exercise.isBodyweight,
+            sets: sets
+        )
+    }
+    .sorted { lhs, rhs in
+        let left = orderByID[lhs.id] ?? Int.max
+        let right = orderByID[rhs.id] ?? Int.max
+        return left == right ? lhs.name < rhs.name : left < right
+    }
+}
+
 extension RecentSessionsView {
     init(showsCloseButton: Bool = true, initialMode: SessionHistoryMode = .list) {
         self.showsCloseButton = showsCloseButton
@@ -750,6 +787,14 @@ private struct SessionSummaryCard: View {
 
 struct SessionExerciseSummary: View {
     let exercise: SessionExerciseSnapshot
+    /// Edit workout passes both: every set gets its own row with a native
+    /// menu, the same edit and remove pair a logged set has in a live workout.
+    var onEditSet: ((SessionSetSnapshot) -> Void)? = nil
+    var onDeleteSet: ((SessionSetSnapshot) -> Void)? = nil
+
+    private var isEditable: Bool {
+        onEditSet != nil && onDeleteSet != nil
+    }
 
     private var areSetsUniform: Bool {
         guard let first = exercise.sets.first else { return true }
@@ -763,11 +808,11 @@ struct SessionExerciseSummary: View {
     }
 
     private var showsPerSetBreakdown: Bool {
-        !areSetsUniform || hasAnyNote
+        isEditable || !areSetsUniform || hasAnyNote
     }
 
     private var headerSummary: String? {
-        guard areSetsUniform else { return nil }
+        guard areSetsUniform, !isEditable else { return nil }
         return exercise.previewPerformanceText
     }
 
@@ -789,7 +834,11 @@ struct SessionExerciseSummary: View {
             if showsPerSetBreakdown {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     ForEach(exercise.sets) { set in
-                        setBreakdownRow(for: set)
+                        if let onEditSet, let onDeleteSet {
+                            editableSetRow(for: set, onEdit: onEditSet, onDelete: onDeleteSet)
+                        } else {
+                            setBreakdownRow(for: set)
+                        }
                     }
                 }
             }
@@ -849,6 +898,34 @@ struct SessionExerciseSummary: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
         }
+    }
+
+    /// The same row, opening a native menu. Mirrors `LoggedSetRow`: edit first,
+    /// the destructive remove second.
+    private func editableSetRow(
+        for set: SessionSetSnapshot,
+        onEdit: @escaping (SessionSetSnapshot) -> Void,
+        onDelete: @escaping (SessionSetSnapshot) -> Void
+    ) -> some View {
+        Menu {
+            Button(AppCopy.Workout.editSetAction, systemImage: AppIcon.edit.systemName) { onEdit(set) }
+            Button(AppCopy.Workout.deleteSet, systemImage: AppIcon.trash.systemName, role: .destructive) { onDelete(set) }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                setBreakdownRow(for: set)
+                AppIcon.edit.image(size: 14, weight: .semibold)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .tint(AppColor.textPrimary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(setPositionLabel(for: set)), \(actualText(for: set))")
+        .accessibilityAction(named: AppCopy.Workout.editSetAction) { onEdit(set) }
+        .accessibilityAction(named: AppCopy.Workout.deleteSet) { onDelete(set) }
+        .accessibilityIdentifier("edit-workout-set-\(exercise.name)-\(set.setIndex + 1)")
     }
 
     private func setPositionLabel(for set: SessionSetSnapshot) -> String {

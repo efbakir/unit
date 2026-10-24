@@ -159,17 +159,21 @@ final class WorkoutSession {
     /// Captures each configured exercise once, at the post-workout boundary.
     /// Re-running this method is intentionally a no-op for existing records so
     /// reopening a summary cannot recalculate or duplicate an earlier result.
+    /// `onlyExerciseIDs` limits a recapture to exercises whose logged sets
+    /// were corrected after Finish (Edit workout).
     @MainActor
     @discardableResult
     func captureProgressionRecords(
         template: DayTemplate,
         exercises: [Exercise],
-        evaluatePendingRecommendations: Bool = true
+        evaluatePendingRecommendations: Bool = true,
+        onlyExerciseIDs: Set<UUID>? = nil
     ) -> Bool {
         var records = progressionRecordsByExerciseId
         var didChange = false
 
-        for exerciseID in template.orderedExerciseIds where records[exerciseID] == nil {
+        for exerciseID in template.orderedExerciseIds
+        where records[exerciseID] == nil && onlyExerciseIDs?.contains(exerciseID) != false {
             guard let progressionState = template.progressionState(for: exerciseID),
                   let exercise = exercises.first(where: { $0.id == exerciseID }) else {
                 continue

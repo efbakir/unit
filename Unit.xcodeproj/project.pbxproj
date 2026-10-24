@@ -100,6 +100,10 @@
 		C04A1F20D44C4A33AA558672 /* RestTimerManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */; };
 		TRSTBLD00000000000000001 /* WorkoutCSVExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000001 /* WorkoutCSVExport.swift */; };
 		TRSTBLD00000000000000002 /* WorkoutCSVExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */; };
+		TRSTBLD00000000000000003 /* WorkoutSession+Editing.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000003 /* WorkoutSession+Editing.swift */; };
+		TRSTBLD00000000000000004 /* EditWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000004 /* EditWorkoutView.swift */; };
+		TRSTBLD00000000000000005 /* EditSetSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000005 /* EditSetSheet.swift */; };
+		TRSTBLD00000000000000007 /* PastWorkoutEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -238,6 +242,10 @@
 		C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerManagerTests.swift; sourceTree = "<group>"; };
 		TRSTREF00000000000000001 /* WorkoutCSVExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCSVExport.swift; sourceTree = "<group>"; };
 		TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCSVExportTests.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000003 /* WorkoutSession+Editing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkoutSession+Editing.swift"; sourceTree = "<group>"; };
+		TRSTREF00000000000000004 /* EditWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditWorkoutView.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000005 /* EditSetSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSetSheet.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastWorkoutEditingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -292,6 +300,7 @@
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
 				165569863085B0817806842D /* ProgramImporterTests.swift */,
 				TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */,
+				TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -389,6 +398,7 @@
 				A20000000000000000000004 /* DayTemplate.swift */,
 				A20000000000000000000005 /* WorkoutSession.swift */,
 				A20000000000000000000006 /* SetEntry.swift */,
+				TRSTREF00000000000000003 /* WorkoutSession+Editing.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -441,6 +451,8 @@
 				A2000000000000000000000D /* HistoryView.swift */,
 				A2000000000000000000000E /* SessionDetailView.swift */,
 				CC000000000000000100006 /* ExerciseProgressView.swift */,
+				TRSTREF00000000000000004 /* EditWorkoutView.swift */,
+				TRSTREF00000000000000005 /* EditSetSheet.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -774,6 +786,9 @@
 				SUB100000000000000000002 /* PaywallView.swift in Sources */,
 				1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */,
 				TRSTBLD00000000000000001 /* WorkoutCSVExport.swift in Sources */,
+				TRSTBLD00000000000000003 /* WorkoutSession+Editing.swift in Sources */,
+				TRSTBLD00000000000000004 /* EditWorkoutView.swift in Sources */,
+				TRSTBLD00000000000000005 /* EditSetSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -795,6 +810,7 @@
 				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */,
 				TRSTBLD00000000000000002 /* WorkoutCSVExportTests.swift in Sources */,
+				TRSTBLD00000000000000007 /* PastWorkoutEditingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
