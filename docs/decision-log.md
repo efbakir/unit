@@ -7,6 +7,31 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Yearly badge back to "Save 80%"
+
+- **Decision:** The yearly badge says `Save N%` again, not `Save N% vs weekly`. Founder call on the paywall review.
+- **Why:** Same as 2026-07-13: the long badge overpowered the plan card. The Weekly price sits two rows above, so the comparison stays readable.
+- **Supersedes:** The badge half of the "Paywall price" line in the App Review fixes entry below. The price headline stays.
+- **Effect:** Copy only. Savings math (52 × Weekly) and purchase behavior do not change.
+
+## 2026-10-24 - Anonymous analytics is opt-in
+
+- **Decision:** Analytics are off until the person turns them on. A missing `analytics.enabled` key now means off, so nothing is sent at launch.
+- **Where:** The opt-in switch is on setup step 1 and in Settings. The paywall footer shows it only while it is on, so people who opted in (including lapsed subscribers, who cannot reach Settings) can turn it off before paying.
+- **Why:** App Review Guideline 5.1.1(ii) asks for consent "even if such data is considered to be anonymous". A switch that starts on is not consent, and 2.1 is the first paywall Apple reviews.
+- **Cost:** Funnel numbers come only from people who opt in, so the default-plan test (about 300 eligible paywall views per arm) reads later. If the numbers are too thin, the follow-up is a one-time "Share anonymous usage data?" question.
+- **Copy:** Caption "Helps me improve Unit. Never sends exercise names or weights."
+- **Supersedes:** The 2026-08-05 "on by default with a Settings opt-out" and the "Default stays on" line of the App Review fixes entry below.
+- **Undo:** `UnitAnalytics.isEnabled` (missing key), `PaywallView.showsAnalyticsToggle`.
+
+## 2026-10-24 — App Review fixes before the next 2.1 upload
+
+- **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.
+- **Privacy manifest.** Device ID is declared for Analytics, not linked and not used for tracking, next to Product Interaction and Purchase History. Matches the App Store Connect privacy answers. TelemetryDeck is still initialized with its default config, which sends a hashed device identifier.
+- **Analytics switch before purchase.** The same Anonymous analytics setting is on the first setup step and on the paywall footer. Settings still uses it. Default stays on.
+- **Paywall price.** An eligible trial headline is the billed price and the free period in one title line (`$29.99/year after 7 days free`). The yearly badge says `Save 80% vs weekly` (still 52 × Weekly). Free-trial wording still requires that product's own free introductory offer plus StoreKit eligibility for that product.
+- **Build number.** Left at 95. The next archive is 96, cut when the upload is made. This change does not bump `CURRENT_PROJECT_VERSION`.
+
 ## 2026-10-23 — Founder override: paywall defaults and the setup notice
 
 Efe reviewed the persona-panel changes and reverted four of them. The panel's warnings stay on record in `docs/research/2026-10-23-persona-panel.md`.

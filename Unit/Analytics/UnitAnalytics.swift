@@ -302,11 +302,11 @@ final class UnitAnalytics {
     private let appIDProvider: () -> String?
     @MainActor private(set) var isConfigured = false
 
+    /// Opt-in (App Review 5.1.1(ii)): a missing key means the person never
+    /// turned analytics on, so nothing is sent.
     @MainActor
     var isEnabled: Bool {
-        defaults.object(forKey: Self.enabledKey) == nil
-            ? true
-            : defaults.bool(forKey: Self.enabledKey)
+        defaults.bool(forKey: Self.enabledKey)
     }
 
     @MainActor

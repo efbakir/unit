@@ -313,6 +313,11 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
+        // Analytics is opt-in (App Review 5.1.1(ii)): a fresh install shows
+        // the step-1 switch off, so nothing is sent before consent.
+        let analyticsSwitch = app.switches["anonymous-analytics-toggle"]
+        XCTAssertTrue(analyticsSwitch.waitForExistence(timeout: 8), "analytics switch missing on step 1")
+        XCTAssertEqual(analyticsSwitch.value as? String, "0", "analytics must start off on a fresh install")
         tap(button(in: app, containing: AppCopy.Onboarding.methodPasteOption), "import method — paste")
 
         let editor = app.textViews.firstMatch
@@ -359,7 +364,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.staticTexts[AppCopy.Paywall.programReady].waitForExistence(timeout: 20),
             "paywall header missing after commit"
         )
-        let trialHeadline = app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")]
+        let trialHeadline = app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
         let standardHeadline = app.staticTexts[AppCopy.Paywall.standardHeadline]
         XCTAssertTrue(
             trialHeadline.waitForExistence(timeout: 20)
@@ -375,6 +380,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(staticText(in: app, containing: "$29.99/year").exists, "yearly price missing")
 
         app.swipeUp()
+        XCTAssertFalse(
+            app.switches["anonymous-analytics-toggle"].exists,
+            "the paywall shows the analytics switch only while analytics is on"
+        )
         let restorePurchases = app.buttons["Restore Purchases"]
         XCTAssertTrue(
             restorePurchases.waitForExistence(timeout: 8),
@@ -498,7 +507,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")]
+            app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
                 .waitForExistence(timeout: 20),
             "eligible trial headline missing"
         )
@@ -647,7 +656,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         openPurchasePage(in: app)
         let trialCTA = button(in: app, containing: AppCopy.Paywall.startFreeTrial)
         tap(trialCTA, "trial CTA", timeout: 20)
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].exists)
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].exists)
         XCTAssertTrue(trialCTA.isEnabled, "cancelled purchase did not reset the CTA")
 
         app.terminate()
@@ -661,7 +670,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(button(in: app, containing: AppCopy.Paywall.startFreeTrial), "unverified trial CTA", timeout: 20)
         XCTAssertTrue(app.alerts["Something went wrong"].waitForExistence(timeout: 5))
         tap(app.alerts["Something went wrong"].buttons["OK"], "dismiss verification error")
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].exists)
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].exists)
         XCTAssertFalse(app.tabBars.buttons["Today"].exists)
     }
 
@@ -805,7 +814,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Subscribe to continue"].isEnabled)
         tap(app.buttons["Try again"], "product-load retry")
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")]
+            app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
                 .waitForExistence(timeout: 20),
             "product retry did not recover"
         )
@@ -839,7 +848,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.windows.firstMatch.frame.width > 390,
             "Compact-layout check: run on the iPhone SE (or Unit Logging Compact) destination."
         )
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].waitForExistence(timeout: 20))
         openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         positionFeatureTableForScreenshot(in: app, requiresLastRow: true)
@@ -855,7 +864,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             ]
         )
         app.launch()
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline("7 days")].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].waitForExistence(timeout: 20))
         openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         positionFeatureTableForScreenshot(in: app, requiresLastRow: false)

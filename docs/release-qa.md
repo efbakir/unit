@@ -136,18 +136,23 @@ StoreKit Configuration → select `Unit.storekit`.**
 Walk this on a fresh install, from Xcode (⌘R), on **iPhone SE (3rd gen)**, a regular iPhone, and
 a **Pro Max**, at default Dynamic Type and one AX size:
 
-- [ ] Complete onboarding (paste a routine OR pick a starter program → schedule → preview →
-      **Save my program**). The app saves the program and lands on **PaywallView**, not the tabs.
+- [ ] Complete onboarding (paste a routine OR pick a starter program → review →
+      **Save program**). The app saves the program and lands on **PaywallView**, not the tabs.
+      The first setup step shows **Anonymous analytics**, off on a fresh install. The paywall
+      footer shows it only if it was turned on. Turning it on or off matches Settings after purchase.
 - [ ] Paywall shows **Weekly / Monthly / Yearly** with real prices ($2.99/week, $4.99/month,
       $29.99/year — ladder authority: `docs/pricing.md`). An eligible new customer defaults to
-      Monthly and sees the verified seven-day offer on Monthly/Yearly; an ineligible customer
-      defaults to Weekly and sees no trial claims. Lifetime ($44.99) appears only if returned by
-      StoreKit.
+      Yearly and sees the verified seven-day offer only on products StoreKit marks eligible
+      (Yearly `com.unit.annual` has the 1-week free offer). The trial headline includes the
+      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80%**.
+      An ineligible customer defaults to Weekly and sees no trial claims. Lifetime ($44.99) appears
+      only if returned by StoreKit.
 - [ ] No clipped tier card; no CTA below the fold (CTA is pinned, body scrolls). The legal footer
       (**Restore Purchases · Terms of Service · Privacy Policy**) is reachable by scrolling even
       while the CTA is disabled.
-- [ ] Tap **Continue with Weekly** → complete the StoreKit test purchase → the app enters the main
-      tabs (unlock). Re-launch → still unlocked.
+- [ ] On an eligible sandbox account, Yearly is selected. Tap **Start free trial** → complete the
+      StoreKit test purchase → the app enters the main tabs (unlock). Re-launch → still unlocked.
+      On an ineligible account, Weekly is selected and the button reads **Subscribe for $2.99/week**.
 - [ ] Delete + reinstall → **Restore Purchases** re-unlocks. With no purchase, Restore shows
       "No purchases to restore."
 - [ ] Force a load failure (delete the products from the config, or Editor → StoreKit → fail

@@ -47,7 +47,7 @@ Pattern: **benefit first, product second, CTA third.** The benefit is a felt out
 
 | Mechanic | How it maps |
 |---|---|
-| One hook template, ground daily | Build Unit's equivalent: `[gym outcome]. [log it] with Unit. [CTA].` e.g. "Never lose your numbers again. Unit remembers your last set. Free on the App Store." Find the line that works, then grind it. |
+| One hook template, ground daily | Build Unit's equivalent: `[gym outcome]. [log it] with Unit. [CTA].` e.g. "Never lose your numbers again. Unit remembers your last set. Free to try on the App Store, subscription after setup." Find the line that works, then grind it. |
 | Benefit-first, product-second | His outcomes are felt states. Unit's: "log a set without looking", "your last weights, already filled in", "the notebook that survives sweat". Lead with the feeling, not "ghost values" / "templates". |
 | Short — median 11s | Unit reels should be 8-15s. The current `tiktok-ig.md` tradesman format (50-60s) is long by this evidence. Test a sub-15s cut. |
 | Trending audio on swings | Validates noah tip 6 (trends as the net). Use trending sound on demo reels; keep brand voice in the on-screen hook, not a meme voiceover. |
@@ -65,7 +65,7 @@ But two cautions before Unit copies it:
 1. The CTA didn't *cause* 11.3M views — trending audio + a mass-appeal hook ("focus") + the algorithm lottery did. The CTA *converted* that reach into installs. Unit is a niche gym tool; the same CTA on smaller reach yields proportionally smaller installs. Don't expect the CTA to manufacture reach.
 2. "Comment X to get the app" brushes Unit's calm, no-gimmick voice (PRODUCT.md). Bingen's brand tolerates it; Unit's is explicitly anti-hype.
 
-**Recommendation:** scoped test, not a doc rewrite. Run the auto-DM CTA on 5-10 Unit reels, measure install lift vs "Free on the App Store / link in bio", and keep the wording plain ("comment 'Unit' and I'll send the link") rather than hypey. If it lifts installs without feeling off-brand, amend `anti-patterns.md` to split the two cases via a decision-log entry. Until then, `anti-patterns.md` stands.
+**Recommendation:** scoped test, not a doc rewrite. Run the auto-DM CTA on 5-10 Unit reels, measure install lift vs "Free to try on the App Store, subscription after setup / link in bio", and keep the wording plain ("comment 'Unit' and I'll send the link") rather than hypey. If it lifts installs without feeling off-brand, amend `anti-patterns.md` to split the two cases via a decision-log entry. Until then, `anti-patterns.md` stands.
 
 ## 6. Skip
 

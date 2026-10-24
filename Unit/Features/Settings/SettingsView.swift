@@ -99,7 +99,6 @@ struct SettingsView: View {
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
     @State private var toastMessage: AppToastEvent?
-    @State private var analyticsEnabled = UnitAnalytics.shared.isEnabled
 
     init(showsCloseButton: Bool = true) {
         self.shouldShowCloseButton = showsCloseButton
@@ -208,7 +207,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var preferencesSection: some View {
         SettingsSection(title: "Preferences", contentInset: AppSpacing.sm) {
-            AppDividedList(data: ["Weight unit", "Anonymous analytics"], id: \.self) { row in
+            AppDividedList(data: ["Weight unit", AppCopy.Preferences.anonymousAnalytics], id: \.self) { row in
                 if row == "Weight unit" {
                     AppListRow(title: row) {
                         AppSegmentedControl(
@@ -222,17 +221,9 @@ struct SettingsView: View {
                         )
                     }
                 } else {
-                    AppListRow(title: row) {
-                        Toggle("", isOn: $analyticsEnabled)
-                            .labelsHidden()
-                            .tint(AppColor.accent)
-                            .accessibilityLabel("Anonymous analytics")
-                    }
+                    AnonymousAnalyticsToggle()
                 }
             }
-        }
-        .onChange(of: analyticsEnabled) { _, enabled in
-            UnitAnalytics.shared.setEnabled(enabled)
         }
     }
 
@@ -380,6 +371,33 @@ struct SettingsView: View {
             get: { store.infoMessage != nil },
             set: { if !$0 { store.infoMessage = nil } }
         )
+    }
+}
+
+/// One opt-in switch for the stored analytics setting, shared by setup step 1,
+/// the paywall and Settings so the three places cannot drift. The wrapper
+/// exists only for that shared binding; the row is the canonical `AppListRow`.
+struct AnonymousAnalyticsToggle: View {
+    @State private var isEnabled = UnitAnalytics.shared.isEnabled
+
+    var body: some View {
+        AppListRow(
+            title: AppCopy.Preferences.anonymousAnalytics,
+            subtitle: AppCopy.Preferences.anonymousAnalyticsCaption
+        ) {
+            Toggle("", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(AppColor.accent)
+                .accessibilityLabel(AppCopy.Preferences.anonymousAnalytics)
+                .accessibilityHint(AppCopy.Preferences.anonymousAnalyticsCaption)
+                .accessibilityIdentifier("anonymous-analytics-toggle")
+        }
+        .onAppear {
+            isEnabled = UnitAnalytics.shared.isEnabled
+        }
+        .onChange(of: isEnabled) { _, enabled in
+            UnitAnalytics.shared.setEnabled(enabled)
+        }
     }
 }
 

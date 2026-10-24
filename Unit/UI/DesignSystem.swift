@@ -3349,15 +3349,16 @@ struct AppSelectableTierCard: View {
 
     private var planIdentity: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack(alignment: .center, spacing: AppSpacing.sm) {
-                Text(label)
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textDisabled)
-                    .fixedSize(horizontal: true, vertical: true)
-
-                if let badge {
-                    AppTag(text: badge, style: .accent, layout: .compactCapsule)
-                        .fixedSize(horizontal: true, vertical: true)
+            // A badge too long for the row moves under the plan name
+            // instead of pushing the card wider than the screen.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: AppSpacing.sm) {
+                    planName
+                    planBadge
+                }
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    planName
+                    planBadge
                 }
             }
 
@@ -3372,6 +3373,21 @@ struct AppSelectableTierCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var planName: some View {
+        Text(label)
+            .font(AppFont.sectionHeader.font)
+            .foregroundStyle(isEnabled ? AppColor.textPrimary : AppColor.textDisabled)
+            .fixedSize(horizontal: true, vertical: true)
+    }
+
+    @ViewBuilder
+    private var planBadge: some View {
+        if let badge {
+            AppTag(text: badge, style: .accent, layout: .compactCapsule)
+                .fixedSize(horizontal: true, vertical: true)
+        }
     }
 
     private var priceLabel: some View {

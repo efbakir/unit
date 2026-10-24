@@ -384,12 +384,22 @@ enum AppCopy {
         static let previewCTASaving = "Saving…"
     }
 
+    enum Preferences {
+        static let anonymousAnalytics = "Anonymous analytics"
+        static let anonymousAnalyticsCaption = "Helps me improve Unit. Never sends exercise names or weights."
+    }
+
     /// Paywall copy — marketing surface only. Legal disclosure, renewal
     /// wording, Restore/Terms/Privacy, and failure states are compliance
     /// copy and live in the view untouched by minimal-language passes.
     enum Paywall {
-        static func trialHeadline(_ duration: String) -> String {
-            "Try all of Unit free for \(duration)"
+        /// The billed amount leads, in the same line as the free period, so
+        /// the trial wording cannot outrank the price (App Review 3.1.2).
+        static func trialHeadline(duration: String, billedPrice: String) -> String {
+            "\(billedPrice) after \(duration) free"
+        }
+        static func annualSavings(percent: Int) -> String {
+            "Save \(percent)%"
         }
         static let standardHeadline = "Unlock Unit"
         static func supportingCopy(for goal: String?) -> String {
