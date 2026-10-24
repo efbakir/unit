@@ -387,6 +387,8 @@ enum AppCopy {
     enum Preferences {
         static let anonymousAnalytics = "Anonymous analytics"
         static let anonymousAnalyticsCaption = "Anonymous usage data. Turn off anytime."
+        static let saveToAppleHealth = "Save to Apple Health"
+        static let appleHealthDenied = "Allow Unit in the Apple Health app to save workouts."
     }
 
     /// Paywall copy — marketing surface only. Legal disclosure, renewal

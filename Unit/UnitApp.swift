@@ -40,6 +40,10 @@ struct UnitApp: App {
         self.sharedModelContainer = Self.makeSharedModelContainer()
         UnitAnalytics.shared.configure()
 #if DEBUG
+        if CommandLine.arguments.contains(Self.uiTestingArgument) {
+            if CommandLine.arguments.contains("-ui-testing-health-allow") { HealthWorkoutSync.store = FakeHealthWorkoutStore(allowsAccess: true) }
+            if CommandLine.arguments.contains("-ui-testing-health-deny") { HealthWorkoutSync.store = FakeHealthWorkoutStore(allowsAccess: false) }
+        }
         if CommandLine.arguments.contains(Self.uiTestingArgument), CommandLine.arguments.contains("-ui-testing-analytics-r5") {
             do { try ProgressionContractUITestSeeder.seedAnalytics(in: sharedModelContainer.mainContext) }
             catch { Self.logger.error("Analytics UI-test fixture failed: \(String(describing: error), privacy: .public)") }

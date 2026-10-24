@@ -100,6 +100,7 @@ struct SettingsView: View {
     @State private var showingManageSubscriptions = false
     @State private var toastMessage: AppToastEvent?
     @State private var analyticsEnabled = UnitAnalytics.shared.isEnabled
+    @AppStorage(HealthWorkoutPolicy.enabledKey) private var savesToAppleHealth = false
 
     init(showsCloseButton: Bool = true) {
         self.shouldShowCloseButton = showsCloseButton
@@ -208,7 +209,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var preferencesSection: some View {
         SettingsSection(title: "Preferences", contentInset: AppSpacing.sm) {
-            AppDividedList(data: ["Weight unit", AppCopy.Preferences.anonymousAnalytics], id: \.self) { row in
+            AppDividedList(data: preferenceRows, id: \.self) { row in
                 if row == "Weight unit" {
                     AppListRow(title: row) {
                         AppSegmentedControl(
@@ -220,6 +221,14 @@ struct SettingsView: View {
                             label: "Weight unit",
                             title: { $0.rawValue }
                         )
+                    }
+                } else if row == AppCopy.Preferences.saveToAppleHealth {
+                    AppListRow(title: row) {
+                        Toggle("", isOn: $savesToAppleHealth)
+                            .labelsHidden()
+                            .tint(AppColor.accent)
+                            .accessibilityLabel(AppCopy.Preferences.saveToAppleHealth)
+                            .accessibilityIdentifier("settings-apple-health")
                     }
                 } else {
                     AppListRow(title: row) {
@@ -234,6 +243,26 @@ struct SettingsView: View {
         .onChange(of: analyticsEnabled) { _, enabled in
             UnitAnalytics.shared.setEnabled(enabled)
         }
+        .onChange(of: savesToAppleHealth) { _, enabled in
+            guard enabled else { return }
+            Task { await confirmAppleHealthAccess() }
+        }
+        .task {
+            // Access can be removed in the Apple Health app at any time.
+            if savesToAppleHealth && !HealthWorkoutSync.canSave { savesToAppleHealth = false }
+        }
+    }
+
+    private var preferenceRows: [String] {
+        ["Weight unit", AppCopy.Preferences.anonymousAnalytics]
+            + (HealthWorkoutSync.isAvailable ? [AppCopy.Preferences.saveToAppleHealth] : [])
+    }
+
+    /// iOS asks only now, when the lifter turns the switch on.
+    private func confirmAppleHealthAccess() async {
+        guard !(await HealthWorkoutSync.requestAccess()) else { return }
+        savesToAppleHealth = false
+        toastMessage = AppToastEvent(AppCopy.Preferences.appleHealthDenied)
     }
 
     @ViewBuilder

@@ -1035,6 +1035,8 @@ struct ActiveWorkoutView: View {
             )
         }
         guard saveWorkoutChanges() else { return }
+        // Only a live finish has a real end time. Runs in the background.
+        HealthWorkoutSync.saveFinishedWorkout(sessionID: session.id, start: session.date, end: Date())
         clearPreparedTarget()
         exerciseOrderData = Data()
         restTimer.stop()

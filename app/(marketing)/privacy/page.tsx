@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               <li><a href="#data-not-collected">Data I do not collect</a></li>
               <li><a href="#feature-requests">Feature requests</a></li>
               <li><a href="#purchases">Purchases</a></li>
-              <li><a href="#healthkit">HealthKit</a></li>
+              <li><a href="#healthkit">Apple Health</a></li>
               <li><a href="#cookies">Cookies and web tracking</a></li>
               <li><a href="#children">Children&apos;s privacy</a></li>
               <li><a href="#rights">Your rights</a></li>
@@ -152,12 +152,15 @@ export default function PrivacyPage() {
             purchase completed. Purchase records are managed by your Apple ID.
           </p>
 
-          <h2 id="healthkit">HealthKit</h2>
+          <h2 id="healthkit">Apple Health</h2>
           <p>
-            Unit does not currently integrate with Apple HealthKit. If HealthKit
-            integration is added in a future update, this policy will be updated
-            and you will be asked for explicit permission before any health data
-            is accessed.
+            Starting with version 2.2, Unit can save your finished workouts to
+            Apple Health. This stays off until you turn on Save to Apple Health
+            in Settings, and iOS asks for your permission first. Unit saves each
+            workout as strength training with its start and end time. Unit does
+            not read any data from Apple Health, and nothing from Apple Health
+            is sent to me or to anyone else. You can turn this off in Settings,
+            or remove Unit&apos;s access in the Apple Health app, at any time.
           </p>
 
           <h2 id="cookies">Cookies and Web Tracking</h2>

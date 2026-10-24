@@ -176,6 +176,42 @@ final class AnalyticsR5UITests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["analytics-main-Squat"].waitForExistence(timeout: 5))
     }
+    func testSetsPerMuscleListsTheLastFourWeeks() {
+        let app = app(); open(app)
+        XCTAssertTrue(app.buttons["analytics-summary"].waitForExistence(timeout: 10))
+        // Fixture: 11 workouts in 28 days, 3 sets per exercise; Back has 3 exercises.
+        let back = app.descendants(matching: .any)["analytics-muscle-back"]
+        reveal(back, in: app)
+        XCTAssertTrue(app.staticTexts["Sets per muscle · last 4 weeks"].exists)
+        XCTAssertTrue(back.label.contains("99 sets"), back.label)
+        for muscle in ["biceps", "chest", "core", "quads", "shoulders"] {
+            XCTAssertTrue(app.descendants(matching: .any)["analytics-muscle-\(muscle)"].label.contains("33 sets"), muscle)
+        }
+        XCTAssertFalse(app.descendants(matching: .any)["analytics-muscle-other"].exists)
+        capture(app, "analytics-sets-per-muscle")
+    }
+    func testAppleHealthSwitchKeepsOnlyAllowedAccess() {
+        for (flag, allowed) in [("-ui-testing-health-allow", true), ("-ui-testing-health-deny", false)] {
+            let app = app([flag])
+            app.launch()
+            XCTAssertTrue(app.tabBars.buttons["Programs"].waitForExistence(timeout: 20))
+            app.tabBars.buttons["Programs"].tap()
+            XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 8))
+            app.buttons["Settings"].tap()
+            let health = app.switches["settings-apple-health"]
+            XCTAssertTrue(health.waitForExistence(timeout: 8))
+            XCTAssertEqual(health.value as? String, "0", "Off by default")
+            health.tap()
+            if allowed {
+                XCTAssertTrue(NSPredicate(format: "value == '1'").evaluate(with: health))
+            } else {
+                XCTAssertTrue(app.staticTexts[AppCopy.Preferences.appleHealthDenied].waitForExistence(timeout: 5))
+                XCTAssertEqual(health.value as? String, "0")
+            }
+            capture(app, allowed ? "settings-apple-health-on" : "settings-apple-health-denied")
+            app.terminate()
+        }
+    }
     func testMainLiftEditorCancelDiscardsChanges() {
         let app = app(); open(app)
         app.buttons["analytics-edit-main"].tap()
