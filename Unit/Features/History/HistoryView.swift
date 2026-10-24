@@ -152,6 +152,7 @@ private struct CalendarDayCellModel: Identifiable {
 struct RecentSessionsView: View {
     let showsCloseButton: Bool
     let initialMode: SessionHistoryMode
+    let isReadOnly: Bool
 
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
@@ -238,7 +239,7 @@ struct RecentSessionsView: View {
             showsNativeNavigationBar: true
         ) {
             Group {
-                if sessionSnapshots.isEmpty, earlierWeekItems.isEmpty {
+                if sessionSnapshots.isEmpty, isReadOnly || earlierWeekItems.isEmpty {
                     emptyState
                 } else {
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -344,8 +345,9 @@ struct RecentSessionsView: View {
         }
     }
 
+    /// "This week" rows start a workout, so the read-only view leaves them out.
     private var showsMissedInList: Bool {
-        (filter == .all || filter == .missed) && !earlierWeekItems.isEmpty
+        !isReadOnly && (filter == .all || filter == .missed) && !earlierWeekItems.isEmpty
     }
 
     /// Month-bucketed sessions, preserving the descending-date order from `filteredSortedDays`.
@@ -391,7 +393,8 @@ struct RecentSessionsView: View {
                                     NavigationLink {
                                         SessionDetailView(
                                             session: session,
-                                            templateName: snapshot.templateName
+                                            templateName: snapshot.templateName,
+                                            isReadOnly: isReadOnly
                                         )
                                     } label: {
                                         historySessionRow(for: snapshot)
@@ -674,9 +677,16 @@ func makeSessionDetailExerciseSnapshots(
 }
 
 extension RecentSessionsView {
-    init(showsCloseButton: Bool = true, initialMode: SessionHistoryMode = .list) {
+    /// `isReadOnly` is the lapsed-subscriber view opened from the paywall:
+    /// History can be read and exported, but nothing starts or changes.
+    init(
+        showsCloseButton: Bool = true,
+        initialMode: SessionHistoryMode = .list,
+        isReadOnly: Bool = false
+    ) {
         self.showsCloseButton = showsCloseButton
         self.initialMode = initialMode
+        self.isReadOnly = isReadOnly
         _mode = State(initialValue: initialMode)
     }
 }

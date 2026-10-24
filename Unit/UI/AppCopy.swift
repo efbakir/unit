@@ -310,6 +310,9 @@ enum AppCopy {
         static let setSaveFailedMessage = "Your changes are still here. Try saving again."
         static let saveFailed = "Couldn't save. Your workout is unchanged. Try again."
         static let invalidSetValues = "Enter a valid weight and reps."
+
+        /// Paywall footer link for lapsed subscribers: History stays readable.
+        static let viewHistory = "View workout history"
     }
 
     /// Settings > Data: export, backup and import of workout history.

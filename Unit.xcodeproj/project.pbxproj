@@ -103,6 +103,7 @@
 		TRSTBLD00000000000000003 /* WorkoutSession+Editing.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000003 /* WorkoutSession+Editing.swift */; };
 		TRSTBLD00000000000000004 /* EditWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000004 /* EditWorkoutView.swift */; };
 		TRSTBLD00000000000000005 /* EditSetSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000005 /* EditSetSheet.swift */; };
+		TRSTBLD00000000000000006 /* ReadOnlyHistorySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000006 /* ReadOnlyHistorySheet.swift */; };
 		TRSTBLD00000000000000007 /* PastWorkoutEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -245,6 +246,7 @@
 		TRSTREF00000000000000003 /* WorkoutSession+Editing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkoutSession+Editing.swift"; sourceTree = "<group>"; };
 		TRSTREF00000000000000004 /* EditWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditWorkoutView.swift; sourceTree = "<group>"; };
 		TRSTREF00000000000000005 /* EditSetSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSetSheet.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000006 /* ReadOnlyHistorySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadOnlyHistorySheet.swift; sourceTree = "<group>"; };
 		TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastWorkoutEditingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -453,6 +455,7 @@
 				CC000000000000000100006 /* ExerciseProgressView.swift */,
 				TRSTREF00000000000000004 /* EditWorkoutView.swift */,
 				TRSTREF00000000000000005 /* EditSetSheet.swift */,
+				TRSTREF00000000000000006 /* ReadOnlyHistorySheet.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -789,6 +792,7 @@
 				TRSTBLD00000000000000003 /* WorkoutSession+Editing.swift in Sources */,
 				TRSTBLD00000000000000004 /* EditWorkoutView.swift in Sources */,
 				TRSTBLD00000000000000005 /* EditSetSheet.swift in Sources */,
+				TRSTBLD00000000000000006 /* ReadOnlyHistorySheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

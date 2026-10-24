@@ -20,7 +20,9 @@ struct PaywallView: View {
     // the payoff of their onboarding effort, not a generic wall.
     @Query(sort: \Split.name) private var splits: [Split]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
+    @Query(.anyLoggedSet) private var anyLoggedSet: [SetEntry]
     @State private var showingManageSubscriptions = false
+    @State private var showsReadOnlyHistory = false
     @State private var revealSession = AppRevealSession()
     @State private var didTrackView = false
     /// On by default for a trial (2026-10-23): a reminder before the first
@@ -46,6 +48,9 @@ struct PaywallView: View {
         }
         .environment(\.appRevealSession, revealSession)
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
+        .sheet(isPresented: $showsReadOnlyHistory) {
+            ReadOnlyHistorySheet()
+        }
         .task {
             await store.loadProducts()
             trackPaywallViewIfNeeded()
@@ -815,10 +820,28 @@ struct PaywallView: View {
             // The paywall is the only screen a locked or charged-but-locked
             // customer can reach, so support lives here too.
             supportLink
+            historyLink
         }
         .font(AppFont.metadata.font)
         .foregroundStyle(AppColor.textSecondary)
         .frame(maxWidth: .infinity)
+    }
+
+    /// A lapsed subscriber keeps History readable and exportable (founder
+    /// decision 2026-10-24). Shown only when this phone has logged sets, so
+    /// a new install never sees it.
+    @ViewBuilder
+    private var historyLink: some View {
+        if !anyLoggedSet.isEmpty {
+            Button {
+                showsReadOnlyHistory = true
+            } label: {
+                Text(AppCopy.History.viewHistory)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityIdentifier("paywall-view-history")
+        }
     }
 
     private var restoreButton: some View {

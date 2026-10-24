@@ -31,7 +31,7 @@
 - CloudKit sync
 - Social features (feed, public profiles, sharing)
 - Exercise discovery / recommendation
-- Changes to the current post-onboarding access gate (`docs/pricing.md`)
+- Changes to the current post-onboarding access gate (`docs/pricing.md`). One recorded exception: read-only History and export for lapsed subscribers (decision 2026-10-24).
 - 8-week cycles as primary container; "Week N of M" UI
 - Day-N rigid numbering; target-vs-actual weight UI
 - Plate calculator; conditioning days; pricing component on landing
@@ -77,4 +77,4 @@ If the user explicitly overrides ("yes, do it anyway / ignore the rule"), procee
 | Pricing component on landing | Decline. |
 | Conditioning days in imported programs | Filter on import. |
 | CloudKit sync | Local-first only. |
-| Changing the access gate | Preserve the current post-onboarding hard gate; see `docs/pricing.md`. |
+| Changing the access gate | Preserve the current post-onboarding hard gate; see `docs/pricing.md`. The only exception is read-only History and export after a lapse (2026-10-24). |

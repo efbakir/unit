@@ -17,6 +17,8 @@ struct SessionDetailView: View {
     @Bindable var session: WorkoutSession
     let templateName: String
     var completionMoment: AppCelebrationMoment? = nil
+    /// Lapsed-subscriber History: no edits, no saved targets, no writes.
+    var isReadOnly = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -157,17 +159,19 @@ struct SessionDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            // Same entry as Programs > Edit program.
-            ToolbarItem(placement: .topBarTrailing) {
-                Group {
-                    Button { showsEditWorkout = true } label: {
-                        Label(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName)
-                            .labelStyle(.iconOnly)
+            if !isReadOnly {
+                // Same entry as Programs > Edit program.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Group {
+                        Button { showsEditWorkout = true } label: {
+                            Label(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName)
+                                .labelStyle(.iconOnly)
+                        }
+                        .accessibilityLabel(AppCopy.History.editWorkout)
+                        .accessibilityIdentifier("edit-workout")
                     }
-                    .accessibilityLabel(AppCopy.History.editWorkout)
-                    .accessibilityIdentifier("edit-workout")
+                    .tint(AppColor.textPrimary)
                 }
-                .tint(AppColor.textPrimary)
             }
         }
         .appNavigationBarChrome()
@@ -562,7 +566,8 @@ struct SessionDetailView: View {
     }
 
     private func isActionable(_ recommendation: ProgressionRecommendationRow) -> Bool {
-        guard let template = progressionTemplate,
+        guard !isReadOnly,
+              let template = progressionTemplate,
               let currentState = template.progressionState(
                   for: recommendation.exerciseID
               ),
@@ -681,7 +686,7 @@ struct SessionDetailView: View {
     }
 
     private func backfillAcceptedProgressionRecordsIfNeeded() {
-        guard let template = progressionTemplate else { return }
+        guard !isReadOnly, let template = progressionTemplate else { return }
         let didChange = session.captureProgressionRecords(
             template: template,
             exercises: exercises,
@@ -773,6 +778,7 @@ struct SessionDetailView: View {
     }
 
     private func presentFeedbackInvitationIfNeeded() {
+        guard !isReadOnly else { return }
         let tracker = EngagementPromptTracker()
         guard tracker.shouldShowFeedback(for: session.id) else { return }
         tracker.markFeedbackPromptShown()
@@ -788,7 +794,7 @@ struct SessionDetailView: View {
     }
 
     private func trackRecommendationsIfNeeded() {
-        guard !didTrackRecommendations else { return }
+        guard !isReadOnly, !didTrackRecommendations else { return }
         didTrackRecommendations = true
         let outcomes = Set(progressionRecommendations.map {
             analyticsOutcome(for: $0.record.recommendationReason)
