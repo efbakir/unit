@@ -130,7 +130,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-finished-summary")
     }
 
-    func testSkippingTheLastExerciseShowsFinishAndTheCardReopens() throws {
+    func testSkippedExerciseSaysSoAndFinishAsksBeforeLeavingIt() throws {
         let app = launch()
         for sets in [4, 3, 3] {
             for number in 1...sets { tap(app.buttons["complete-set-\(number)"], in: app) }
@@ -142,32 +142,37 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(app.alerts.buttons["Skip exercise"], in: app)
         XCTAssertTrue(app.buttons["workout-complete-finish"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["complete-set-1"].exists)
-        capture(app, "skip-last-exercise-finish")
-        tap(app.buttons["Deadlift"], in: app)
+        let deadlift = app.buttons["Deadlift"].firstMatch
+        XCTAssertTrue((deadlift.value as? String)?.contains("Skipped") == true, String(describing: deadlift.value))
+        capture(app, "skipped-exercise-finish")
+        tap(app.buttons["workout-complete-finish"], in: app)
+        XCTAssertTrue(app.alerts["Deadlift is not done."].waitForExistence(timeout: 5))
+        capture(app, "finish-asks-not-done")
+        tap(app.alerts.buttons["Go to Deadlift"], in: app)
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["workout-complete-finish"].exists)
     }
 
-    func testHeavierSetShowsPRTagOnTheRowAndTheDoneCard() throws {
-        let app = launch(extra: ["-logging-history"])
-        tap(app.textFields["logging-weight"].firstMatch, in: app)
-        tap(app.buttons["+2.5"], in: app)
-        tap(app.buttons["Done"].firstMatch, in: app)
-        tap(app.buttons["complete-set-1"], in: app)
-        let first = app.buttons["logged-set-1"]
-        XCTAssertTrue(first.waitForExistence(timeout: 5))
-        XCTAssertTrue(first.label.contains("Personal record"), first.label)
-        capture(app, "pr-tag-logged-set")
-        // Same weight and reps as the new best: no tag.
-        tap(app.buttons["complete-set-2"], in: app)
-        XCTAssertTrue(app.buttons["logged-set-2"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["logged-set-2"].label.contains("Personal record"))
-        tap(app.buttons["complete-set-3"], in: app)
-        tap(app.buttons["complete-set-4"], in: app)
-        let doneCard = app.buttons["Bench Press"].firstMatch
-        XCTAssertTrue(doneCard.waitForExistence(timeout: 5))
-        XCTAssertTrue((doneCard.value as? String)?.contains("Personal record") == true, String(describing: doneCard.value))
-        capture(app, "pr-tag-done-card")
+    func testSkippingAnEarlierExerciseMovesOnAndLeavesItSkipped() throws {
+        let app = launch()
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tapMenuItem("Skip exercise", in: app)
+        tap(app.alerts.buttons["Skip exercise"], in: app)
+        let bench = app.buttons["Bench Press"].firstMatch
+        XCTAssertTrue(bench.waitForExistence(timeout: 5))
+        XCTAssertTrue((bench.value as? String)?.contains("Skipped") == true, String(describing: bench.value))
+        XCTAssertTrue(app.buttons["complete-set-1"].exists, "Barbell Row is current")
+    }
+
+    func testCompleteSetStaysEnabledRightAfterASet() throws {
+        let app = launch()
+        let first = app.buttons["complete-set-1"]
+        XCTAssertTrue(first.waitForExistence(timeout: 8))
+        first.tap()
+        let second = app.buttons["complete-set-2"]
+        XCTAssertTrue(second.waitForExistence(timeout: 2))
+        // The 400 ms double-tap guard blocks taps but must not grey the button.
+        XCTAssertTrue(second.isEnabled)
     }
 
     func testAddedSetCanBeRemovedAndUndone() throws {
@@ -192,40 +197,41 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Remove added set"].waitForExistence(timeout: 2))
     }
 
-    func testExerciseHistoryOpensFromTheWorkoutAndReturns() throws {
+    func testExerciseHistoryOpensAsASheetAndCloses() throws {
         let app = launch(extra: ["-logging-history"])
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
         tapMenuItem("Exercise history", in: app)
         let latest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Latest'")).firstMatch
         XCTAssertTrue(latest.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["complete-set-1"].exists)
-        XCTAssertFalse(app.tabBars.firstMatch.exists && app.tabBars.firstMatch.isHittable)
-        capture(app, "exercise-history-mid-workout")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
+        capture(app, "exercise-history-sheet")
+        tap(app.buttons["exercise-history-close"], in: app)
+        XCTAssertTrue(latest.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["complete-set-1"].isHittable)
     }
 
-    func testPinnedNoteShowsUnderTheNameAndSurvivesRelaunch() throws {
+    func testNotesOpenFromTheMenuAndSurviveRelaunch() throws {
         let app = launch()
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tapMenuItem("Add note", in: app)
-        let field = app.alerts.textFields.firstMatch
+        tapMenuItem("Notes", in: app)
+        let field = app.textViews["exercise-note-field"].exists
+            ? app.textViews["exercise-note-field"] : app.textFields["exercise-note-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
+        tap(field, in: app)
         field.typeText("Seat 4")
-        tap(app.alerts.buttons["Save"], in: app)
-        XCTAssertTrue(app.staticTexts["Seat 4"].waitForExistence(timeout: 5))
-        capture(app, "pinned-note")
+        tap(app.buttons["Save"].firstMatch, in: app)
+        XCTAssertTrue(field.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Seat 4"].exists, "the note is not shown on the card")
         app.terminate()
         app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
         app.launch()
-        XCTAssertTrue(app.staticTexts["Seat 4"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["exercise-menu"].firstMatch.waitForExistence(timeout: 15))
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tapMenuItem("Edit note", in: app)
-        let editField = app.alerts.textFields.firstMatch
-        XCTAssertTrue(editField.waitForExistence(timeout: 5))
-        editField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6))
-        tap(app.alerts.buttons["Save"], in: app)
-        XCTAssertTrue(app.staticTexts["Seat 4"].waitForNonExistence(timeout: 5))
+        tapMenuItem("Notes", in: app)
+        let reopened = app.textViews["exercise-note-field"].exists
+            ? app.textViews["exercise-note-field"] : app.textFields["exercise-note-field"]
+        XCTAssertTrue(reopened.waitForExistence(timeout: 5))
+        XCTAssertEqual(reopened.value as? String, "Seat 4")
+        capture(app, "notes-sheet")
     }
 
     func testSwapBeforeTheFirstSetKeepsThePlannedSetsAndSurvivesRelaunch() throws {

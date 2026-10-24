@@ -121,7 +121,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Screen, top to bottom** ([ActiveWorkoutView.swift:161](Unit/Features/Today/ActiveWorkoutView.swift:161))
 - Nav bar: X (cancel), routine name + running clock, "Finish" (only after 1 logged set).
 - Exercise cards in routine order. The current exercise is open ([DesignSystem.swift:6540](Unit/UI/DesignSystem.swift:6540)). Others are closed cards: upcoming ("3 × 60 kg × 8") or done (flow 5) ([DesignSystem.swift:6717](Unit/UI/DesignSystem.swift:6717)).
-- Open card: name, pinned note line (if any), "..." menu (Exercise history, Swap exercise before the first set, Add note or Edit note, Bodyweight switch, Remove added set when one is open, Skip exercise), set rows, "+ Add set".
+- Open card: name, "..." menu with icons (Exercise history, Swap exercise before the first set, Notes, Bodyweight switch, Remove added set when one is open, Skip exercise), set rows, centred "Add set".
 - Set rows: logged (number, "60 kg × 8", "PR" tag when it beat the best so far, Undo space, check), current ("Set N" + source text, weight × reps fields, blue "Complete set N"), planned (grey number and value).
 - Bottom: rest bar, always visible (flow 4). Uncommitted edit: swapped for "Finish workout" once every planned set is logged (flow 5).
 
@@ -146,15 +146,15 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Add set: "+ Add set" -> one more planned row, this workout only ([ActiveWorkoutView.swift:951](Unit/Features/Today/ActiveWorkoutView.swift:951)).
 - Remove an added row: "..." -> "Remove added set" (only while a row added with "+ Add set" is open) -> row gone, toast "Set removed" with Undo for 4 s. Rows from the routine plan cannot be removed.
 - PR: a logged set that beats the best so far (finished workouts, then this workout's earlier sets) shows the "PR" tag on its row and on the closed done card. Same rule as History. No banner, sound or extra haptic.
-- Exercise history: "..." -> "Exercise history" -> the exercise page (same as from Analytics) -> back returns to the same set. Other tabs stay hidden.
+- Exercise history: "..." -> "Exercise history" -> the exercise page in a bottom sheet (half height, drag up) -> X closes it; the workout stays underneath.
 - Bodyweight: "..." -> "Bodyweight" switch -> changes the exercise everywhere, all routines and history ([ActiveWorkoutView.swift:964](Unit/Features/Today/ActiveWorkoutView.swift:964)). Weight 0 -> "BW × 12". Positive weight -> "BW + 10 kg × 8". 0 kg on a normal exercise logs "0 kg × 8"; it never turns into BW by itself.
 - Warm-ups: not available. Every set is a working set. Warm-up code exists but nothing uses it ([WarmupGenerator.swift:11](Unit/Engine/WarmupGenerator.swift:11)).
 - Reorder: long-press a card -> drag onto another card -> order saved for this workout only ([ActiveWorkoutView.swift:1047](Unit/Features/Today/ActiveWorkoutView.swift:1047)). No drag handle is shown.
-- Skip exercise: "..." -> "Skip exercise" -> confirm -> next unfinished exercise opens; the skipped one comes back after the others ([ActiveWorkoutView.swift:946](Unit/Features/Today/ActiveWorkoutView.swift:946)). On the last unfinished exercise: its card closes, rest stops and "Finish workout" replaces the rest bar (no Finish when nothing is logged); tapping the card reopens it.
+- Skip exercise: "..." -> "Skip exercise" -> confirm -> the card closes with a grey "Skipped" tag and the next unfinished exercise opens. The app never returns to a skipped exercise by itself; tapping its card reopens it. When nothing else is open, rest stops and "Finish workout" replaces the rest bar.
 - Jump: tap a closed card -> it becomes current ([ActiveWorkoutView.swift:932](Unit/Features/Today/ActiveWorkoutView.swift:932)).
 - Add exercise mid-workout: "Add exercise" at the end of the list -> picker (own list, search, create) -> "How many sets?" 1 to 6. Freestyle adds to its hidden routine; a routine workout adds for this workout only, the routine is unchanged.
 - Swap exercise: "..." -> "Swap exercise" (only before its first set) -> picker -> the new exercise takes the same place with the routine's planned sets and reps; its weight comes from its own history. This workout only; next time the routine exercise is back. No suggestions.
-- Notes: "..." -> "Add note" -> one line under the exercise name ("Seat 4, pin 6"), kept on the exercise, so it shows in every routine and workout. Clear it by saving an empty note. Set notes: none; old ones stay when a set is edited and show in History.
+- Notes: "..." -> "Notes" (filled icon when a note exists) -> a small sheet to read or edit one note per exercise ("Seat 4, pin 6"), kept on the exercise for every routine. The card does not show it. Set notes: none; old ones stay when a set is edited and show in History.
 - Keyboard: decimal pad for weight, number pad for reps. Scrolling hides the keyboard and saves valid edits. Invalid numbers -> toast "Enter a valid weight and reps.", the field stays open ([ActiveWorkoutView.swift:713](Unit/Features/Today/ActiveWorkoutView.swift:713)).
 
 **Saved data**
@@ -193,7 +193,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Steps**
 - Complete set -> rest starts with that exercise's own length, else the default (120 s at first, never under 15 s) ([ActiveWorkoutView.swift:923](Unit/Features/Today/ActiveWorkoutView.swift:923)).
-- Rest bar -> blue progress line, "Rest" + countdown, buttons "-30", "+30", "Skip" (30-second steps since 2026-10-23; were 20). Buttons work only while running; "-30" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
+- Rest bar -> blue progress line, "Bench Press rest" (whose rest it is) + countdown, buttons "-30", "+30", "Skip" (30-second steps since 2026-10-23; were 20). Buttons work only while running; "-30" is off at 15 s or less ([DesignSystem.swift:6780](Unit/UI/DesignSystem.swift:6780)).
 - "+30" or "-30" -> new end time; the new length is saved for the exercise whose set started this rest (since 2026-10-24; it used to change every later rest). The idle bar shows the current exercise's length. There is no rest setting in Settings ([ActiveWorkoutView.swift:926](Unit/Features/Today/ActiveWorkoutView.swift:926)).
 - "Skip" -> bar back to idle, no "finished" state, no alert; it also removes the set's Undo ([ActiveWorkoutView.swift:931](Unit/Features/Today/ActiveWorkoutView.swift:931)).
 - Ends with the app open -> "Rest finished." + 0:00 for 30 s, success haptic, VoiceOver line, plus an iOS banner with sound -> idle ([ActiveWorkoutView.swift:1384](Unit/Features/Today/ActiveWorkoutView.swift:1384)).
@@ -262,6 +262,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - "Finish" (top right, after at least 1 logged set) or X (top left).
 
 **Steps**
+- Exercises not done (skipped or open) -> "Finish" asks "Deadlift is not done." -> "Finish anyway" or "Go to Deadlift".
 - All or some sets done -> "Finish" -> any open edit saved first -> alert "Finish workout? Saves and ends your session." -> "Finish workout" ([ActiveWorkoutView.swift:979](Unit/Features/Today/ActiveWorkoutView.swift:979), [ActiveWorkoutView.swift:315](Unit/Features/Today/ActiveWorkoutView.swift:315)).
 - Freestyle -> alert "Name this workout" -> "Use name" or "Skip". Skip with a typed name asks "Discard workout name?" ([ActiveWorkoutView.swift:319](Unit/Features/Today/ActiveWorkoutView.swift:319)).
 - No "Update routine with today's weights?" dialog since 2026-10-24 ([ActiveWorkoutView.swift:1004](Unit/Features/Today/ActiveWorkoutView.swift:1004)).

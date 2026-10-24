@@ -234,6 +234,9 @@ The palette is named like materials in a workshop, not like UI states. There is 
 ### Off-system
 - **Spark** (`#FF4400`): The splash-screen orange. Reserved for the launch animation and home-screen icon only — **forbidden in the app shell**. There is no `AppColor` token for it; the splash asset carries the value directly.
 
+### Lock Screen copy of the palette
+- The rest Live Activity can't link `AppColor`, so `UnitWidget/WidgetColors.xcassets` holds the same tokens with the same light values: `CardBackground` (white card), `TextPrimary`, `TextSecondary`, `ControlBackground`, `Accent`. Change a value in both places. Dark values arrive with dark mode.
+
 ### Named Rules
 
 **The One Ink Rule.** Ink is reserved for the single primary action on a stress screen. If a screen has two Ink-filled buttons, one of them is wrong. Secondary actions take Pumice. Tertiary actions take Ghost (text-only, no fill).

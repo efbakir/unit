@@ -37,8 +37,11 @@ struct ActiveWorkoutView: View {
     @State private var swapTarget: Exercise?
     @State private var historyExercise: Exercise?
     @State private var noteExercise: Exercise?
-    @State private var showsNoteEditor = false
-    @State private var noteDraft = ""
+    @State private var showsNotDoneQuestion = false
+    /// Rows are built once per change, not on every redraw (rest ticks redraw twice a second).
+    @State private var sectionCache = SectionModelCache()
+    /// The set values the PR tags were last worked out for.
+    @State private var prFingerprint: [String] = []
     @State private var showsCancelConfirmation = false
     @State private var showsSkipExerciseConfirmation = false
     @State private var showsFinishConfirmation = false
@@ -142,6 +145,15 @@ struct ActiveWorkoutView: View {
         orderedExerciseIDs.compactMap { id in exercises.first { $0.id == id } }
     }
     private var sectionModels: [WorkoutExerciseSectionModel] {
+        let key: [AnyHashable] = [loggedSetFingerprint, exerciseOrderData, preparedSetTargetsData,
+                                  sessions.count, template?.id, exercises.count, unitSystem]
+        if sectionCache.key == key { return sectionCache.models }
+        let models = buildSectionModels()
+        sectionCache.key = key
+        sectionCache.models = models
+        return models
+    }
+    private func buildSectionModels() -> [WorkoutExerciseSectionModel] {
         orderedExercises.map { exercise in
             WorkoutExerciseSectionModel(
                 exercise: exercise, lastActualText: nil,
@@ -199,6 +211,17 @@ struct ActiveWorkoutView: View {
     private var loggedSetFingerprint: [String] {
         session.setEntries.map { "\($0.id)|\($0.weight)|\($0.reps)|\($0.isCompleted)" }
     }
+    /// Exercises with sets still open (skipped ones included), for the Finish question.
+    private var unfinishedExercises: [WorkoutLoggingState.ExerciseState] {
+        exerciseStates.filter { !$0.isComplete }
+    }
+    /// "Bench Press rest": the running rest belongs to the set that started it;
+    /// otherwise it is the current exercise's next rest.
+    private var restTitle: String {
+        let id = restTimer.isRunning || restTimer.isFinished ? (restTimer.sourceExerciseID ?? currentExerciseID) : currentExerciseID
+        guard let name = exercises.first(where: { $0.id == id })?.displayName else { return AppCopy.Workout.restLabel }
+        return AppCopy.Workout.restTitle(name)
+    }
     /// The rest the current exercise's next set starts (its own, else the default).
     private var defaultRestText: String {
         RestTimerManager.clockText(restTimer.restSeconds(for: currentExerciseID))
@@ -207,18 +230,35 @@ struct ActiveWorkoutView: View {
     var body: some View {
         // Split in two so the compiler can type-check each chain in time.
         workoutScreen
-        .alert(AppCopy.Workout.noteTitle, isPresented: $showsNoteEditor, presenting: noteExercise) { exercise in
-            TextField(AppCopy.Workout.notePlaceholder, text: $noteDraft)
-            Button(AppCopy.Nav.save) { saveNote(for: exercise) }
+        .alert(AppCopy.Workout.notDoneTitle(unfinishedExercises.map(\.name)), isPresented: $showsNotDoneQuestion) {
+            Button(AppCopy.Workout.finishAnyway, action: confirmFinish)
+            if let first = unfinishedExercises.first {
+                Button(AppCopy.Workout.goTo(first.name)) { jump(to: first.id) }
+            }
             Button(AppCopy.Nav.cancel, role: .cancel) { }
-        } message: { _ in
-            Text(AppCopy.Workout.noteMessage)
         }
-        .navigationDestination(item: $historyExercise) { exercise in
-            ExerciseProgressView(exerciseId: exercise.id, exerciseName: exercise.displayName,
-                                 isBodyweight: exercise.isBodyweight, sessions: sessions, templates: templates)
-                // Other tabs stay out of reach until the workout ends.
-                .toolbar(.hidden, for: .tabBar)
+        .sheet(item: $noteExercise) { exercise in
+            ExerciseNoteSheet(exerciseName: exercise.displayName, note: exercise.notes) { saveNote($0, for: exercise) }
+                .presentationDetents([.medium])
+                .appBottomSheetChrome()
+        }
+        // A sheet, so the workout stays underneath: half height, drag up for all.
+        .sheet(item: $historyExercise) { exercise in
+            NavigationStack {
+                ExerciseProgressView(exerciseId: exercise.id, exerciseName: exercise.displayName,
+                                     isBodyweight: exercise.isBodyweight, sessions: sessions, templates: templates)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button { historyExercise = nil } label: {
+                                Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                            }
+                            .tint(AppColor.textPrimary)
+                            .accessibilityIdentifier("exercise-history-close")
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+            .appBottomSheetChrome()
         }
         .sheet(isPresented: $showsAddExercise) {
             AppExercisePickerSheet(existingIds: Set(orderedExerciseIDs), onSelect: addExerciseToWorkout)
@@ -234,7 +274,10 @@ struct ActiveWorkoutView: View {
                 .appBottomSheetChrome()
         }
         .onAppear(perform: restoreWorkout)
-        .onChange(of: loggedSetFingerprint, initial: true) { _, _ in
+        .onChange(of: loggedSetFingerprint, initial: true) { _, fingerprint in
+            // Complete set already worked these out for the set it logged.
+            guard fingerprint != prFingerprint else { return }
+            prFingerprint = fingerprint
             livePRIDs = PRHistory.prSetEntryIDs(inOpen: session, history: sessions)
         }
         .onChange(of: restUpNext) { _, _ in refreshRestUpNext() }
@@ -409,12 +452,13 @@ struct ActiveWorkoutView: View {
                 VStack(spacing: AppSpacing.sm) {
                     RestBar.status(timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
                         state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
-                        spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
+                        spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver),
+                        title: restTitle)
                     if let editor, editor.isCurrent, let section = currentSection,
                        section.id == editor.exerciseID {
                         AppPrimaryButton(
                             needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
-                            isEnabled: canCommitEditor && !guardActive
+                            isEnabled: canCommitEditor
                         ) {
                             if needsStartingTarget(section, row: editor.number) {
                                 saveStartingTarget(section: section, number: editor.number)
@@ -447,7 +491,8 @@ struct ActiveWorkoutView: View {
             // Every planned set is logged (or the rest was skipped): rest is
             // over, and the summary (where next targets are accepted) is one
             // tap away. The small toolbar Finish alone was easy to miss.
-            AppPrimaryButton(AppCopy.Workout.finishWorkout, isEnabled: !guardActive, action: requestFinish)
+            AppPrimaryButton(AppCopy.Workout.finishWorkout, action: requestFinish)
+                .allowsHitTesting(!guardActive)
                 .accessibilityIdentifier("workout-complete-finish")
                 .padding(AppSpacing.md)
                 .background(AppColor.background.ignoresSafeArea(edges: .bottom))
@@ -464,7 +509,8 @@ struct ActiveWorkoutView: View {
                 canDecrease: restTimer.secondsRemaining > 15,
                 onDecrease: { adjustRestTimer(by: -AppCopy.Workout.restStepSeconds) },
                 onIncrease: { adjustRestTimer(by: AppCopy.Workout.restStepSeconds) },
-                onSkip: skipRest
+                onSkip: skipRest,
+                title: restTitle
             )
             .dynamicTypeSize(...DynamicTypeSize.accessibility3)
         }
@@ -476,7 +522,7 @@ struct ActiveWorkoutView: View {
         if isCurrent || expandedCompletedID == section.id {
             ExerciseLoggingCard(
                 name: section.exercise.displayName,
-                note: section.exercise.notes,
+                hasNote: !section.exercise.notes.isEmpty,
                 isBodyweight: Binding(get: { section.exercise.isBodyweight }, set: { setBodyweight($0, exercise: section.exercise) }),
                 onSkip: { jump(to: section.id); showsSkipExerciseConfirmation = true },
                 onAddSet: { addSet(to: section) },
@@ -509,7 +555,8 @@ struct ActiveWorkoutView: View {
             onUndo: undoLastLog, onSelect: { jump(to: section.id) },
             detail: suggestion?.text,
             detailIsSuggestion: suggestion?.outcome != .unsupported,
-            showsPR: section.entries.contains { livePRIDs.contains($0.id) }
+            showsPR: section.entries.contains { livePRIDs.contains($0.id) },
+            isSkipped: skippedExerciseIDs.contains(section.id) && !section.hasReachedPlannedSetGoal
         )
         .allowsHitTesting(!guardActive)
     }
@@ -886,8 +933,9 @@ struct ActiveWorkoutView: View {
         // Invalid input and durable save failures keep the draft available.
         if saved { focusedField = nil }
     }
+    /// The 400 ms double-tap guard blocks taps (rows stop hit-testing) but never
+    /// greys the button: a grey flash after every set read as a slow app.
     private func canPerformCurrentAction(_ section: WorkoutExerciseSectionModel, number: Int) -> Bool {
-        guard !guardActive else { return false }
         if let editor {
             return editor.id == rowID(section.id, number) && canCommitEditor
         }
@@ -971,7 +1019,9 @@ struct ActiveWorkoutView: View {
         }
         if !editedRows.contains(rowID(exercise.id, number)) { noKeyboardSetCount += 1 }
         // The tag is the only PR cue: no banner, sound or second haptic.
-        let isPR = PRHistory.prSetEntryIDs(inOpen: session, history: sessions).contains(entry.id)
+        livePRIDs = PRHistory.prSetEntryIDs(inOpen: session, history: sessions)
+        prFingerprint = loggedSetFingerprint
+        let isPR = livePRIDs.contains(entry.id)
         let prAnnouncement = isPR ? " \(AppCopy.Workout.personalRecord)." : ""
         setLoggedPhase &+= 1
         if isDayDone { restTimer.stop() }
@@ -1066,16 +1116,11 @@ struct ActiveWorkoutView: View {
         expandedCompletedID = sectionModels.first(where: { $0.id == id })?.hasReachedPlannedSetGoal == true ? id : nil
         refreshRestUpNext()
     }
+    /// Skipped means skipped for today: the card closes and says "Skipped", and
+    /// the app never comes back to it by itself. Tapping the card reopens it;
+    /// Finish asks before leaving it undone.
     private func skipExercise() {
-        guard let currentExerciseID else { return }
-        if let next = WorkoutLoggingState.nextUnfinishedExerciseID(
-            in: exerciseStates, after: currentExerciseID, skipped: skippedExerciseIDs) {
-            jump(to: next)
-            return
-        }
-        // Nothing unfinished comes after the last exercise, so skipping it ends
-        // the day: its card closes and Finish takes the rest bar's place.
-        guard !guardActive, commitEditor() else { return }
+        guard let currentExerciseID, !guardActive, commitEditor() else { return }
         if editor?.isSetup == true {
             retainInputDraft()
             editor = nil
@@ -1083,9 +1128,10 @@ struct ActiveWorkoutView: View {
         focusedField = nil
         logging.invalidateUndo()
         skippedExerciseIDs.insert(currentExerciseID)
-        selectedExerciseID = nil
         expandedCompletedID = nil
-        restTimer.stop()
+        selectedExerciseID = WorkoutLoggingState.nextUnfinishedExerciseID(
+            in: exerciseStates, after: currentExerciseID, skipped: skippedExerciseIDs)
+        if isDayDone { restTimer.stop() } else { refreshRestUpNext() }
     }
     private func addSet(to section: WorkoutExerciseSectionModel) {
         guard !guardActive, commitEditor() else { return }
@@ -1143,12 +1189,9 @@ struct ActiveWorkoutView: View {
     private func editNote(of exercise: Exercise) {
         guard commitEditor() else { return }
         focusedField = nil
-        noteDraft = exercise.notes
         noteExercise = exercise
-        showsNoteEditor = true
     }
-    private func saveNote(for exercise: Exercise) {
-        let note = noteDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func saveNote(_ note: String, for exercise: Exercise) {
         guard note != exercise.notes else { return }
         exercise.notes = note
         _ = saveWorkoutChanges()
@@ -1172,7 +1215,8 @@ struct ActiveWorkoutView: View {
         guard commitEditor() else { return }
         focusedField = nil
         logging.invalidateUndo()
-        showsFinishConfirmation = true
+        // Skipped or half-done exercises get a clear question instead.
+        if unfinishedExercises.isEmpty { showsFinishConfirmation = true } else { showsNotDoneQuestion = true }
     }
     /// No "Update routine with today's weights?" step (removed 2026-10-24):
     /// the next workout already starts from this one, so its answer changed
@@ -1338,6 +1382,53 @@ private struct WorkoutExerciseSectionModel: Identifiable {
 
     var hasReachedPlannedSetGoal: Bool {
         entries.count >= plannedSetCount
+    }
+}
+
+/// Built rows for the last set of inputs; a class so `body` can refill it
+/// without invalidating the view.
+private final class SectionModelCache {
+    var key: [AnyHashable] = []
+    var models: [WorkoutExerciseSectionModel] = []
+}
+
+/// Read or edit an exercise's note. The card no longer shows the note; the
+/// "..." menu's Notes item opens this sheet.
+private struct ExerciseNoteSheet: View {
+    let exerciseName: String
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: String
+
+    init(exerciseName: String, note: String, onSave: @escaping (String) -> Void) {
+        self.exerciseName = exerciseName
+        self.onSave = onSave
+        _draft = State(initialValue: note)
+    }
+
+    var body: some View {
+        AppSheetScreen(
+            title: AppCopy.Workout.notes,
+            primaryButton: PrimaryButtonConfig(label: AppCopy.Nav.save, action: save),
+            onDismissAction: { dismiss() },
+            usesOuterScroll: false
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(exerciseName).font(AppFont.body.font).foregroundStyle(AppColor.textSecondary)
+                TextField(AppCopy.Workout.notePlaceholder, text: $draft, axis: .vertical)
+                    .lineLimit(3...6)
+                    .font(AppFont.body.font)
+                    .appInputFieldStyleMultiline(minHeight: 96)
+                    .accessibilityIdentifier("exercise-note-field")
+                Text(AppCopy.Workout.noteMessage).font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
+            }
+        }
+    }
+
+    private func save() {
+        onSave(draft.trimmingCharacters(in: .whitespacesAndNewlines))
+        dismiss()
     }
 }
 

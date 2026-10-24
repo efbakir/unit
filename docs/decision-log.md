@@ -7,6 +7,21 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Workout screen, round 2 from the founder's phone test
+
+Efe tested the merged build on his phone and sent 11 notes; plan approved (animation option A).
+
+- **Exercise history** opens as a bottom sheet (half height, drag up), not a new page.
+- **Notes** are no longer shown on the card. The "..." menu has "Notes" (filled icon when a note exists); it opens a small sheet to read or edit.
+- **Menu icons** on every item: History, Swap, Notes, Bodyweight, Remove added set, Skip.
+- **Skip means skipped for today.** The closed card says "Skipped"; the app never returns to it by itself; tapping the card reopens it. Supersedes the earlier "skipped exercise comes back after the others".
+- **Finish asks** when exercises are not done: "Deadlift is not done." with "Finish anyway" and "Go to Deadlift". Nothing extra appears after a set.
+- **Complete set responds at once.** The 400 ms double-tap guard no longer greys the button (Final B §8.3 asked for that); exercise rows are built once per change and the PR check runs once per set.
+- **Animation:** a just-logged set's check pops once (symbol bounce); Reduce Motion and VoiceOver get no bounce.
+- **"Add set" is centred** under the set rows again (routine lists keep left).
+- **Rest bar names the rest:** "Bench Press rest", so −30 / +30 read as that exercise's length.
+- **White Live Activity** in the app's colours: `UnitWidget/WidgetColors.xcassets` mirrors AppColor (card white, ink, secondary, control grey, accent) because the widget can't link the design system. Dark values come with the colors chat's dark mode.
+
 ## 2026-10-24 - Founder override: next targets apply at Finish
 
 Efe chose this in the progression-loop session, after benchmark 4 (`docs/research/2026-10-24-benchmarks/4-exercise-done-summary.md`) and persona panel round 2.

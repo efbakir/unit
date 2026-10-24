@@ -27,25 +27,26 @@ struct RestTimerLiveActivityView: View {
                         Image(systemName: "timer")
                     }
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.textSecondary)
                         .textCase(.uppercase)
                         .tracking(0.5)
 
                     if context.isStale {
                         Text("Rest finished")
                             .font(.title.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.textPrimary)
                     } else {
                         Text(timerInterval: timerRange,
                              countsDown: true,
                              showsHours: false)
                             .font(.title.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.textPrimary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .contentTransition(.numericText(countsDown: true))
                         ProgressView(timerInterval: timerRange, countsDown: true)
                             .labelsHidden()
+                            .tint(.accent)
                             .accessibilityLabel("Rest remaining")
                     }
                 }
@@ -57,13 +58,13 @@ struct RestTimerLiveActivityView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("Up next")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.textSecondary)
                             .textCase(.uppercase)
                             .tracking(0.5)
 
                         Text(upNext)
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.textPrimary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                             .truncationMode(.tail)
@@ -72,7 +73,7 @@ struct RestTimerLiveActivityView: View {
                         if let detail = context.state.upNextDetail, !detail.isEmpty {
                             Text(detail)
                                 .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.textPrimary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                                 .multilineTextAlignment(.trailing)
@@ -115,13 +116,15 @@ struct RestTimerLiveActivityControls: View {
     }
 
     private func control(_ title: String, label: String, intent: some AppIntent) -> some View {
+        // Same grey buttons and ink text as the in-app rest bar.
         Button(intent: intent) {
             Text(title)
                 .font(.subheadline.weight(.semibold).monospacedDigit())
-                .frame(maxWidth: .infinity, minHeight: 32)
+                .foregroundStyle(.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background(.controlBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .buttonStyle(.bordered)
-        .foregroundStyle(.primary)
+        .buttonStyle(.plain)
         .accessibilityLabel(label)
     }
 }
