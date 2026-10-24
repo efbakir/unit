@@ -7,6 +7,14 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 — App Review fixes before the next 2.1 upload
+
+- **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.
+- **Privacy manifest.** Device ID is declared for Analytics, not linked and not used for tracking, next to Product Interaction and Purchase History. Matches the App Store Connect privacy answers. TelemetryDeck is still initialized with its default config, which sends a hashed device identifier.
+- **Analytics switch before purchase.** The same Anonymous analytics setting is on the first setup step and on the paywall footer. Settings still uses it. Default stays on.
+- **Paywall price.** An eligible trial headline is the billed price and the free period in one title line (`$29.99/year after 7 days free`). The yearly badge says `Save 80% vs weekly` (still 52 × Weekly). Free-trial wording still requires that product's own free introductory offer plus StoreKit eligibility for that product.
+- **Build number.** Left at 95. The next archive is 96, cut when the upload is made. This change does not bump `CURRENT_PROJECT_VERSION`.
+
 ## 2026-10-23 — Founder override: paywall defaults and the setup notice
 
 Efe reviewed the persona-panel changes and reverted four of them. The panel's warnings stay on record in `docs/research/2026-10-23-persona-panel.md`.
