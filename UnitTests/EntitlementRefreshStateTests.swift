@@ -630,3 +630,41 @@ final class PurchaseAttemptStateTests: XCTestCase {
         XCTAssertTrue(state.begin())
     }
 }
+
+/// Benchmark 2026-10-24, paywall row 4: Settings shows the trial end or the
+/// next charge date.
+@MainActor
+final class SubscriptionRenewalSummaryTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 1_793_000_000)
+    private var nextWeek: Date { now.addingTimeInterval(7 * 86_400) }
+
+    func testFreeTrialShowsWhenItEndsWhetherOrNotItRenews() {
+        for willAutoRenew in [true, false, nil] as [Bool?] {
+            XCTAssertEqual(
+                SubscriptionRenewalSummary.resolve(
+                    expirationDate: nextWeek, isFreeTrial: true, willAutoRenew: willAutoRenew, now: now
+                ),
+                SubscriptionRenewalSummary(kind: .trialEnds, date: nextWeek)
+            )
+        }
+    }
+
+    func testPaidPlanRenewsOrEnds() {
+        XCTAssertEqual(
+            SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: true, now: now)?.kind,
+            .renews
+        )
+        XCTAssertEqual(
+            SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: false, now: now)?.kind,
+            .ends
+        )
+    }
+
+    func testNoRowForLifetimePastDatesOrUnknownRenewal() {
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: nil, isFreeTrial: false, willAutoRenew: true, now: now),
+                     "Lifetime has no expiration")
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: now.addingTimeInterval(-60), isFreeTrial: true, willAutoRenew: true, now: now))
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: nil, now: now),
+                     "an unknown renewal state shows nothing rather than a guess")
+    }
+}

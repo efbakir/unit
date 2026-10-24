@@ -465,6 +465,35 @@ struct StorePlanPresentation: Equatable, Sendable {
     }
 }
 
+/// What Settings shows under "Unit Pro" (benchmark 2026-10-24, paywall
+/// row 4): the day a free trial ends, or the day a paid plan renews or ends.
+struct SubscriptionRenewalSummary: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case trialEnds
+        case renews
+        case ends
+    }
+
+    let kind: Kind
+    let date: Date
+
+    /// Lifetime (no expiration) and past dates give no row. A paid plan
+    /// whose auto-renew state is unknown gives no row rather than a guess.
+    static func resolve(
+        expirationDate: Date?,
+        isFreeTrial: Bool,
+        willAutoRenew: Bool?,
+        now: Date = .now
+    ) -> SubscriptionRenewalSummary? {
+        guard let expirationDate, expirationDate > now else { return nil }
+        if isFreeTrial {
+            return SubscriptionRenewalSummary(kind: .trialEnds, date: expirationDate)
+        }
+        guard let willAutoRenew else { return nil }
+        return SubscriptionRenewalSummary(kind: willAutoRenew ? .renews : .ends, date: expirationDate)
+    }
+}
+
 /// Serializes purchase attempts independently of product loading/restores.
 /// A pending Ask-to-Buy/SCA result deliberately keeps the gate closed until a
 /// verified transaction arrives through `Transaction.updates`.
@@ -601,6 +630,9 @@ final class StoreManager {
     var hasAttemptedProductLoad = false
     var isPurchased = false
     var activeTier: Tier?
+    /// Trial end or next renewal of the active plan, for Settings. Nil for
+    /// Lifetime, no plan, or an unknown renewal state.
+    private(set) var renewalSummary: SubscriptionRenewalSummary?
     /// Flips true the first time `checkEntitlement()` completes (success or no
     /// entitlement). Read by `ContentView` to avoid flashing the hard paywall
     /// over `mainTabView` on cold launch before the StoreKit check returns.
@@ -972,6 +1004,7 @@ final class StoreManager {
         }
         if let entitlementTier, let entitlementTransaction {
             confirmEntitlement(entitlementTier)
+            renewalSummary = await Self.renewalSummary(for: entitlementTransaction)
             await reconcileTrialReminder(
                 for: entitlementTransaction,
                 requestAuthorizationIfNeeded: false
@@ -995,6 +1028,36 @@ final class StoreManager {
             logger.error("Entitlement check did not answer within \(Self.entitlementGateTimeout.components.seconds)s; releasing launch gate unpurchased.")
             hasCheckedEntitlement = true
         }
+    }
+
+    // MARK: - Renewal summary
+
+    /// Settings calls this on open, so a plan bought in this session (which
+    /// unlocks through the purchase result or the live feed, not
+    /// `checkEntitlement()`) still shows its date.
+    @MainActor
+    func refreshRenewalSummary() async {
+        for await result in Transaction.currentEntitlements {
+            guard let transaction = try? checkVerified(result),
+                  Tier(rawValue: transaction.productID) != nil else { continue }
+            renewalSummary = await Self.renewalSummary(for: transaction)
+            return
+        }
+        renewalSummary = nil
+    }
+
+    private static func renewalSummary(for transaction: Transaction) async -> SubscriptionRenewalSummary? {
+        var willAutoRenew: Bool?
+        if let status = await transaction.subscriptionStatus,
+           case .verified(let renewalInfo) = status.renewalInfo {
+            willAutoRenew = renewalInfo.willAutoRenew
+        }
+        return SubscriptionRenewalSummary.resolve(
+            expirationDate: transaction.expirationDate,
+            isFreeTrial: transaction.offer?.type == .introductory
+                && transaction.offer?.paymentMode == .freeTrial,
+            willAutoRenew: willAutoRenew
+        )
     }
 
     // MARK: - Transaction Listener
@@ -1058,6 +1121,7 @@ final class StoreManager {
         entitlementRefreshState.recordAuthoritativeChange()
         activeTier = nil
         isPurchased = false
+        renewalSummary = nil
         UserDefaults.standard.set("", forKey: Self.lastKnownEntitlementKey)
         logger.info("Entitlement inactive.")
     }

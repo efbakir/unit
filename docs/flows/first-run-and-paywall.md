@@ -278,7 +278,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Steps**:
   - Preferences -> "Weight unit" kg or lb (changes the display only; weights are stored in kg). "Anonymous analytics" switch, off by default (opt-in, 2026-10-24); off stops all events. The same switch is on setup step 1, and on the paywall while it is on. [SettingsView.swift:211](Unit/Features/Settings/SettingsView.swift:211), [UnitAnalytics.swift:339](Unit/Analytics/UnitAnalytics.swift:339)
   - Data -> "Storage: On this iPhone", "Account: None". The "Export data" row is hidden by an old v1 filter. There is no export anywhere in the app. [SettingsView.swift:187](Unit/Features/Settings/SettingsView.swift:187)
-  - Subscription -> "Unit Pro" status ("Monthly active" and so on), "Restore Purchases", "Manage Subscription" (Apple's own sheet; hidden for Lifetime). [SettingsView.swift:240](Unit/Features/Settings/SettingsView.swift:240), [SettingsView.swift:282](Unit/Features/Settings/SettingsView.swift:282)
+  - Subscription -> "Unit Pro" status ("Monthly active" and so on), then "Trial ends", "Renews" or "Ends" with the date (2026-10-24; none for Lifetime or an unknown renewal state), "Restore Purchases", "Manage Subscription" (Apple's own sheet; hidden for Lifetime). [SettingsView.swift:240](Unit/Features/Settings/SettingsView.swift:240), [SettingsView.swift:282](Unit/Features/Settings/SettingsView.swift:282)
   - Feedback -> "Request a feature" opens unitlift.featurebase.app. [SettingsView.swift:336](Unit/Features/Settings/SettingsView.swift:336)
   - Legal -> Privacy Policy, Terms of Service, "Contact me" (an email with the app version and iOS version filled in). [SettingsView.swift:302](Unit/Features/Settings/SettingsView.swift:302), [SettingsView.swift:64](Unit/Features/Settings/SettingsView.swift:64)
   - Footer -> "Made with (heart emoji) in my room" and support@unitlift.app.
@@ -287,7 +287,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Edge cases**:
   - Restore while the plan is active -> spinner, then nothing. The "Purchases restored" alert only shows when access was off before, which cannot happen on this screen -> Low -> partial. [SettingsView.swift:350](Unit/Features/Settings/SettingsView.swift:350)
   - Restore finds nothing -> access is removed, the root swaps to the paywall, and the paywall shows "No purchases to restore." -> Low -> yes.
-  - Trial user -> status says "Monthly active". No trial end date and no next charge date -> Med -> no. [SettingsView.swift:358](Unit/Features/Settings/SettingsView.swift:358)
+  - Trial user -> status says "Monthly active", and "Trial ends" shows the date (2026-10-24). Paid plans show "Renews" or, after cancelling, "Ends" -> Low -> yes. [SettingsView.swift:358](Unit/Features/Settings/SettingsView.swift:358)
   - Lapsed user -> cannot open Settings at all (behind the paywall) -> Med -> no.
   - Analytics off -> no events at all, including purchases. No event about the opt-out itself -> Low -> yes.
   - docs/pricing.md still lists the removed unit and weekday steps [pricing.md:42](docs/pricing.md:42) and "export, theming" in Settings [pricing.md:52](docs/pricing.md:52). None of these exist now -> Low -> no.

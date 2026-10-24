@@ -453,6 +453,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             staticText(in: app, containing: "Push").waitForExistence(timeout: 8),
             "committed program missing from Programs"
         )
+        // Settings names the trial end or the next charge (benchmark 2026-10-24).
+        tap(app.buttons["Settings"], "Settings")
+        XCTAssertTrue(
+            staticText(in: app, containing: "Trial ends").waitForExistence(timeout: 8)
+                || staticText(in: app, containing: "Renews").exists,
+            "Settings shows no trial end or renewal date"
+        )
+        tap(app.buttons["Close"], "Close Settings")
         tap(app.tabBars.buttons["Today"], "back to Today")
 
         // ── Gym Test: start → one-tap sets → finish → History ──
