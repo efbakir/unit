@@ -57,50 +57,38 @@ final class ProgressionContractUITests: XCTestCase {
             staticText(in: app, containing: "3 × 8 at 62.5 kg").exists,
             "Increase-weight target is incomplete or incorrect"
         )
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.allSetsReachedTopReason).exists,
-            "Increase-weight explanation is missing"
-        )
+        // Direction A (2026-10-24): a header count, a hero target with its
+        // change, and one choice control per card. Nothing saves on tap.
+        XCTAssertTrue(app.descendants(matching: .any)["next-time-header"].exists, "Summary header is missing")
+        XCTAssertTrue(staticText(in: app, containing: "go up").exists, "Header lost its count")
+        XCTAssertTrue(staticText(in: app, containing: "+2.5 kg").exists, "Saved target lost its change chip")
+        XCTAssertTrue(staticText(in: app, containing: "Last: 3 × 10 at 60 kg").exists, "Last target line is missing")
         attachScreenshot(of: app, named: "01b-completed-workout-summary")
-        // Since 2026-10-24 Finish saves every suggested target by itself.
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime).exists,
-            "Finish did not save the suggested targets"
-        )
-        XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.useThisTarget).exists,
-            "A saved target must not ask to be saved again"
-        )
         attachScreenshot(of: app, named: "02-increase-weight")
 
-        let keepRow = app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Barbell Row"]
-        scrollTo(keepRow, in: app)
-        attachScreenshot(of: app, named: "03-increase-reps")
-        tap(keepRow, "Keep previous target — add-rep recommendation")
+        // Barbell Row: keep the previous target.
+        let rowChoice = app.segmentedControls["target-choice-Barbell Row"]
+        scrollTo(rowChoice, in: app)
+        tap(rowChoice.buttons["Keep 3 × 8"], "Keep previous target — add-rep recommendation")
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.repeatingForNextTime)
+            staticText(in: app, containing: "You chose to keep it. Suggested was 3 × 9.")
                 .waitForExistence(timeout: 8),
-            "Keep-previous decision was not shown"
+            "Keep choice was not shown"
         )
-        XCTAssertTrue(
-            app.buttons["\(AppCopy.Workout.useSuggestedTarget) for Barbell Row"].waitForExistence(timeout: 5),
-            "A kept target lost its one-tap way back to the suggestion"
-        )
+        attachScreenshot(of: app, named: "03-increase-reps")
 
+        // Back Squat stalled on set 2; "Change…" opens the sheet.
+        let squatChoice = app.segmentedControls["target-choice-Back Squat"]
+        scrollTo(squatChoice, in: app)
         XCTAssertTrue(
-            staticText(in: app, containing: "Set 2: 8 of 9 reps. Keep this target.").exists,
+            staticText(in: app, containing: "Set 2: 8 of 9 reps. Target stays.").exists,
             "The stall did not name the short set"
         )
-        let editRepeatTarget = app.buttons["Edit next target for Back Squat"]
-        scrollTo(editRepeatTarget, in: app)
         attachScreenshot(of: app, named: "04-repeat-target")
-        tap(editRepeatTarget, "Edit repeat-target recommendation")
-        XCTAssertTrue(
-            app.staticTexts[AppCopy.Workout.editNextTarget].waitForExistence(timeout: 8),
-            "Recommendation edit sheet did not open"
-        )
+        tap(squatChoice.buttons[AppCopy.Workout.changeTarget], "Change… — repeat-target recommendation")
         let weightField = app.textFields[AppCopy.Workout.nextTargetLabel]
         let repsField = app.textFields[AppCopy.Workout.repsLabel]
+        XCTAssertTrue(weightField.waitForExistence(timeout: 8), "Next-target sheet did not open")
         XCTAssertEqual(weightField.frame.width, repsField.frame.width, accuracy: 1)
         XCTAssertEqual(weightField.frame.height, repsField.frame.height, accuracy: 1)
         attachScreenshot(of: app, named: "05-matched-target-inputs")
@@ -119,15 +107,15 @@ final class ProgressionContractUITests: XCTestCase {
         waitForExpectations(timeout: 3)
         repsField.typeText("10")
         tap(app.buttons[AppCopy.Nav.done], "Dismiss target keyboard")
-        tap(app.buttons[AppCopy.Workout.saveChanges], "Save edited recommendation")
+        tap(app.buttons[AppCopy.Workout.saveChanges], "Set changed target")
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.editedForNextTime)
+            staticText(in: app, containing: "You changed it. Suggested was 3 × 9.")
                 .waitForExistence(timeout: 8),
-            "Edited decision was not shown"
+            "Changed target was not explained"
         )
         XCTAssertTrue(
             staticText(in: app, containing: "3 × 10 at 50 kg").exists,
-            "Edited complete target was not shown"
+            "Changed complete target was not shown"
         )
 
         let mixedWeightExplanation = staticText(
@@ -137,21 +125,20 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(mixedWeightExplanation, in: app)
         XCTAssertTrue(
             mixedWeightExplanation.exists,
-            "Mixed working-set weights did not explain why automation is unavailable"
+            "Mixed working-set weights did not explain why the target stays"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.noAutomaticTarget).exists,
-            "Unavailable state heading is missing"
-        )
-        XCTAssertFalse(
-            app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Deadlift"].exists,
-            "A block without a suggestion has nothing to keep"
-        )
-        XCTAssertTrue(
-            app.buttons["Edit next target for Deadlift"].exists,
-            "A block without a suggestion lost its Edit"
+            app.segmentedControls["target-choice-Deadlift"].exists,
+            "A card without a suggestion lost its choices"
         )
         attachScreenshot(of: app, named: "05-mixed-weight-unavailable")
+        let saveAll = app.buttons["save-all-targets"]
+        scrollTo(saveAll, in: app, maximumSwipes: 8)
+        tap(saveAll, "Save all")
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Workout.targetsSaved).waitForExistence(timeout: 8),
+            "Save all did not confirm"
+        )
 
         // Cold relaunch against the same dedicated store. The launch seeder is
         // idempotent and must not recreate the workout or replace decisions.
@@ -327,15 +314,11 @@ final class ProgressionContractUITests: XCTestCase {
             app.staticTexts["Upper A"].waitForExistence(timeout: 20),
             "US App Store seed did not open the completed workout"
         )
-        // Exercise-done preview (2026-10-23): a finished progression exercise
-        // shows the same suggestion the summary will offer, before Finish.
-        let exerciseDoneSuggestion = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@",
-                        "Next time: 3 × 8 at 140 lb", "Next time: 3 × 8 at 140 lb")
-        ).firstMatch
-        XCTAssertTrue(
-            exerciseDoneSuggestion.waitForExistence(timeout: 10),
-            "Finished Bench Press card did not show its suggested next target"
+        // Since 2026-10-24 the done card shows only this workout; next time
+        // lives on the summary.
+        XCTAssertFalse(
+            staticText(in: app, containing: "3 × 8 at 140 lb").exists,
+            "The done card must not show next time"
         )
         attachScreenshot(of: app, named: "exercise-done-suggestion")
         let finishWorkout = app.buttons[AppCopy.Workout.finishShort].firstMatch
@@ -351,21 +334,11 @@ final class ProgressionContractUITests: XCTestCase {
             "US screenshot recommendation did not show the complete 140 lb target"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Previous").exists
-                && staticText(in: app, containing: "3 × 10 at 135 lb").exists,
-            "US screenshot recommendation lost the 135 lb evidence"
+            staticText(in: app, containing: "+5 lb").exists,
+            "US screenshot recommendation lost its change tag"
         )
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.allSetsReachedTopReason).exists,
-            "US screenshot recommendation lost its transparent reason"
-        )
-
         // Finish saves the targets (2026-10-24): "Next time" opens with the
-        // saved Bench Press card. Let the finish celebration settle first.
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime).exists,
-            "Saved recommendation state was not visible"
-        )
+        // saved Bench Press row. Let the finish celebration settle first.
         sleep(4)
         attachScreenshot(of: app, named: "store-01-real-next-target")
         attachScreenshot(of: app, named: "store-03-real-double-progression-result")
@@ -373,9 +346,7 @@ final class ProgressionContractUITests: XCTestCase {
         // Additional real recommendation variants for founder-composed App
         // Store artwork. These stay outside the canonical six-image export so
         // Figma can layer or crop them without changing the product UI.
-        let addRepSuggestion = app.buttons[
-            "\(AppCopy.Workout.keepPreviousTarget) for Barbell Row"
-        ]
+        let addRepSuggestion = app.segmentedControls["target-choice-Barbell Row"]
         scrollTo(addRepSuggestion, in: app, maximumSwipes: 6)
         XCTAssertTrue(
             staticText(in: app, containing: "3 × 9 at 95 lb").exists,
@@ -383,7 +354,7 @@ final class ProgressionContractUITests: XCTestCase {
         )
         attachScreenshot(of: app, named: "figma-card-add-one-rep")
 
-        let repeatSuggestion = app.buttons["Edit next target for Back Squat"]
+        let repeatSuggestion = app.segmentedControls["target-choice-Back Squat"]
         scrollTo(repeatSuggestion, in: app, maximumSwipes: 6)
         XCTAssertTrue(
             staticText(in: app, containing: "3 × 9 at 115 lb").exists,
@@ -453,9 +424,7 @@ final class ProgressionContractUITests: XCTestCase {
             attachScreenshot(of: app, named: "celebration-\(look)-finish-late")
             sleep(3)
             // Finish saves the target; going back to it plays the saved burst.
-            tap(app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Bench Press"], "keep \(look)")
-            sleep(1)
-            tap(app.buttons["\(AppCopy.Workout.useSuggestedTarget) for Bench Press"], "save \(look)")
+            tap(app.buttons["save-all-targets"], "save \(look)")
             usleep(150_000)
             attachScreenshot(of: app, named: "celebration-\(look)-saved")
             sleep(2)
@@ -856,17 +825,10 @@ final class ProgressionContractUITests: XCTestCase {
     }
 
     private func assertNoProgressionDecisionUI(in app: XCUIApplication) {
-        XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.useThisTarget).exists,
-            "Use-this-target must not interrupt active logging"
-        )
-        XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.keepPreviousTarget).exists,
-            "Keep-previous must not interrupt active logging"
-        )
-        XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.useSuggestedTarget).exists,
-            "Use-suggested must not interrupt active logging"
+        XCTAssertEqual(
+            app.segmentedControls.matching(NSPredicate(format: "identifier BEGINSWITH %@", "target-choice-")).count,
+            0,
+            "Target choices must not interrupt active logging"
         )
         XCTAssertEqual(
             app.buttons.matching(
@@ -879,10 +841,10 @@ final class ProgressionContractUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts[AppCopy.Workout.suggestedForNextTime].exists)
         XCTAssertFalse(app.staticTexts[AppCopy.Workout.noAutomaticTarget].exists)
         XCTAssertFalse(
-            staticText(in: app, containing: "Every set reached the top").exists
+            staticText(in: app, containing: "Every set hit").exists
         )
         XCTAssertFalse(
-            staticText(in: app, containing: AppCopy.Workout.addARepReason).exists
+            staticText(in: app, containing: "Add one rep").exists
         )
         XCTAssertFalse(
             staticText(in: app, containing: AppCopy.Workout.repeatTargetReason).exists

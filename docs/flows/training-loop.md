@@ -231,15 +231,15 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 **Steps (what the lifter sees, in order)**
 - "Complete set 3" -> same success haptic as any set. No special sound or motion for "exercise done" ([ActiveWorkoutView.swift:855](Unit/Features/Today/ActiveWorkoutView.swift:855)).
 - Card closes into a small card with grey text: name, "3 × 60 kg × 10" (or "3 sets" when sets differ), "Undo" for 5 s, check ([ActiveWorkoutView.swift:639](Unit/Features/Today/ActiveWorkoutView.swift:639), [DesignSystem.swift:6717](Unit/UI/DesignSystem.swift:6717)).
-- Progression on and the rule gives a suggestion -> one dark line with a chart icon: "Next time: 3 × 8 at 62.5 kg · +2.5 kg", or "· +1 rep", or "· same target". Read-only; Finish saves it ([ActiveWorkoutView.swift:603](Unit/Features/Today/ActiveWorkoutView.swift:603)). Added in commit `94be704`; same-set wording and "Next time" since 2026-10-24.
+- No next-time line on the done card since 2026-10-24 (founder): it shows only the name, the logged sets, a PR tag and the check. Next targets live on the summary.
 - No line when progression is off. When the rule gives no suggestion, a muted line without the icon says why: "No suggestion · Weights varied.", "· Added weight is required." or "· Set a weight increase." (2026-10-23).
 - Next unfinished exercise opens. If it is the next card in the list, the screen scrolls so the finished card stays on top; otherwise it scrolls to the next exercise ([ActiveWorkoutView.swift:834](Unit/Features/Today/ActiveWorkoutView.swift:834)).
 - Rest starts; the Lock Screen "Up next" names the next exercise, Set 1.
-- After 0.4 s the tap lock lifts. VoiceOver hears "Set 3 logged. Bench Press done. Next time: ... Rest 2:00" ([ActiveWorkoutView.swift:858](Unit/Features/Today/ActiveWorkoutView.swift:858)).
+- After 0.4 s the tap lock lifts. VoiceOver hears "Set 3 logged. Rest 2:00".
 - Last exercise of the day -> every card closed with checks (and suggestion lines), no rest. The rest bar becomes a full-width "Finish workout" button (2026-10-23); the small "Finish" stays in the nav bar.
 
 **Saved data**
-- The set only. The suggestion line is calculated live; Finish saves it to the routine.
+- The set only. Finish calculates and saves the next target.
 
 **Edge cases**
 - Undo within 5 s -> exercise reopens, the line disappears -> Low -> yes.
@@ -247,7 +247,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Next unfinished exercise is not directly below (after a skip) -> finished card and its Undo scroll out of view -> Low -> partial.
 - Tap a finished card -> it opens with its sets, no suggestion line inside; you must tap the next exercise to continue -> Low -> partial.
 - Sets with different numbers -> card says "3 sets", the numbers are hidden -> Low -> no.
-- Suggestion format differed from the summary page ("62.5 kg × 8" here, "3 × 8 at 62.5 kg" there) -> fixed 2026-10-24: "3 × 8 at 62.5 kg" on both -> Low -> yes.
+- Done card and summary used two formats -> moot since 2026-10-24: the done card no longer shows next time -> Low -> yes.
 - All exercises done -> full-width "Finish workout" replaces the rest bar -> Low -> yes (2026-10-23).
 - "+ Add set" used -> no line until the extra set is logged -> Low -> yes.
 
@@ -327,14 +327,14 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Where it appears**
 - At exercise done: read-only line (flow 5).
-- Summary page, section "Next time". Right after Finish it is the first section (2026-10-23); from History it sits below the exercise list ([SessionDetailView.swift:151](Unit/Features/History/SessionDetailView.swift:151)). The place to keep the previous target or edit.
+- Summary page: a header ("2 targets go up · 2 stay the same", "Save all"), then one card per exercise. Right after Finish they come first; from History they sit below the exercise list ([SessionDetailView.swift](Unit/Features/History/SessionDetailView.swift)).
 - Today: the saved target is the row's main line, "Last time" under it. Inside the workout only as set 1's prefill.
 
 **Steps**
-- Summary -> one block per exercise: status ("Saved"), name + "Edit", "Previous target", "Logged", "Next target", reason, "Keep previous target" (hidden when the target did not change) ([SessionDetailView.swift:217](Unit/Features/History/SessionDetailView.swift:217)).
+- Card -> "Last: 3 × 9 at 107 kg" (small, grey), the next target (large, bold) with a chip ("+1 rep", "+2.5 kg", "Same"), the reason, and one control: `+1 rep | Keep 3 × 9 | Change…`.
 - Finish already saved the target as fixed numbers (saving twice cannot add a second step) and updated the routine's planned weight and reps ([WorkoutSession.swift:156](Unit/Models/WorkoutSession.swift:156), [DayTemplate.swift:210](Unit/Models/DayTemplate.swift:210)). "Save for next workout" remains only for a suggestion Finish could not save.
-- "Keep previous target" -> previous target saved -> status "Kept", toast "Next targets saved", haptic. The action becomes "Use suggested target", which saves the suggestion again with a burst.
-- "Edit" -> sheet "Edit next target" with weight and reps -> "Save changes" (weight above 0, reps inside the range) -> status "Edited"; a "Suggested" line stays for comparison, and "Use suggested target" goes back ([SessionDetailView.swift:347](Unit/Features/History/SessionDetailView.swift:347)).
+- A choice only selects. Choices save on "Save all" or when the screen goes away; Finish already saved the suggestions, so doing nothing keeps them. "Change…" opens the sheet with weight and reps; at accessibility text sizes one "Change…" button replaces the segments and the sheet lists "Suggested" and "Keep previous target".
+- The sheet keeps Save grey while reps are outside the range or the weight is empty.
 - Back arrow without deciding -> the saved targets stay; the next workout starts from them.
 - Next workout -> set 1 of that exercise prefills the saved target ([ActiveWorkoutView.swift:1254](Unit/Features/Today/ActiveWorkoutView.swift:1254)); Today row shows "3 × 9 at 60 kg"; Analytics shows "Next 60 kg × 9".
 - History -> open that workout -> same block with the decision and its evidence.
