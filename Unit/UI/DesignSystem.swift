@@ -14,62 +14,65 @@ import UIKit
 // MARK: - Atoms
 
 /// Role-based color tokens. Every color used in the app resolves to a case here —
-/// no `Color.black/.gray`, no raw hex literals in page files. **Light-mode only**
-/// per CLAUDE.md §4 rule 3 — no dark-mode variants are maintained.
+/// no `Color.black/.gray`, no raw hex literals in page files. Each token has a
+/// light and a dark value; the app follows the system appearance
+/// (founder decision 2026-10-24). Roles: black for titles and the main number,
+/// gray for supporting text and decorative icons, blue for what you can tap or
+/// what is selected, green for done and PR.
 enum AppColor {
     static let clear = Color.clear
     // Surfaces
-    static let background = Color(uiColor: uicolor(0xF5F5F5))
-    static let cardBackground = Color(uiColor: uicolor(0xFFFFFF))
+    static let background = dynamic(0xF5F5F5, 0x000000)
+    static let cardBackground = dynamic(0xFFFFFF, 0x1C1C1E)
     /// Soft inset fill for elements nested inside `AppCard` (exercise rows, chips, inline cells).
     /// Matches page background so rows read as quiet recesses on white. Use with `AppRadius.sm` (10) +
     /// `AppSpacing.sm` (8) padding per the Figma source of truth. Do not use for top-level controls.
-    static let cardRowFill = Color(uiColor: uicolor(0xF5F5F5))
-    static let sheetBackground = Color(uiColor: uicolor(0xFFFFFF))
+    static let cardRowFill = dynamic(0xF5F5F5, 0x2C2C2E)
+    static let sheetBackground = dynamic(0xFFFFFF, 0x1C1C1E)
     /// Neutral surface for steppers, segmented track, disabled buttons, muted chip fills.
     /// Single canonical "secondary surface" token.
-    static let controlBackground = Color(uiColor: uicolor(0xE8E8E8))
+    static let controlBackground = dynamic(0xE8E8E8, 0x3A3A3C)
     /// One shade darker than `controlBackground`. Use to mark a control as the
     /// active subject of a sheet that is currently open — e.g. the logged set
     /// chip whose values are being edited in `AdjustResultSheet`. Subtle enough
     /// to read as "this is the one" without competing with the accent pill used
     /// for the live current set.
-    static let controlBackgroundActive = Color(uiColor: uicolor(0xD6D6D6))
+    static let controlBackgroundActive = dynamic(0xD6D6D6, 0x48484A)
 
     // Text
-    static let textPrimary = Color(uiColor: uicolor(0x0A0A0A))
-    static let textSecondary = Color(uiColor: uicolor(0x595959))
-    /// Low-emphasis contextual notes, lighter than `textSecondary` but still readable on Milk/Bond surfaces.
-    static let textTertiary = Color(uiColor: uicolor(0x707070))
+    /// Titles, names and the one main number of a row.
+    static let textPrimary = dynamic(0x0A0A0A, 0xF5F5F7)
+    /// Supporting text and decorative icons. At least 4.5:1 on every surface
+    /// in both appearances.
+    static let textSecondary = dynamic(0x68686D, 0x98989F)
     /// Disabled primary/secondary buttons — softer than `textSecondary` so inactive reads clearly.
-    static let textDisabled = Color(uiColor: uicolor(0x949494))
+    static let textDisabled = dynamic(0x949494, 0x636366)
     /// Placeholder hint for empty text fields and editors. Matches the iOS-native
     /// `TextField` placeholder color (`UIColor.placeholderText`) so SwiftUI's built-in
     /// placeholder rendering and the manual `AppTextEditor` overlay read identically
     /// — single canonical placeholder gray across every input surface.
     static let textPlaceholder = Color(uiColor: .placeholderText)
-    static let border = Color(uiColor: uicolor(0xE5E5E5))
+    static let border = dynamic(0xE5E5E5, 0x38383A)
     static let chartGrid = border.opacity(0.4)
     static let chartSelection = textSecondary.opacity(0.5)
+    /// Drop shadows stay black in both appearances (ink turns light in dark mode).
+    static let shadow = dynamic(0x0A0A0A, 0x000000)
 
-    /// Filled segment in multi-step progress (e.g. onboarding) — softer than `textPrimary` but reads clearly against `border` for inactive steps.
-
-    // Interactive — October 20 user-approved blue, deepened for light CTA labels.
-    static let accent = Color(uiColor: uicolor(0x0068E0))
-    static let accentForeground = Color(uiColor: uicolor(0xF6F6F6))
-    static let accentSoft = Color(uiColor: uicolor(0xEAF2FF))
+    // Interactive — October 20 user-approved blue; dark uses the iOS dark-mode blue.
+    static let accent = dynamic(0x0068E0, 0x0A84FF)
+    static let accentForeground = dynamic(0xF6F6F6, 0xFFFFFF)
+    static let accentSoft = dynamic(0xEAF2FF, 0x0F2A47)
 
     // Celebration pieces only (never UI chrome). Brand: Unit blues plus ink.
     // Color: the Family-style multi-color option kept for comparison.
-    static let celebrationBrand: [Color] = [0x0068E0, 0x4D9BFF, 0x0A0A0A, 0xA9CCFF, 0x0068E0]
-        .map { Color(uiColor: uicolor($0)) }
+    static let celebrationBrand: [Color] = [accent, Color(uiColor: uicolor(0x4D9BFF)), textPrimary, Color(uiColor: uicolor(0xA9CCFF)), accent]
     static let celebrationColor: [Color] = [0x0068E0, 0x34C759, 0xFFCC00, 0xFF9500, 0xFF3B30, 0xAF52DE]
         .map { Color(uiColor: uicolor($0)) }
 
-    // Status
-    static let success = Color(uiColor: uicolor(0x34C759))
-    static let warning = Color(uiColor: uicolor(0xFF9500))
-    static let error = Color(uiColor: uicolor(0xFF3B30))
+    // Status. Green marks done and PR; deepened in light mode so icons pass 3:1.
+    static let success = dynamic(0x248A3D, 0x30D158)
+    static let warning = dynamic(0xFF9500, 0xFF9F0A)
+    static let error = dynamic(0xFF3B30, 0xFF453A)
 
     /// Soft tint fills for status surfaces (calendar day cells, status badges).
     /// Replaces scattered `AppColor.success.opacity(0.18)` and peers.
@@ -79,10 +82,16 @@ enum AppColor {
 
     /// Accessible text colors paired with the matching `*Soft` backgrounds.
     /// Vivid `success` / `warning` fail WCAG AA contrast when set as text on their own
-    /// soft tint; these darker shades are the chip foreground.
-    static let successOnSoft = Color(uiColor: uicolor(0x1D7A38))
-    static let warningOnSoft = Color(uiColor: uicolor(0x8A4A00))
-    static let errorOnSoft = Color(uiColor: uicolor(0xB3261E))
+    /// soft tint; these darker (light mode) or lighter (dark mode) shades are the chip foreground.
+    static let successOnSoft = dynamic(0x1A6B30, 0x30D158)
+    static let warningOnSoft = dynamic(0x8A4A00, 0xFFB340)
+    static let errorOnSoft = dynamic(0xB3261E, 0xFF6961)
+
+    private nonisolated static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            uicolor(traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
 
     private nonisolated static func uicolor(_ hex: UInt32) -> UIColor {
         UIColor(
@@ -342,6 +351,9 @@ enum AppRadius {
 enum AppProgressChipMetrics {
     static let rowHeight: CGFloat = 20
     static var compactHorizontalPadding: CGFloat { AppSpacing.sm }
+    /// `AppTag.Layout.mini`: the PR chip, a quiet marker beside row numbers.
+    static let miniHeight: CGFloat = 16
+    static let miniHorizontalPadding: CGFloat = 6
 }
 
 /// One motion vocabulary. Active logging stays quiet; staged moments may settle.
@@ -810,7 +822,7 @@ struct AppCelebration: View {
             let pop = 0.55 + 0.45 * min(1, t / C.popIn)
             var particle = context
             particle.opacity = max(0, fade) * (flip < 0 ? 0.78 : 1)
-            particle.addFilter(.shadow(color: AppColor.textPrimary.opacity(0.12), radius: 1.5, x: 0, y: 1))
+            particle.addFilter(.shadow(color: AppColor.shadow.opacity(0.12), radius: 1.5, x: 0, y: 1))
             particle.translateBy(x: x, y: y)
             particle.rotate(by: .radians(sample(13) * .pi * 2 + spin * t))
             particle.scaleBy(x: pop, y: pop * max(0.14, abs(flip)))
@@ -2109,11 +2121,12 @@ private struct AppFloatingPillShadow: ViewModifier {
     }
 }
 
-/// Ink "PR" chip: History rows, the workout summary, and logged sets during a
-/// workout. One owner so every personal record reads the same.
+/// Green "PR" chip: History rows, the workout summary, and logged sets during
+/// a workout. Same green as the live "Personal record" badge, so every
+/// personal record reads the same. One owner.
 @ViewBuilder
 func historyPRTag() -> some View {
-    AppTag(text: AppCopy.Workout.prTag, style: .ink, layout: .compactCapsule)
+    AppTag(text: AppCopy.Workout.prTag, style: .success, layout: .mini)
         .accessibilityLabel(AppCopy.Workout.personalRecord)
 }
 
@@ -2139,12 +2152,13 @@ struct AppTag: View {
     enum Layout {
         case regular
         case compactCapsule
+        /// Smallest pill (11pt caps, 16pt tall) for a marker beside numbers.
+        case mini
     }
 
     enum Style {
         case `default`
         case accent
-        case ink
         case success
         case warning
         case error
@@ -2180,6 +2194,12 @@ struct AppTag: View {
                 .frame(minHeight: AppProgressChipMetrics.rowHeight)
                 .background(backgroundColor)
                 .clipShape(Capsule(style: .continuous))
+        case .mini:
+            content
+                .padding(.horizontal, AppProgressChipMetrics.miniHorizontalPadding)
+                .frame(minHeight: AppProgressChipMetrics.miniHeight)
+                .background(backgroundColor)
+                .clipShape(Capsule(style: .continuous))
         }
     }
 
@@ -2189,7 +2209,7 @@ struct AppTag: View {
                 icon.image(size: 12, weight: .semibold)
             }
             Text(text)
-                .appCapsLabel(isEmphasized ? .overlineStrong : .overline)
+                .appCapsLabel(layout == .mini ? .smallLabel : (isEmphasized ? .overlineStrong : .overline))
         }
         .foregroundStyle(foregroundColor)
     }
@@ -2200,7 +2220,7 @@ struct AppTag: View {
     private var isEmphasized: Bool {
         switch style {
         case .default, .muted, .custom: return false
-        case .accent, .ink, .success, .warning, .error: return true
+        case .accent, .success, .warning, .error: return true
         }
     }
 
@@ -2208,7 +2228,6 @@ struct AppTag: View {
         switch style {
         case .default: return AppColor.textPrimary
         case .accent: return AppColor.accentForeground
-        case .ink: return AppColor.cardBackground
         case .success: return AppColor.successOnSoft
         case .warning: return AppColor.warningOnSoft
         case .error: return AppColor.errorOnSoft
@@ -2221,7 +2240,6 @@ struct AppTag: View {
         switch style {
         case .default: return AppColor.controlBackground
         case .accent: return AppColor.accent
-        case .ink: return AppColor.textPrimary
         case .success: return AppColor.successSoft
         case .warning: return AppColor.warningSoft
         case .error: return AppColor.errorSoft
@@ -2325,7 +2343,7 @@ private struct AppFilterChipSurface: ViewModifier {
         content
             .animation(AppMotion.feedback) { label in
                 label.foregroundStyle(isEnabled
-                    ? (isSelected ? AppColor.background : AppColor.textPrimary)
+                    ? (isSelected ? AppColor.accentForeground : AppColor.textPrimary)
                     : AppColor.textDisabled)
             }
             .padding(.leading, AppSpacing.smd)
@@ -2334,7 +2352,7 @@ private struct AppFilterChipSurface: ViewModifier {
             .frame(minHeight: 44)
             .background {
                 Capsule(style: .continuous)
-                    .fill(isEnabled && isSelected ? AppColor.textPrimary : AppColor.controlBackground)
+                    .fill(isEnabled && isSelected ? AppColor.accent : AppColor.controlBackground)
                     .animation(AppMotion.feedback, value: isSelected)
                     .animation(AppMotion.feedback, value: isEnabled)
             }
@@ -2863,7 +2881,7 @@ extension View {
             HStack(spacing: AppSpacing.md) {
                 self.frame(maxWidth: .infinity, alignment: .leading)
                 AppIcon.forward.image(size: AppIconSize.indicator, weight: .medium)
-                    .foregroundStyle(AppColor.textTertiary)
+                    .foregroundStyle(AppColor.textSecondary)
                     .accessibilityHidden(true)
             }
             .frame(minHeight: 44)
@@ -3606,7 +3624,7 @@ struct AppFeatureAccessTable: View {
     private func featureRow(_ label: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             AppIcon.checkmarkFilled.image(size: AppIconSize.readiness, weight: .semibold)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.success)
                 .accessibilityHidden(true)
 
             Text(label)
@@ -3760,7 +3778,7 @@ private struct AppToastPill: View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
             if event.kind == .success {
                 AppIcon.checkmark.image(size: AppIconSize.readiness, weight: .bold)
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(AppColor.success)
                     .opacity(markVisible ? 1 : 0)
                     .scaleEffect(markVisible || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
                         ? 1 : AppMotion.markPopScale)
@@ -3821,8 +3839,8 @@ extension View {
     /// where the shadow lives beneath the object, not around it.
     func appFloatingShadow() -> some View {
         self
-            .shadow(color: AppColor.textPrimary.opacity(0.14), radius: 14, x: 0, y: 14)
-            .shadow(color: AppColor.textPrimary.opacity(0.06), radius: 2, x: 0, y: 2)
+            .shadow(color: AppColor.shadow.opacity(0.14), radius: 14, x: 0, y: 14)
+            .shadow(color: AppColor.shadow.opacity(0.06), radius: 2, x: 0, y: 2)
     }
 }
 
@@ -3875,7 +3893,7 @@ struct EmptyStateCard<Content: View>: View {
                     if let note {
                         Text(note)
                             .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textTertiary)
+                            .foregroundStyle(AppColor.textSecondary)
                             .multilineTextAlignment(.leading)
                     }
                 }
@@ -6395,7 +6413,6 @@ struct AppComponentCatalog: View {
         }
         .navigationTitle("Components")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.light)
         .tint(AppColor.accent)
         .appToast(event: $toast)
         .overlay { AppCelebration(moment: celebration) }
@@ -6410,7 +6427,6 @@ struct AppComponentCatalog: View {
                     return true
                 }
             }
-            .preferredColorScheme(.light)
         }
     }
 
@@ -6631,7 +6647,7 @@ struct AppTrendChart: View {
                         LineMark(x: .value("", point.week), y: .value("", point.value))
                             .interpolationMethod(.linear)
                             .lineStyle(StrokeStyle(lineWidth: differentiate ? 2.5 : 2))
-                            .foregroundStyle(AppColor.textPrimary)
+                            .foregroundStyle(AppColor.accent)
                     }
                     if selected?.id == point.id {
                         RuleMark(x: .value("", point.week))
@@ -6641,9 +6657,9 @@ struct AppTrendChart: View {
                     PointMark(x: .value("", point.week), y: .value("", point.value))
                         .symbol {
                             Circle()
-                                .fill(selected?.id == point.id ? AppColor.accent : (point.id == data.points.last?.id ? AppColor.textPrimary : AppColor.cardBackground))
+                                .fill(selected?.id == point.id ? AppColor.accent : (point.id == data.points.last?.id ? AppColor.accent : AppColor.cardBackground))
                                 .frame(width: selected?.id == point.id ? 9 : (point.id == data.points.last?.id ? 7 : 5), height: selected?.id == point.id ? 9 : (point.id == data.points.last?.id ? 7 : 5))
-                                .overlay { Circle().stroke(selected?.id == point.id ? AppColor.cardBackground : AppColor.textPrimary, lineWidth: selected?.id == point.id ? 2 : 1.5) }
+                                .overlay { Circle().stroke(selected?.id == point.id ? AppColor.cardBackground : AppColor.accent, lineWidth: selected?.id == point.id ? 2 : 1.5) }
                         }
                 }
             }
@@ -6811,7 +6827,7 @@ struct AppMainLiftCard: View {
     static func iconTile(_ icon: AppIcon, side: CGFloat, detail: Bool = false) -> some View {
         AppIconCircle(diameter: side, shape: .roundedRect(radius: AppRadius.sm), surface: .background, maximumScale: 2) {
             icon.image(size: detail ? AppIconSize.exerciseDetail : AppIconSize.exercise, weight: .regular, maximumScale: 2)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.textSecondary)
         }.accessibilityHidden(true)
     }
     static func metric(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String, numberStyle: AppFont = .numericInput) -> some View {
@@ -6979,7 +6995,7 @@ struct CurrentSetRow<Value: View>: View {
         } else {
             HStack(spacing: AppSpacing.xs) {
                 Text("\(number)").appFont(.stepIndicator)
-                    .foregroundStyle(AppColor.textTertiary)
+                    .foregroundStyle(AppColor.textSecondary)
                     .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
                 value()
                 if showsCompletion { AppIcon.checkmarkFilled.image(size: 20).accessibilityHidden(true) }
@@ -7015,7 +7031,7 @@ struct LoggedSetRow: View {
             } label: {
                 HStack(spacing: AppSpacing.xs) {
                     Text("\(number)").appFont(.stepIndicator)
-                        .foregroundStyle(AppColor.textTertiary)
+                        .foregroundStyle(AppColor.textSecondary)
                         .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
                     // The tag sits beside the value; the Undo slot and check
                     // after the menu keep their positions.
@@ -7044,7 +7060,7 @@ struct LoggedSetRow: View {
             }
             .animation(AppMotion.transition, value: showsUndo)
             AppIcon.checkmarkFilled.image(size: 20)
-                .foregroundStyle(AppColor.textPrimary).accessibilityHidden(true)
+                .foregroundStyle(AppColor.success).accessibilityHidden(true)
                 .symbolEffect(.bounce, value: arrived)
         }
         .onAppear {
@@ -7133,6 +7149,7 @@ struct ExerciseSummaryRow: View {
                         AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                     }
                     AppIcon.checkmarkFilled.image(size: 20)
+                        .foregroundStyle(AppColor.success)
                         .accessibilityHidden(true)
                 }
             }

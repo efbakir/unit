@@ -189,6 +189,8 @@ components:
 
 # Design System: Unit
 
+**October 24 color roles and dark mode:** black (`textPrimary`) for titles, names and the main number; gray (`textSecondary`, `#68686D`) for supporting text and decorative icons; blue (`accent`) for what you can tap or what is selected; green (`success`, `#248A3D`) for done and PR. Every token has a dark value (page `#000000`, card `#1C1C1E`, text `#F5F5F7` / `#98989F`, blue `#0A84FF`, green `#30D158`); the app follows the system setting. Full list: `docs/atomic-design-system.md` §Colour.
+
 **October 20 approved color override:** `AppColor.accent` is blue `#0068E0`, with `accentSoft` `#EAF2FF` and the existing Chalk foreground. This supersedes references below to Ink as the action accent. Ink remains the primary text/data color. Reuse existing action and selection owners; no per-exercise colors. Layout, type, and native navigation structure remain unchanged.
 
 Runtime owners and the DEBUG catalog: [design-system index](docs/design-system-index.md).
@@ -204,7 +206,7 @@ The aesthetic is *iron and paper*: solid Ink (#0A0A0A) accents on Bond (#FFFFFF)
 This system explicitly rejects the visual category of "fitness tracker" software. It is not a Strong/Hevy/Jefit spreadsheet, not a Strava feed, not a Whoop dashboard. There are no neon data viz arcs, no gradient hero metrics, no recovery rings, no badge animations, no stock-photo athletes. If a pixel doesn't help log faster or read state more clearly under fatigue, it does not belong.
 
 **Key Characteristics:**
-- Light-only for this release (after the recorded two-second black onboarding brand opener, the established light appearance is rendered regardless of the system trait)
+- Light and dark follow the system setting (2026-10-24). Only the two-second black onboarding opener forces an appearance
 - Flat by doctrine — separation through fill contrast, never shadows
 - Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)
 - One Ink-black primary CTA per stress screen, full-width, 60pt tall

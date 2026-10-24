@@ -197,15 +197,7 @@ struct AnalyticsView: View {
 }
 
 
-#Preview("Analytics · light") {
+#Preview("Analytics") {
     NavigationStack { AnalyticsView() }
         .modelContainer(PreviewSampleData.makePreviewContainer())
-        .preferredColorScheme(.light)
-}
-
-#Preview("Analytics · system dark, Unit stays light") {
-    NavigationStack { AnalyticsView() }
-        .modelContainer(PreviewSampleData.makePreviewContainer())
-        .environment(\.colorScheme, .dark)
-        .preferredColorScheme(.light)
 }

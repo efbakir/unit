@@ -4,6 +4,7 @@
   "title": "Design System: Unit",
   "platform": "ios-swiftui",
   "approvedColorOverride": {"date": "2026-10-20", "accent": "#0068E0", "accentForeground": "#F6F6F6", "accentSoft": "#EAF2FF", "scope": "Existing action and selection owners; Ink remains text/data. Supersedes older Ink-as-action examples. No exercise colors."},
+  "approvedAppearance": {"date": "2026-10-24", "mode": "Follows the system light/dark setting", "accentDark": "#0A84FF", "roles": "Black = titles and main number; gray = supporting text and decorative icons; blue = tappable or selected; green = done and PR."},
   "platformNote": "Unit is iOS / SwiftUI. The HTML/CSS component snippets below are web approximations of the canonical SwiftUI primitives in Unit/UI/DesignSystem.swift, generated for live-panel rendering only — they are not used by the app.",
   "extensions": {
     "colorMeta": {
@@ -11,56 +12,56 @@
         "role": "primary",
         "displayName": "Ink",
         "canonical": "#0A0A0A",
-        "dark": "#F3F4F6",
+        "dark": "#F5F5F7",
         "tonalRamp": ["#0A0A0A", "#1A1A1A", "#2C2C2C", "#404040", "#595959", "#7A7A7A", "#949494", "#C7C7C7"]
       },
       "milk": {
         "role": "neutral",
         "displayName": "Milk",
         "canonical": "#F5F5F5",
-        "dark": "#0E0F12",
+        "dark": "#000000",
         "tonalRamp": ["#0E0F12", "#1D2026", "#2C313A", "#595959", "#949494", "#C7C7C7", "#E5E5E5", "#F5F5F5"]
       },
       "bond": {
         "role": "neutral",
         "displayName": "Bond",
         "canonical": "#FFFFFF",
-        "dark": "#1D2026",
+        "dark": "#1C1C1E",
         "tonalRamp": ["#1D2026", "#2C313A", "#3F4550", "#595959", "#949494", "#D4D4D4", "#F5F5F5", "#FFFFFF"]
       },
       "pumice": {
         "role": "neutral",
         "displayName": "Pumice",
         "canonical": "#E8E8E8",
-        "dark": "#2C313A",
+        "dark": "#3A3A3C",
         "tonalRamp": ["#2C313A", "#3F4550", "#595959", "#7A7A7A", "#949494", "#C7C7C7", "#E0E0E0", "#E8E8E8"]
       },
       "hairline": {
         "role": "neutral",
         "displayName": "Hairline",
         "canonical": "#E5E5E5",
-        "dark": "#373C47",
+        "dark": "#38383A",
         "tonalRamp": ["#373C47", "#4A4F5A", "#5C616B", "#7A7F88", "#949CA5", "#B5BBC2", "#D4D8DC", "#E5E5E5"]
       },
       "ash": {
         "role": "neutral",
         "displayName": "Ash",
-        "canonical": "#595959",
-        "dark": "#B3B8C2",
+        "canonical": "#68686D",
+        "dark": "#98989F",
         "tonalRamp": ["#1A1A1A", "#2C2C2C", "#404040", "#595959", "#7A7A7A", "#949494", "#B5B5B5", "#D4D4D4"]
       },
       "mist": {
         "role": "neutral",
         "displayName": "Mist",
         "canonical": "#949494",
-        "dark": "#7A808C",
+        "dark": "#636366",
         "tonalRamp": ["#404040", "#595959", "#6E6E6E", "#7A7A7A", "#949494", "#B5B5B5", "#D4D4D4", "#EAEAEA"]
       },
       "chalk": {
         "role": "neutral",
         "displayName": "Chalk",
         "canonical": "#F6F6F6",
-        "dark": "#111317",
+        "dark": "#FFFFFF",
         "tonalRamp": ["#111317", "#1D2026", "#2C313A", "#595959", "#949494", "#C7C7C7", "#E5E5E5", "#F6F6F6"]
       },
       "spark": {
@@ -74,7 +75,7 @@
       "verde": {
         "role": "system-success",
         "displayName": "Verde",
-        "canonical": "#34C759",
+        "canonical": "#248A3D",
         "dark": "#30D158",
         "tonalRamp": ["#0F3D1B", "#185C2A", "#1F7A38", "#2A9E48", "#34C759", "#5FD37C", "#90E2A6", "#C8F1D5"]
       },
@@ -171,7 +172,7 @@
     "northStar": "The Lab Notebook",
     "overview": "Unit is the gym notebook a serious lifter has been writing in for a year — quiet, page-like, and trusted because it never gets in the way. The visual system is built around a single belief: under fatigue, the only things that should compete for the eye are the numbers the lifter is reading and the one button they need to press next. Everything else recedes into milk-grey paper and bond-white cards. The aesthetic is iron and paper: solid Ink (#0A0A0A) accents on Bond (#FFFFFF) cards floating on a Milk (#F5F5F5) page. There is no glow, no gradient, no decorative motion in the hot loop. Cards separate from the page through fill contrast, never through drop shadows. Numerics use monospaced digits and dominate visual hierarchy — weight, reps, and timers are the loudest elements on every screen because they are the data the lifter is actually reading mid-set. This system explicitly rejects the visual category of fitness tracker software. It is not a Strong/Hevy/Jefit spreadsheet, not a Strava feed, not a Whoop dashboard. There are no neon data viz arcs, no gradient hero metrics, no recovery rings, no badge animations, no stock-photo athletes. If a pixel doesn't help log faster or read state more clearly under fatigue, it does not belong.",
     "keyCharacteristics": [
-      "Light-first, system-honoring (light mode is the design baseline; dark adapts via system trait, never drives decisions)",
+      "Follows the system light/dark setting (2026-10-24); every AppColor token has a dark value in DesignSystem.swift",
       "Flat by doctrine — separation through fill contrast, never shadows",
       "Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)",
       "One Ink-black primary CTA per stress screen, full-width, 60pt tall",

@@ -303,7 +303,7 @@ struct TrainingWeekStripView: View {
                 .foregroundStyle(AppColor.accentForeground)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
-                .background(AppColor.textPrimary)
+                .background(AppColor.accent)
                 .clipShape(Capsule(style: .continuous))
                 .layoutPriority(1)
 

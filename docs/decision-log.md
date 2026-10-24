@@ -45,6 +45,16 @@ Efe tested the merged build on his phone and called the summary "the most import
 - **Kept:** confetti, automatic saving at Finish, the stall line naming the short set.
 - **Colors and PR tag size:** tokens only (textPrimary for the target, textSecondary for the rest); the consistency chat owns tag size.
 
+## 2026-10-24 - Dark mode follows the system; fewer black elements
+
+- **Decision:** Unit follows the system light/dark setting. Every `AppColor` token has a dark value in `DesignSystem.swift` (page `#000000`, card `#1C1C1E`, text `#F5F5F7` / `#98989F`, blue `#0A84FF`, green `#30D158`). Founder call after testing the merged build on his phone.
+- **Supersedes:** CLAUDE.md §4 rule 3 "Light mode only" and the light-only lines in `DESIGN.md` and `docs/atomic-design-system.md`. Forcing an appearance stays banned; only the two-second splash opener forces dark.
+- **Color roles (founder: "too much is dark and black"):** black for titles, names and the main number; gray for supporting text and decorative icons (`textSecondary` lighter, `#595959` -> `#68686D`, still 4.5:1 on every surface; `textTertiary` folded in); blue for what you can tap or what is selected (filter chip, calendar day, current week day, chart lines); green for done and PR (set checks, summary checks, success toast, feature checks, PR chip, completed calendar days). Supersedes the "status checks are black" consistency rule from earlier today.
+- **PR chip:** smaller (16pt tall, 11pt caps) and green, the same green as the live "Personal record" badge.
+- **Summary (agreed with the progression chat):** the next target is the one strongest element, `AppFont.title` + `textPrimary`; name, tag and reason are caption + `textSecondary`.
+- **Not in scope:** a dark or tinted app icon.
+- **Undo:** `AppColor.dynamic(_:_:)`, `INFOPLIST_KEY_UIUserInterfaceStyle`.
+
 ## 2026-10-24 - Founder override: next targets apply at Finish
 
 Efe chose this in the progression-loop session, after benchmark 4 (`docs/research/2026-10-24-benchmarks/4-exercise-done-summary.md`) and persona panel round 2.

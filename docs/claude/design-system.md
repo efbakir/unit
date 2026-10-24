@@ -8,7 +8,7 @@
 
 1. **Keep it simple.** Default to removing, not adding. Fewer tokens, fewer variants, fewer words, fewer screens. If a change grows the system, justify it out loud before shipping.
 2. **Reuse components. Do not create new ones.** Before writing any new `View`, grep `Unit/UI/DesignSystem.swift` and the existing molecules/organisms. If something ~80% fits — use it or extend it. Duplicates are worse than imperfect reuse. *Creating a parallel component is an explicit decision that requires the user's okay.*
-3. **Light mode only.** No dark-mode styling, no `.preferredColorScheme(.dark)`, no dark-first visual decisions. Tokens may have dark values for system compatibility, but visual review and screenshots happen in light mode.
+3. **Light and dark follow the system** (2026-10-24). Every `AppColor` token has a light and a dark value; never force an appearance with `.preferredColorScheme`. Review screenshots in both appearances.
 4. **Portrait only.** The app does not rotate. Landscape is not supported.
 5. **Gatekeeper every UI change.** Run the checklist below before Edit/Write on any `.swift` view file. Fail-closed.
 
@@ -48,13 +48,13 @@ Cross-reference: `feedback_unit_scroll_edge_soft.md` in memory.
 - [ ] **I am not adding a parallel `LinearGradient` / `.mask` / `.scrollEdgeEffectStyle(.automatic, ...)`** when `appScrollEdgeSoft(...)` is the canonical modifier.
 - [ ] The change introduces no new raw colors, fonts, spacings, or radii — only tokens.
 - [ ] The change adds no net-new component without the user's explicit okay.
-- [ ] The change is light-mode correct. No dark-mode-first decisions.
+- [ ] The change is correct in light and dark: tokens only, no color that assumes a light page.
 - [ ] The change does not assume landscape or rotated layout.
 - [ ] If this is a bug fix, I confirmed whether the bug is at the atom/molecule layer. **If yes, I fix only `DesignSystem.swift` — not also the feature file.** (See `CLAUDE.md` §5.)
 - [ ] If I edited a `ToolbarItem` button, I did not add `.weight(...)` unless I'm changing the convention app-wide in the same turn.
 - [ ] If I edited `.sheet { }` content, the root is a plain `VStack` (no `ScrollView` / `AppCard` wrapper). Use `presentationDetents` for height.
 - [ ] The screen is wrapped in `AppScreen`. All CTAs use `AppPrimaryButton`. Cards use `AppCard` / `appCardStyle()`. Navigation rows use shared disclosure; no raw glyph literals. No `Divider()` where `AppDivider` applies.
-- [ ] Touch targets ≥ 44×44pt. No regular font weight. No orange `#FF4400` (accent is `0x0A0A0A`).
+- [ ] Touch targets ≥ 44×44pt. No regular font weight. No orange `#FF4400` (accent is blue `0x0068E0`).
 - [ ] Copy is explicit, not a `–` / `—` placeholder. Bodyweight shows "BW", not "0 kg".
 - [ ] No `ProcessInfo.processInfo.environment["UNIT_*"]` / `UNIT_START_TAB` / `UNIT_AUTO_OPEN` screenshot-scaffolding left in `ContentView.swift` or any `Features/**/*.swift`. Revert temp scaffolding before turn end.
 
@@ -124,7 +124,7 @@ Fetch via the figma MCP (`get_design_context`, `get_screenshot`, `get_variable_d
 
 ### Mode and orientation
 
-- `.preferredColorScheme(.dark)` or any dark-mode-first styling decision
+- `.preferredColorScheme(...)` outside the two-second splash opener; any color that only works on a light page
 - Any landscape-only layout assumption
 
 ### Copy

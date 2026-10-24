@@ -53,7 +53,7 @@ enum SessionReviewState: Equatable {
 
     var markerColor: Color {
         switch self {
-        case .completed: return AppColor.textPrimary
+        case .completed: return AppColor.success
         case .partial: return AppColor.warning
         case .skipped: return AppColor.error
         }
@@ -1157,7 +1157,7 @@ private struct CalendarDayCell: View {
 
     private var backgroundFill: Color {
         if model.isSelected {
-            return AppColor.textPrimary
+            return AppColor.accent
         }
         switch model.status {
         case .completed:
@@ -1169,7 +1169,7 @@ private struct CalendarDayCell: View {
 
     private var numberColor: Color {
         if model.isSelected {
-            return AppColor.background
+            return AppColor.accentForeground
         }
         switch model.status {
         case .completed, .missed, .today:
@@ -1181,7 +1181,7 @@ private struct CalendarDayCell: View {
 
     private var strokeColor: Color {
         if model.isSelected {
-            return AppColor.textPrimary
+            return AppColor.accent
         }
         switch model.status {
         case .missed, .today:
