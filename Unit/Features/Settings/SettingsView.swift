@@ -247,7 +247,7 @@ struct SettingsView: View {
                     Button {
                         Task { await runRestore() }
                     } label: {
-                        AppListRow(title: row.rawValue) {
+                        AppListRow(title: row.rawValue, tone: .action) {
                             // Reserve the indicator's space so the row stays
                             // still when restoring begins or finishes.
                             ProgressView()
@@ -324,9 +324,10 @@ struct SettingsView: View {
             }
             .foregroundStyle(AppColor.textSecondary)
             if let mailURL = URL(string: "mailto:support@unitlift.app") {
-                Link("support@unitlift.app", destination: mailURL)
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textPrimary)
+                Link(destination: mailURL) {
+                    AppGhostButtonLabel(title: "support@unitlift.app", layout: .inline)
+                }
+                .buttonStyle(ScaleButtonStyle())
             }
         }
         .frame(maxWidth: .infinity)

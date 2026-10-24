@@ -131,13 +131,10 @@ struct TemplatesView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             activeProgramCard(split: split, days: days)
 
-            Button {
+            AppGhostButton(AppCopy.Workout.freestyleSession) {
                 FreestyleSessionSupport.startEmptyWorkout(modelContext: modelContext, activeSplit: split)
                 appTabSelection(.today)
-            } label: {
-                AppGhostButtonLabel(title: AppCopy.Workout.freestyleSession)
             }
-            .buttonStyle(ScaleButtonStyle())
             .padding(.top, AppSpacing.xxs)
             .accessibilityLabel("Freestyle session, log without a program day")
 
@@ -480,7 +477,7 @@ struct EditProgramView: View {
             } label: {
                 Text(weekdayShort(template.scheduledWeekday) ?? "Day")
                     .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(AppColor.accent)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }

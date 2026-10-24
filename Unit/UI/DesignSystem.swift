@@ -1234,12 +1234,22 @@ enum AppListRowStyle {
 }
 
 struct AppListRow<Trailing: View>: View {
+    /// `.action` is a row that runs something in place (no chevron), so its
+    /// title is blue like every text button. Rows that open a screen keep a
+    /// black title and the disclosure chevron.
+    enum Tone {
+        case `default`
+        case action
+    }
+
     let title: String
     let subtitle: String?
     let leadingIcon: AppIcon?
     var style: AppListRowStyle = .tappable
     var showsDisclosure: Bool = false
+    var tone: Tone = .default
     @ViewBuilder let trailing: () -> Trailing
+    @Environment(\.isEnabled) private var isEnabled
 
     init(
         title: String,
@@ -1247,6 +1257,7 @@ struct AppListRow<Trailing: View>: View {
         leadingIcon: AppIcon? = nil,
         style: AppListRowStyle = .tappable,
         showsDisclosure: Bool = false,
+        tone: Tone = .default,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
@@ -1254,7 +1265,13 @@ struct AppListRow<Trailing: View>: View {
         self.leadingIcon = leadingIcon
         self.style = style
         self.showsDisclosure = showsDisclosure
+        self.tone = tone
         self.trailing = trailing
+    }
+
+    private var titleColor: Color {
+        guard tone == .action else { return AppFont.body.color }
+        return isEnabled ? AppColor.accent : AppColor.textDisabled
     }
 
     var body: some View {
@@ -1268,7 +1285,7 @@ struct AppListRow<Trailing: View>: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(AppFont.body.font)
-                    .foregroundStyle(AppFont.body.color)
+                    .foregroundStyle(titleColor)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -1918,43 +1935,54 @@ struct AppSecondaryButton: View {
     }
 }
 
-/// Text-only action (no fill). Full-width row with **centered** label and ≥44pt hit area.
-/// Use inside `NavigationLink` labels or with `AppGhostButton`.
+/// Text-only action (no fill), blue like every text button so it reads as
+/// tappable next to black body text (decision 2026-10-24). `.fullWidth` is a
+/// centered row; `.inline` hugs its text for rows and section headers. Both
+/// keep a ≥44pt hit area. Use inside `NavigationLink` labels or `Link`s too.
 struct AppGhostButtonLabel: View {
     let title: String
     var isEnabled: Bool = true
+    var layout: AppGhostButton.Layout = .fullWidth
     @Environment(\.isEnabled) private var parentIsEnabled
     private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
 
     var body: some View {
         Text(title)
-            .font(AppFont.productAction.font)
-            .foregroundStyle(effectiveEnabled ? AppColor.textPrimary : AppColor.textDisabled)
+            .font(layout == .inline ? AppFont.caption.font : AppFont.productAction.font)
+            .foregroundStyle(effectiveEnabled ? AppColor.accent : AppColor.textDisabled)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
+            .frame(maxWidth: layout == .inline ? nil : .infinity)
+            .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
     }
 }
 
 /// Text-only quiet action (no fill, no stroke) — use for "Freestyle session",
 /// "Skip", or any optional path that shouldn't compete with the primary CTA.
-/// 44pt hit area. For disclosure link labels, use `AppGhostButtonLabel` directly.
+/// `.inline` is the same action at row size: "Edit", "Undo", "No thanks".
+/// For disclosure link labels, use `AppGhostButtonLabel` directly.
 struct AppGhostButton: View {
+    enum Layout {
+        case fullWidth
+        case inline
+    }
+
     let label: String
     var isEnabled: Bool = true
+    var layout: Layout = .fullWidth
     let action: () -> Void
 
-    init(_ label: String, isEnabled: Bool = true, action: @escaping () -> Void) {
+    init(_ label: String, isEnabled: Bool = true, layout: Layout = .fullWidth, action: @escaping () -> Void) {
         self.label = label
         self.isEnabled = isEnabled
+        self.layout = layout
         self.action = action
     }
 
     var body: some View {
         Button(action: action) {
-            AppGhostButtonLabel(title: label, isEnabled: isEnabled)
-                .frame(minHeight: 60)
+            AppGhostButtonLabel(title: label, isEnabled: isEnabled, layout: layout)
+                .frame(minHeight: layout == .inline ? 44 : 60)
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(!isEnabled)
@@ -5281,7 +5309,7 @@ struct AppExercisePickerSheet: View {
                                 .foregroundStyle(AppColor.accent)
                             Text("Restore \"\(archivedExactMatch.displayName)\"")
                                 .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.textPrimary)
+                                .foregroundStyle(AppColor.accent)
                         }
                         .frame(minHeight: 44, alignment: .leading)
                     }
@@ -5297,7 +5325,7 @@ struct AppExercisePickerSheet: View {
                                 .foregroundStyle(AppColor.accent)
                             Text("Create \"\(trimmedQuery)\"")
                                 .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.textPrimary)
+                                .foregroundStyle(AppColor.accent)
                         }
                         .frame(minHeight: 44, alignment: .leading)
                     }
@@ -6812,12 +6840,9 @@ struct ExerciseLoggingCard<Content: View>: View {
             }
             .padding(.horizontal, AppSpacing.xs)
             content()
-            Button("+ Add set", action: onAddSet)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
+            // Same "add to this list" row as a routine's "Add exercise".
+            AppCardListAddRow(AppCopy.Workout.addSet, action: onAddSet)
                 .padding(.horizontal, AppSpacing.smd)
-                .buttonStyle(ScaleButtonStyle())
         }
     }
 }
@@ -6915,10 +6940,7 @@ struct LoggedSetRow: View {
             .accessibilityAction(named: "Mark not done", onMarkNotDone)
             Group {
                 if showsUndo {
-                    Button("Undo", action: onUndo)
-                        .font(AppFont.caption.font).underline()
-                        .foregroundStyle(AppColor.textPrimary)
-                        .frame(minWidth: 44, minHeight: 44)
+                    AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                 } else {
                     AppColor.clear.frame(width: 44, height: 44)
                         .accessibilityHidden(true)
@@ -7010,10 +7032,7 @@ struct ExerciseSummaryRow: View {
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {
                     if showsUndo {
-                    Button("Undo", action: onUndo)
-                        .font(AppFont.caption.font).underline()
-                        .foregroundStyle(AppColor.textPrimary)
-                        .frame(minWidth: 44, minHeight: 44)
+                        AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                     }
                     AppIcon.checkmarkFilled.image(size: 22)
                         .accessibilityHidden(true)

@@ -30,9 +30,7 @@ struct AnalyticsView: View {
                         if !output.mainIDs.isEmpty {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Main lifts") {
-                                    Button("Edit") { showsMainLiftEditor = true }
-                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.accent)
-                                        .frame(minWidth: AppSpacing.xxl, minHeight: AppSpacing.xxl)
+                                    AppGhostButton(AppCopy.Workout.edit, layout: .inline) { showsMainLiftEditor = true }
                                         .accessibilityLabel("Edit main lifts")
                                         .accessibilityHint("Choose up to 3 main lifts.")
                                         .accessibilityIdentifier("analytics-edit-main")

@@ -7,6 +7,17 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Consistency rules (audit approved)
+
+Efe approved the consistency audit in [`docs/design/consistency-audit.md`](design/consistency-audit.md) with its four defaults.
+
+- **Text buttons are blue.** Text with no fill uses `AppColor.accent` through `AppGhostButton` (full width or inline). Toolbars stay black, per Apple's monochrome toolbar guidance and the JOI note "Top-bar actions are ink". Supersedes DESIGN.md "Ghost: Ink label", written when Ink was the accent.
+- **SF Mono is retired.** Every number uses SF Pro with tabular digits; set data is 17pt. Supersedes the Oct 20-21 "SF Mono unchanged" notes.
+- **Paywall legal links are blue at 13pt.** The size follows the 2026-08-13 decision; the color changes.
+- **"+ Add set" uses the shared blue add row**, like "Add exercise" in routines. Inline Undo is a blue text button without an underline. Supersedes those two lines of the Final B spec.
+- **Why:** the same action looked different across screens, black text did not read as tappable, and SF Mono made row numbers small and made them wrap.
+- **Next:** six stacked PRs (text buttons, numbers, formats, toolbars and tint, words, leftovers). Undo: revert the PR.
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

@@ -155,7 +155,7 @@ components:
     height: "60px"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    textColor: "{colors.actionBlue}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     padding: "16px 24px"
@@ -310,7 +310,7 @@ The component set is deliberately small. Every primitive lives in `Unit/UI/Desig
 - **Shape:** rounded rectangle, `AppRadius.md` (14px), iOS continuous corners, 60pt tall, full-width on stress screens.
 - **Primary** (`AppPrimaryButton`): Ink (`#0A0A0A`) background, Chalk (`#F6F6F6`) label, Label typography. One per screen on logging flows. Disabled state: Pumice background, Mist label.
 - **Secondary** (`AppSecondaryButton`): Pumice (`#E8E8E8`) background, Ink label. Tones: `.default`, `.accentSoft`, `.destructive` (text-only Signal red).
-- **Ghost** (`AppGhostButton`): No fill, no border, Ink label. Used for "Add exercise" / "Add set" triggers inside cards. The `accentSoft` tone of Secondary is **banned for "Add X" actions** — that's Ghost's job.
+- **Ghost** (`AppGhostButton`): No fill, no border, blue (`accent`) label. Every text button uses it: full width (17 bold, 60pt) for standalone actions, `layout: .inline` (15 medium, 44pt hit area) inside rows and headers. No underline, no black or gray text buttons (decision 2026-10-24). "Add X" at the end of a card's list uses `AppCardListAddRow`. The `accentSoft` tone of Secondary is **banned for "Add X" actions**.
 - **Pressed:** `ScaleButtonStyle` is the single custom pressed state: 0.96× scale and 18% opacity dim over 150ms. Reduce Motion or VoiceOver uses the fade only; disabled controls retain their paired colors. Use it on every custom tappable card, row, and button. Native toolbar, alert, toggle, picker, and menu controls keep iOS feedback. Never add a screen-local pressed treatment.
 
 ### Cards & Containers

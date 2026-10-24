@@ -816,8 +816,10 @@ struct PaywallView: View {
             // customer can reach, so support lives here too.
             supportLink
         }
-        .font(AppFont.metadata.font)
-        .foregroundStyle(AppColor.textSecondary)
+        // Legal actions are text buttons: blue, at the muted size the
+        // 2026-08-13 decision set (decision 2026-10-24).
+        .font(AppFont.muted.font)
+        .foregroundStyle(AppColor.accent)
         .frame(maxWidth: .infinity)
     }
 
@@ -826,6 +828,7 @@ struct PaywallView: View {
             Task { await store.restore() }
         } label: {
             Text("Restore Purchases")
+                .foregroundStyle(store.isLoading || store.isPurchasing ? AppColor.textDisabled : AppColor.accent)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }

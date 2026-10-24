@@ -94,7 +94,7 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 | `AppTag` | Pills (default, accent, success, warning, error, muted, custom) |
 | `AppPrimaryButton` | Full-width primary CTA (see `visual-language.md` for height/contrast) |
 | `AppSecondaryButton` | Pumice-fill secondary action; tones `.default`, `.accentSoft`, `.destructive` |
-| `AppGhostButton` | Text-only "Add X" trigger for inside-card affordances |
+| `AppGhostButton` | Every text button: blue label, no fill. Full width, or `layout: .inline` inside rows and headers |
 | `ProductTopBarAction` | Shared pill-style header action for text and icon affordances |
 | `SetProgressIndicator` | Set-step tracker with Ink current, neutral completed/failed/upcoming, and Verde PR-completed states |
 | `RestTimerControl` | Rest countdown control with `-15`, central timer pill, and `+15` |

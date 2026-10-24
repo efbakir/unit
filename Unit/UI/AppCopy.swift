@@ -15,7 +15,7 @@ enum AppCopy {
         static let noStartingTarget = "No starting target yet"
         static let saveStartingTarget = "Save starting target"
         static let markNotDone = "Mark not done"
-        static let addSet = "+ Add set"
+        static let addSet = "Add set"
         static func restIdle(_ time: String) -> String { "Rest \(time)" }
         static let restLabel = "Rest"
         /// Rest adjustment step, one source for buttons, VoiceOver and logic

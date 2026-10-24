@@ -325,13 +325,9 @@ struct SessionDetailView: View {
     private func recommendationEditButton(
         _ recommendation: ProgressionRecommendationRow
     ) -> some View {
-        Button(AppCopy.Workout.edit) {
+        AppGhostButton(AppCopy.Workout.edit, layout: .inline) {
             beginEditing(recommendation)
         }
-        .font(AppFont.body.font)
-        .foregroundStyle(AppColor.textSecondary)
-        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
-        .buttonStyle(ScaleButtonStyle())
         .accessibilityLabel(
             "Edit next target for \(recommendation.exerciseName)"
         )
@@ -726,17 +722,13 @@ struct SessionDetailView: View {
                     open(url)
                 }
 
-                Button(AppCopy.Engagement.noThanks) {
+                AppGhostButton(AppCopy.Engagement.noThanks, layout: .inline) {
                     UnitAnalytics.shared.track(.feedbackAction(action: .dismiss))
                     withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: UIAccessibility.isReduceMotionEnabled, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appState : nil) {
                         showsFeedbackInvitation = false
                     }
                 }
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 44)
-                .buttonStyle(ScaleButtonStyle())
             }
         }
         .accessibilityIdentifier("feedback-invitation")
