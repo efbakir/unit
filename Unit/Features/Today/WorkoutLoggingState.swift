@@ -9,11 +9,16 @@ struct WorkoutLoggingState {
     }
 
     static func orderedExerciseIDs(templateIDs: [UUID], sessionID: UUID, saved: Data) -> [UUID] {
-        guard let order = try? JSONDecoder().decode(SessionExerciseOrder.self, from: saved),
-              order.sessionID == sessionID else { return templateIDs }
+        let source: [UUID]
+        if let order = try? JSONDecoder().decode(SessionExerciseOrder.self, from: saved),
+           order.sessionID == sessionID {
+            source = order.exerciseIDs + templateIDs
+        } else {
+            source = templateIDs
+        }
         let valid = Set(templateIDs)
         var seen = Set<UUID>()
-        return (order.exerciseIDs + templateIDs).filter { valid.contains($0) && seen.insert($0).inserted }
+        return source.filter { valid.contains($0) && seen.insert($0).inserted }
     }
 
     static func encodeExerciseOrder(_ ids: [UUID], sessionID: UUID) -> Data {

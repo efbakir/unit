@@ -46,14 +46,15 @@ enum ProgramImporter {
             }
         }
 
-        func resolveExercise(named name: String) -> Exercise {
+        func resolveExercise(named name: String, catalogName: String) -> Exercise {
             if let match = exerciseByNormalizedName[normalize(name)] {
                 return match
             }
-            let catalogEntry = ExerciseCatalog.lookup(name)
+            let catalogEntry = ExerciseCatalog.lookup(catalogName)
+            let disambiguated = normalize(name) != normalize(catalogName)
             let exercise = Exercise(
-                displayName: catalogEntry?.displayName ?? name,
-                aliases: catalogEntry?.aliases ?? [],
+                displayName: disambiguated ? name : (catalogEntry?.displayName ?? name),
+                aliases: disambiguated ? [] : (catalogEntry?.aliases ?? []),
                 isBodyweight: catalogEntry?.isBodyweight ?? false,
                 muscleGroup: catalogEntry?.muscleGroup ?? .fullBody,
                 equipment: catalogEntry?.equipment ?? .other
@@ -75,8 +76,22 @@ enum ProgramImporter {
             var plannedReps: [UUID: Int] = [:]
             var plannedWeights: [UUID: Double] = [:]
             var progressionPlan: [UUID: ExerciseProgressionState] = [:]
+            var seenNames: [String: Int] = [:]
             for item in day.items {
-                let exercise = resolveExercise(named: item.exerciseName)
+                let occurrence = seenNames[normalize(item.exerciseName), default: 0]
+                seenNames[normalize(item.exerciseName)] = occurrence + 1
+                // The same lift twice on one day (5/3/1 main work, then BBB
+                // volume) cannot share one exercise id. Plans, order, and
+                // summary screens are all keyed by that id, so a repeat used
+                // to drop a prescription and then trap on duplicate keys.
+                let resolvedName = occurrence == 0
+                    ? item.exerciseName
+                    : repeatedExerciseDisplayName(
+                        item.exerciseName,
+                        note: item.notes ?? "",
+                        occurrence: occurrence
+                    )
+                let exercise = resolveExercise(named: resolvedName, catalogName: item.exerciseName)
                 exerciseIds.append(exercise.id)
                 if item.setCount > 0 { plannedSets[exercise.id] = item.setCount }
                 if item.repTarget > 0 { plannedReps[exercise.id] = item.repTarget }
@@ -129,6 +144,16 @@ enum ProgramImporter {
 
         try? context.save()
         return split
+    }
+
+    /// Second and later listings of one lift on the same day. The note keeps
+    /// the volume block recognizable (`Bench Press · BBB @ 50%`).
+    static func repeatedExerciseDisplayName(_ name: String, note: String, occurrence: Int) -> String {
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "\(name) · \(occurrence + 1)"
+        }
+        return "\(name) · \(trimmed)"
     }
 
     private static func normalize(_ value: String) -> String {

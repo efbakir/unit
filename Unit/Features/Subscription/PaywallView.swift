@@ -392,8 +392,13 @@ struct PaywallView: View {
     }
 
     private var paywallHeadline: String {
-        guard let selectedTrial else { return AppCopy.Paywall.standardHeadline }
-        return AppCopy.Paywall.trialHeadline(selectedTrial.durationText)
+        guard let selectedTrial, let presentation = selectedPresentation else {
+            return AppCopy.Paywall.standardHeadline
+        }
+        return AppCopy.Paywall.trialHeadline(
+            duration: selectedTrial.durationText,
+            billedPrice: presentation.billedPriceText
+        )
     }
 
     private var paywallSupportingCopy: String {
@@ -470,7 +475,7 @@ struct PaywallView: View {
     private var orderedProgramTemplates: [DayTemplate] {
         guard let split = ActiveSplitStore.resolve(from: splits) else { return [] }
         let splitTemplates = templates.filter { $0.splitId == split.id }
-        let byID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
+        let byID = Dictionary.firstUniqueKeys(splitTemplates.map { ($0.id, $0) })
         let ordered = split.orderedTemplateIds.compactMap { byID[$0] }
         return ordered.isEmpty ? splitTemplates.sorted { $0.name < $1.name } : ordered
     }
@@ -693,10 +698,9 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 80%": calculated against 52 weeks at the live Weekly price
-    /// (founder decision 2026-10-23 keeps this anchor). The compact badge
-    /// omits the comparison label; the yearly card already shows its
-    /// per-week equivalent directly beneath the price.
+    /// "Save 80% vs weekly": 52 weeks at the live Weekly price
+    /// (founder decision 2026-10-23 keeps this anchor). The badge names
+    /// the comparison so the percent is not an unlabeled claim.
     private var annualSavingsBadgeText: String? {
         guard let annual = store.product(for: .annual),
               let weekly = store.product(for: .weekly) else { return nil }
@@ -705,7 +709,7 @@ struct PaywallView: View {
         let fraction = (annualizedWeekly - annual.price) / annualizedWeekly
         let percent = Int((NSDecimalNumber(decimal: fraction).doubleValue * 100).rounded(.down))
         guard percent >= 10 else { return nil }
-        return "Save \(percent)%"
+        return AppCopy.Paywall.annualSavings(percent: percent)
     }
 
     private func ctaPlanName(for tier: StoreManager.Tier) -> String {
@@ -790,6 +794,7 @@ struct PaywallView: View {
 
     private var footer: some View {
         VStack(spacing: AppSpacing.sm) {
+            AnonymousAnalyticsToggle()
             // Keep the low-emphasis legal actions on one line when they fit.
             // Decorative "·" separators are dropped in the vertical fallback
             // since they only frame horizontal layout.

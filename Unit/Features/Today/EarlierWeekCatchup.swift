@@ -69,7 +69,7 @@ enum EarlierWeekCatchup {
 
     static func orderedTemplates(for split: Split, templates: [DayTemplate]) -> [DayTemplate] {
         let splitTemplates = templates.filter { $0.splitId == split.id }
-        let templateByID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
+        let templateByID = Dictionary.firstUniqueKeys(splitTemplates.map { ($0.id, $0) })
         let ordered = split.orderedTemplateIds.compactMap { templateByID[$0] }
         return ordered.isEmpty ? splitTemplates.sorted { $0.name < $1.name } : ordered
     }

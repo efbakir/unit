@@ -406,12 +406,25 @@ final class OnboardingViewModel {
 
         var exerciseMap: [UUID: Exercise] = [:]
         for day in dayExercises {
+            var seenInDay: [String: Int] = [:]
             for onbEx in day {
                 let displayName = onbEx.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !displayName.isEmpty else { continue }
-                let key = displayName.lowercased()
+                let nameKey = displayName.lowercased()
+                let occurrence = seenInDay[nameKey, default: 0]
+                seenInDay[nameKey] = occurrence + 1
+                // Same lift twice on one day (5/3/1, then BBB volume) needs two
+                // exercise ids. One id collapses the plans and crashes summaries.
+                let resolvedName = occurrence == 0
+                    ? displayName
+                    : ProgramImporter.repeatedExerciseDisplayName(
+                        displayName,
+                        note: onbEx.note,
+                        occurrence: occurrence
+                    )
+                let resolvedKey = resolvedName.lowercased()
                 let isBodyweight = isBodyweightExercise(named: displayName)
-                if let match = nameToExercise[key] {
+                if let match = nameToExercise[resolvedKey] {
                     match.isArchived = false
                     if isBodyweight && !match.isBodyweight {
                         match.isBodyweight = true
@@ -419,12 +432,12 @@ final class OnboardingViewModel {
                     exerciseMap[onbEx.id] = match
                 } else {
                     let ex = Exercise(
-                        displayName: displayName,
+                        displayName: resolvedName,
                         isBodyweight: isBodyweight
                     )
                     modelContext.insert(ex)
                     exerciseMap[onbEx.id] = ex
-                    nameToExercise[key] = ex
+                    nameToExercise[resolvedKey] = ex
                 }
             }
         }
