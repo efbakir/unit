@@ -60,6 +60,23 @@ enum AnalyticsSetCountBucket: String, CaseIterable, Hashable {
     }
 }
 
+/// Workouts in one history import, never the exact number.
+enum AnalyticsImportSizeBucket: String, CaseIterable, Hashable {
+    case from1To10 = "1_10"
+    case from11To50 = "11_50"
+    case from51To200 = "51_200"
+    case over200 = "over_200"
+
+    init(workoutCount: Int) {
+        switch workoutCount {
+        case ...10: self = .from1To10
+        case ...50: self = .from11To50
+        case ...200: self = .from51To200
+        default: self = .over200
+        }
+    }
+}
+
 enum AnalyticsNoKeyboardRatioBucket: String, CaseIterable, Hashable {
     case none
     case under50 = "under_50"
@@ -160,6 +177,7 @@ enum UnitAnalyticsEvent {
     case progressionDecision(action: AnalyticsProgressionDecision, outcome: AnalyticsProgressionOutcome)
     case feedbackAction(action: AnalyticsFeedbackAction)
     case dataExported
+    case historyImported(source: WorkoutHistorySource, size: AnalyticsImportSizeBucket)
 
     static let allowedNames: Set<String> = [
         "onboarding_started",
@@ -183,7 +201,8 @@ enum UnitAnalyticsEvent {
         "progression_preview_shown",
         "progression_decision",
         "feedback_action",
-        "data_exported"
+        "data_exported",
+        "history_imported"
     ]
 
     var payload: (name: String, parameters: [String: String]) {
@@ -257,6 +276,8 @@ enum UnitAnalyticsEvent {
             ("feedback_action", ["action": action.rawValue])
         case .dataExported:
             ("data_exported", [:])
+        case .historyImported(let source, let size):
+            ("history_imported", ["source": source.rawValue, "workouts": size.rawValue])
         }
     }
 

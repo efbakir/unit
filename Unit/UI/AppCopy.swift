@@ -329,6 +329,70 @@ enum AppCopy {
         static func exportFileName(unitSystem: String) -> String {
             "Unit workouts (\(unitSystem == "lb" ? "lb" : "kg")).csv"
         }
+
+        // MARK: Import from Strong or Hevy
+        static let importTitle = "Import from Strong or Hevy"
+        static let importSheetTitle = "Import history"
+        static func fromSource(_ appName: String) -> String { "From \(appName)" }
+        static let workoutsRow = "Workouts"
+        static let setsRow = "Sets"
+        static let datesRow = "Dates"
+        static let alreadyInUnit = "Already in Unit"
+        static let alreadyInUnitDetail = "Skipped, so nothing is added twice"
+        static let skippedRows = "Skipped rows"
+        static let skippedRowsDetail = "Timed, cardio and unreadable rows"
+        static let weightsInFile = "Weights in this file"
+        static let weightUnit = "Unit"
+        static let exercisesSection = "Exercises"
+        static let matchYours = "Match yours"
+        static let newExercises = "New"
+        static let recalculatedNote = "PRs and Analytics are recalculated with this history."
+        static let nothingNew = "Nothing new to import."
+        static let unknownFormat = "This file isn't a Strong or Hevy export."
+        static let noWorkouts = "No workouts found in this file."
+        static let readFailed = "Couldn't read this file."
+        static let importFailedTitle = "Couldn't import"
+        static let importFailedMessage = "Nothing was saved. Try again."
+
+        static func importAction(_ count: Int) -> String {
+            switch count {
+            case 0: "Import"
+            case 1: "Import 1 workout"
+            default: "Import \(count.formatted()) workouts"
+            }
+        }
+
+        static func imported(_ count: Int) -> String {
+            count == 1 ? "Imported 1 workout" : "Imported \(count.formatted()) workouts"
+        }
+
+        static func dateRange(_ first: Date, _ last: Date) -> String {
+            let start = first.formatted(.dateTime.month(.abbreviated).year())
+            let end = last.formatted(.dateTime.month(.abbreviated).year())
+            return start == end ? start : "\(start) to \(end)"
+        }
+
+        /// The first few new exercise names, so the lifter sees what will be added.
+        static func nameList(_ names: [String]) -> String? {
+            guard !names.isEmpty else { return nil }
+            let shown = names.prefix(6).joined(separator: ", ")
+            return names.count > 6 ? "\(shown) and \(names.count - 6) more" : shown
+        }
+
+        // MARK: Undo last import
+        static let undoImportTitle = "Undo last import"
+        static let undoImportConfirmTitle = "Undo import?"
+        static let undoImportAction = "Undo import"
+        static let importUndone = "Import undone"
+        static let undoFailed = "Couldn't undo. Nothing was changed."
+
+        static func workoutCount(_ count: Int) -> String {
+            count == 1 ? "1 workout" : "\(count.formatted()) workouts"
+        }
+
+        static func undoImportMessage(_ count: Int) -> String {
+            "Removes the \(workoutCount(count)) this import added. Workouts you logged in Unit stay."
+        }
     }
 
     /// Copy for the exercise catalog — destructive flows in particular, which

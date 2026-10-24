@@ -106,6 +106,10 @@
 		TRSTBLD00000000000000006 /* ReadOnlyHistorySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000006 /* ReadOnlyHistorySheet.swift */; };
 		TRSTBLD00000000000000007 /* PastWorkoutEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */; };
 		TRSTUIB00000000000000001 /* TrustLayerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTUIR00000000000000001 /* TrustLayerUITests.swift */; };
+		TRSTBLD00000000000000008 /* WorkoutHistoryImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000008 /* WorkoutHistoryImport.swift */; };
+		TRSTBLD00000000000000009 /* WorkoutHistoryImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000009 /* WorkoutHistoryImporter.swift */; };
+		TRSTBLD00000000000000010 /* ImportHistorySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000010 /* ImportHistorySheet.swift */; };
+		TRSTBLD00000000000000011 /* WorkoutHistoryImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000011 /* WorkoutHistoryImportTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -250,6 +254,10 @@
 		TRSTREF00000000000000006 /* ReadOnlyHistorySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadOnlyHistorySheet.swift; sourceTree = "<group>"; };
 		TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastWorkoutEditingTests.swift; sourceTree = "<group>"; };
 		TRSTUIR00000000000000001 /* TrustLayerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustLayerUITests.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000008 /* WorkoutHistoryImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryImport.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000009 /* WorkoutHistoryImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryImporter.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000010 /* ImportHistorySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportHistorySheet.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000011 /* WorkoutHistoryImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryImportTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -305,6 +313,7 @@
 				165569863085B0817806842D /* ProgramImporterTests.swift */,
 				TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */,
 				TRSTREF00000000000000007 /* PastWorkoutEditingTests.swift */,
+				TRSTREF00000000000000011 /* WorkoutHistoryImportTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -466,6 +475,7 @@
 			isa = PBXGroup;
 			children = (
 				CC000000000000000100005 /* SettingsView.swift */,
+				TRSTREF00000000000000010 /* ImportHistorySheet.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -496,6 +506,8 @@
 				PCAT200000000000000000001 /* ProgramCatalog.swift */,
 				PIMP200000000000000000001 /* ProgramImporter.swift */,
 				TRSTREF00000000000000001 /* WorkoutCSVExport.swift */,
+				TRSTREF00000000000000008 /* WorkoutHistoryImport.swift */,
+				TRSTREF00000000000000009 /* WorkoutHistoryImporter.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -796,6 +808,9 @@
 				TRSTBLD00000000000000004 /* EditWorkoutView.swift in Sources */,
 				TRSTBLD00000000000000005 /* EditSetSheet.swift in Sources */,
 				TRSTBLD00000000000000006 /* ReadOnlyHistorySheet.swift in Sources */,
+				TRSTBLD00000000000000008 /* WorkoutHistoryImport.swift in Sources */,
+				TRSTBLD00000000000000009 /* WorkoutHistoryImporter.swift in Sources */,
+				TRSTBLD00000000000000010 /* ImportHistorySheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -818,6 +833,7 @@
 				4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */,
 				TRSTBLD00000000000000002 /* WorkoutCSVExportTests.swift in Sources */,
 				TRSTBLD00000000000000007 /* PastWorkoutEditingTests.swift in Sources */,
+				TRSTBLD00000000000000011 /* WorkoutHistoryImportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

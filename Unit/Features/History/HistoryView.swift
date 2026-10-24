@@ -371,7 +371,9 @@ struct RecentSessionsView: View {
                 filteredEmptyState
                     .transition(AppBlurTransition().animation(.appReveal))
             } else {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                // Lazy: an imported Strong or Hevy history can hold years of
+                // workouts, and only the visible months need building.
+                LazyVStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if showsMissedInList {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             AppSectionHeader("This week")
