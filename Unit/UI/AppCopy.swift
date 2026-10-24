@@ -643,7 +643,7 @@ enum AppCopy {
         /// "How do I cancel?" under the timeline (2026-10-24, Blinkist
         /// pattern). Unit's own path first, then the iPhone path.
         static let cancelHelpTitle = "How do I cancel?"
-        static let cancelHelpInApp = "In Unit: Programs, then Settings, then Manage Subscription."
+        static let cancelHelpInApp = "In Unit: Programs, then Settings, then Manage subscription."
         static let cancelHelpOnPhone = "On your iPhone: Settings, then your name, then Subscriptions."
         static func cancelHelpDeadline(trialEnd: Date?) -> String {
             guard let trialEnd else {
