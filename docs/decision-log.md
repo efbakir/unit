@@ -7,6 +7,18 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Trust layer: export, edit and delete, History after a lapse
+
+Efe approved the trust-layer plan built from the 2026-10-24 benchmarks (reports 1, 2, 5 and 6; `docs/research/2026-10-24-benchmarks/`).
+
+- **Export workouts** (Settings > Data): every logged set as a CSV file in Strong's comma columns, through the iOS share sheet, so Hevy, Liftosaur and others can read it. Weights in the current unit; the file name says which. Brings back the row hidden on 2026-06-03 for the free v1 build, without the PRO tag.
+- **Backup line:** Storage says "Included in iPhone backups". True because the store lives in Application Support, which iCloud and computer backups include. Corrects benchmark 5 row 2 ("a replaced phone loses all history").
+- **Edit and delete a past workout:** the pencil on the workout detail (and the summary after Finish) opens Edit workout, the same pattern as Edit program. Each logged set has "Edit set" / "Delete set" (Undo); the trash deletes the workout after a confirm. A saved next target never changes. The workout's "Next time" evidence follows the corrected sets. Deleting a routine's newest workout restores its last-done date.
+- **History after a lapse (founder override):** the paywall shows "View workout history" when the phone has logged sets. History opens read-only with Export; nothing starts, saves or changes. Overrides the "no change to the access gate" line in `docs/claude/scope.md` and the 2026-06-16 rule that History is paid, for History only. `docs/pricing.md` updated.
+- **Not doing:** iCloud sync (CLAUDE.md §3; export plus the backup line instead), an import link in onboarding, a manual exercise-matching step, adding sets or changing dates later.
+- **Release:** the PR stays open until 2.1 is approved, then ships in the next update.
+- **Undo:** `SettingsView.exportRow` and the Storage subtitle; the pencil and `deleteWorkout` in `SessionDetailView`; `historyLink` in `PaywallView`.
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

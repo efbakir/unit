@@ -367,8 +367,12 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - List -> months -> rows: date, routine, "N exercises", "PR" tag, state tag (Completed, Partial, Skipped) -> tap -> workout detail ([HistoryView.swift:385](Unit/Features/History/HistoryView.swift:385)).
 - Filter chips "Completed" and "Missed" (tap again to clear). "Missed" shows only this week's missed routines ([HistoryView.swift:434](Unit/Features/History/HistoryView.swift:434)).
 - Calendar -> month grid: filled day = workout; outlined = missed scheduled day, or today -> tap a workout day -> sheet with that day's workouts -> exercise -> progress page; tap a missed day -> "Missed" card with the routine name ([HistoryView.swift:452](Unit/Features/History/HistoryView.swift:452)).
-- Workout detail -> name, date, exercise cards (same numbers: "3 × 8 at 60 kg"; different numbers: one line per set), PR tags, notes -> tap an exercise -> progress page (flow 9); "Next time" block (flow 7) ([SessionDetailView.swift:112](Unit/Features/History/SessionDetailView.swift:112)).
-- Edit or delete a past workout: not possible anywhere.
+- Workout detail -> name, date, exercise cards (same numbers: "3 × 8 at 60 kg"; different numbers: one line per set), PR tags, notes -> tap an exercise -> progress page (flow 9); "Next time" block (flow 7) ([SessionDetailView.swift:95](Unit/Features/History/SessionDetailView.swift:95)).
+- Edit a past workout (added 2026-10-24): workout detail -> pencil (top right, also on the summary right after Finish) -> "Edit workout" lists every logged set -> tap a set -> menu "Edit set" / "Delete set" ([EditWorkoutView.swift](Unit/Features/History/EditWorkoutView.swift)).
+  - "Edit set" -> sheet with Weight and Reps -> "Save changes" -> saved at once ([EditSetSheet.swift](Unit/Features/History/EditSetSheet.swift)).
+  - "Delete set" -> removed at once, toast "Set removed" with Undo. The last set left asks the Delete workout question instead.
+  - Trash (top right) -> "Delete workout" confirm -> workout and its sets deleted -> back to History (or Today from the summary). Checkmark closes Edit workout.
+- Lapsed subscriber (added 2026-10-24): paywall -> "View workout history" (only when the phone has logged sets) -> the same History, read-only: no "This week" start rows, no "Next time" buttons, no pencil; top right "Export" ([ReadOnlyHistorySheet.swift](Unit/Features/History/ReadOnlyHistorySheet.swift)).
 
 **PR badges** ([HistoryView.swift:548](Unit/Features/History/HistoryView.swift:548))
 - Replays all finished workouts in date order, per exercise. The first set ever is the baseline.
@@ -376,10 +380,15 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 - Shown on History rows, exercise cards and set lines. Not shown during the workout.
 
 **Saved data**
-- None (read-only), except a catch-up start.
+- Database, at once: a catch-up start, an edited set, a deleted set or workout ([WorkoutSession+Editing.swift](Unit/Models/WorkoutSession+Editing.swift)).
+- After an edit: PR tags, Analytics, the progress page and "Last time" recalculate from the saved sets. A saved next target never changes. The workout's "Next time" block: a saved decision keeps its target and shows the corrected sets; an unsaved suggestion on the routine's newest workout is recalculated; an unsaved one on an older workout is removed.
+- Deleting the routine's newest workout restores its last-done date, so the rotation offers the right routine next.
 
 **Edge cases**
-- Wrong numbers in a past workout -> cannot fix or delete -> Med -> no.
+- Wrong numbers in a past workout -> Edit workout fixes or deletes them -> Med -> yes.
+- Deleting the workout a saved target came from -> the target stays on the routine; change it in the routine's target sheet -> Low -> by design.
+- Set numbers after a deleted set keep their gap ("Set 1", "Set 3") -> Low -> no.
+- Adding a set or changing the date of a past workout -> not possible -> Low -> no.
 - First workout with ramp-up sets -> later heavier sets get "PR" (the baseline is the first set, not the first workout) -> Low -> no.
 - Lighter set with many more reps -> never a PR -> Low -> by design.
 - Program switch -> past "missed" days follow the new program's weekdays (from the day that program was created) -> Low -> partial.
