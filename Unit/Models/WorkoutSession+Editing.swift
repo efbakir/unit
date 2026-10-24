@@ -180,8 +180,12 @@ enum PastWorkoutEditor {
             removing: session,
             sessions: context.sessions
         )
+        let sessionID = session.id
         context.modelContext.delete(session)
-        return save(context)
+        guard save(context) else { return false }
+        // Its Apple Health copy goes too; nothing happens when Health is off.
+        HealthWorkoutSync.removeWorkout(sessionID: sessionID)
+        return true
     }
 
     private static func save(_ context: Context) -> Bool {
