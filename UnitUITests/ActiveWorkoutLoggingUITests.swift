@@ -175,12 +175,17 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(addSet, in: app)
         XCTAssertTrue(app.buttons["planned-set-5"].waitForExistence(timeout: 5))
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Remove added set"], in: app)
-        XCTAssertTrue(app.buttons["planned-set-5"].waitForNonExistence(timeout: 5))
+        // The toast's Undo lasts 4 s: tap it without the helper's extra waits.
+        let remove = app.buttons["Remove added set"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        remove.tap()
+        let undo = app.buttons["Undo"].firstMatch
+        XCTAssertTrue(undo.waitForExistence(timeout: 3))
         capture(app, "added-set-removed-toast")
-        tap(app.buttons["Undo"].firstMatch, in: app)
+        undo.tap()
         XCTAssertTrue(app.buttons["planned-set-5"].waitForExistence(timeout: 5))
-        // The plan's own rows cannot be removed this way.
+        // Removing again takes the added row away; the plan's own rows cannot
+        // be removed this way.
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
         tap(app.buttons["Remove added set"], in: app)
         XCTAssertTrue(app.buttons["planned-set-5"].waitForNonExistence(timeout: 5))
