@@ -14,7 +14,7 @@ enum AnalyticsSnapshot {
             },
             templates: templates.map { template in
                 .init(id: template.id, name: template.displayName, exerciseIDs: template.orderedExerciseIds,
-                      targets: Dictionary(uniqueKeysWithValues: template.orderedExerciseIds.compactMap { id in
+                      targets: Dictionary.firstUniqueKeys(template.orderedExerciseIds.compactMap { id in
                     guard let target = template.progressionState(for: id)?.acceptedTarget else { return nil }
                     return (id, AnalyticsEngine.Target(weight: target.weightKg, reps: target.reps, templateName: template.displayName))
                 }))

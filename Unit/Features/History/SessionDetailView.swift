@@ -8,6 +8,11 @@
 import SwiftUI
 import SwiftData
 
+/// First index wins when a routine lists the same exercise twice.
+func exerciseOrderIndex(for ids: [UUID]) -> [UUID: Int] {
+    Dictionary.firstUniqueKeys(ids.enumerated().map { ($0.element, $0.offset) })
+}
+
 struct SessionDetailView: View {
     @Bindable var session: WorkoutSession
     let templateName: String
@@ -50,7 +55,7 @@ struct SessionDetailView: View {
     private var exerciseSnapshots: [SessionExerciseSnapshot] {
         let prIDs = PRHistory.prSetEntryIDs(in: allSessions)
         let templateOrder = templates.first(where: { $0.id == session.templateId })?.orderedExerciseIds ?? []
-        let orderByID = Dictionary(uniqueKeysWithValues: templateOrder.enumerated().map { ($0.element, $0.offset) })
+        let orderByID = exerciseOrderIndex(for: templateOrder)
         let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
         return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
             guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
@@ -87,11 +92,7 @@ struct SessionDetailView: View {
         guard session.isCompleted else { return [] }
         let records = session.progressionRecordsByExerciseId
         let templateOrder = progressionTemplate?.orderedExerciseIds ?? []
-        let orderByID = Dictionary(
-            uniqueKeysWithValues: templateOrder.enumerated().map {
-                ($0.element, $0.offset)
-            }
-        )
+        let orderByID = exerciseOrderIndex(for: templateOrder)
         return records.values.map { record in
             return ProgressionRecommendationRow(
                 exerciseID: record.exerciseID,

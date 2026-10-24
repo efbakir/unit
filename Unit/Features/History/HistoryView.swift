@@ -180,11 +180,11 @@ struct RecentSessionsView: View {
     }
 
     private var templateNamesByID: [UUID: String] {
-        Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0.displayName) })
+        Dictionary.firstUniqueKeys(templates.map { ($0.id, $0.displayName) })
     }
 
     private var exercisesByID: [UUID: Exercise] {
-        Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        Dictionary.firstUniqueKeys(exercises.map { ($0.id, $0) })
     }
 
     private var sessionSnapshots: [SessionSnapshot] {
@@ -211,7 +211,7 @@ struct RecentSessionsView: View {
     /// lifter committed to. Empty for flexible-schedule splits — nothing is
     /// "missed" in rotation mode.
     private var scheduledWeekdays: Set<Int> {
-        let templateByID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
+        let templateByID = Dictionary.firstUniqueKeys(templates.map { ($0.id, $0) })
         let ordered = routineTemplateIDs.compactMap { templateByID[$0] }
         return Set(ordered.map(\.scheduledWeekday).filter { $0 > 0 })
     }
@@ -507,7 +507,7 @@ struct RecentSessionsView: View {
         let weekday = calendar.component(.weekday, from: date)
         guard let split = ActiveSplitStore.resolve(from: splits) else { return "Assigned workout" }
 
-        let templateByID = Dictionary(uniqueKeysWithValues: templates.map { ($0.id, $0) })
+        let templateByID = Dictionary.firstUniqueKeys(templates.map { ($0.id, $0) })
         let routineTemplates = split.orderedTemplateIds.compactMap { templateByID[$0] }
 
         return routineTemplates.first(where: { $0.scheduledWeekday == weekday })?.displayName ?? "Assigned workout"
