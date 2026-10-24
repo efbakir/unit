@@ -390,7 +390,8 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Saved data**
 - Database, at once: a catch-up start, an edited set, a deleted set or workout ([WorkoutSession+Editing.swift](Unit/Models/WorkoutSession+Editing.swift)).
-- After an edit: PR tags, Analytics, the progress page and "Last time" recalculate from the saved sets. A saved next target never changes. The workout's "Next time" block: a saved decision keeps its target and shows the corrected sets; an unsaved suggestion on the routine's newest workout is recalculated; an unsaved one on an older workout is removed.
+- After an edit: PR tags, Analytics, the progress page and "Last time" recalculate from the saved sets. The workout's "Next time" block: a target Finish saved by itself on the routine's newest workout is calculated and saved again from the corrected sets; a target the lifter kept or edited stays and shows the corrected sets; an unsaved suggestion on the newest workout is recalculated; one on an older workout is removed.
+- Deleting a workout also removes its Apple Health copy (nothing happens when Apple Health is off).
 - Deleting the routine's newest workout restores its last-done date, so the rotation offers the right routine next.
 
 **Edge cases**

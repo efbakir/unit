@@ -81,21 +81,60 @@ final class PastWorkoutEditingTests: XCTestCase {
         XCTAssertNil(record.acceptedTarget)
     }
 
-    func testSavedDecisionKeepsItsTargetAndShowsTheCorrectedSets() throws {
+    func testEditedTargetStaysAndShowsTheCorrectedSets() throws {
         let fixture = try makeRoutine()
         let workout = try finishedWorkout(fixture, daysAgo: 0, sets: [(60, 10), (60, 10), (60, 10)])
-        let suggestion = try XCTUnwrap(workout.progressionRecord(for: fixture.bench.id)?.suggestedTarget)
-        try save(suggestion, from: workout, fixture)
+        let chosen = DoubleProgressionTarget(weightKg: 65, reps: 8)
+        try save(chosen, from: workout, fixture, action: .edited)
         let savedState = fixture.template.progressionState(for: fixture.bench.id)
         let third = try XCTUnwrap(workout.setEntries.first { $0.setIndex == 2 })
 
         XCTAssertTrue(PastWorkoutEditor.update(third, weightKg: 60, reps: 9, in: workout, editor(fixture)))
 
         let record = try XCTUnwrap(workout.progressionRecord(for: fixture.bench.id))
-        XCTAssertEqual(record.acceptedTarget, suggestion)
-        XCTAssertEqual(record.decisionAction, .usedSuggestion)
+        XCTAssertEqual(record.acceptedTarget, chosen)
+        XCTAssertEqual(record.decisionAction, .edited)
         XCTAssertEqual(record.completedSets.map(\.reps), [10, 10, 9])
         XCTAssertEqual(fixture.template.progressionState(for: fixture.bench.id), savedState)
+    }
+
+    /// Finish saves every suggestion by itself (2026-10-24). A typo fixed on
+    /// the newest workout must not leave a target built from the typo.
+    func testAutoSavedTargetOnTheNewestWorkoutFollowsTheCorrectedSets() throws {
+        let fixture = try makeRoutine()
+        let workout = try finishedWorkout(fixture, daysAgo: 0, sets: [(60, 10), (60, 10), (60, 10)])
+        XCTAssertTrue(workout.applySuggestedTargets(to: fixture.template))
+        try context.save()
+        XCTAssertEqual(fixture.template.progressionState(for: fixture.bench.id)?.acceptedTarget,
+                       DoubleProgressionTarget(weightKg: 62.5, reps: 8))
+        let third = try XCTUnwrap(workout.setEntries.first { $0.setIndex == 2 })
+
+        XCTAssertTrue(PastWorkoutEditor.update(third, weightKg: 60, reps: 9, in: workout, editor(fixture)))
+
+        let corrected = DoubleProgressionTarget(weightKg: 60, reps: 9)
+        let record = try XCTUnwrap(workout.progressionRecord(for: fixture.bench.id))
+        XCTAssertEqual(record.recommendationReason, .addARep)
+        XCTAssertEqual(record.suggestedTarget, corrected)
+        XCTAssertEqual(record.acceptedTarget, corrected)
+        XCTAssertEqual(record.decisionAction, .usedSuggestion)
+        XCTAssertEqual(record.previousTarget, DoubleProgressionTarget(weightKg: 60, reps: 8))
+        XCTAssertEqual(fixture.template.progressionState(for: fixture.bench.id)?.acceptedTarget, corrected)
+        XCTAssertEqual(fixture.template.plannedReps(for: fixture.bench.id), 9)
+    }
+
+    func testAutoSavedTargetOnAnOlderWorkoutStays() throws {
+        let fixture = try makeRoutine()
+        let older = try finishedWorkout(fixture, daysAgo: 7, sets: [(60, 10), (60, 10), (60, 10)])
+        XCTAssertTrue(older.applySuggestedTargets(to: fixture.template))
+        _ = try finishedWorkout(fixture, daysAgo: 0, sets: [(62.5, 8), (62.5, 8), (62.5, 8)])
+        let saved = older.progressionRecord(for: fixture.bench.id)?.acceptedTarget
+        let set = try XCTUnwrap(older.setEntries.first { $0.setIndex == 0 })
+
+        XCTAssertTrue(PastWorkoutEditor.update(set, weightKg: 60, reps: 9, in: older, editor(fixture)))
+
+        let record = try XCTUnwrap(older.progressionRecord(for: fixture.bench.id))
+        XCTAssertEqual(record.acceptedTarget, saved)
+        XCTAssertEqual(record.completedSets.map(\.reps), [9, 10, 10])
     }
 
     func testUnsavedSuggestionOnAnOlderWorkoutIsRemoved() throws {
@@ -127,6 +166,19 @@ final class PastWorkoutEditingTests: XCTestCase {
     }
 
     // MARK: - Workouts
+
+    func testDeletingAWorkoutRemovesItsAppleHealthCopyAfterTheSave() throws {
+        let fixture = try makeRoutine()
+        let workout = try finishedWorkout(fixture, daysAgo: 0, sets: [(60, 8), (60, 8), (60, 8)])
+        let workoutID = workout.id
+        var removed: [UUID] = []
+        var context = editor(fixture)
+        context.removeFromHealth = { removed.append($0) }
+
+        XCTAssertTrue(PastWorkoutEditor.deleteWorkout(workout, context))
+
+        XCTAssertEqual(removed, [workoutID])
+    }
 
     func testDeletingTheNewestWorkoutRestoresTheRoutineLastDoneDate() throws {
         let fixture = try makeRoutine()
@@ -172,6 +224,8 @@ final class PastWorkoutEditingTests: XCTestCase {
         let third = try XCTUnwrap(workout.setEntries.first { $0.setIndex == 2 })
         var failing = editor(fixture, in: storeContext)
         failing.save = { _ in throw Failure.disk }
+        var removedFromHealth = false
+        failing.removeFromHealth = { _ in removedFromHealth = true }
 
         XCTAssertFalse(PastWorkoutEditor.update(third, weightKg: 60, reps: 9, in: workout, failing))
         XCTAssertNil(PastWorkoutEditor.delete(third, from: workout, failing))
@@ -181,6 +235,7 @@ final class PastWorkoutEditingTests: XCTestCase {
         XCTAssertEqual(workout.setEntries.count, 3)
         XCTAssertEqual(workout.progressionRecord(for: fixture.bench.id), recordBefore)
         XCTAssertEqual(try storeContext.fetchCount(FetchDescriptor<WorkoutSession>()), 1)
+        XCTAssertFalse(removedFromHealth, "A workout that is still here keeps its Health copy")
     }
 
     // MARK: - Helpers
@@ -243,13 +298,18 @@ final class PastWorkoutEditingTests: XCTestCase {
     }
 
     /// The summary's "Save for next workout" path.
-    private func save(_ target: DoubleProgressionTarget, from session: WorkoutSession, _ routine: Routine) throws {
+    private func save(
+        _ target: DoubleProgressionTarget,
+        from session: WorkoutSession,
+        _ routine: Routine,
+        action: ProgressionDecisionAction = .usedSuggestion
+    ) throws {
         let reason = try XCTUnwrap(session.progressionRecord(for: routine.bench.id)?.recommendationReason)
         XCTAssertTrue(routine.template.acceptProgressionRecommendation(
             DoubleProgressionRecommendation(target: target, reason: reason, sourceWorkoutSessionID: session.id),
             for: routine.bench.id
         ))
-        XCTAssertTrue(session.recordProgressionDecision(target: target, action: .usedSuggestion, for: routine.bench.id))
+        XCTAssertTrue(session.recordProgressionDecision(target: target, action: action, for: routine.bench.id))
         try context.save()
     }
 
@@ -259,12 +319,14 @@ final class PastWorkoutEditingTests: XCTestCase {
         extraExercises: [Exercise] = []
     ) -> PastWorkoutEditor.Context {
         let modelContext = modelContext ?? context
-        return PastWorkoutEditor.Context(
+        var context = PastWorkoutEditor.Context(
             modelContext: modelContext,
             sessions: (try? modelContext.fetch(FetchDescriptor<WorkoutSession>())) ?? [],
             templates: [routine.template],
             exercises: [routine.bench] + extraExercises
         )
+        context.removeFromHealth = { _ in }
+        return context
     }
 
     private func makeOnDiskContainer() throws -> ModelContainer {

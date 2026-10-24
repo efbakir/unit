@@ -42,7 +42,10 @@ extension WorkoutSession {
     }
 
     /// Rewrites one exercise's "Next time" record after its logged sets changed:
-    /// - a saved decision keeps its target and shows the corrected sets;
+    /// - a suggestion Finish saved by itself (2026-10-24) on the routine's
+    ///   newest workout is calculated and saved again from the corrected sets;
+    /// - any other saved decision (kept, edited) keeps its target and shows
+    ///   the corrected sets;
     /// - an unsaved suggestion on the routine's newest workout is calculated
     ///   again from the corrected sets;
     /// - an unsaved suggestion on an older workout is removed, because it can
@@ -57,6 +60,30 @@ extension WorkoutSession {
     ) -> Bool {
         guard let record = progressionRecord(for: exerciseID) else { return false }
         let corrected = completedProgressionSets(for: exerciseID)
+        let isNewest = isCompleted && !hasNewerCompletedWorkout(for: exerciseID, in: sessions)
+
+        if let template, isNewest,
+           record.decisionAction == .usedSuggestion,
+           record.acceptedTarget != nil,
+           record.acceptedTarget == record.suggestedTarget,
+           let state = template.progressionState(for: exerciseID),
+           state.sourceWorkoutSessionID == id {
+            // Put the routine back where Finish found it, so the new
+            // suggestion starts from the same previous target.
+            template.setProgressionState(ExerciseProgressionState(
+                lowerRepBound: state.lowerRepBound,
+                upperRepBound: state.upperRepBound,
+                weightIncrementKg: state.weightIncrementKg,
+                currentAcceptedTargetWeightKg: record.previousTarget?.weightKg,
+                currentAcceptedTargetReps: record.previousTarget?.reps ?? state.lowerRepBound,
+                sourceWorkoutSessionID: nil,
+                lastAcceptedReason: nil
+            ), for: exerciseID)
+            setProgressionRecord(nil, for: exerciseID)
+            captureProgressionRecords(template: template, exercises: exercises, onlyExerciseIDs: [exerciseID])
+            applySuggestedTargets(to: template)
+            return true
+        }
 
         if record.acceptedTarget != nil {
             guard corrected != record.completedSets else { return false }
@@ -65,7 +92,7 @@ extension WorkoutSession {
         }
 
         setProgressionRecord(nil, for: exerciseID)
-        if let template, isCompleted, !hasNewerCompletedWorkout(for: exerciseID, in: sessions) {
+        if let template, isNewest {
             captureProgressionRecords(
                 template: template,
                 exercises: exercises,
@@ -107,6 +134,9 @@ enum PastWorkoutEditor {
         let exercises: [Exercise]
         /// Tests swap this to prove a failed save leaves everything as it was.
         var save: (ModelContext) throws -> Void = { try $0.save() }
+        /// Removes a deleted workout's Apple Health copy; does nothing when
+        /// Apple Health is off. Tests swap it.
+        var removeFromHealth: (UUID) -> Void = { HealthWorkoutSync.removeWorkout(sessionID: $0) }
 
         func template(for session: WorkoutSession) -> DayTemplate? {
             templates.first { $0.id == session.templateId }
@@ -176,12 +206,15 @@ enum PastWorkoutEditor {
     /// a flexible rotation offers the right routine next. A next target saved
     /// from this workout stays on the routine.
     static func deleteWorkout(_ session: WorkoutSession, _ context: Context) -> Bool {
+        let sessionID = session.id
         context.template(for: session)?.restoreLastPerformedDate(
             removing: session,
             sessions: context.sessions
         )
         context.modelContext.delete(session)
-        return save(context)
+        guard save(context) else { return false }
+        context.removeFromHealth(sessionID)
+        return true
     }
 
     private static func save(_ context: Context) -> Bool {
