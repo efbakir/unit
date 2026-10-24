@@ -187,18 +187,6 @@ final class WorkoutLoggingStateTests: XCTestCase {
         XCTAssertNil(WorkoutLoggingState.savingTarget(SetPrefill(weight: 60, reps: 0, source: .prepared), in: targets, sessionID: sessionID, exerciseID: exerciseID))
     }
 
-    func testFinishUpdatesUseFirstLoggedSetAndRequireExerciseTarget() {
-        let sessionID = UUID(), exerciseID = UUID()
-        let state = exercise([entry(2, weight: 65, reps: 7), entry(0, weight: 60, reps: 8)], id: exerciseID)
-        let targets: WorkoutLoggingState.Targets = [sessionID.uuidString: [exerciseID.uuidString: .init(weight: 70, reps: 6, source: .prepared)]]
-        let diff = WorkoutLoggingState.routineUpdates(exercises: [state], targets: targets, sessionID: sessionID, isFreestyle: false)
-        XCTAssertEqual(diff.first?.weight, 60)
-        XCTAssertEqual(diff.first?.reps, 8)
-        XCTAssertTrue(WorkoutLoggingState.routineUpdates(exercises: [state], targets: [:], sessionID: sessionID, isFreestyle: false).isEmpty)
-        XCTAssertTrue(WorkoutLoggingState.routineUpdates(exercises: [state], targets: targets, sessionID: sessionID, isFreestyle: true).isEmpty)
-        XCTAssertTrue(WorkoutLoggingState.routineUpdates(exercises: [exercise([], id: exerciseID)], targets: targets, sessionID: sessionID, isFreestyle: false).isEmpty)
-    }
-
     func testEditingCurrentRowReplacesOnlyItsOldPlannedOverride() throws {
         let sessionID = UUID(), exerciseID = UUID()
         var targets: WorkoutLoggingState.Targets = [:]

@@ -452,6 +452,7 @@ struct TodayView: View {
                 template: template,
                 exercises: exercises
             )
+            session.applySuggestedTargets(to: template)
         }
         guard persistSessionChange() else { return }
         EngagementPromptTracker().recordCompletedWorkout(sessionID: session.id)
@@ -766,8 +767,8 @@ final class TodayDashboardViewModel {
             )
         }
 
-        // Ghost values: last completed working sets per exercise from any session (newest first).
-        // Matches TemplateDetailView / ActiveWorkout prefill — not limited to this template.
+        // Last time: this routine's newest workout with the exercise, else any
+        // routine's. Matches the ActiveWorkout set-1 prefill.
         return template.orderedExerciseIds.compactMap { exerciseID in
             guard let exercise = exercises.first(where: { $0.id == exerciseID }) else {
                 return nil
@@ -786,6 +787,7 @@ final class TodayDashboardViewModel {
                     displayTarget: displayTarget,
                     supportingText: lastTimePreviewText(
                         for: exercise,
+                        templateID: template.id,
                         sessions: sessions
                     ),
                     isEmptyHint: false
@@ -793,8 +795,10 @@ final class TodayDashboardViewModel {
             }
 
             // Cold-start: planned target if onboarding set one, else explicit empty copy.
-            let lastSets = SetEntry.latestValidWorkingSets(for: exerciseID, in: sessions)
-            guard let representative = lastSets.last else {
+            // Same workout and set the workout prefills from: this routine first, set 1.
+            let lastSets = SetEntry.latestValidWorkingSets(for: exerciseID, in: sessions,
+                                                           preferringTemplate: template.id)
+            guard let representative = lastSets.first else {
                 return emptyTarget(for: exercise)
             }
 
@@ -832,9 +836,11 @@ final class TodayDashboardViewModel {
 
     private func lastTimePreviewText(
         for exercise: Exercise,
+        templateID: UUID,
         sessions: [WorkoutSession]
     ) -> String? {
-        let sets = SetEntry.latestValidWorkingSets(for: exercise.id, in: sessions)
+        let sets = SetEntry.latestValidWorkingSets(for: exercise.id, in: sessions,
+                                                   preferringTemplate: templateID)
         guard let performance = WorkoutTargetFormatter.completedPerformanceText(
             weightsKg: sets.map(\.weight),
             reps: sets.map(\.reps),

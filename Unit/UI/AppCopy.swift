@@ -35,10 +35,6 @@ enum AppCopy {
         static let repsNext = "Reps ›"
         static func kgPrev(unitSystem: String) -> String { unitSystem == "lb" ? "‹ Lb" : "‹ Kg" }
         static let bodyweightToggle = "Bodyweight"
-        static let updateRoutineTitle = "Update routine with today's weights?"
-        static func updateRoutineMessage(_ names: [String]) -> String { names.joined(separator: ", ") }
-        static let updateRoutineAction = "Update"
-        static let keepRoutineAction = "Keep routine"
         static let startWorkout = "Start workout"
         static let continueWorkout = "Continue workout"
         static let completeSet = "Complete set"
@@ -95,18 +91,24 @@ enum AppCopy {
         static let noAutomaticTarget = "No automatic target"
         /// "Use next workout" was misread as "go to the next workout" in the
         /// 2026-10-23 persona panel; "Save" also matches the "Saved" status.
+        /// Since 2026-10-24 Finish saves targets by itself; this shows only for
+        /// a suggestion that could not be saved then.
         static let useThisTarget = "Save for next workout"
+        /// After "Keep previous target" or an edit: back to the suggestion.
+        static let useSuggestedTarget = "Use suggested target"
         /// Completed progression exercise during the workout. Read-only
-        /// preview; the lifter still accepts after Finish.
+        /// preview of the target Finish saves (2026-10-24); the summary
+        /// offers "Keep previous target" and "Edit".
         static func exerciseDoneSuggestion(_ target: String, change: String) -> String {
-            "Suggested next: \(target) · \(change)"
+            "Next time: \(target) · \(change)"
         }
         static func exerciseDoneNoSuggestion(_ reason: String) -> String {
             "No suggestion · \(reason)"
         }
         static let suggestionAddOneRep = "+1 rep"
         static let suggestionSameTarget = "same target"
-        static let repeatPreviousTarget = "Repeat previous target"
+        /// Pairs with the "Kept" status.
+        static let keepPreviousTarget = "Keep previous target"
         static let edit = "Edit"
         static let editNextTarget = "Edit next target"
         static let targetsSaved = "Next targets saved"
@@ -114,6 +116,16 @@ enum AppCopy {
         static let allSetsReachedTopReason = "Every set reached the top."
         static let addARepReason = "Same weight. Add one rep."
         static let repeatTargetReason = "Keep this target."
+        /// A repeated target names the planned sets that fell short
+        /// (2026-10-24). Same target, no deload.
+        static func stallReason(shortSets: [(number: Int, reps: Int)], targetReps: Int) -> String {
+            guard let last = shortSets.last else { return repeatTargetReason }
+            if shortSets.count == 1 {
+                return "Set \(last.number): \(last.reps) of \(targetReps) reps. \(repeatTargetReason)"
+            }
+            let earlier = shortSets.dropLast().map { String($0.number) }.joined(separator: ", ")
+            return "Sets \(earlier) and \(last.number): under \(targetReps) reps. \(repeatTargetReason)"
+        }
         static let chooseTargetManually = "Set a target next workout."
         static let mixedWeightsUnavailable = "Weights varied."
         static let incompleteSetsUnavailable = "Some sets are unfinished."

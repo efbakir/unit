@@ -39,7 +39,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-relaunch")
     }
 
-    func testStartingTargetOnlyPreparesAndFinishKeepsRoutine() throws {
+    func testStartingTargetOnlyPreparesAndFinishOpensSummary() throws {
         let app = launch(extra: ["-logging-empty-target"])
         XCTAssertTrue(app.buttons["save-starting-target"].exists)
         XCTAssertFalse(app.buttons["complete-set-1"].exists)
@@ -64,9 +64,10 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         tap(app.buttons["complete-set-1"], in: app)
         tap(app.buttons["Finish"], in: app)
         tap(app.alerts.buttons["Finish workout"], in: app)
-        XCTAssertTrue(app.buttons["Keep routine"].waitForExistence(timeout: 5))
-        capture(app, "final-b-update-routine-prompt")
-        tap(app.buttons["Keep routine"], in: app)
+        // No "Update routine with today's weights?" step since 2026-10-24.
+        XCTAssertTrue(app.staticTexts["Next time"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Keep routine"].exists)
+        capture(app, "final-b-finish-opens-summary")
         XCTAssertFalse(app.buttons["complete-set-2"].waitForExistence(timeout: 2))
     }
 
@@ -104,7 +105,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "gym-feedback-next-set")
     }
 
-    func testFinishUpdateAndEndOfDay() throws {
+    func testEditedWeightFinishAndEndOfDay() throws {
         let app = launch()
         let weight = app.textFields["logging-weight"].firstMatch
         tap(weight, in: app)
@@ -123,10 +124,10 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-end-of-day")
         tap(app.buttons["Finish"], in: app)
         tap(app.alerts.buttons["Finish workout"], in: app)
-        tap(app.buttons["Update"], in: app)
         XCTAssertTrue(app.staticTexts["Next time"].waitForExistence(timeout: 10)
             || app.staticTexts["Workout complete"].exists)
-        capture(app, "final-b-finished-update")
+        XCTAssertFalse(app.buttons["Update"].exists)
+        capture(app, "final-b-finished-summary")
     }
 
     // Build 90 removed the toolbar reorder sheet; exercise cards are reordered

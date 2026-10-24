@@ -77,13 +77,6 @@ struct WorkoutLoggingState {
         return groups
     }
 
-    struct RoutineUpdate: Equatable {
-        let exerciseID: UUID
-        let name: String
-        let weight: Double
-        let reps: Int
-    }
-
     struct Undo: Equatable {
         let entryID: UUID
         let exerciseID: UUID
@@ -180,19 +173,6 @@ struct WorkoutLoggingState {
         }
         result[sessionID.uuidString, default: [:]][targetKey(exerciseID: exerciseID, row: row)] = target
         return result
-    }
-
-    static func routineUpdates(
-        exercises: [ExerciseState], targets: Targets, sessionID: UUID, isFreestyle: Bool
-    ) -> [RoutineUpdate] {
-        guard !isFreestyle else { return [] }
-        let saved = targets[sessionID.uuidString] ?? [:]
-        return exercises.compactMap { exercise in
-            guard saved[targetKey(exerciseID: exercise.id)] != nil,
-                  let first = exercise.logged.first else { return nil }
-            return RoutineUpdate(exerciseID: exercise.id, name: exercise.name,
-                                 weight: first.weight, reps: first.reps)
-        }
     }
 
     /// Editing reps must never round-trip an unchanged stored load through pounds.

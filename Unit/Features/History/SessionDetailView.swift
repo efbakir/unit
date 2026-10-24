@@ -44,11 +44,26 @@ struct SessionDetailView: View {
         let exerciseName: String
         let isBodyweight: Bool
         let record: SessionProgressionRecord
+        /// Computed once per render: the check scans every workout.
+        let isActionable: Bool
 
         var id: UUID { exerciseID }
 
         var displayTarget: DoubleProgressionTarget? {
             record.acceptedTarget ?? record.suggestedTarget
+        }
+
+        /// Where Edit starts. Without a suggestion (weights varied, sets
+        /// unfinished) the lifter sets the next target from the previous one.
+        var editTarget: DoubleProgressionTarget? {
+            guard isActionable else { return nil }
+            if let displayTarget { return displayTarget }
+            switch record.unavailableReason {
+            case .mixedWorkingSetWeights, .incompleteWorkingSets, .invalidWorkingSetData:
+                return record.previousTarget
+            default:
+                return nil
+            }
         }
     }
 
@@ -98,7 +113,8 @@ struct SessionDetailView: View {
                 exerciseID: record.exerciseID,
                 exerciseName: record.exerciseName,
                 isBodyweight: record.isBodyweight,
-                record: record
+                record: record,
+                isActionable: isActionable(record)
             )
         }
         .sorted { lhs, rhs in
@@ -208,8 +224,7 @@ struct SessionDetailView: View {
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if recommendation.displayTarget != nil,
-                   isActionable(recommendation) {
+                if recommendation.editTarget != nil {
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .center, spacing: AppSpacing.md) {
                             recommendationExerciseName(
@@ -264,40 +279,51 @@ struct SessionDetailView: View {
                 }
             }
 
-            Text(explanationText(recommendation.record))
+            Text(explanationText(recommendation.record, offersEdit: recommendation.editTarget != nil))
                 .contentTransition(.opacity)
-                .animation(AppMotion.feedback, value: explanationText(recommendation.record))
+                .animation(AppMotion.feedback, value: explanationText(recommendation.record, offersEdit: recommendation.editTarget != nil))
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if isActionable(recommendation),
-               recommendation.record.acceptedTarget == nil,
-               recommendation.record.suggestedTarget != nil {
-                AppPrimaryButton(
-                    AppCopy.Workout.useThisTarget,
-                    isEnabled: isValidRecommendation(recommendation)
-                ) {
-                    useSuggestedTarget(recommendation)
-                }
-                .accessibilityLabel(
-                    "\(AppCopy.Workout.useThisTarget) for \(recommendation.exerciseName)"
-                )
-                .transition(AppBlurTransition().animation(.appReveal))
-
-                if recommendation.record.recommendationReason != .repeatTarget {
-                    AppGhostButton(AppCopy.Workout.repeatPreviousTarget) {
-                        repeatPreviousTarget(recommendation)
+            if recommendation.isActionable,
+               let suggested = recommendation.record.suggestedTarget {
+                if recommendation.record.acceptedTarget == nil {
+                    // Not saved at Finish (a workout from before 2026-10-24,
+                    // or a rule that could not take the target): save it here.
+                    AppPrimaryButton(
+                        AppCopy.Workout.useThisTarget,
+                        isEnabled: isValidRecommendation(recommendation)
+                    ) {
+                        useSuggestedTarget(recommendation)
                     }
                     .accessibilityLabel(
-                        "\(AppCopy.Workout.repeatPreviousTarget) for \(recommendation.exerciseName)"
+                        "\(AppCopy.Workout.useThisTarget) for \(recommendation.exerciseName)"
+                    )
+                    .transition(AppBlurTransition().animation(.appReveal))
+
+                    if recommendation.record.recommendationReason != .repeatTarget {
+                        keepPreviousButton(recommendation)
+                    }
+                } else if recommendation.record.acceptedTarget == suggested {
+                    // Saved at Finish: one tap keeps the old target instead.
+                    if let previous = recommendation.record.previousTarget, previous != suggested {
+                        keepPreviousButton(recommendation)
+                    }
+                } else {
+                    // Kept or edited: one tap goes back to the suggestion.
+                    AppGhostButton(AppCopy.Workout.useSuggestedTarget) {
+                        useSuggestedTarget(recommendation)
+                    }
+                    .accessibilityLabel(
+                        "\(AppCopy.Workout.useSuggestedTarget) for \(recommendation.exerciseName)"
                     )
                     .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
         }
         .padding(.vertical, AppSpacing.sm)
-        .appAnimation(.appState, value: recommendation.record.acceptedTarget != nil, reduceMotion: reduceMotion)
+        .appAnimation(.appState, value: recommendation.record.acceptedTarget, reduceMotion: reduceMotion)
         .overlay {
             AppCelebration(moment: acceptedExerciseID == recommendation.exerciseID ? acceptedMoment : nil)
         }
@@ -320,6 +346,18 @@ struct SessionDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func keepPreviousButton(
+        _ recommendation: ProgressionRecommendationRow
+    ) -> some View {
+        AppGhostButton(AppCopy.Workout.keepPreviousTarget) {
+            keepPreviousTarget(recommendation)
+        }
+        .accessibilityLabel(
+            "\(AppCopy.Workout.keepPreviousTarget) for \(recommendation.exerciseName)"
+        )
+        .transition(AppBlurTransition().animation(.appReveal))
     }
 
     private func recommendationEditButton(
@@ -433,7 +471,7 @@ struct SessionDetailView: View {
 
     private func beginEditing(_ recommendation: ProgressionRecommendationRow) {
         toastMessage = nil
-        guard let target = recommendation.displayTarget else { return }
+        guard let target = recommendation.editTarget else { return }
         editingWeightText = displayedWeight(target.weightKg)
         editingRepsText = String(target.reps)
         editingRecommendationID = recommendation.id
@@ -469,7 +507,7 @@ struct SessionDetailView: View {
         )
     }
 
-    private func repeatPreviousTarget(_ recommendation: ProgressionRecommendationRow) {
+    private func keepPreviousTarget(_ recommendation: ProgressionRecommendationRow) {
         guard let target = recommendation.record.previousTarget else { return }
         persistTarget(
             target,
@@ -486,7 +524,7 @@ struct SessionDetailView: View {
         action: ProgressionDecisionAction,
         reason: DoubleProgressionReason
     ) -> Bool {
-        guard isActionable(recommendation),
+        guard isActionable(recommendation.record),
               let template = progressionTemplate,
               target.weightKg.isFinite,
               target.weightKg > 0,
@@ -495,22 +533,12 @@ struct SessionDetailView: View {
             return false
         }
         let previousTarget = template.progressionState(for: recommendation.exerciseID)?.acceptedTarget
-        let absoluteRecommendation = DoubleProgressionRecommendation(
-            target: target,
-            reason: reason,
-            sourceWorkoutSessionID: session.id
-        )
-        guard template.acceptProgressionRecommendation(
-            absoluteRecommendation,
-            for: recommendation.exerciseID
-        ) else {
-            return false
-        }
-
-        guard session.recordProgressionDecision(
-            target: target,
+        guard session.saveProgressionDecision(
+            target,
             action: action,
-            for: recommendation.exerciseID
+            reason: reason,
+            for: recommendation.exerciseID,
+            template: template
         ) else {
             modelContext.rollbackRestoringLoadedModels()
             return false
@@ -525,8 +553,11 @@ struct SessionDetailView: View {
                 )
             )
             if previousTarget != target {
-                pendingAcceptedExerciseID = recommendation.exerciseID
-                if editingRecommendationID == nil { playAcceptedMomentIfNeeded() }
+                // Going back to the previous target is not a celebration.
+                if action != .repeatedPreviousTarget {
+                    pendingAcceptedExerciseID = recommendation.exerciseID
+                    if editingRecommendationID == nil { playAcceptedMomentIfNeeded() }
+                }
                 AppHaptic.success.fire()
             }
             toastMessage = .init(AppCopy.Workout.targetsSaved, kind: .success)
@@ -555,32 +586,32 @@ struct SessionDetailView: View {
             && target.reps <= recommendation.record.upperRepBound
     }
 
-    private func isActionable(_ recommendation: ProgressionRecommendationRow) -> Bool {
+    private func isActionable(_ record: SessionProgressionRecord) -> Bool {
         guard let template = progressionTemplate,
               let currentState = template.progressionState(
-                  for: recommendation.exerciseID
+                  for: record.exerciseID
               ),
-        !hasNewerCompletedSession(for: recommendation.exerciseID) else {
+        !hasNewerCompletedSession(for: record.exerciseID) else {
             return false
         }
-        guard recommendation.record.acceptedTarget == nil else {
+        guard record.acceptedTarget == nil else {
             return currentState.sourceWorkoutSessionID == session.id
         }
 
-        guard template.plannedSets(for: recommendation.exerciseID)
-                == recommendation.record.configuredSetCount,
-              currentState.lowerRepBound == recommendation.record.lowerRepBound,
-              currentState.upperRepBound == recommendation.record.upperRepBound,
+        guard template.plannedSets(for: record.exerciseID)
+                == record.configuredSetCount,
+              currentState.lowerRepBound == record.lowerRepBound,
+              currentState.upperRepBound == record.upperRepBound,
               abs(
                   currentState.weightIncrementKg
-                      - recommendation.record.weightIncrementKg
+                      - record.weightIncrementKg
               ) <= 0.000_1,
               currentState.currentAcceptedTargetReps
-                == recommendation.record.previousTarget?.reps else {
+                == record.previousTarget?.reps else {
             return false
         }
         if let currentWeight = currentState.currentAcceptedTargetWeightKg,
-           let previousWeight = recommendation.record.previousTarget?.weightKg {
+           let previousWeight = record.previousTarget?.weightKg {
             return abs(currentWeight - previousWeight) <= 0.000_1
         }
         return true
@@ -601,7 +632,7 @@ struct SessionDetailView: View {
     }
 
     private func statusText(_ record: SessionProgressionRecord) -> String {
-        if record.unavailableReason != nil {
+        if record.unavailableReason != nil, record.decisionAction == nil {
             return AppCopy.Workout.noAutomaticTarget
         }
         switch record.decisionAction {
@@ -637,19 +668,22 @@ struct SessionDetailView: View {
         )
     }
 
-    private func explanationText(_ record: SessionProgressionRecord) -> String {
+    /// With Edit on the block, the reason stands alone; "Set a target next
+    /// workout." stays only where this summary can no longer set one.
+    private func explanationText(_ record: SessionProgressionRecord, offersEdit: Bool) -> String {
+        let manual = offersEdit ? "" : " \(AppCopy.Workout.chooseTargetManually)"
         if let reason = record.unavailableReason {
             switch reason {
             case .mixedWorkingSetWeights:
-                return "\(AppCopy.Workout.mixedWeightsUnavailable) \(AppCopy.Workout.chooseTargetManually)"
+                return AppCopy.Workout.mixedWeightsUnavailable + manual
             case .incompleteWorkingSets:
-                return "\(AppCopy.Workout.incompleteSetsUnavailable) \(AppCopy.Workout.chooseTargetManually)"
+                return AppCopy.Workout.incompleteSetsUnavailable + manual
             case .invalidWeightIncrement:
                 return AppCopy.Workout.invalidIncrementUnavailable
             case .unsupportedBodyweightOnly:
                 return AppCopy.Workout.bodyweightUnavailable
             case .invalidConfiguration, .invalidTarget, .invalidWorkingSetData, .targetWeightOverflow:
-                return "\(AppCopy.Workout.invalidDataUnavailable) \(AppCopy.Workout.chooseTargetManually)"
+                return AppCopy.Workout.invalidDataUnavailable + manual
             }
         }
 
@@ -659,7 +693,10 @@ struct SessionDetailView: View {
         case .addARep:
             return AppCopy.Workout.addARepReason
         case .repeatTarget:
-            return AppCopy.Workout.repeatTargetReason
+            return AppCopy.Workout.stallReason(
+                shortSets: record.shortSets,
+                targetReps: record.previousTarget?.reps ?? 0
+            )
         case nil:
             return AppCopy.Workout.invalidDataUnavailable
         }

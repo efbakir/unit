@@ -577,6 +577,74 @@ final class ProgressionPersistenceTests: XCTestCase {
         XCTAssertEqual(prefill?.reps, 6)
     }
 
+    func testSetOneStartsFromThisRoutinesFirstSetBeforeNewerOtherRoutines() {
+        let exerciseID = UUID(), heavyDay = UUID(), lightDay = UUID()
+        let current = WorkoutSession(templateId: heavyDay)
+        let lastHeavy = WorkoutSession(date: Date().addingTimeInterval(-7 * 86_400), templateId: heavyDay, isCompleted: true)
+        lastHeavy.setEntries = [
+            completedEntry(session: lastHeavy, exerciseID: exerciseID, weight: 100, reps: 5, index: 0),
+            completedEntry(session: lastHeavy, exerciseID: exerciseID, weight: 100, reps: 5, index: 1),
+            completedEntry(session: lastHeavy, exerciseID: exerciseID, weight: 100, reps: 3, index: 2)
+        ]
+        let newerLight = WorkoutSession(date: Date().addingTimeInterval(-86_400), templateId: lightDay, isCompleted: true)
+        newerLight.setEntries = [completedEntry(session: newerLight, exerciseID: exerciseID, weight: 70, reps: 10, index: 0)]
+
+        let prefill = ActiveWorkoutViewModel().prefillSet(
+            for: exerciseID, currentSession: current, sessions: [current, newerLight, lastHeavy]
+        )
+
+        XCTAssertEqual(prefill?.source, .priorSession)
+        XCTAssertEqual(prefill?.weight ?? -1, 100, accuracy: 0.000_001)
+        XCTAssertEqual(prefill?.reps, 5, "Set 1 anchors on set 1, not on the weaker last set")
+    }
+
+    func testSetOneFallsBackToFirstSetOfAnotherRoutine() {
+        let exerciseID = UUID()
+        let current = WorkoutSession(templateId: UUID())
+        let other = WorkoutSession(date: Date().addingTimeInterval(-86_400), templateId: UUID(), isCompleted: true)
+        other.setEntries = [
+            completedEntry(session: other, exerciseID: exerciseID, weight: 60, reps: 8, index: 0),
+            completedEntry(session: other, exerciseID: exerciseID, weight: 60, reps: 6, index: 1)
+        ]
+
+        let prefill = ActiveWorkoutViewModel().prefillSet(
+            for: exerciseID, currentSession: current, sessions: [other], plannedReps: 10, plannedWeightKg: 40
+        )
+
+        XCTAssertEqual(prefill?.source, .priorSession)
+        XCTAssertEqual(prefill?.weight ?? -1, 60, accuracy: 0.000_001)
+        XCTAssertEqual(prefill?.reps, 8)
+    }
+
+    func testRepeatedLiftBlocksAnchorOnTheirOwnHistory() {
+        // PR #5 saves a second listing (5/3/1 BBB) as its own exercise.
+        let main = UUID(), volume = UUID(), routine = UUID()
+        let current = WorkoutSession(templateId: routine)
+        let last = WorkoutSession(date: Date().addingTimeInterval(-86_400), templateId: routine, isCompleted: true)
+        last.setEntries = [
+            completedEntry(session: last, exerciseID: main, weight: 100, reps: 5, index: 0),
+            completedEntry(session: last, exerciseID: volume, weight: 50, reps: 10, index: 0)
+        ]
+        let viewModel = ActiveWorkoutViewModel()
+
+        XCTAssertEqual(viewModel.prefillSet(for: main, currentSession: current, sessions: [last])?.weight, 100)
+        XCTAssertEqual(viewModel.prefillSet(for: volume, currentSession: current, sessions: [last])?.weight, 50)
+    }
+
+    func testLastTimeSetsPreferTheRoutineWithoutChangingTheDefault() {
+        let exerciseID = UUID(), routine = UUID()
+        let older = WorkoutSession(date: Date().addingTimeInterval(-7 * 86_400), templateId: routine, isCompleted: true)
+        older.setEntries = [completedEntry(session: older, exerciseID: exerciseID, weight: 80, reps: 5, index: 0)]
+        let newer = WorkoutSession(date: Date().addingTimeInterval(-86_400), templateId: UUID(), isCompleted: true)
+        newer.setEntries = [completedEntry(session: newer, exerciseID: exerciseID, weight: 60, reps: 10, index: 0)]
+
+        XCTAssertEqual(SetEntry.latestValidWorkingSets(for: exerciseID, in: [older, newer]).first?.weight, 60)
+        XCTAssertEqual(SetEntry.latestValidWorkingSets(for: exerciseID, in: [older, newer],
+                                                       preferringTemplate: routine).first?.weight, 80)
+        XCTAssertEqual(SetEntry.latestValidWorkingSets(for: exerciseID, in: [newer],
+                                                       preferringTemplate: routine).first?.weight, 60)
+    }
+
     func testCompleteTargetFormattingIncludesSetsWeightAndUnit() {
         let defaults = UserDefaults.standard
         let previousUnit = defaults.string(forKey: "unitSystem")
@@ -684,6 +752,174 @@ final class ProgressionPersistenceTests: XCTestCase {
         XCTAssertEqual(
             session.progressionRecord(for: exerciseID)?.exerciseName,
             "Bench Press"
+        )
+    }
+
+    func testFinishAppliesSuggestedTargetsOnce() throws {
+        let bench = UUID(), deadlift = UUID()
+        let exercises = [
+            Exercise(id: bench, displayName: "Bench Press", isBodyweight: false),
+            Exercise(id: deadlift, displayName: "Deadlift", isBodyweight: false)
+        ]
+        let template = DayTemplate(
+            name: "Push",
+            orderedExerciseIds: [bench, deadlift],
+            plannedSetsByExerciseId: [bench: 3, deadlift: 3],
+            plannedRepsByExerciseId: [bench: 8, deadlift: 8],
+            progressionStateByExerciseId: [bench: progressionState(), deadlift: progressionState()]
+        )
+        let session = WorkoutSession(templateId: template.id, isCompleted: true)
+        session.setEntries = (0..<3).map {
+            completedEntry(session: session, exerciseID: bench, weight: 60, reps: 10, index: $0)
+        } + [60.0, 65, 60].enumerated().map {
+            completedEntry(session: session, exerciseID: deadlift, weight: $0.element, reps: 8, index: $0.offset)
+        }
+        session.captureProgressionRecords(template: template, exercises: exercises)
+
+        XCTAssertTrue(session.applySuggestedTargets(to: template))
+        let applied = DoubleProgressionTarget(weightKg: 62.5, reps: 8)
+        XCTAssertEqual(template.progressionState(for: bench)?.acceptedTarget, applied)
+        XCTAssertEqual(template.progressionState(for: bench)?.sourceWorkoutSessionID, session.id)
+        XCTAssertEqual(template.plannedWeight(for: bench), 62.5)
+        XCTAssertEqual(session.progressionRecord(for: bench)?.acceptedTarget, applied)
+        XCTAssertEqual(session.progressionRecord(for: bench)?.decisionAction, .usedSuggestion)
+        // Weights varied: no suggestion, so the routine keeps its target.
+        XCTAssertNil(template.progressionState(for: deadlift)?.acceptedTarget)
+        XCTAssertNil(session.progressionRecord(for: deadlift)?.decisionAction)
+
+        let recordsAfterFinish = session.progressionRecordsByExerciseIdData
+        XCTAssertFalse(session.applySuggestedTargets(to: template))
+        XCTAssertEqual(session.progressionRecordsByExerciseIdData, recordsAfterFinish)
+    }
+
+    func testFailedFinishSaveRollsBackAppliedTargets() throws {
+        enum Failure: Error { case disk }
+        let container = try makeContainer(at: temporaryStoreURL(named: "failed-apply"))
+        let context = container.mainContext
+        let exerciseID = UUID()
+        let exercise = Exercise(id: exerciseID, displayName: "Bench Press", isBodyweight: false)
+        let template = DayTemplate(
+            name: "Push",
+            orderedExerciseIds: [exerciseID],
+            plannedSetsByExerciseId: [exerciseID: 3],
+            plannedRepsByExerciseId: [exerciseID: 8],
+            plannedWeightByExerciseId: [exerciseID: 60],
+            progressionStateByExerciseId: [exerciseID: progressionState()]
+        )
+        let session = WorkoutSession(templateId: template.id)
+        context.insert(exercise)
+        context.insert(template)
+        context.insert(session)
+        for index in 0..<3 {
+            let entry = SetEntry(sessionId: session.id, exerciseId: exerciseID, weight: 60, reps: 10,
+                                 isCompleted: true, setIndex: index)
+            entry.session = session
+            context.insert(entry)
+        }
+        try context.save()
+        let savedState = template.progressionStateByExerciseIdData
+
+        session.isCompleted = true
+        session.captureProgressionRecords(template: template, exercises: [exercise])
+        XCTAssertTrue(session.applySuggestedTargets(to: template))
+        XCTAssertFalse(ActiveWorkoutViewModel().saveChanges(in: context, save: { throw Failure.disk }))
+
+        XCTAssertFalse(session.isCompleted)
+        XCTAssertEqual(template.progressionStateByExerciseIdData, savedState)
+        XCTAssertEqual(template.plannedWeight(for: exerciseID), 60)
+        XCTAssertTrue(session.progressionRecordsByExerciseId.isEmpty)
+    }
+
+    func testKeepPreviousThenUseSuggestedThenEditMoveTheSavedTarget() throws {
+        let exerciseID = UUID()
+        let exercise = Exercise(id: exerciseID, displayName: "Bench Press", isBodyweight: false)
+        let template = DayTemplate(
+            name: "Push",
+            orderedExerciseIds: [exerciseID],
+            plannedSetsByExerciseId: [exerciseID: 3],
+            plannedRepsByExerciseId: [exerciseID: 8],
+            progressionStateByExerciseId: [exerciseID: progressionState()]
+        )
+        let session = WorkoutSession(templateId: template.id, isCompleted: true)
+        session.setEntries = (0..<3).map {
+            completedEntry(session: session, exerciseID: exerciseID, weight: 60, reps: 10, index: $0)
+        }
+        session.captureProgressionRecords(template: template, exercises: [exercise])
+        session.applySuggestedTargets(to: template)
+        let previous = try XCTUnwrap(session.progressionRecord(for: exerciseID)?.previousTarget)
+        let suggested = DoubleProgressionTarget(weightKg: 62.5, reps: 8)
+
+        XCTAssertTrue(session.saveProgressionDecision(previous, action: .repeatedPreviousTarget,
+                                                      reason: .repeatTarget, for: exerciseID, template: template))
+        XCTAssertEqual(template.progressionState(for: exerciseID)?.acceptedTarget, previous)
+        XCTAssertEqual(session.progressionRecord(for: exerciseID)?.decisionAction, .repeatedPreviousTarget)
+
+        XCTAssertTrue(session.saveProgressionDecision(suggested, action: .usedSuggestion,
+                                                      reason: .allSetsReachedTop, for: exerciseID, template: template))
+        XCTAssertEqual(template.progressionState(for: exerciseID)?.acceptedTarget, suggested)
+
+        let edited = DoubleProgressionTarget(weightKg: 61.25, reps: 9)
+        XCTAssertTrue(session.saveProgressionDecision(edited, action: .edited,
+                                                      reason: .allSetsReachedTop, for: exerciseID, template: template))
+        XCTAssertEqual(template.progressionState(for: exerciseID)?.acceptedTarget, edited)
+        XCTAssertEqual(session.progressionRecord(for: exerciseID)?.decisionAction, .edited)
+    }
+
+    func testEditSetsATargetWhenWeightsVaried() throws {
+        let exerciseID = UUID()
+        let exercise = Exercise(id: exerciseID, displayName: "Deadlift", isBodyweight: false)
+        let template = DayTemplate(
+            name: "Pull",
+            orderedExerciseIds: [exerciseID],
+            plannedSetsByExerciseId: [exerciseID: 3],
+            plannedRepsByExerciseId: [exerciseID: 8],
+            progressionStateByExerciseId: [exerciseID: progressionState(weightKg: 100)]
+        )
+        let session = WorkoutSession(templateId: template.id, isCompleted: true)
+        session.setEntries = [100.0, 110, 100].enumerated().map {
+            completedEntry(session: session, exerciseID: exerciseID, weight: $0.element, reps: 8, index: $0.offset)
+        }
+        session.captureProgressionRecords(template: template, exercises: [exercise])
+        XCTAssertFalse(session.applySuggestedTargets(to: template))
+        let record = try XCTUnwrap(session.progressionRecord(for: exerciseID))
+        XCTAssertEqual(record.unavailableReason, .mixedWorkingSetWeights)
+        XCTAssertEqual(record.previousTarget, DoubleProgressionTarget(weightKg: 100, reps: 8))
+
+        let target = DoubleProgressionTarget(weightKg: 105, reps: 8)
+        XCTAssertTrue(session.saveProgressionDecision(target, action: .edited, reason: .repeatTarget,
+                                                      for: exerciseID, template: template))
+        XCTAssertEqual(template.progressionState(for: exerciseID)?.acceptedTarget, target)
+        XCTAssertEqual(session.progressionRecord(for: exerciseID)?.decisionAction, .edited)
+    }
+
+    func testStallReasonNamesThePlannedSetsThatFellShort() {
+        func reason(_ reps: [Int]) -> String {
+            let record = SessionProgressionRecord(
+                exerciseID: UUID(), exerciseName: "Back Squat", isBodyweight: false,
+                configuredSetCount: 3, lowerRepBound: 8, upperRepBound: 10, weightIncrementKg: 2.5,
+                previousTarget: DoubleProgressionTarget(weightKg: 100, reps: 8),
+                completedSets: reps.map { CompletedProgressionSet(weightKg: 100, reps: $0) },
+                suggestedTarget: DoubleProgressionTarget(weightKg: 100, reps: 8),
+                recommendationReason: .repeatTarget, unavailableReason: nil
+            )
+            return AppCopy.Workout.stallReason(shortSets: record.shortSets, targetReps: 8)
+        }
+        XCTAssertEqual(reason([8, 8, 8, 5]), "Keep this target.", "An extra set never counts")
+        XCTAssertEqual(reason([8, 8, 6]), "Set 3: 6 of 8 reps. Keep this target.")
+        XCTAssertEqual(reason([8, 7, 6]), "Sets 2 and 3: under 8 reps. Keep this target.")
+        XCTAssertEqual(reason([7, 7, 6]), "Sets 1, 2 and 3: under 8 reps. Keep this target.")
+    }
+
+    func testDoneCardLineUsesTheSameSetWording() {
+        let previousUnit = UserDefaults.standard.string(forKey: "unitSystem")
+        UserDefaults.standard.set("kg", forKey: "unitSystem")
+        defer { UserDefaults.standard.set(previousUnit, forKey: "unitSystem") }
+        let target = WorkoutTargetFormatter.completedPerformanceText(
+            weightsKg: [62.5, 62.5, 62.5], reps: [8, 8, 8], isBodyweight: false
+        )
+        XCTAssertEqual(
+            AppCopy.Workout.exerciseDoneSuggestion(target ?? "", change: "+2.5 kg"),
+            "Next time: 3 × 8 at 62.5 kg · +2.5 kg"
         )
     }
 

@@ -62,32 +62,35 @@ final class ProgressionContractUITests: XCTestCase {
             "Increase-weight explanation is missing"
         )
         attachScreenshot(of: app, named: "01b-completed-workout-summary")
-        let useFirstSuggestion = button(
-            in: app,
-            containing: AppCopy.Workout.useThisTarget
-        )
-        scrollTo(useFirstSuggestion, in: app)
-        attachScreenshot(of: app, named: "02-increase-weight")
-        tap(useFirstSuggestion, "Use this target — increase weight")
+        // Since 2026-10-24 Finish saves every suggested target by itself.
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime)
-                .waitForExistence(timeout: 8),
-            "Accepted state did not replace the pending action"
+            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime).exists,
+            "Finish did not save the suggested targets"
         )
+        XCTAssertFalse(
+            button(in: app, containing: AppCopy.Workout.useThisTarget).exists,
+            "A saved target must not ask to be saved again"
+        )
+        attachScreenshot(of: app, named: "02-increase-weight")
 
-        let repeatPrevious = button(
-            in: app,
-            containing: AppCopy.Workout.repeatPreviousTarget
-        )
-        scrollTo(repeatPrevious, in: app)
+        let keepRow = app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Barbell Row"]
+        scrollTo(keepRow, in: app)
         attachScreenshot(of: app, named: "03-increase-reps")
-        tap(repeatPrevious, "Repeat previous target — add-rep recommendation")
+        tap(keepRow, "Keep previous target — add-rep recommendation")
         XCTAssertTrue(
             staticText(in: app, containing: AppCopy.Workout.repeatingForNextTime)
                 .waitForExistence(timeout: 8),
-            "Repeat-previous decision was not shown"
+            "Keep-previous decision was not shown"
+        )
+        XCTAssertTrue(
+            app.buttons["\(AppCopy.Workout.useSuggestedTarget) for Barbell Row"].waitForExistence(timeout: 5),
+            "A kept target lost its one-tap way back to the suggestion"
         )
 
+        XCTAssertTrue(
+            staticText(in: app, containing: "Set 2: 8 of 9 reps. Keep this target.").exists,
+            "The stall did not name the short set"
+        )
         let editRepeatTarget = app.buttons["Edit next target for Back Squat"]
         scrollTo(editRepeatTarget, in: app)
         attachScreenshot(of: app, named: "04-repeat-target")
@@ -141,8 +144,12 @@ final class ProgressionContractUITests: XCTestCase {
             "Unavailable state heading is missing"
         )
         XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.repeatPreviousTarget).exists,
-            "Accepted and unavailable rows must not keep stale repeat actions"
+            app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Deadlift"].exists,
+            "A block without a suggestion has nothing to keep"
+        )
+        XCTAssertTrue(
+            app.buttons["Edit next target for Deadlift"].exists,
+            "A block without a suggestion lost its Edit"
         )
         attachScreenshot(of: app, named: "05-mixed-weight-unavailable")
 
@@ -324,7 +331,7 @@ final class ProgressionContractUITests: XCTestCase {
         // shows the same suggestion the summary will offer, before Finish.
         let exerciseDoneSuggestion = app.descendants(matching: .any).matching(
             NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@",
-                        "Suggested next: 140 lb × 8", "Suggested next: 140 lb × 8")
+                        "Next time: 3 × 8 at 140 lb", "Next time: 3 × 8 at 140 lb")
         ).firstMatch
         XCTAssertTrue(
             exerciseDoneSuggestion.waitForExistence(timeout: 10),
@@ -353,17 +360,21 @@ final class ProgressionContractUITests: XCTestCase {
             "US screenshot recommendation lost its transparent reason"
         )
 
-        let useSuggestion = button(in: app, containing: AppCopy.Workout.useThisTarget)
-        scrollTo(useSuggestion, in: app)
-        // Store screenshots: let the finish celebration settle first.
+        // Finish saves the targets (2026-10-24): "Next time" opens with the
+        // saved Bench Press card. Let the finish celebration settle first.
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime).exists,
+            "Saved recommendation state was not visible"
+        )
         sleep(4)
         attachScreenshot(of: app, named: "store-01-real-next-target")
+        attachScreenshot(of: app, named: "store-03-real-double-progression-result")
 
         // Additional real recommendation variants for founder-composed App
         // Store artwork. These stay outside the canonical six-image export so
         // Figma can layer or crop them without changing the product UI.
         let addRepSuggestion = app.buttons[
-            "\(AppCopy.Workout.useThisTarget) for Barbell Row"
+            "\(AppCopy.Workout.keepPreviousTarget) for Barbell Row"
         ]
         scrollTo(addRepSuggestion, in: app, maximumSwipes: 6)
         XCTAssertTrue(
@@ -372,30 +383,13 @@ final class ProgressionContractUITests: XCTestCase {
         )
         attachScreenshot(of: app, named: "figma-card-add-one-rep")
 
-        let repeatSuggestion = app.buttons[
-            "\(AppCopy.Workout.useThisTarget) for Back Squat"
-        ]
+        let repeatSuggestion = app.buttons["Edit next target for Back Squat"]
         scrollTo(repeatSuggestion, in: app, maximumSwipes: 6)
         XCTAssertTrue(
             staticText(in: app, containing: "3 × 9 at 115 lb").exists,
             "US repeat-target recommendation was not visible"
         )
         attachScreenshot(of: app, named: "figma-card-repeat-target")
-
-        scrollTo(useSuggestion, in: app, maximumSwipes: 8)
-
-        tap(useSuggestion, "Use this target — US screenshot")
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.acceptedForNextTime)
-                .waitForExistence(timeout: 8),
-            "Accepted recommendation state was not visible"
-        )
-        // Let the "Next targets saved" toast and burst finish, then return to
-        // the top, where "Next time" opens with the saved Bench Press card.
-        sleep(5)
-        for _ in 0..<3 { app.swipeDown() }
-        sleep(1)
-        attachScreenshot(of: app, named: "store-03-real-double-progression-result")
 
         // Capture the real History surface before starting the next workout.
         app.terminate()
@@ -458,7 +452,10 @@ final class ProgressionContractUITests: XCTestCase {
             usleep(500_000)
             attachScreenshot(of: app, named: "celebration-\(look)-finish-late")
             sleep(3)
-            tap(button(in: app, containing: AppCopy.Workout.useThisTarget), "save \(look)")
+            // Finish saves the target; going back to it plays the saved burst.
+            tap(app.buttons["\(AppCopy.Workout.keepPreviousTarget) for Bench Press"], "keep \(look)")
+            sleep(1)
+            tap(app.buttons["\(AppCopy.Workout.useSuggestedTarget) for Bench Press"], "save \(look)")
             usleep(150_000)
             attachScreenshot(of: app, named: "celebration-\(look)-saved")
             sleep(2)
@@ -861,8 +858,12 @@ final class ProgressionContractUITests: XCTestCase {
             "Use-this-target must not interrupt active logging"
         )
         XCTAssertFalse(
-            button(in: app, containing: AppCopy.Workout.repeatPreviousTarget).exists,
-            "Repeat-previous must not interrupt active logging"
+            button(in: app, containing: AppCopy.Workout.keepPreviousTarget).exists,
+            "Keep-previous must not interrupt active logging"
+        )
+        XCTAssertFalse(
+            button(in: app, containing: AppCopy.Workout.useSuggestedTarget).exists,
+            "Use-suggested must not interrupt active logging"
         )
         XCTAssertEqual(
             app.buttons.matching(

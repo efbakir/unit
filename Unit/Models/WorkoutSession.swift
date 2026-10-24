@@ -37,6 +37,15 @@ struct SessionProgressionRecord: Codable, Equatable, Sendable {
     let unavailableReason: DoubleProgressionUnavailableReason?
     var acceptedTarget: DoubleProgressionTarget?
     var decisionAction: ProgressionDecisionAction?
+
+    /// Planned sets under the target reps, numbered from 1: why a target
+    /// repeats. Extra sets beyond the plan never count.
+    var shortSets: [(number: Int, reps: Int)] {
+        guard let targetReps = previousTarget?.reps else { return [] }
+        return completedSets.prefix(configuredSetCount).enumerated()
+            .filter { $0.element.reps < targetReps }
+            .map { (number: $0.offset + 1, reps: $0.element.reps) }
+    }
 }
 
 @Model
@@ -114,6 +123,48 @@ final class WorkoutSession {
         record.decisionAction = action
         setProgressionRecord(record, for: exerciseID)
         return true
+    }
+
+    /// Saves one next target to the routine and records the decision on
+    /// this workout. Mutates in memory only; the caller saves or rolls back.
+    @MainActor
+    @discardableResult
+    func saveProgressionDecision(
+        _ target: DoubleProgressionTarget,
+        action: ProgressionDecisionAction,
+        reason: DoubleProgressionReason,
+        for exerciseID: UUID,
+        template: DayTemplate
+    ) -> Bool {
+        let recommendation = DoubleProgressionRecommendation(
+            target: target,
+            reason: reason,
+            sourceWorkoutSessionID: id
+        )
+        guard template.acceptProgressionRecommendation(recommendation, for: exerciseID) else {
+            return false
+        }
+        return recordProgressionDecision(target: target, action: action, for: exerciseID)
+    }
+
+    /// Finishing a workout saves every suggested next target, so the next
+    /// workout moves forward without a tap (founder decision 2026-10-24).
+    /// The summary then offers "Keep previous target" and "Edit". Exercises
+    /// without a suggestion keep their current target.
+    @MainActor
+    @discardableResult
+    func applySuggestedTargets(to template: DayTemplate) -> Bool {
+        var didChange = false
+        for (exerciseID, record) in progressionRecordsByExerciseId
+        where record.acceptedTarget == nil && record.decisionAction == nil {
+            guard let target = record.suggestedTarget,
+                  let reason = record.recommendationReason else { continue }
+            if saveProgressionDecision(target, action: .usedSuggestion, reason: reason,
+                                       for: exerciseID, template: template) {
+                didChange = true
+            }
+        }
+        return didChange
     }
 
     /// The double-progression result for one exercise, calculated from this

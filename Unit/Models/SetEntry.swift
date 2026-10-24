@@ -60,19 +60,26 @@ extension SetEntry {
         isCompleted && !isWarmup && weight.isFinite && weight >= 0 && reps > 0
     }
 
+    /// Newest finished workout with valid sets of this exercise. With a
+    /// routine, that routine's newest workout wins over newer workouts of
+    /// other routines, so a heavy day and a light day keep their own numbers.
     static func latestValidWorkingSets(
         for exerciseID: UUID,
         in sessions: [WorkoutSession],
-        excluding sessionID: UUID? = nil
+        excluding sessionID: UUID? = nil,
+        preferringTemplate templateID: UUID? = nil
     ) -> [SetEntry] {
+        var otherRoutine: [SetEntry] = []
         for session in sessions.sorted(by: { $0.date > $1.date })
         where session.isCompleted && session.id != sessionID {
             let entries = session.setEntries
                 .filter { $0.exerciseId == exerciseID && $0.isValidCompletedWorkingSet }
                 .sorted { $0.setIndex < $1.setIndex }
-            if !entries.isEmpty { return entries }
+            guard !entries.isEmpty else { continue }
+            if templateID == nil || session.templateId == templateID { return entries }
+            if otherRoutine.isEmpty { otherRoutine = entries }
         }
-        return []
+        return otherRoutine
     }
 }
 

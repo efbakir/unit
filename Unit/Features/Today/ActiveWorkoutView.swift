@@ -36,12 +36,9 @@ struct ActiveWorkoutView: View {
     @State private var showsCancelConfirmation = false
     @State private var showsSkipExerciseConfirmation = false
     @State private var showsFinishConfirmation = false
-    @State private var showsRoutineUpdate = false
-    @State private var pendingRoutineUpdatePrompt = false
     @State private var showsRenamePrompt = false
     @State private var showsDiscardRenamePrompt = false
     @State private var renameDraft = ""
-    @State private var pendingRoutineUpdates: [WorkoutLoggingState.RoutineUpdate] = []
     @AppStorage("unit.activeWorkoutExerciseOrder") private var exerciseOrderData = Data()
     @State private var draggedExerciseID: UUID?
     @State private var showsAddExercise = false
@@ -359,13 +356,6 @@ struct ActiveWorkoutView: View {
                 renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
             ))
         }
-        .confirmationDialog(AppCopy.Workout.updateRoutineTitle, isPresented: $showsRoutineUpdate, titleVisibility: .visible) {
-            Button(AppCopy.Workout.updateRoutineAction) { applyRoutineUpdatesAndFinish() }
-            Button(AppCopy.Workout.keepRoutineAction) { finishWorkout() }
-            Button(AppCopy.Nav.cancel, role: .cancel) { }
-        } message: {
-            Text(AppCopy.Workout.updateRoutineMessage(pendingRoutineUpdates.map(\.name)))
-        }
         .sheet(isPresented: $showsAddExercise) {
             AppExercisePickerSheet(existingIds: Set(template?.orderedExerciseIds ?? []), onSelect: addExerciseToWorkout)
         }
@@ -389,14 +379,6 @@ struct ActiveWorkoutView: View {
         }
         .onChange(of: focusedField) { old, new in
             handleFocusChange(from: old, to: new)
-        }
-        .task(id: pendingRoutineUpdatePrompt) {
-            guard pendingRoutineUpdatePrompt else { return }
-            // Present after SwiftUI has committed the preceding alert dismissal.
-            await Task.yield()
-            guard !Task.isCancelled, !showsFinishConfirmation, !session.isCompleted else { return }
-            showsRoutineUpdate = true
-            pendingRoutineUpdatePrompt = false
         }
         .task(id: logging.lastLogAt) { await releaseLoggingGuard() }
         .task(id: logging.undo?.entryID) {
@@ -615,8 +597,9 @@ struct ActiveWorkoutView: View {
         WorkoutTargetFormatter.loggingSetText(weightKg: weight, reps: reps, isBodyweight: exercise.isBodyweight, unitSystem: unitSystem)
     }
     /// The exercise-done preview: the same double-progression result the
-    /// finish summary will offer, shown as soon as the planned sets are done.
-    /// Read-only; nothing is saved until the lifter accepts after Finish.
+    /// finish summary will show, as soon as the planned sets are done.
+    /// Read-only; Finish saves this target, and the summary offers "Keep
+    /// previous target" and "Edit".
     private func progressionSuggestion(for section: WorkoutExerciseSectionModel)
         -> (text: String, outcome: AnalyticsProgressionOutcome)? {
         guard section.hasReachedPlannedSetGoal, let template,
@@ -638,8 +621,14 @@ struct ActiveWorkoutView: View {
             }
             return explanation.map { (AppCopy.Workout.exerciseDoneNoSuggestion($0), .unsupported) }
         }
-        let target = valueText(weight: recommendation.target.weightKg, reps: recommendation.target.reps,
-                               exercise: section.exercise)
+        // Same-sets wording as Today and History: "3 × 8 at 62.5 kg".
+        let setCount = max(1, template.plannedSets(for: section.id) ?? section.plannedSetCount)
+        let target = WorkoutTargetFormatter.completedPerformanceText(
+            weightsKg: Array(repeating: recommendation.target.weightKg, count: setCount),
+            reps: Array(repeating: recommendation.target.reps, count: setCount),
+            isBodyweight: section.exercise.isBodyweight
+        ) ?? valueText(weight: recommendation.target.weightKg, reps: recommendation.target.reps,
+                       exercise: section.exercise)
         switch recommendation.reason {
         case .allSetsReachedTop:
             let increment = template.progressionState(for: section.id)?.weightIncrementKg ?? 0
@@ -665,9 +654,15 @@ struct ActiveWorkoutView: View {
               !needsStartingTarget(section, row: section.entries.count + 1) else { return "" }
         return "\(section.plannedSetCount) × \(valueText(weight: target.weight, reps: target.reps, exercise: section.exercise))"
     }
-    private func supportingText(for section: WorkoutExerciseSectionModel, row: Int) -> String {
+    /// "Last time" reads the workout set 1 was prefilled from: row N shows
+    /// set N of it, and a set that did not exist then shows nothing.
+    private func supportingText(for section: WorkoutExerciseSectionModel, row: Int) -> String? {
         if needsStartingTarget(section, row: row) { return AppCopy.Workout.noStartingTarget }
-        if let prior = SetEntry.latestValidWorkingSets(for: section.id, in: sessions, excluding: session.id).last {
+        let lastTime = SetEntry.latestValidWorkingSets(for: section.id, in: sessions, excluding: session.id,
+                                                       preferringTemplate: session.templateId)
+        if !lastTime.isEmpty {
+            guard lastTime.indices.contains(row - 1) else { return nil }
+            let prior = lastTime[row - 1]
             let load = displayWeight(prior.weight).weightString
             let weight = section.exercise.isBodyweight
                 ? (prior.weight > 0 ? "\(AppCopy.Workout.bodyweightAbbrev) + \(load)" : AppCopy.Workout.bodyweightAbbrev)
@@ -1003,18 +998,11 @@ struct ActiveWorkoutView: View {
         logging.invalidateUndo()
         showsFinishConfirmation = true
     }
+    /// No "Update routine with today's weights?" step (removed 2026-10-24):
+    /// the next workout already starts from this one, so its answer changed
+    /// nothing the lifter would see.
     private func confirmFinish() {
         if isFreestyleSession { renameDraft = ""; showsRenamePrompt = true; return }
-        pendingRoutineUpdates = WorkoutLoggingState.routineUpdates(exercises: exerciseStates,
-            targets: preparedTargets, sessionID: session.id, isFreestyle: isFreestyleSession)
-        if pendingRoutineUpdates.isEmpty { finishWorkout() }
-        else { pendingRoutineUpdatePrompt = true }
-    }
-    private func applyRoutineUpdatesAndFinish() {
-        for update in pendingRoutineUpdates {
-            template?.setPlannedWeight(update.weight, for: update.exerciseID)
-            template?.setPlannedReps(update.reps, for: update.exerciseID)
-        }
         finishWorkout()
     }
     private func saveWorkoutChanges() -> Bool {
@@ -1033,6 +1021,7 @@ struct ActiveWorkoutView: View {
                 template: template,
                 exercises: exercises
             )
+            session.applySuggestedTargets(to: template)
         }
         guard saveWorkoutChanges() else { return }
         clearPreparedTarget()
@@ -1299,14 +1288,18 @@ final class ActiveWorkoutViewModel {
         return nil
     }
 
+    /// Set 1 of this routine's last workout with the exercise, else of any
+    /// routine's. The first set is the planned working set; the last one is
+    /// often a fatigue drop.
     private func latestSessionSet(
         for exerciseID: UUID,
         currentSession: WorkoutSession,
         sessions: [WorkoutSession]
     ) -> SetEntry? {
         SetEntry.latestValidWorkingSets(
-            for: exerciseID, in: sessions, excluding: currentSession.id
-        ).last
+            for: exerciseID, in: sessions, excluding: currentSession.id,
+            preferringTemplate: currentSession.templateId
+        ).first
     }
 
 }
