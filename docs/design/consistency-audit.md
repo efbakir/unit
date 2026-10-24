@@ -34,7 +34,7 @@
   - Plan without weight: "3 × 8–10"
   - Bodyweight: "BW × 12", "BW + 10 kg × 8"
   - Last time: "Last time · 80 kg × 8"
-  - A next target reads like a plan, with the change after a middle dot: "Suggested next: 3 × 8 at 62.5 kg · +2.5 kg" (also "· +1 rep", "· same target"). One performed set stays "62.5 kg × 8".
+  - A next target reads like a plan, with the change after a middle dot: "Next time: 3 × 8 at 62.5 kg · +2.5 kg" (also "· +1 rep", "· same target"). One performed set stays "62.5 kg × 8".
 - **Colors:** blue only for things you can tap or that are selected. Status checkmarks are black. Text is black, supporting text gray.
 - **Type scale:** `AppFont` tokens only, each with its own tracking. No borrowed tracking, no `.bold()` or `.weight()` overrides. In-page titles are 24pt (`productHeading`).
 - **Capitalization:** sentence case for every label, button, title and header. Names keep their capitals (Unit Pro, App Store, Terms of Service, exercise and program names). Caps only through `appCapsLabel`, never on text the lifter typed. Apple uses title case for buttons; Unit's recorded rule is sentence case and almost every string already follows it.
@@ -168,7 +168,7 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Now | Fix | Effort | Status |
 |---|---|---|---|---|---|---|
-| 47 | The same next target is written two ways (benchmark report 4, row 8) | Exercise-done card (`Today/ActiveWorkoutView.swift` `exerciseDoneSuggestion`) vs Today and the summary; Analytics "Next" | "Suggested next: 62.5 kg × 8 · +2.5 kg" / "3 × 8 at 62.5 kg" / "Next 62.5 kg × 8" | targets read like a plan (rule above) | S | Rule set. Done card handed to the progression-loop chat; Analytics "Next" needs the planned set count (follow-up) |
+| 47 | The same next target is written two ways (benchmark report 4, row 8) | Exercise-done card (`Today/ActiveWorkoutView.swift` `exerciseDoneSuggestion`) vs Today and the summary; Analytics "Next" | "Suggested next: 62.5 kg × 8 · +2.5 kg" / "3 × 8 at 62.5 kg" / "Next 62.5 kg × 8" | targets read like a plan (rule above) | S | Done card built to the rule by the progression-loop chat (commit 4f9a8f2 on `claude/progression-loop-7006dd`, prefix "Next time:" because Finish now saves the target). Analytics "Next" needs the planned set count (follow-up) |
 
 ## Needs your call
 
