@@ -554,6 +554,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             descendant(in: app, identifier: "paywall-plan-com.unit.annual").isSelected,
             "eligible Yearly did not become the default"
         )
+        XCTAssertTrue(
+            staticText(in: app, containing: "7 days free · then $29.99/year ($0.58/week)").exists,
+            "the per-week price does not follow the yearly price"
+        )
         let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
         scrollTo(trialTimeline, in: app)
         XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")

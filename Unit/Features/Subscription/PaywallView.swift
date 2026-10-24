@@ -703,7 +703,10 @@ struct PaywallView: View {
     private func sublabel(for tier: StoreManager.Tier) -> String {
         if let presentation = store.presentation(for: tier),
            let trial = presentation.trial {
-            return "\(trial.durationText) free · then \(presentation.billedPriceText)"
+            // The billed price stays first (3.1.2); the per-week figure
+            // follows in brackets, as in the Mesh reference (2026-10-24).
+            let perWeek = perWeekEquivalentText(for: tier).map { " (\($0)/week)" } ?? ""
+            return "\(trial.durationText) free · then \(presentation.billedPriceText)\(perWeek)"
         }
 
         switch tier {
