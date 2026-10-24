@@ -38,6 +38,19 @@ struct SessionProgressionRecord: Codable, Equatable, Sendable {
     var acceptedTarget: DoubleProgressionTarget?
     var decisionAction: ProgressionDecisionAction?
 
+    /// What a save from the next-target sheet means: the suggestion, the
+    /// previous target, or the lifter's own numbers.
+    func decisionAction(saving target: DoubleProgressionTarget) -> ProgressionDecisionAction {
+        // Pounds round-trip through kilograms, so compare within 0.01 kg.
+        func matches(_ other: DoubleProgressionTarget?) -> Bool {
+            guard let other else { return false }
+            return other.reps == target.reps && abs(other.weightKg - target.weightKg) < 0.01
+        }
+        if matches(suggestedTarget) { return .usedSuggestion }
+        if matches(previousTarget) { return .repeatedPreviousTarget }
+        return .edited
+    }
+
     /// Planned sets under the target reps, numbered from 1: why a target
     /// repeats. Extra sets beyond the plan never count.
     var shortSets: [(number: Int, reps: Int)] {

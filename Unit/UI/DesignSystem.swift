@@ -7069,12 +7069,6 @@ struct ExerciseSummaryRow: View {
     let showsUndo: Bool
     let onUndo: () -> Void
     let onSelect: () -> Void
-    /// Optional result line under the summary, e.g. the suggested next
-    /// target once a progression exercise is done. Primary ink so the
-    /// outcome reads before the muted set summary is re-read.
-    var detail: String? = nil
-    /// False for an explanation (no suggestion): muted, without the trend icon.
-    var detailIsSuggestion = true
     /// One of this exercise's sets was a personal record. The done card closes
     /// right after the last set, so a final-set PR would otherwise never show.
     var showsPR = false
@@ -7098,18 +7092,6 @@ struct ExerciseSummaryRow: View {
                                 if showsPR { historyPRTag() }
                             }
                         }
-                        if let detail, !detail.isEmpty {
-                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                                if detailIsSuggestion {
-                                    AppIcon.chart.image(size: AppIconSize.compact)
-                                        .accessibilityHidden(true)
-                                }
-                                Text(detail).appFont(.caption).monospacedDigit()
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .foregroundStyle(detailIsSuggestion ? AppColor.textPrimary : AppColor.textSecondary)
-                            .transition(AppBlurTransition().animation(.appReveal))
-                        }
                     }
                     .padding(.vertical, AppSpacing.md)
                     .frame(minHeight: 52).contentShape(Rectangle())
@@ -7118,7 +7100,7 @@ struct ExerciseSummaryRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(name)
                 .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary,
-                                     showsPR ? AppCopy.Workout.personalRecord : "", detail ?? ""]
+                                     showsPR ? AppCopy.Workout.personalRecord : ""]
                     .filter { !$0.isEmpty }.joined(separator: ", "))
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {
