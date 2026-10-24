@@ -7,6 +7,15 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Paywall patterns from Blinkist, Mesh and Runtastic
+
+- **Timeline:** "Today", "Day 5", "Day 7" stay as titles; the real dates sit in the text ("Unit reminds you on Oct 29.", "You will be charged $29.99/year on Oct 31. Cancel anytime before."). Plans without a trial name the next charge date.
+- **Cancel:** A closed "How do I cancel?" card under the timeline gives the path in Unit and on the iPhone, and the 24-hour deadline. No card for Lifetime. A refund line stays out.
+- **Price:** Trial cards add the per-week figure after the billed price ("$29.99/year ($0.58/week)"). The billed price stays first; the line above the button is unchanged.
+- **Review:** The one real Türkiye App Store review is back above the plans, labeled "translated from Turkish" (the 2026-07-13 founder call; it was dropped on 2026-08-05 without a decision). No rating number until about 50 ratings; then the real number from App Store Connect, never rounded up. Never an invented or placeholder quote.
+- **Kept:** Yearly preselected when eligible, Weekly otherwise, "Save 80% vs weekly", "Start free trial", the billed price leading.
+- **Evidence:** Founder references: Blinkist (23% more trial starts, 55% fewer complaints), Runtastic (+44% paid with a review card), Mesh (date and per-week price). Their numbers are theirs; Unit has not measured its own.
+
 ## 2026-10-24 - Anonymous analytics is opt-in
 
 - **Decision:** Analytics are off until the person turns them on. A missing `analytics.enabled` key now means off, so nothing is sent at launch.

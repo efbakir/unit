@@ -558,14 +558,15 @@ enum AppCopy {
         }
         static let trialTimelineRewardMessage =
             "Your program, history, and next targets stay ready."
-        // Social proof — a real, published five-star App Store review
+        // Social proof: a real, published five-star App Store review
         // (Türkiye storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym
-        // tracker app"). The user-facing quote is its English translation.
-        // Numeric aggregate-rating claims stay off the paywall until the
-        // rating count is meaningful.
+        // tracker app"). The user-facing quote is its English translation,
+        // labeled as translated. A rating number stays off the paywall
+        // until about 50 ratings exist; never an invented quote.
         static let reviewStars = "★★★★★"
+        static let reviewStarsAccessibility = "5 out of 5 stars"
         static let reviewQuote = "\u{201C}The gym tracker app I\u{2019}ve been looking for for years.\u{201D}"
-        static let reviewAttribution = "App Store review"
+        static let reviewAttribution = "App Store review · translated from Turkish"
     }
 
     /// Today dashboard state copy. One status line per state — the title

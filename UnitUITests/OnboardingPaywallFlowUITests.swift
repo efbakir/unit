@@ -558,6 +558,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             staticText(in: app, containing: "7 days free · then $29.99/year ($0.58/week)").exists,
             "the per-week price does not follow the yearly price"
         )
+        // One real, translated App Store review; no rating number yet.
+        XCTAssertTrue(
+            descendant(in: app, identifier: "paywall-review").exists,
+            "the real review is missing above the plans"
+        )
+        XCTAssertFalse(staticText(in: app, containing: " ratings").exists, "no rating count before about 50 ratings")
         let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
         scrollTo(trialTimeline, in: app)
         XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")

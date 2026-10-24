@@ -116,6 +116,9 @@ struct PaywallView: View {
                     .appScreenEnter(index: 1, staged: true)
                     .padding(.top, AppSpacing.xl)
 
+                reviewQuoteBlock
+                    .padding(.top, AppSpacing.xl)
+
                 planSelectionSection
                     .padding(.top, AppSpacing.xxl)
 
@@ -488,6 +491,32 @@ struct PaywallView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("paywall-program-summary")
+    }
+
+    /// One real App Store review above the plans (Runtastic reference,
+    /// 2026-10-24; founder call 2026-07-13). No heading and no rating
+    /// number until about 50 ratings exist.
+    private var reviewQuoteBlock: some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(AppCopy.Paywall.reviewStars)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .accessibilityLabel(AppCopy.Paywall.reviewStarsAccessibility)
+
+            Text(AppCopy.Paywall.reviewQuote)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(AppCopy.Paywall.reviewAttribution)
+                .font(AppFont.muted.font)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall-review")
     }
 
     private var activeSubscriptionHeader: some View {
