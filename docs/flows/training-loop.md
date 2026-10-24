@@ -372,6 +372,7 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
   - "Edit set" -> sheet with Weight and Reps -> "Save changes" -> saved at once ([EditSetSheet.swift](Unit/Features/History/EditSetSheet.swift)).
   - "Delete set" -> removed at once, toast "Set removed" with Undo. The last set left asks the Delete workout question instead.
   - Trash (top right) -> "Delete workout" confirm -> workout and its sets deleted -> back to History (or Today from the summary). Checkmark closes Edit workout.
+- Imported history (added 2026-10-24): workouts from a Strong or Hevy import show like any other, named as in the file, on hidden routines. They feed PR tags, "Last time", the progress page and Analytics, and have no "Next time" block.
 - Lapsed subscriber (added 2026-10-24): paywall -> "View workout history" (only when the phone has logged sets) -> the same History, read-only: no "This week" start rows, no "Next time" buttons, no pencil; top right "Export" ([ReadOnlyHistorySheet.swift](Unit/Features/History/ReadOnlyHistorySheet.swift)).
 
 **PR badges** ([HistoryView.swift:548](Unit/Features/History/HistoryView.swift:548))

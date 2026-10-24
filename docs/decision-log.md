@@ -7,6 +7,18 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Import history from Strong or Hevy
+
+Part of the approved trust-layer plan (ships after the export and edit PR).
+
+- **Settings > Data > Import from Strong or Hevy:** pick a CSV export in Files; a preview shows workouts, sets, dates, what is already in Unit, and which exercises match or are new. A kg / lb choice appears only for Strong's comma file, which has no unit.
+- **Formats:** Strong 6.2.3+ (semicolons, "Weight (kg)"), Strong's older comma layout, Strong's per-row unit layout, Hevy in kg or lbs. Checked against real files on 2026-10-24. Rest timer, note, timed and cardio rows are left out; W and warmup stay warm-ups (never PRs); drop and failure sets count as normal sets.
+- **Where it lands:** each workout is a finished workout on a hidden routine (no program), like Freestyle. Programs, Today and the rotation do not change. History, PR tags, "Last time", the exercise pages and Analytics use it at once.
+- **Exercises:** exact match to the lifter's exercises, then Unit's catalog, which now lists the Strong and Hevy names of its lifts as aliases. Everything else becomes a new exercise with its file name. No fuzzy matching, so dumbbell and barbell work never merge. A manual match step and an exercise merge tool are follow-ups.
+- **Safety:** a workout that starts in the same minute as one in Unit is skipped, so importing twice adds nothing. "Undo last import" removes only what the import added. A failed save changes nothing.
+- **Not doing:** routine import, Fitbod or JEFIT files, an import link in onboarding.
+- **Undo:** remove `DataRow.importHistory` and `DataRow.undoImport` in `SettingsView`.
+
 ## 2026-10-24 - Trust layer: export, edit and delete, History after a lapse
 
 Efe approved the trust-layer plan built from the 2026-10-24 benchmarks (reports 1, 2, 5 and 6; `docs/research/2026-10-24-benchmarks/`).

@@ -277,12 +277,13 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Steps**:
   - Preferences -> "Weight unit" kg or lb (changes the display only; weights are stored in kg). "Anonymous analytics" switch, on by default; off stops all events. [SettingsView.swift:211](Unit/Features/Settings/SettingsView.swift:211), [UnitAnalytics.swift:339](Unit/Analytics/UnitAnalytics.swift:339)
   - Data -> "Storage: On this iPhone" ("Included in iPhone backups"), "Account: None", "Export workouts" (CSV file in Strong's columns through the iOS share sheet; "No workouts yet" with no logged sets). [SettingsView.swift:183](Unit/Features/Settings/SettingsView.swift:183), [WorkoutCSVExport.swift](Unit/Data/WorkoutCSVExport.swift)
+  - Data -> "Import from Strong or Hevy" -> Files picker -> preview (workouts, sets, dates, already in Unit, matched and new exercises, kg/lb for Strong's comma file) -> "Import N workouts" -> toast "Imported N workouts". After an import, "Undo last import" (with a confirm) removes only what it added. [ImportHistorySheet.swift](Unit/Features/Settings/ImportHistorySheet.swift), [WorkoutHistoryImporter.swift](Unit/Data/WorkoutHistoryImporter.swift)
   - Subscription -> "Unit Pro" status ("Monthly active" and so on), "Restore Purchases", "Manage Subscription" (Apple's own sheet; hidden for Lifetime). [SettingsView.swift:240](Unit/Features/Settings/SettingsView.swift:240), [SettingsView.swift:282](Unit/Features/Settings/SettingsView.swift:282)
   - Feedback -> "Request a feature" opens unitlift.featurebase.app. [SettingsView.swift:336](Unit/Features/Settings/SettingsView.swift:336)
   - Legal -> Privacy Policy, Terms of Service, "Contact me" (an email with the app version and iOS version filled in). [SettingsView.swift:302](Unit/Features/Settings/SettingsView.swift:302), [SettingsView.swift:64](Unit/Features/Settings/SettingsView.swift:64)
   - Footer -> "Made with (heart emoji) in my room" and support@unitlift.app.
 - **Saved data**: `unitSystem`, `analytics.enabled` (Settings storage).
-- **Events**: `feedback_action` (portal). `restore_outcome` on restore. `data_exported` when the CSV file is written.
+- **Events**: `feedback_action` (portal). `restore_outcome` on restore. `data_exported` when the CSV file is written. `history_imported` after an import.
 - **Edge cases**:
   - Restore while the plan is active -> spinner, then nothing. The "Purchases restored" alert only shows when access was off before, which cannot happen on this screen -> Low -> partial. [SettingsView.swift:350](Unit/Features/Settings/SettingsView.swift:350)
   - Restore finds nothing -> access is removed, the root swaps to the paywall, and the paywall shows "No purchases to restore." -> Low -> yes.
@@ -344,6 +345,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 | `progression_decision` | `action`: accept, repeat, edit (a `dismiss` value exists but is never sent); `outcome` | Next target accepted, repeated or edited | [SessionDetailView.swift:521](Unit/Features/History/SessionDetailView.swift:521) |
 | `feedback_action` | `action`: book, email, dismiss, portal | Feedback card buttons and "Request a feature" | [SessionDetailView.swift:724](Unit/Features/History/SessionDetailView.swift:724), [SettingsView.swift:342](Unit/Features/Settings/SettingsView.swift:342) |
 | `data_exported` | none | The export CSV file is written (Settings or read-only History) | [WorkoutCSVExport.swift](Unit/Data/WorkoutCSVExport.swift) |
+| `history_imported` | `source`: strong, hevy; `workouts`: 1_10, 11_50, 51_200, over_200 | A Strong or Hevy history is saved | [SettingsView.swift](Unit/Features/Settings/SettingsView.swift) |
 
 **Funnel gaps** (install -> setup done -> paywall -> trial or purchase -> first workout -> week 1)
 
