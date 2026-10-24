@@ -99,7 +99,6 @@ struct SettingsView: View {
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
     @State private var toastMessage: AppToastEvent?
-    @State private var analyticsEnabled = UnitAnalytics.shared.isEnabled
 
     init(showsCloseButton: Bool = true) {
         self.shouldShowCloseButton = showsCloseButton
@@ -222,17 +221,9 @@ struct SettingsView: View {
                         )
                     }
                 } else {
-                    AppListRow(title: row) {
-                        Toggle("", isOn: $analyticsEnabled)
-                            .labelsHidden()
-                            .tint(AppColor.accent)
-                            .accessibilityLabel(AppCopy.Preferences.anonymousAnalytics)
-                    }
+                    AnonymousAnalyticsToggle()
                 }
             }
-        }
-        .onChange(of: analyticsEnabled) { _, enabled in
-            UnitAnalytics.shared.setEnabled(enabled)
         }
     }
 
@@ -383,26 +374,24 @@ struct SettingsView: View {
     }
 }
 
-/// One switch for the stored analytics setting, so setup and the paywall
-/// can turn it off before purchase. Settings uses the same label and key.
+/// One opt-in switch for the stored analytics setting, shared by setup step 1,
+/// the paywall and Settings so the three places cannot drift. The wrapper
+/// exists only for that shared binding; the row is the canonical `AppListRow`.
 struct AnonymousAnalyticsToggle: View {
     @State private var isEnabled = UnitAnalytics.shared.isEnabled
 
     var body: some View {
-        Toggle(isOn: $isEnabled) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(AppCopy.Preferences.anonymousAnalytics)
-                    .font(AppFont.body.font)
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(AppCopy.Preferences.anonymousAnalyticsCaption)
-                    .font(AppFont.muted.font)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        AppListRow(
+            title: AppCopy.Preferences.anonymousAnalytics,
+            subtitle: AppCopy.Preferences.anonymousAnalyticsCaption
+        ) {
+            Toggle("", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(AppColor.accent)
+                .accessibilityLabel(AppCopy.Preferences.anonymousAnalytics)
+                .accessibilityHint(AppCopy.Preferences.anonymousAnalyticsCaption)
+                .accessibilityIdentifier("anonymous-analytics-toggle")
         }
-        .tint(AppColor.accent)
-        .frame(minHeight: 44)
-        .accessibilityIdentifier("anonymous-analytics-toggle")
         .onAppear {
             isEnabled = UnitAnalytics.shared.isEnabled
         }

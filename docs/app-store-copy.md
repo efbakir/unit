@@ -110,7 +110,7 @@ Engagement prompts count only workouts completed in this version:
 
 Trial text appears only when StoreKit returns a valid Free introductory offer and Apple reports the customer eligible. The billed amount stays visible above the CTA; trial length, post-trial price, auto-renewal, and cancel-via-App-Store copy appear on the paywall. Ineligible customers see the standard disclosure with no trial text.
 
-Workout details stay on-device (SwiftData). Unit sends a small allowlist of anonymous product-interaction and purchase-state events through TelemetryDeck, using a hashed device identifier. Analytics are not linked to identity and are not used for tracking. Anonymous analytics is on by default. The switch is on the first setup step and on the paywall (before purchase), and again in Settings → Preferences → Anonymous analytics. All three use the same stored setting. Off stops anonymous usage data. Unit works fully offline.
+Workout details stay on-device (SwiftData). Unit sends a small allowlist of anonymous product-interaction and purchase-state events through TelemetryDeck, using a hashed device identifier. Analytics are not linked to identity and are not used for tracking. Anonymous analytics is off by default and nothing is sent until the person turns it on (Guideline 5.1.1(ii)). The opt-in switch is on the first setup step and in Settings → Preferences → Anonymous analytics; the paywall footer shows it only while it is on, so it can be turned off before purchase. All three use the same stored setting. Off stops anonymous usage data. Unit works fully offline.
 
 If you have questions during review, please email support@unitlift.app.
 ```

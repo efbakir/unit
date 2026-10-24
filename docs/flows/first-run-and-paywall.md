@@ -275,7 +275,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Purpose**: Weight unit, analytics opt-out, plan status, restore, manage plan, feedback and legal links.
 - **Entry**: Programs tab -> gear button (top right) -> sheet. Only reachable with an active plan. [TemplatesView.swift:83](Unit/Features/Templates/TemplatesView.swift:83), [TemplatesView.swift:109](Unit/Features/Templates/TemplatesView.swift:109)
 - **Steps**:
-  - Preferences -> "Weight unit" kg or lb (changes the display only; weights are stored in kg). "Anonymous analytics" switch, on by default; off stops all events. [SettingsView.swift:211](Unit/Features/Settings/SettingsView.swift:211), [UnitAnalytics.swift:339](Unit/Analytics/UnitAnalytics.swift:339)
+  - Preferences -> "Weight unit" kg or lb (changes the display only; weights are stored in kg). "Anonymous analytics" switch, off by default (opt-in, 2026-10-24); off stops all events. The same switch is on setup step 1, and on the paywall while it is on. [SettingsView.swift:211](Unit/Features/Settings/SettingsView.swift:211), [UnitAnalytics.swift:339](Unit/Analytics/UnitAnalytics.swift:339)
   - Data -> "Storage: On this iPhone", "Account: None". The "Export data" row is hidden by an old v1 filter. There is no export anywhere in the app. [SettingsView.swift:187](Unit/Features/Settings/SettingsView.swift:187)
   - Subscription -> "Unit Pro" status ("Monthly active" and so on), "Restore Purchases", "Manage Subscription" (Apple's own sheet; hidden for Lifetime). [SettingsView.swift:240](Unit/Features/Settings/SettingsView.swift:240), [SettingsView.swift:282](Unit/Features/Settings/SettingsView.swift:282)
   - Feedback -> "Request a feature" opens unitlift.featurebase.app. [SettingsView.swift:336](Unit/Features/Settings/SettingsView.swift:336)
@@ -310,7 +310,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 ## 13. Analytics
 
 - **Purpose**: Anonymous funnel counts through TelemetryDeck. No names, exercises, weights, notes or receipts are sent.
-- **Entry**: Set up at app start when "Anonymous analytics" is on (default on) and the app has a valid TelemetryDeck ID. [UnitApp.swift:41](Unit/UnitApp.swift:41), [UnitAnalytics.swift:328](Unit/Analytics/UnitAnalytics.swift:328)
+- **Entry**: Set up at app start when "Anonymous analytics" is on (off by default since 2026-10-24: opt-in) and the app has a valid TelemetryDeck ID. [UnitApp.swift:41](Unit/UnitApp.swift:41), [UnitAnalytics.swift:328](Unit/Analytics/UnitAnalytics.swift:328)
 - **Rules**:
   - Only names on an allow list are sent. [UnitAnalytics.swift:163](Unit/Analytics/UnitAnalytics.swift:163)
   - Five money events also get `default_plan` (monthly or annual) when this install is in the plan test: `paywall_viewed`, `purchase_started`, `purchase_outcome`, `trial_started`, `purchase_completed`. [UnitAnalytics.swift:351](Unit/Analytics/UnitAnalytics.swift:351)
