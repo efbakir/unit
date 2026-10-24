@@ -20,7 +20,7 @@ Efe tested the merged build on his phone and sent 11 notes; plan approved (anima
 - **Animation:** a just-logged set's check pops once (symbol bounce); Reduce Motion and VoiceOver get no bounce.
 - **"Add set" is centred** under the set rows again (routine lists keep left).
 - **Rest bar names the rest:** "Bench Press rest", so −30 / +30 read as that exercise's length.
-- **White Live Activity** in the app's colours: `UnitWidget/WidgetColors.xcassets` mirrors AppColor (card white, ink, secondary, control grey, accent) because the widget can't link the design system. Dark values come with the colors chat's dark mode.
+- **White Live Activity** in the app's colours: `UnitWidget/WidgetColors.xcassets` mirrors AppColor (card white, ink, secondary, control grey, accent) because the widget can't link the design system. Light and dark values match the colors chat's final AppColor (textSecondary #68686D / #98989F).
 
 ## 2026-10-24 - Founder override: next targets apply at Finish
 

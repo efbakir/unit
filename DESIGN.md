@@ -235,7 +235,7 @@ The palette is named like materials in a workshop, not like UI states. There is 
 - **Spark** (`#FF4400`): The splash-screen orange. Reserved for the launch animation and home-screen icon only — **forbidden in the app shell**. There is no `AppColor` token for it; the splash asset carries the value directly.
 
 ### Lock Screen copy of the palette
-- The rest Live Activity can't link `AppColor`, so `UnitWidget/WidgetColors.xcassets` holds the same tokens with the same light values: `CardBackground` (white card), `TextPrimary`, `TextSecondary`, `ControlBackground`, `Accent`. Change a value in both places. Dark values arrive with dark mode.
+- The rest Live Activity can't link `AppColor`, so `UnitWidget/WidgetColors.xcassets` holds the same tokens with the same light and dark values: `CardBackground` (white card), `TextPrimary`, `TextSecondary`, `ControlBackground`, `Accent`. Change a value in both places.
 
 ### Named Rules
 
