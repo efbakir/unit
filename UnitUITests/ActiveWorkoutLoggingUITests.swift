@@ -227,6 +227,62 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Seat 4"].waitForNonExistence(timeout: 5))
     }
 
+    func testSwapBeforeTheFirstSetKeepsThePlannedSetsAndSurvivesRelaunch() throws {
+        let app = launch()
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tapMenuItem("Swap exercise", in: app)
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        search.typeText("Test Press")
+        tap(app.buttons["Create \"Test Press\""], in: app)
+        XCTAssertTrue(app.staticTexts["Test Press"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Bench Press"].exists)
+        // Bench Press had 4 planned sets; the swapped-in exercise keeps them.
+        XCTAssertTrue(app.buttons["planned-set-4"].exists)
+        capture(app, "swap-exercise")
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Test Press"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["Bench Press"].exists)
+    }
+
+    func testAddExerciseInARoutineWorkoutWithItsOwnSetCount() throws {
+        let app = launch()
+        tap(app.buttons["Add exercise"], in: app)
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        search.typeText("Test Curl")
+        tap(app.buttons["Create \"Test Curl\""], in: app)
+        XCTAssertTrue(app.staticTexts["How many sets?"].waitForExistence(timeout: 5))
+        tap(app.buttons["2"], in: app)
+        tap(app.buttons["Done"].firstMatch, in: app)
+        XCTAssertTrue(app.staticTexts["Test Curl"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["planned-set-2"].exists)
+        XCTAssertFalse(app.buttons["planned-set-3"].exists)
+        capture(app, "add-exercise-routine-workout")
+    }
+
+    func testRestStepIsRememberedForThatExerciseOnly() throws {
+        let app = launch()
+        tap(app.buttons["complete-set-1"], in: app)
+        let rest = app.descendants(matching: .any)["rest-duration"]
+        XCTAssertTrue(rest.waitForExistence(timeout: 5))
+        tap(app.buttons["+30"], in: app)
+        tap(app.buttons["complete-set-2"], in: app)
+        // Bench Press now rests 2:30; a few seconds may pass under load.
+        let benchRest = (rest.value as? String) ?? ""
+        XCTAssertTrue(benchRest.hasPrefix("2:2") || benchRest.hasPrefix("2:3"), benchRest)
+        tap(app.buttons["complete-set-3"], in: app)
+        tap(app.buttons["complete-set-4"], in: app)
+        tap(app.buttons["complete-set-1"], in: app)
+        // Barbell Row keeps the 2:00 default.
+        let rowRest = (rest.value as? String) ?? ""
+        XCTAssertTrue(rowRest.hasPrefix("2:0") || rowRest.hasPrefix("1:5"), rowRest)
+    }
+
     // Build 90 removed the toolbar reorder sheet; exercise cards are reordered
     // by long-pressing a card and dropping it on another (direct drag only).
     func testReorderKeepsLoggedSetRestAndSurvivesRelaunch() throws {

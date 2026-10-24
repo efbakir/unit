@@ -94,6 +94,38 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: "unit.restTimer.upNextDetail"))
     }
 
+    func testRestLengthIsRememberedPerExerciseAndTheDefaultStays() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let squat = UUID(), curl = UUID()
+        let timer = timer(defaults, notifications, now: { now })
+        defer { timer.stop() }
+        XCTAssertEqual(timer.restSeconds(for: squat), 120, "no saved default means 120 s")
+        defaults.set(90, forKey: "restDurationSeconds")
+        XCTAssertEqual(timer.restSeconds(for: squat), 90)
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: timer.restSeconds(for: squat), sourceExerciseID: squat)
+        }
+        let step = AppCopy.Workout.restStepSeconds
+        await notifications.waitForRequest { timer.adjustAndRemember(by: step) }
+        XCTAssertEqual(timer.restSeconds(for: squat), 90 + step)
+        XCTAssertEqual(timer.restSeconds(for: curl), 90, "other exercises keep the default")
+        XCTAssertEqual(defaults.integer(forKey: "restDurationSeconds"), 90, "the default no longer moves")
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: timer.restSeconds(for: curl), sourceExerciseID: curl)
+        }
+        await notifications.waitForRequest { timer.adjustAndRemember(by: -500) }
+        XCTAssertEqual(timer.restSeconds(for: curl), 15, "never under 15 s")
+        // The source exercise survives a relaunch, so a later step saves to it.
+        let restored = self.timer(defaults, notifications, now: { now })
+        XCTAssertEqual(restored.sourceExerciseID, curl)
+        restored.stop()
+        XCTAssertNil(defaults.object(forKey: "unit.restTimer.sourceExerciseID"))
+        XCTAssertEqual(RestTimerManager.clockText(150), "2:30")
+        XCTAssertEqual(RestTimerManager.clockText(15), "0:15")
+    }
+
     func testRestStepAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()

@@ -7,6 +7,14 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 — Rest per exercise; swap and add exercise for one workout (PR B)
+
+- **Rest per exercise (founder override of Final B §2 and §9).** −30 / +30 during a rest now save the new length for the exercise whose set started that rest; next time that exercise rests that long. Exercises without their own length use the global default (`restDurationSeconds`, 120 s at first), which no longer moves. No new control: the idle rest bar shows the current exercise's length. Steps stay ±30 (2026-10-23). Stored in settings storage (`unit.restSecondsByExercise`), no schema change. Undo: start rest from `restDurationSeconds` again in `RestTimerManager.restSeconds(for:)`.
+- **Swap exercise, this workout only.** "..." -> "Swap exercise" (before the first set) opens the lifter's own exercise list (search, create), with no suggestions (`CLAUDE.md` §3). The new exercise takes the same place and keeps the planned sets and reps; its weight comes from its own history. No "Update program?" question; the routine never changes.
+- **Add exercise in routine workouts.** The "Add exercise" button at the end of the list, with "How many sets?", now also works in routine workouts, for this workout only. Freestyle keeps writing its hidden routine.
+- **Session plan is saved.** Order, swaps, added exercises, set counts, rows added with "+ Add set" and the skipped last exercise are saved per workout (`unit.activeWorkoutExerciseOrder`, old data still decodes), so a relaunch keeps them. Before, added rows and the skip were lost.
+- **Known gap:** the summary still lists a swapped-out routine exercise as "Some sets are unfinished", like a skipped one (progression chat's code).
+
 ## 2026-10-24 — Logging fixes from the benchmarks (PR A)
 
 Efe approved the logging and Lock Screen plan from the 2026-10-24 benchmarks (`docs/research/2026-10-24-benchmarks/`, reports 3, 5 and 6). This entry covers the small changes; rest per exercise, swap and Lock Screen buttons get their own entries.

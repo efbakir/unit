@@ -6799,6 +6799,7 @@ struct ExerciseLoggingCard<Content: View>: View {
     var onSelect: (() -> Void)? = nil
     /// Optional menu actions; nil hides the item.
     var onShowHistory: (() -> Void)? = nil
+    var onSwap: (() -> Void)? = nil
     var onEditNote: (() -> Void)? = nil
     var onRemoveAddedSet: (() -> Void)? = nil
     @ViewBuilder let content: () -> Content
@@ -6822,6 +6823,9 @@ struct ExerciseLoggingCard<Content: View>: View {
                     Section {
                         if let onShowHistory {
                             Button(AppCopy.Workout.exerciseHistory, action: onShowHistory)
+                        }
+                        if let onSwap {
+                            Button(AppCopy.Workout.swapExercise, action: onSwap)
                         }
                         if let onEditNote {
                             Button(note.isEmpty ? AppCopy.Workout.addNote : AppCopy.Workout.editNote, action: onEditNote)

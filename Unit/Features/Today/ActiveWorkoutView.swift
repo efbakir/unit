@@ -23,7 +23,6 @@ struct ActiveWorkoutView: View {
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
-    @AppStorage("restDurationSeconds") private var restDurationSeconds = 120
     @AppStorage("unitSystem") private var unitSystem = "kg"
     @AppStorage("unit.preparedSetTargets") private var preparedSetTargetsData = Data()
     @SceneStorage("unit.loggingInputDrafts") private var inputDraftsData = Data()
@@ -32,14 +31,9 @@ struct ActiveWorkoutView: View {
     @State private var logging = WorkoutLoggingState()
     @State private var selectedExerciseID: UUID?
     @State private var expandedCompletedID: UUID?
-    /// The last unfinished exercise, once skipped, stays closed for this workout.
-    @State private var skippedExerciseIDs: Set<UUID> = []
     /// Sets in this workout that were a personal record when logged.
     @State private var livePRIDs: Set<UUID> = []
-    @State private var customSetCounts: [UUID: Int] = [:]
-    /// Rows added with "+ Add set" (this workout only), counted separately so
-    /// only those can be removed again.
-    @State private var addedSetCounts: [UUID: Int] = [:]
+    @State private var swapTarget: Exercise?
     @State private var historyExercise: Exercise?
     @State private var noteExercise: Exercise?
     @State private var showsNoteEditor = false
@@ -118,9 +112,33 @@ struct ActiveWorkoutView: View {
     private var workoutNavigationTitle: String {
         (template?.name ?? "Workout").truncatedForNavigationTitle(maxGlyphCount: 34)
     }
+    /// This workout's own order, swaps, added exercises and set counts. Saved
+    /// with the session, so a relaunch keeps them; the routine never changes.
+    private var sessionPlan: WorkoutLoggingState.SessionPlan {
+        get { WorkoutLoggingState.plan(from: exerciseOrderData, sessionID: session.id) }
+        nonmutating set { exerciseOrderData = WorkoutLoggingState.encode(newValue) }
+    }
+    /// Set count picked for an added or freestyle exercise.
+    private var customSetCounts: [UUID: Int] {
+        get { sessionPlan.setCounts }
+        nonmutating set { sessionPlan.setCounts = newValue }
+    }
+    /// Rows added with "+ Add set", counted apart so only those can be removed.
+    private var addedSetCounts: [UUID: Int] {
+        get { sessionPlan.addedSets }
+        nonmutating set { sessionPlan.addedSets = newValue }
+    }
+    /// The last unfinished exercise, once skipped, stays closed for this workout.
+    private var skippedExerciseIDs: Set<UUID> {
+        get { sessionPlan.skipped }
+        nonmutating set { sessionPlan.skipped = newValue }
+    }
     private var orderedExerciseIDs: [UUID] {
-        WorkoutLoggingState.orderedExerciseIDs(templateIDs: template?.orderedExerciseIds ?? [],
-            sessionID: session.id, saved: exerciseOrderData)
+        WorkoutLoggingState.orderedExerciseIDs(templateIDs: template?.orderedExerciseIds ?? [], plan: sessionPlan)
+    }
+    /// A swapped-in exercise keeps the routine exercise's sets and reps.
+    private func planSourceID(for exerciseID: UUID) -> UUID {
+        WorkoutLoggingState.planSourceID(for: exerciseID, in: sessionPlan)
     }
     private var orderedExercises: [Exercise] {
         orderedExerciseIDs.compactMap { id in exercises.first { $0.id == id } }
@@ -133,7 +151,7 @@ struct ActiveWorkoutView: View {
                 prefill: viewModel.prefillSet(
                     for: exercise.id, currentSession: session, sessions: sessions,
                     acceptedProgressionTarget: template?.progressionState(for: exercise.id)?.acceptedTarget,
-                    plannedReps: template?.plannedReps(for: exercise.id),
+                    plannedReps: template?.plannedReps(for: planSourceID(for: exercise.id)),
                     plannedWeightKg: template?.plannedWeight(for: exercise.id)
                 ), plannedSetCount: plannedSetCount(for: exercise.id)
             )
@@ -183,8 +201,9 @@ struct ActiveWorkoutView: View {
     private var loggedSetFingerprint: [String] {
         session.setEntries.map { "\($0.id)|\($0.weight)|\($0.reps)|\($0.isCompleted)" }
     }
+    /// The rest the current exercise's next set starts (its own, else the default).
     private var defaultRestText: String {
-        String(format: "%d:%02d", restDurationSeconds / 60, restDurationSeconds % 60)
+        RestTimerManager.clockText(restTimer.restSeconds(for: currentExerciseID))
     }
 
     var body: some View {
@@ -204,7 +223,12 @@ struct ActiveWorkoutView: View {
                 .toolbar(.hidden, for: .tabBar)
         }
         .sheet(isPresented: $showsAddExercise) {
-            AppExercisePickerSheet(existingIds: Set(template?.orderedExerciseIds ?? []), onSelect: addExerciseToWorkout)
+            AppExercisePickerSheet(existingIds: Set(orderedExerciseIDs), onSelect: addExerciseToWorkout)
+        }
+        .sheet(item: $swapTarget) { exercise in
+            AppExercisePickerSheet(title: AppCopy.Workout.swapExercise, existingIds: Set(orderedExerciseIDs)) {
+                swap(exercise, with: $0)
+            }
         }
         .sheet(item: $pendingExerciseForSetup) { exercise in
             SetCountPickerSheet(exerciseName: exercise.displayName) { customSetCounts[exercise.id] = $0 }
@@ -263,7 +287,7 @@ struct ActiveWorkoutView: View {
                                 onMove: moveExercise))
                             .id(section.id.uuidString)
                     }
-                    if isFreestyleSession && !sectionModels.isEmpty { addExerciseButton }
+                    if !sectionModels.isEmpty { addExerciseButton }
                     if sectionModels.isEmpty { addExercisePrompt }
                 }
                 // Child-owned scrolling keeps its breathing room inside the
@@ -474,6 +498,7 @@ struct ActiveWorkoutView: View {
                 onAddSet: { addSet(to: section) },
                 onSelect: isCurrent ? nil : { jump(to: section.id) },
                 onShowHistory: { showHistory(of: section.exercise) },
+                onSwap: section.entries.isEmpty ? { swapExercise(section.exercise) } : nil,
                 onEditNote: { editNote(of: section.exercise) },
                 onRemoveAddedSet: canRemoveAddedSet(section) ? { removeAddedSet(from: section) } : nil
             ) {
@@ -941,8 +966,8 @@ struct ActiveWorkoutView: View {
         let prAnnouncement = isPR ? " \(AppCopy.Workout.personalRecord)." : ""
         setLoggedPhase &+= 1
         if isDayDone { restTimer.stop() }
-        else { startRestTimer(sourceEntryID: entry.id) }
-        AccessibilityNotification.Announcement("Set \(number) logged.\(prAnnouncement)\(suggestionAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(defaultRestText) : "")").post()
+        else { startRestTimer(sourceEntryID: entry.id, exerciseID: exercise.id) }
+        AccessibilityNotification.Announcement("Set \(number) logged.\(prAnnouncement)\(suggestionAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(restTimer.label) : "")").post()
     }
     private func releaseLoggingGuard() async {
         guard logging.lastLogAt != nil else { return }
@@ -1007,18 +1032,15 @@ struct ActiveWorkoutView: View {
             restTimer.stop()
         } else { refreshRestUpNext() }
     }
-    private func startRestTimer(sourceEntryID: UUID) {
-        restTimer.start(totalSeconds: max(15, restDurationSeconds), upNext: upNext?.name,
-                        upNextDetail: upNextDetail, sourceEntryID: sourceEntryID)
+    /// Rest after a set belongs to that set's exercise.
+    private func startRestTimer(sourceEntryID: UUID, exerciseID: UUID) {
+        restTimer.start(totalSeconds: restTimer.restSeconds(for: exerciseID), upNext: upNext?.name,
+                        upNextDetail: upNextDetail, sourceEntryID: sourceEntryID, sourceExerciseID: exerciseID)
     }
     private func refreshRestUpNext() {
         restTimer.updateUpNext(upNext?.name, detail: upNextDetail)
     }
-    private func adjustRestTimer(by delta: Int) {
-        guard restTimer.isRunning, delta > 0 || restTimer.secondsRemaining > 15 else { return }
-        restTimer.adjust(by: delta, minimumSeconds: 15)
-        restDurationSeconds = max(15, restTimer.totalDuration)
-    }
+    private func adjustRestTimer(by delta: Int) { restTimer.adjustAndRemember(by: delta) }
     private func skipRest() { logging.invalidateUndo(); restTimer.stop() }
     private func jump(to id: UUID) {
         guard !guardActive, commitEditor() else { return }
@@ -1098,6 +1120,11 @@ struct ActiveWorkoutView: View {
             refreshRestUpNext()
         })
         AppHaptic.warning.fire()
+    }
+    private func swapExercise(_ exercise: Exercise) {
+        guard commitEditor() else { return }
+        focusedField = nil
+        swapTarget = exercise
     }
     private func showHistory(of exercise: Exercise) {
         guard commitEditor() else { return }
@@ -1196,7 +1223,7 @@ struct ActiveWorkoutView: View {
         guard !guardActive else { return }
         // Keep the active set/editor on its UUID while neighboring exercises move.
         selectedExerciseID = currentExerciseID
-        exerciseOrderData = WorkoutLoggingState.encodeExerciseOrder(ids, sessionID: session.id)
+        sessionPlan.exerciseIDs = ids
         refreshRestUpNext()
     }
 
@@ -1219,14 +1246,27 @@ struct ActiveWorkoutView: View {
             buttonLabel: AppCopy.Workout.addExercise) { showsAddExercise = true }
     }
     private func addExerciseToWorkout(_ exercise: Exercise) {
-        guard let template else { return }
-        var ids = template.orderedExerciseIds
-        guard !ids.contains(exercise.id) else { return }
-        ids.append(exercise.id)
-        template.orderedExerciseIds = ids
-        guard saveWorkoutChanges() else { return }
+        guard let template, !orderedExerciseIDs.contains(exercise.id) else { return }
+        if isFreestyleSession {
+            // The hidden Freestyle routine is this workout's own list.
+            template.orderedExerciseIds.append(exercise.id)
+            guard saveWorkoutChanges() else { return }
+        } else {
+            // A routine workout adds for today only; the routine is unchanged.
+            sessionPlan.additions.append(exercise.id)
+        }
         selectedExerciseID = exercise.id
         pendingExerciseForSetup = exercise
+    }
+    /// Swap uses the lifter's own exercise list (no suggestions) and only
+    /// before the first set; the new exercise keeps the planned sets and reps.
+    private func swap(_ old: Exercise, with new: Exercise) {
+        guard currentEntries(for: old.id).isEmpty else { return }
+        sessionPlan = WorkoutLoggingState.swapping(old.id, with: new.id, in: sessionPlan)
+        logging.invalidateUndo()
+        selectedExerciseID = new.id
+        expandedCompletedID = nil
+        refreshRestUpNext()
     }
     private func cancelWorkout() {
         template?.restoreLastPerformedDate(removing: session, sessions: sessions)
@@ -1244,7 +1284,7 @@ struct ActiveWorkoutView: View {
         // The user's explicit routine plan is authoritative. History only
         // fills gaps for legacy/freestyle routines without a stored plan; an
         // early-finished session must not permanently shrink the next workout.
-        if let templatePlan = template?.plannedSets(for: exerciseID), templatePlan > 0 {
+        if let templatePlan = template?.plannedSets(for: planSourceID(for: exerciseID)), templatePlan > 0 {
             return templatePlan
         }
         if let latestTemplateCount = latestCompletedSetCount(for: exerciseID, matchingTemplate: true) {
@@ -1479,6 +1519,8 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     var sourceEntryID: UUID? {
         didSet { defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey) }
     }
+    /// The exercise whose set started this rest; −30 / +30 save to it.
+    private(set) var sourceExerciseID: UUID?
     private(set) var notificationIssue: String?
     private(set) var totalDuration = 0
     private(set) var endDate: Date?
@@ -1500,6 +1542,10 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     private static let upNextKey = "unit.restTimer.upNext"
     private static let upNextDetailKey = "unit.restTimer.upNextDetail"
     private static let sourceEntryIDKey = "unit.restTimer.sourceEntryID"
+    private static let sourceExerciseIDKey = "unit.restTimer.sourceExerciseID"
+    /// Global default rest (120 s at first), used by exercises without their own.
+    private static let defaultRestKey = "restDurationSeconds"
+    private static let restByExerciseKey = "unit.restSecondsByExercise"
     private static let finishedAtKey = "unit.restTimer.finishedAt"
     private static let endDateKey = "unit.restTimer.endDate"
     private static let totalDurationKey = "unit.restTimer.totalDuration"
@@ -1547,15 +1593,44 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         notification.request.identifier.hasPrefix(Self.notificationPrefix) ? [.banner, .sound] : []
     }
 
-    var label: String {
-        String(format: "%d:%02d", secondsRemaining / 60, secondsRemaining % 60)
+    var label: String { Self.clockText(secondsRemaining) }
+
+    static func clockText(_ seconds: Int) -> String {
+        Duration.seconds(max(0, seconds)).formatted(.time(pattern: .minuteSecond))
     }
 
-    func start(totalSeconds: Int, upNext: String? = nil, upNextDetail: String? = nil, sourceEntryID: UUID? = nil) {
+    /// The rest a set of this exercise starts: the length last set for it with
+    /// −30 / +30, else the global default. Never under 15 s.
+    func restSeconds(for exerciseID: UUID?) -> Int {
+        let saved = exerciseID.flatMap { restByExercise[$0.uuidString] }
+        let fallback = defaults.object(forKey: Self.defaultRestKey) as? Int ?? 120
+        return max(15, saved ?? fallback)
+    }
+
+    /// −30 / +30 from the rest bar or the Lock Screen. The new length is kept
+    /// for the exercise whose set started this rest (2026-10-24; it used to
+    /// change every later rest).
+    func adjustAndRemember(by delta: Int) {
+        if isRunning { resumeFromBackground() }
+        guard isRunning, delta > 0 || secondsRemaining > 15 else { return }
+        adjust(by: delta, minimumSeconds: 15)
+        guard let sourceExerciseID else { return }
+        var saved = restByExercise
+        saved[sourceExerciseID.uuidString] = max(15, totalDuration)
+        defaults.set(saved, forKey: Self.restByExerciseKey)
+    }
+
+    private var restByExercise: [String: Int] {
+        defaults.dictionary(forKey: Self.restByExerciseKey) as? [String: Int] ?? [:]
+    }
+
+    func start(totalSeconds: Int, upNext: String? = nil, upNextDetail: String? = nil,
+               sourceEntryID: UUID? = nil, sourceExerciseID: UUID? = nil) {
         task?.cancel()
         task = nil
         finishedAt = nil
         self.sourceEntryID = sourceEntryID
+        self.sourceExerciseID = sourceExerciseID
         notificationIssue = nil
         totalDuration = max(15, totalSeconds)
         secondsRemaining = totalDuration
@@ -1654,6 +1729,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         startDate = nil
         finishedAt = nil
         sourceEntryID = nil
+        sourceExerciseID = nil
         upNext = nil
         upNextDetail = nil
         notificationIssue = nil
@@ -1685,6 +1761,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
 
     private func restoreFromPersistedState() {
         sourceEntryID = defaults.string(forKey: Self.sourceEntryIDKey).flatMap(UUID.init(uuidString:))
+        sourceExerciseID = defaults.string(forKey: Self.sourceExerciseIDKey).flatMap(UUID.init(uuidString:))
         finishedAt = defaults.object(forKey: Self.finishedAtKey) as? Date
         var recoveredEnd = defaults.object(forKey: Self.endDateKey) as? Date
         var recoveredTotal = defaults.integer(forKey: Self.totalDurationKey)
@@ -1732,11 +1809,12 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         defaults.set(upNextDetail, forKey: Self.upNextDetailKey)
         defaults.set(finishedAt, forKey: Self.finishedAtKey)
         defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey)
+        defaults.set(sourceExerciseID?.uuidString, forKey: Self.sourceExerciseIDKey)
     }
 
     private func clearPersistedState() {
         for key in [Self.endDateKey, Self.totalDurationKey, Self.upNextKey, Self.upNextDetailKey,
-                    Self.finishedAtKey, Self.sourceEntryIDKey] {
+                    Self.finishedAtKey, Self.sourceEntryIDKey, Self.sourceExerciseIDKey] {
             defaults.removeObject(forKey: key)
         }
     }

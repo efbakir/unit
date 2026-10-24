@@ -53,6 +53,52 @@ final class WorkoutLoggingStateTests: XCTestCase {
             sessionID: sessionID, saved: saved), [second, first, added])
     }
 
+    func testSessionPlanDecodesOldOrderOnlyDataAndRoundTrips() throws {
+        let sessionID = UUID(), first = UUID(), second = UUID()
+        // Data saved by builds before the session plan: order only.
+        let legacy = Data(#"{"sessionID":"\#(sessionID.uuidString)","exerciseIDs":["\#(second.uuidString)","\#(first.uuidString)"]}"#.utf8)
+        let decoded = WorkoutLoggingState.plan(from: legacy, sessionID: sessionID)
+        XCTAssertEqual(decoded.exerciseIDs, [second, first])
+        XCTAssertTrue(decoded.swaps.isEmpty && decoded.additions.isEmpty && decoded.skipped.isEmpty)
+        XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: [first, second], sessionID: sessionID, saved: legacy),
+                       [second, first])
+        var plan = decoded
+        plan.swaps[first] = UUID(); plan.additions = [UUID()]; plan.setCounts[second] = 5
+        plan.addedSets[second] = 1; plan.skipped = [second]
+        XCTAssertEqual(WorkoutLoggingState.plan(from: WorkoutLoggingState.encode(plan), sessionID: sessionID), plan)
+        XCTAssertEqual(WorkoutLoggingState.plan(from: WorkoutLoggingState.encode(plan), sessionID: UUID()).exerciseIDs, [])
+    }
+
+    func testSwapTakesTheRoutineExercisesPlaceAndAdditionsGoLast() {
+        let sessionID = UUID(), bench = UUID(), row = UUID(), press = UUID(), curl = UUID()
+        var plan = WorkoutLoggingState.SessionPlan(sessionID: sessionID, exerciseIDs: [row, bench])
+        plan = WorkoutLoggingState.swapping(bench, with: press, in: plan)
+        plan.additions.append(curl)
+        XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: [bench, row], plan: plan), [row, press, curl])
+        XCTAssertEqual(WorkoutLoggingState.planSourceID(for: press, in: plan), bench)
+        XCTAssertEqual(WorkoutLoggingState.planSourceID(for: curl, in: plan), curl)
+        // Swapping the swapped-in exercise again still maps to the routine one;
+        // swapping back to the routine exercise removes the swap.
+        let incline = UUID()
+        plan = WorkoutLoggingState.swapping(press, with: incline, in: plan)
+        XCTAssertEqual(plan.swaps, [bench: incline])
+        plan = WorkoutLoggingState.swapping(incline, with: bench, in: plan)
+        XCTAssertTrue(plan.swaps.isEmpty)
+        XCTAssertEqual(WorkoutLoggingState.orderedExerciseIDs(templateIDs: [bench, row], plan: plan), [row, bench, curl])
+    }
+
+    func testSwappingAnAddedExerciseMovesItsCounts() {
+        let sessionID = UUID(), curl = UUID(), hammer = UUID()
+        var plan = WorkoutLoggingState.SessionPlan(sessionID: sessionID)
+        plan.additions = [curl]; plan.setCounts[curl] = 4; plan.addedSets[curl] = 1; plan.skipped = [curl]
+        plan = WorkoutLoggingState.swapping(curl, with: hammer, in: plan)
+        XCTAssertEqual(plan.additions, [hammer])
+        XCTAssertTrue(plan.swaps.isEmpty)
+        XCTAssertEqual(plan.setCounts, [hammer: 4])
+        XCTAssertEqual(plan.addedSets, [hammer: 1])
+        XCTAssertTrue(plan.skipped.isEmpty)
+    }
+
     func testRowsDeriveCurrentAndPlannedPositionsForZeroTwoAndFourSets() {
         let empty = WorkoutLoggingState.rows(for: exercise([]), isCurrent: true)
         XCTAssertEqual(empty.map(\.number), [1, 2, 3, 4])
