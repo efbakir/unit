@@ -855,6 +855,14 @@ final class StoreManager {
         if CommandLine.arguments.contains(Self.purchaseSuccessUITestArgument) {
             trialReminderPreferences.clearStagedPreference()
             confirmEntitlement(tier)
+            // Mirror the date a real purchase gives, so Settings can be tested.
+            if let presentation = presentation(for: tier) {
+                if let trialEnd = presentation.trial?.endDate(from: .now) {
+                    renewalSummary = SubscriptionRenewalSummary(kind: .trialEnds, date: trialEnd)
+                } else if let renewal = presentation.renewalDate(from: .now) {
+                    renewalSummary = SubscriptionRenewalSummary(kind: .renews, date: renewal)
+                }
+            }
             return
         }
         if CommandLine.arguments.contains(Self.purchaseCancelledUITestArgument) {
@@ -879,6 +887,8 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 if let tier = Tier(rawValue: transaction.productID) {
                     confirmEntitlement(tier)
+                    // A plan bought this second always starts auto-renewing.
+                    renewalSummary = await Self.renewalSummary(for: transaction, assumesAutoRenew: true)
                     let isIntroductoryTrial = transaction.offer?.type == .introductory
                         && transaction.offer?.paymentMode == .freeTrial
                     if isIntroductoryTrial {
@@ -1043,11 +1053,20 @@ final class StoreManager {
             renewalSummary = await Self.renewalSummary(for: transaction)
             return
         }
-        renewalSummary = nil
+        // StoreKit can briefly list nothing right after a purchase; keep a
+        // known date while access stays on. Losing access clears it.
+        if !isPurchased { renewalSummary = nil }
     }
 
-    private static func renewalSummary(for transaction: Transaction) async -> SubscriptionRenewalSummary? {
-        var willAutoRenew: Bool?
+    private func applyRenewalSummary(for transaction: Transaction) async {
+        renewalSummary = await Self.renewalSummary(for: transaction)
+    }
+
+    private static func renewalSummary(
+        for transaction: Transaction,
+        assumesAutoRenew: Bool = false
+    ) async -> SubscriptionRenewalSummary? {
+        var willAutoRenew: Bool? = assumesAutoRenew ? true : nil
         if let status = await transaction.subscriptionStatus,
            case .verified(let renewalInfo) = status.renewalInfo {
             willAutoRenew = renewalInfo.willAutoRenew
@@ -1084,6 +1103,7 @@ final class StoreManager {
                             // StoreKit race where currentEntitlements briefly
                             // returns empty after an Xcode/device purchase.
                             await self.confirmEntitlement(tier)
+                            await self.applyRenewalSummary(for: transaction)
                             var shouldRequestReminderAuthorization = false
                             if transaction.offer?.type == .introductory,
                                transaction.offer?.paymentMode == .freeTrial {
