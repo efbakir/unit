@@ -35,6 +35,7 @@ struct PaywallView: View {
     /// it off; read once so it does not vanish mid-visit.
     @State private var showsAnalyticsToggle = UnitAnalytics.shared.isEnabled
     @State private var isCancelHelpExpanded = false
+    @State private var showsAllPlans = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -113,36 +114,38 @@ struct PaywallView: View {
     @ViewBuilder
     private var purchaseContent: some View {
         if selectedPresentation != nil {
+            // Founder layout 2026-10-24: a real review, the program the
+            // person just built, how billing works, then the plans. No
+            // headline; the billed price stays the largest price on screen
+            // (plan card + line above the CTA).
             VStack(alignment: .leading, spacing: 0) {
-                purchaseHeader
+                reviewHeader
                     .appScreenEnter(index: 0, staged: true)
 
                 programSummaryCard
                     .appScreenEnter(index: 1, staged: true)
+                    .padding(.top, AppSpacing.md)
+
+                purchaseTimelineSection
+                    .appScreenEnter(index: 2, staged: true)
                     .padding(.top, AppSpacing.xl)
 
-                reviewQuoteBlock
-                    .padding(.top, AppSpacing.xl)
+                if selectedTrial != nil {
+                    reminderPreferenceCard
+                        .transition(AppBlurTransition().animation(.appReveal))
+                        .padding(.top, AppSpacing.md)
+                }
+
+                if store.selectedTier != .lifetime {
+                    cancelHelpCard
+                        .padding(.top, AppSpacing.md)
+                }
 
                 planSelectionSection
                     .padding(.top, AppSpacing.xxl)
 
                 if store.hasAttemptedProductLoad && hasMissingRequiredProducts && !store.isLoading {
                     partialLoadBanner
-                        .padding(.top, AppSpacing.md)
-                }
-
-                purchaseTimelineSection
-                    .padding(.top, AppSpacing.xxl)
-
-                if selectedTrial != nil {
-                    reminderPreferenceCard
-                        .transition(AppBlurTransition().animation(.appReveal))
-                        .padding(.top, AppSpacing.xl)
-                }
-
-                if store.selectedTier != .lifetime {
-                    cancelHelpCard
                         .padding(.top, AppSpacing.md)
                 }
 
@@ -223,24 +226,36 @@ struct PaywallView: View {
         }
     }
 
-    private var purchaseHeader: some View {
-        VStack(alignment: .center, spacing: AppSpacing.sm) {
-            Text(paywallHeadline)
-                .appFont(.title)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("paywall-headline")
+    private var reviewHeader: some View {
+        VStack(alignment: .center, spacing: AppSpacing.md) {
+            AppCard(contentInset: AppSpacing.lg, verticalInset: AppSpacing.md) {
+                VStack(alignment: .center, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(0..<5, id: \.self) { _ in
+                            AppIcon.starFilled.image(size: AppSpacing.md)
+                                .foregroundStyle(AppColor.textPrimary)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("5 stars")
 
-            Text(paywallSupportingCopy)
-                .font(AppFont.muted.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("paywall-supporting-copy")
+                    Text(AppCopy.Paywall.reviewQuote)
+                        .font(AppFont.sectionHeader.font)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(AppCopy.Paywall.reviewAttribution)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, AppSpacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall-review")
     }
 
     private var selectedPresentation: StorePlanPresentation? {
@@ -446,20 +461,6 @@ struct PaywallView: View {
         )
     }
 
-    private var paywallHeadline: String {
-        guard let selectedTrial, let presentation = selectedPresentation else {
-            return AppCopy.Paywall.standardHeadline
-        }
-        return AppCopy.Paywall.trialHeadline(
-            duration: selectedTrial.durationText,
-            billedPrice: presentation.billedPriceText
-        )
-    }
-
-    private var paywallSupportingCopy: String {
-        AppCopy.Paywall.supportingCopy(for: setupContext?.matchProfile?.goal.rawValue)
-    }
-
     private var programSummaryCard: some View {
         AppCard(contentInset: AppSpacing.lg, verticalInset: AppSpacing.md) {
             VStack(alignment: .center, spacing: AppSpacing.md) {
@@ -496,32 +497,6 @@ struct PaywallView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("paywall-program-summary")
-    }
-
-    /// One real App Store review above the plans (Runtastic reference,
-    /// 2026-10-24; founder call 2026-07-13). No heading and no rating
-    /// number until about 50 ratings exist.
-    private var reviewQuoteBlock: some View {
-        VStack(spacing: AppSpacing.xs) {
-            Text(AppCopy.Paywall.reviewStars)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .accessibilityLabel(AppCopy.Paywall.reviewStarsAccessibility)
-
-            Text(AppCopy.Paywall.reviewQuote)
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(AppCopy.Paywall.reviewAttribution)
-                .font(AppFont.muted.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("paywall-review")
     }
 
     private var activeSubscriptionHeader: some View {
@@ -674,17 +649,39 @@ struct PaywallView: View {
             VStack(spacing: AppSpacing.sm) {
                 ForEach(visibleTiers) { tier in
                     tierCard(for: tier)
+                        .transition(AppBlurTransition().animation(.appReveal))
                 }
             }
+
+            if !showsAllTiers {
+                AppGhostButton(AppCopy.Paywall.viewAllPlans) {
+                    showsAllPlans = true
+                }
+                .accessibilityIdentifier("paywall-view-all-plans")
+            }
         }
+        .animation(AppMotion.feedback, value: showsAllTiers)
     }
 
-    private var visibleTiers: [StoreManager.Tier] {
+    private var allTiers: [StoreManager.Tier] {
         var tiers = StoreManager.requiredTiers
         if store.product(for: .lifetime) != nil {
             tiers.append(.lifetime)
         }
         return tiers
+    }
+
+    /// Weekly and Yearly show first; Monthly and Lifetime open in place
+    /// behind "View all plans". A selected hidden plan (default-plan test,
+    /// restored choice) always shows every plan so the choice stays visible.
+    private static let primaryTiers: [StoreManager.Tier] = [.weekly, .annual]
+
+    private var showsAllTiers: Bool {
+        showsAllPlans || !Self.primaryTiers.contains(store.selectedTier)
+    }
+
+    private var visibleTiers: [StoreManager.Tier] {
+        showsAllTiers ? allTiers : allTiers.filter { Self.primaryTiers.contains($0) }
     }
 
     private func tierCard(for tier: StoreManager.Tier) -> some View {
