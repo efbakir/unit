@@ -144,7 +144,7 @@ a **Pro Max**, at default Dynamic Type and one AX size:
       $29.99/year — ladder authority: `docs/pricing.md`). An eligible new customer defaults to
       Yearly and sees the verified seven-day offer only on products StoreKit marks eligible
       (Yearly `com.unit.annual` has the 1-week free offer). The trial headline includes the
-      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80% vs weekly**.
+      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80%**.
       An ineligible customer defaults to Weekly and sees no trial claims. Lifetime ($44.99) appears
       only if returned by StoreKit.
 - [ ] No clipped tier card; no CTA below the fold (CTA is pinned, body scrolls). The legal footer

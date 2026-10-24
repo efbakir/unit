@@ -283,7 +283,7 @@ final class StorePlanPresentationTests: XCTestCase {
             AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year"),
             "$29.99/year after 7 days free"
         )
-        XCTAssertEqual(AppCopy.Paywall.annualSavings(percent: 80), "Save 80% vs weekly")
+        XCTAssertEqual(AppCopy.Paywall.annualSavings(percent: 80), "Save 80%")
         XCTAssertFalse(AppCopy.Paywall.standardHeadline.localizedCaseInsensitiveContains("free"))
     }
 

@@ -399,7 +399,7 @@ enum AppCopy {
             "\(billedPrice) after \(duration) free"
         }
         static func annualSavings(percent: Int) -> String {
-            "Save \(percent)% vs weekly"
+            "Save \(percent)%"
         }
         static let standardHeadline = "Unlock Unit"
         static func supportingCopy(for goal: String?) -> String {

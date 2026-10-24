@@ -3349,7 +3349,7 @@ struct AppSelectableTierCard: View {
 
     private var planIdentity: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            // A long badge ("Save 80% vs weekly") moves under the plan name
+            // A badge too long for the row moves under the plan name
             // instead of pushing the card wider than the screen.
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .center, spacing: AppSpacing.sm) {

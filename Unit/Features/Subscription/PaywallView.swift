@@ -702,9 +702,9 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 80% vs weekly": 52 weeks at the live Weekly price
-    /// (founder decision 2026-10-23 keeps this anchor). The badge names
-    /// the comparison so the percent is not an unlabeled claim.
+    /// "Save 80%": 52 weeks at the live Weekly price (founder decision
+    /// 2026-10-23 keeps this anchor). Compact badge per the 2026-10-24
+    /// founder call; the Weekly price sits two rows above.
     private var annualSavingsBadgeText: String? {
         guard let annual = store.product(for: .annual),
               let weekly = store.product(for: .weekly) else { return nil }

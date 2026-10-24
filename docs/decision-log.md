@@ -7,6 +7,13 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Yearly badge back to "Save 80%"
+
+- **Decision:** The yearly badge says `Save N%` again, not `Save N% vs weekly`. Founder call on the paywall review.
+- **Why:** Same as 2026-07-13: the long badge overpowered the plan card. The Weekly price sits two rows above, so the comparison stays readable.
+- **Supersedes:** The badge half of the "Paywall price" line in the App Review fixes entry below. The price headline stays.
+- **Effect:** Copy only. Savings math (52 × Weekly) and purchase behavior do not change.
+
 ## 2026-10-24 - Anonymous analytics is opt-in
 
 - **Decision:** Analytics are off until the person turns them on. A missing `analytics.enabled` key now means off, so nothing is sent at launch.
