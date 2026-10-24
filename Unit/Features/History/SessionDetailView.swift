@@ -93,68 +93,14 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
-        if isDeleted {
-            // The workout is gone; nothing here may read it while the screen leaves.
-            AppScreen(showsNativeNavigationBar: true) { EmptyView() }
-        } else {
-            detailContent
-        }
-    }
-
-    private var detailContent: some View {
         AppScreen(
             showsNativeNavigationBar: true
         ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(templateName)
-                        .font(AppFont.title.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-
-                    Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Right after Finish, decisions come first: the next targets
-                // are the payoff of the workout and were below the whole log.
-                if completionMoment != nil, !progressionRecommendations.isEmpty {
-                    progressionCard
-                }
-
-                if !exerciseSnapshots.isEmpty {
-                    AppCardList(exerciseSnapshots) { exercise in
-                        NavigationLink {
-                            ExerciseProgressView(
-                                exerciseId: exercise.id,
-                                exerciseName: exercise.name,
-                                isBodyweight: exercise.isBodyweight,
-                                sessions: allSessions,
-                                templates: templates
-                            )
-                        } label: {
-                            SessionExerciseSummary(exercise: exercise)
-                                .appNavigationDisclosure()
-                                .padding(.vertical, AppSpacing.sm)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(ScaleButtonStyle())
-                        .accessibilityHint("Opens progress history for \(exercise.name).")
-                    }
-                }
-
-                if completionMoment == nil, !progressionRecommendations.isEmpty {
-                    progressionCard
-                }
-
-                if showsFeedbackInvitation {
-                    feedbackInvitationCard
-                }
+            // Once the workout is deleted, nothing here may read it while the
+            // screen leaves. The modifiers below stay, so the pop completes.
+            if !isDeleted {
+                detailStack
             }
-            .appScreenEnter()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -179,6 +125,10 @@ struct SessionDetailView: View {
         .navigationDestination(isPresented: $showsEditWorkout) {
             EditWorkoutView(session: session, onDeleteWorkout: deleteWorkout)
         }
+        .onChange(of: showsEditWorkout) { _, isPresented in
+            // Second step of a delete: Edit workout has closed, now leave too.
+            if !isPresented, isDeleted { dismiss() }
+        }
         .overlay { AppCelebration(moment: completionMoment) }
         .appToast(event: editingRecommendationID == nil ? $toastMessage : .constant(nil))
         .sheet(
@@ -195,6 +145,59 @@ struct SessionDetailView: View {
             presentFeedbackInvitationIfNeeded()
             trackRecommendationsIfNeeded()
         }
+    }
+
+    private var detailStack: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(templateName)
+                    .font(AppFont.title.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+
+                Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Right after Finish, decisions come first: the next targets
+            // are the payoff of the workout and were below the whole log.
+            if completionMoment != nil, !progressionRecommendations.isEmpty {
+                progressionCard
+            }
+
+            if !exerciseSnapshots.isEmpty {
+                AppCardList(exerciseSnapshots) { exercise in
+                    NavigationLink {
+                        ExerciseProgressView(
+                            exerciseId: exercise.id,
+                            exerciseName: exercise.name,
+                            isBodyweight: exercise.isBodyweight,
+                            sessions: allSessions,
+                            templates: templates
+                        )
+                    } label: {
+                        SessionExerciseSummary(exercise: exercise)
+                            .appNavigationDisclosure()
+                            .padding(.vertical, AppSpacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .accessibilityHint("Opens progress history for \(exercise.name).")
+                }
+            }
+
+            if completionMoment == nil, !progressionRecommendations.isEmpty {
+                progressionCard
+            }
+
+            if showsFeedbackInvitation {
+                feedbackInvitationCard
+            }
+        }
+        .appScreenEnter()
     }
 
     private var progressionCard: some View {
@@ -602,8 +605,10 @@ struct SessionDetailView: View {
     }
 
     /// Edit workout calls this after its confirm. The screen stops reading
-    /// the workout first, then deletes it and leaves (with Edit workout on
-    /// top). False when the save failed and nothing was deleted.
+    /// the workout first, then deletes it, closes Edit workout and leaves
+    /// once that pop is done (`onChange` above). A dismiss from here would
+    /// not pop while Edit workout is on top. False when the save failed and
+    /// nothing was deleted.
     private func deleteWorkout() -> Bool {
         isDeleted = true
         let context = PastWorkoutEditor.Context(
@@ -616,7 +621,7 @@ struct SessionDetailView: View {
             isDeleted = false
             return false
         }
-        dismiss()
+        showsEditWorkout = false
         return true
     }
 

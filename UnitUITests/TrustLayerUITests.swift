@@ -39,7 +39,8 @@ final class TrustLayerUITests: XCTestCase {
         let reps = app.textFields["Reps"]
         XCTAssertTrue(reps.waitForExistence(timeout: 5))
         reps.tap()
-        reps.typeText(XCUIKeyboardKey.delete.rawValue + "6")
+        reps.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4) + "6")
+        XCTAssertEqual(reps.value as? String, "6 reps")
         app.buttons["Save changes"].tap()
         XCTAssertTrue(waitForLabel(of: firstSet, containing: "× 6"), firstSet.label)
 
@@ -50,9 +51,9 @@ final class TrustLayerUITests: XCTestCase {
         let deleteSet = app.buttons["Delete set"]
         XCTAssertTrue(deleteSet.waitForExistence(timeout: 5))
         deleteSet.tap()
-        XCTAssertTrue(waitForDisappearance(of: secondSet))
+        // The toast only appears after a saved delete; tap Undo before it times out.
         let undo = app.buttons["Undo"]
-        XCTAssertTrue(undo.waitForExistence(timeout: 5))
+        XCTAssertTrue(undo.waitForExistence(timeout: 3))
         undo.tap()
         XCTAssertTrue(secondSet.waitForExistence(timeout: 5))
 
@@ -64,6 +65,40 @@ final class TrustLayerUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         confirm.tap()
         XCTAssertTrue(app.staticTexts["No sessions yet"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
+    /// The summary right after Finish is the likeliest place to catch a typo.
+    @MainActor
+    func testDeleteFromTheSummaryAfterFinishReturnsToToday() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-ui-testing", "-ui-testing-reset", "-ui-testing-progression-contract",
+            "-AppleLocale", "en_US", "-AppleLanguages", "(en)"
+        ]
+        app.launch()
+
+        let finish = app.buttons["Finish"].firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout: 20))
+        finish.tap()
+        let confirmFinish = app.alerts.firstMatch.buttons["Finish workout"]
+        XCTAssertTrue(confirmFinish.waitForExistence(timeout: 5))
+        confirmFinish.tap()
+
+        let pencil = app.buttons["edit-workout"]
+        XCTAssertTrue(pencil.waitForExistence(timeout: 15))
+        pencil.tap()
+        let trash = app.buttons["delete-workout"]
+        XCTAssertTrue(trash.waitForExistence(timeout: 5))
+        trash.tap()
+        let confirm = app.buttons.matching(
+            NSPredicate(format: "label == %@ AND identifier != %@", "Delete workout", "delete-workout")
+        ).firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+
+        XCTAssertTrue(app.buttons["History"].waitForExistence(timeout: 10), "Back on Today")
+        XCTAssertFalse(app.buttons["edit-workout"].exists)
         XCTAssertEqual(app.state, .runningForeground)
     }
 
@@ -100,11 +135,6 @@ final class TrustLayerUITests: XCTestCase {
 
     private func waitForLabel(of element: XCUIElement, containing text: String) -> Bool {
         let predicate = NSPredicate(format: "label CONTAINS %@", text)
-        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 5) == .completed
-    }
-
-    private func waitForDisappearance(of element: XCUIElement) -> Bool {
-        let predicate = NSPredicate(format: "exists == false")
         return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 5) == .completed
     }
 
