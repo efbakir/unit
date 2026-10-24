@@ -231,9 +231,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         let app = launch()
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
         tapMenuItem("Swap exercise", in: app)
-        let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 10))
-        search.tap()
+        let search = exerciseSearch(in: app)
         search.typeText("Test Press")
         tap(app.buttons["Create \"Test Press\""], in: app)
         XCTAssertTrue(app.staticTexts["Test Press"].waitForExistence(timeout: 5))
@@ -251,9 +249,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
     func testAddExerciseInARoutineWorkoutWithItsOwnSetCount() throws {
         let app = launch()
         tap(app.buttons["Add exercise"], in: app)
-        let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 10))
-        search.tap()
+        let search = exerciseSearch(in: app)
         search.typeText("Test Curl")
         tap(app.buttons["Create \"Test Curl\""], in: app)
         XCTAssertTrue(app.staticTexts["How many sets?"].waitForExistence(timeout: 5))
@@ -365,6 +361,17 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         // The interaction contract rejects a second log inside 400ms.
         // XCTest's idle wait normally exceeds it; waiting for hittability is explicit.
         _ = element.waitForNonExistence(timeout: 0.5)
+    }
+
+    /// From iOS 26 the picker's search is minimized into a toolbar button.
+    private func exerciseSearch(in app: XCUIApplication) -> XCUIElement {
+        let search = app.searchFields.firstMatch
+        if !search.waitForExistence(timeout: 3) {
+            tap(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Search")).firstMatch, in: app)
+        }
+        XCTAssertTrue(search.waitForExistence(timeout: 8))
+        search.tap()
+        return search
     }
 
     /// Menu items appear with an animation; swiping (as `tap` does) would
