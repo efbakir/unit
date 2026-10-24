@@ -21,7 +21,7 @@
 | 5 | History and Analytics | `05-progress-history.png` | Analytics tab, History list, one past workout |
 
 - Setup shows only when no program is saved. The paywall shows only without an active plan. Capture both on a spare phone or the Simulator.
-- Do not delete Unit on your training phone to reach these screens. Your workouts live only on that phone.
+- Do not delete Unit on your training phone to reach these screens. Deleting it erases your workouts on that phone.
 
 ## 1. First-run setup
 
@@ -398,7 +398,7 @@ Analytics tab
 WHAT UNIT DOES NOT HAVE HERE TODAY
 - No edit or delete of a past workout. A wrong set stays wrong.
 - No export, and no import of history from Hevy, Strong or a spreadsheet.
-- No cloud backup or sync. A lost phone loses the history.
+- No sync and no in-app backup. History reaches a new phone only through a full iPhone backup restore.
 - No Apple Health.
 - No body weight or body measurements.
 - No volume per muscle group.
