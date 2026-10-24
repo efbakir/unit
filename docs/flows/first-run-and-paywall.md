@@ -136,6 +136,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
   - Instruction lines with only a time ("Rest 90s between sets", "Total time 60 min", "Warm up 10 min bike") -> skipped and counted, not exercises (fixed 2026-10-24) -> Low -> yes.
   - Day heading with a long dash ("Day 1" + long dash + "Upper") -> the day name gets double spaces -> Low -> no. [ProgramImportParser.swift:171](Unit/Features/Onboarding/ProgramImportParser.swift:171)
   - Same heading twice -> two days with the same name -> Low -> yes.
+  - Week headings ("Week 1" ... "Week 2" ...) -> the first week's days are kept and later weeks are skipped; the Review card says "Unit repeats the first week." (2026-10-24; before, later weeks were appended as extra days with repeated names and cut at 6) -> Low -> yes.
   - Weekday headings (Monday, Wednesday) -> used as day names only; the program still starts as a rotation -> Low -> partial.
   - Long paste (thousands of lines) -> the parser runs on the main thread, so the "Reading…" line never appears and the screen freezes. Mac timing: 1,813 lines 0.9 s, 10,000 lines 2.6 s; phones are slower. There is no length limit -> Low -> no. [OnboardingProgramImportView.swift:140](Unit/Features/Onboarding/OnboardingProgramImportView.swift:140)
   - Emoji, markdown bold, tables, numbered lists, comma decimals -> handled -> Low -> yes.

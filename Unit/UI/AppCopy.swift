@@ -383,12 +383,17 @@ enum AppCopy {
         static let previewCTA = "Save program"
         /// Review card for pasted lines the parser did not keep (benchmark
         /// 2026-10-24, setup row 2). Plain "skipped", never "didn't parse".
-        static func importSkippedTitle(lines: Int, days: Int) -> String {
+        static func importSkippedTitle(lines: Int, days: Int, weeks: Int = 0) -> String {
             var parts: [String] = []
             if lines > 0 { parts.append(lines == 1 ? "1 line" : "\(lines) lines") }
             if days > 0 { parts.append(days == 1 ? "1 day" : "\(days) days") }
-            return parts.joined(separator: " and ") + " skipped"
+            if weeks > 0 { parts.append(weeks == 1 ? "1 week" : "\(weeks) weeks") }
+            let joined = parts.count > 1
+                ? parts.dropLast().joined(separator: ", ") + " and " + (parts.last ?? "")
+                : parts.joined()
+            return joined + " skipped"
         }
+        static let importSkippedWeeks = "Unit repeats the first week."
         static func importSkippedDays(_ names: [String]) -> String {
             "Unit keeps the first 6 days. Skipped: \(names.joined(separator: ", "))."
         }

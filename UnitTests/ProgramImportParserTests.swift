@@ -808,6 +808,82 @@ final class ProgramImportParserTests: XCTestCase {
         XCTAssertTrue(ProgramImportResult.SkipSummary(warnings: []).isEmpty)
     }
 
+    // MARK: - Benchmark 2026-10-24, setup row 9
+
+    /// Week 2+ used to be appended as extra days ("Day 1" twice): a 3-day,
+    /// 3-week paste became a 6-day rotation and Week 3 was cut.
+    func testLaterWeeksAreSkippedAndTheFirstWeekIsKept() {
+        let input = """
+        # Week 1
+        ## Day 1
+        Squat 3x5 100
+        ## Day 2
+        Bench 3x5 80
+        ## Day 3
+        Deadlift 1x5 140
+        # Week 2
+        ## Day 1
+        Squat 3x5 102.5
+        ## Day 2
+        Bench 3x5 82.5
+        ## Day 3
+        Deadlift 1x5 145
+        # Week 3
+        ## Day 1
+        Squat 3x5 105
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Day 1", "Day 2", "Day 3"])
+        XCTAssertEqual(result.days.first?.exercises.first?.weightKg ?? 0, 100, accuracy: 0.01,
+                       "the first week's numbers are kept")
+        XCTAssertTrue(result.warnings.contains(.skippedWeeks(count: 2)))
+        XCTAssertFalse(result.warnings.contains { warning in
+            if case .truncatedAtSixDays = warning { return true }
+            return false
+        }, "later weeks no longer hit the 6-day cap")
+
+        let summary = ProgramImportResult.SkipSummary(warnings: result.warnings)
+        XCTAssertEqual(summary.title, "2 weeks skipped")
+        XCTAssertEqual(summary.displayRows(), ["Unit repeats the first week."])
+    }
+
+    func testPlainWeekHeadingsWithoutDaysKeepWeekOneAsTheDay() {
+        let input = """
+        Week 1
+        Squat 5x5 100
+        Bench 5x5 80
+
+        Week 2
+        Squat 5x5 102.5
+        Bench 5x5 82.5
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Week 1"])
+        XCTAssertTrue(result.warnings.contains(.skippedWeeks(count: 1)))
+    }
+
+    func testALoneWeekHeadingChangesNothing() {
+        let input = """
+        Week 1
+        Day 1
+        Squat 3x5 100
+        Day 2
+        Bench 3x5 80
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Day 1", "Day 2"])
+        XCTAssertFalse(result.warnings.contains { warning in
+            if case .skippedWeeks = warning { return true }
+            return false
+        })
+    }
+
+    func testSkippedTitleJoinsEveryPart() {
+        XCTAssertEqual(AppCopy.Onboarding.importSkippedTitle(lines: 1, days: 0), "1 line skipped")
+        XCTAssertEqual(AppCopy.Onboarding.importSkippedTitle(lines: 3, days: 1, weeks: 2),
+                       "3 lines, 1 day and 2 weeks skipped")
+    }
+
     // MARK: - Benchmark 2026-10-24, setup row 3
 
     /// `RPE 8` written word-first used to save 8 kg and the name "Bench Press RPE".

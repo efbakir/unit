@@ -63,6 +63,10 @@ struct ProgramImportResult: Equatable {
         /// kept as `sets=nil, reps=nil` so the lifter can fill in-app. The
         /// warning surfaces the names so they're visible above the day list.
         case exerciseNameOnly(names: [String])
+        /// The paste repeats its days per week ("Week 1" ... "Week 2" ...).
+        /// Unit runs one rotation of templates, so only the first week's
+        /// days are kept; `count` is how many later weeks were skipped.
+        case skippedWeeks(count: Int)
     }
 }
 
@@ -73,8 +77,9 @@ extension ProgramImportResult {
     struct SkipSummary: Equatable {
         var lines: [String] = []
         var droppedDayNames: [String] = []
+        var skippedWeekCount = 0
 
-        var isEmpty: Bool { lines.isEmpty && droppedDayNames.isEmpty }
+        var isEmpty: Bool { lines.isEmpty && droppedDayNames.isEmpty && skippedWeekCount == 0 }
 
         init(warnings: [Warning]) {
             var noisy: [String] = []
@@ -84,6 +89,7 @@ extension ProgramImportResult {
                 case .noisyLines(let lines): noisy = lines
                 case .skippedConditioning(let lines): cardio = lines
                 case .truncatedAtSixDays(let names): droppedDayNames = names
+                case .skippedWeeks(let count): skippedWeekCount = count
                 case .exerciseNameOnly: break
                 }
             }
@@ -91,14 +97,21 @@ extension ProgramImportResult {
         }
 
         var title: String {
-            AppCopy.Onboarding.importSkippedTitle(lines: lines.count, days: droppedDayNames.count)
+            AppCopy.Onboarding.importSkippedTitle(
+                lines: lines.count,
+                days: droppedDayNames.count,
+                weeks: skippedWeekCount
+            )
         }
 
-        /// Rows for the expanded card: the day-cap note first, then up to
+        /// Rows for the expanded card: the week and day-cap notes first, then up to
         /// `limit` skipped lines, then "N more" so a long chat-style intro
         /// cannot flood the screen.
         func displayRows(limit: Int = 10) -> [String] {
             var rows: [String] = []
+            if skippedWeekCount > 0 {
+                rows.append(AppCopy.Onboarding.importSkippedWeeks)
+            }
             if !droppedDayNames.isEmpty {
                 rows.append(AppCopy.Onboarding.importSkippedDays(droppedDayNames))
             }
@@ -149,6 +162,10 @@ enum ProgramImportParser {
         // what was not kept and re-edit if something important was missed.
         if !grouped.noisyLines.isEmpty {
             warnings.append(.noisyLines(lines: grouped.noisyLines))
+        }
+
+        if grouped.skippedWeekCount > 0 {
+            warnings.append(.skippedWeeks(count: grouped.skippedWeekCount))
         }
 
         // 6-day cap warning
@@ -478,6 +495,10 @@ enum ProgramImportParser {
         /// Lines classified as `.noise` (un-parseable), in paste order.
         /// Previously dropped silently; Review now lists them.
         var noisyLines: [String]
+        /// Weeks after the first "Week N" heading. Their days used to be
+        /// appended as extra days ("Day 1" twice), so a 3-day, 3-week paste
+        /// became a 6-day rotation (benchmark 2026-10-24, setup row 9).
+        var skippedWeekCount: Int
     }
 
     private static func groupIntoDays(
@@ -490,6 +511,8 @@ enum ProgramImportParser {
         var currentExercises: [ImportedProgramExercise] = []
         var skippedConditioning: [String] = []
         var noisyLines: [String] = []
+        var weekHeadingCount = 0
+        var skippedWeekCount = 0
 
         func flush() {
             guard !currentExercises.isEmpty else { return }
@@ -498,6 +521,14 @@ enum ProgramImportParser {
         }
 
         for (index, classification) in classifications.enumerated() {
+            // Keep the first week; skip everything from the second "Week N"
+            // heading on. Unit repeats the first week as its rotation.
+            if case .heading(let name) = classification, isWeekHeading(name) {
+                weekHeadingCount += 1
+                if weekHeadingCount > 1 { skippedWeekCount += 1 }
+            }
+            if skippedWeekCount > 0 { continue }
+
             switch classification {
             case .heading(let name):
                 flush()
@@ -540,8 +571,13 @@ enum ProgramImportParser {
         return GroupedResult(
             days: days,
             skippedConditioning: skippedConditioning,
-            noisyLines: noisyLines
+            noisyLines: noisyLines,
+            skippedWeekCount: skippedWeekCount
         )
+    }
+
+    private static func isWeekHeading(_ name: String) -> Bool {
+        name.range(of: #"(?i)^week\s*\d+"#, options: .regularExpression) != nil
     }
 
     // MARK: Stage 4 — Tokenizer
