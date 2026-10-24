@@ -159,6 +159,7 @@ enum UnitAnalyticsEvent {
     case progressionPreviewShown(outcome: AnalyticsProgressionOutcome)
     case progressionDecision(action: AnalyticsProgressionDecision, outcome: AnalyticsProgressionOutcome)
     case feedbackAction(action: AnalyticsFeedbackAction)
+    case dataExported
 
     static let allowedNames: Set<String> = [
         "onboarding_started",
@@ -181,7 +182,8 @@ enum UnitAnalyticsEvent {
         "progression_recommendation_shown",
         "progression_preview_shown",
         "progression_decision",
-        "feedback_action"
+        "feedback_action",
+        "data_exported"
     ]
 
     var payload: (name: String, parameters: [String: String]) {
@@ -253,6 +255,8 @@ enum UnitAnalyticsEvent {
             ("progression_decision", ["action": action.rawValue, "outcome": outcome.rawValue])
         case .feedbackAction(let action):
             ("feedback_action", ["action": action.rawValue])
+        case .dataExported:
+            ("data_exported", [:])
         }
     }
 

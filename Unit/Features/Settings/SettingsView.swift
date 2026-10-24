@@ -6,6 +6,7 @@
 //
 
 import StoreKit
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -20,7 +21,7 @@ enum WeightUnitOption: String, CaseIterable, Identifiable, Hashable {
 private enum DataRow: String, CaseIterable, Identifiable {
     case storage = "Storage"
     case account = "Account"
-    case export = "Export data"
+    case export = "Export workouts"
 
     var id: String { rawValue }
 }
@@ -94,7 +95,9 @@ struct SettingsView: View {
     @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
+    @Query(.anyLoggedSet) private var anyLoggedSet: [SetEntry]
 
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
@@ -179,29 +182,39 @@ struct SettingsView: View {
     @ViewBuilder
     private var dataSection: some View {
         SettingsSection(title: "Data", contentInset: AppSpacing.sm) {
-            // `.export` is filtered out for v1.0.0 — same rationale as
-            // `subscriptionSection` (Guideline 2.1(b) rejection 2026-06-03):
-            // a PRO chip with no IAP behind it reads as undelivered paid
-            // content to App Review. Re-include `.export` when Pro IAPs are
-            // submitted in v1.1+. See docs/decision-log.md 2026-06-03.
-            AppDividedList(DataRow.allCases.filter { $0 != .export }) { row in
+            AppDividedList(DataRow.allCases) { row in
                 switch row {
                 case .storage:
-                    AppListRow(title: row.rawValue, value: "On this iPhone")
+                    AppListRow(
+                        title: row.rawValue,
+                        value: "On this iPhone",
+                        subtitle: AppCopy.DataTransfer.storageBackup
+                    )
                 case .account:
                     AppListRow(title: row.rawValue, value: "None")
                 case .export:
-                    // Unreachable in v1.0.0 (filtered above). Switch case
-                    // retained so the v1.1+ Pro launch only needs to remove
-                    // the filter, not re-add the rendering.
-                    Button { } label: {
-                        AppListRow(title: row.rawValue) {
-                            AppTag(text: "PRO", style: .accent, layout: .compactCapsule)
-                        }
-                    }
-                    .buttonStyle(ScaleButtonStyle())
+                    exportRow(title: row.rawValue)
                 }
             }
+        }
+    }
+
+    /// The native share sheet with every logged set as a CSV file. A plain
+    /// value row while there is nothing to export, so the row never looks
+    /// tappable without doing anything.
+    @ViewBuilder
+    private func exportRow(title: String) -> some View {
+        if anyLoggedSet.isEmpty {
+            AppListRow(title: title, value: AppCopy.DataTransfer.noWorkoutsYet)
+        } else {
+            ShareLink(
+                item: WorkoutCSVFile(container: modelContext.container, unitSystem: unitSystem),
+                preview: SharePreview(AppCopy.DataTransfer.exportPreviewTitle)
+            ) {
+                AppListRow(title: title, subtitle: AppCopy.DataTransfer.csvFile)
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityIdentifier("settings-export-workouts")
         }
     }
 

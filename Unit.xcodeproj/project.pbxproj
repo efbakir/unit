@@ -98,6 +98,8 @@
 		4559761791D9015B415F61F3 /* WorkoutLoggingStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */; };
 		5AF649418EF8C64C753FFFB6 /* ActiveWorkoutLoggingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CA1F50C3B509D55BE1E7C4 /* ActiveWorkoutLoggingUITests.swift */; };
 		C04A1F20D44C4A33AA558672 /* RestTimerManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */; };
+		TRSTBLD00000000000000001 /* WorkoutCSVExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000001 /* WorkoutCSVExport.swift */; };
+		TRSTBLD00000000000000002 /* WorkoutCSVExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -234,6 +236,8 @@
 		DE46276D5D7E59E6AE57AD50 /* WorkoutLoggingStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLoggingStateTests.swift; sourceTree = "<group>"; };
 		E3CA1F50C3B509D55BE1E7C4 /* ActiveWorkoutLoggingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutLoggingUITests.swift; sourceTree = "<group>"; };
 		C04A1F20D44C4A33AA558671 /* RestTimerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerManagerTests.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000001 /* WorkoutCSVExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCSVExport.swift; sourceTree = "<group>"; };
+		TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCSVExportTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -287,6 +291,7 @@
 				UT200000000000000000007 /* UnitAnalyticsTests.swift */,
 				165569863085B0817806842C /* ProgramImportParserTests.swift */,
 				165569863085B0817806842D /* ProgramImporterTests.swift */,
+				TRSTREF00000000000000002 /* WorkoutCSVExportTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -473,6 +478,7 @@
 				PTPL200000000000000000001 /* ProgramTemplate.swift */,
 				PCAT200000000000000000001 /* ProgramCatalog.swift */,
 				PIMP200000000000000000001 /* ProgramImporter.swift */,
+				TRSTREF00000000000000001 /* WorkoutCSVExport.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -767,6 +773,7 @@
 				SUB100000000000000000001 /* StoreManager.swift in Sources */,
 				SUB100000000000000000002 /* PaywallView.swift in Sources */,
 				1D3B32FFB367C7DBF1BCC87B /* ProgramImportParser.swift in Sources */,
+				TRSTBLD00000000000000001 /* WorkoutCSVExport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -787,6 +794,7 @@
 				UT100000000000000000007 /* UnitAnalyticsTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91226 /* ProgramImportParserTests.swift in Sources */,
 				4BD7329FD7C1BC7DD8F91227 /* ProgramImporterTests.swift in Sources */,
+				TRSTBLD00000000000000002 /* WorkoutCSVExportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

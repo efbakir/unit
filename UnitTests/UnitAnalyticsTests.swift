@@ -56,7 +56,7 @@ final class UnitAnalyticsTests: XCTestCase {
             "purchase_started", "trial_started", "purchase_completed", "purchase_outcome", "restore_outcome",
             "workout_started", "workout_completed",
             "progression_recommendation_shown", "progression_preview_shown", "progression_decision",
-            "feedback_action"
+            "feedback_action", "data_exported"
         ])
     }
 
@@ -101,7 +101,8 @@ final class UnitAnalyticsTests: XCTestCase {
             .workoutCompleted(duration: .from30To60, setCount: .from11To20, noKeyboardRatio: .from90To99),
             .progressionPreviewShown(outcome: .addWeight),
             .progressionDecision(action: .edit, outcome: .addWeight),
-            .feedbackAction(action: .book)
+            .feedbackAction(action: .book),
+            .dataExported
         ]
         let forbiddenKeys = Set([
             "exercise", "program", "weight", "reps", "note", "bodyweight", "email",

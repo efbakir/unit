@@ -289,6 +289,22 @@ enum AppCopy {
         static let earlierThisWeek = "Earlier this week"
     }
 
+    /// Settings > Data: export, backup and import of workout history.
+    enum DataTransfer {
+        static let exportTitle = "Export workouts"
+        static let csvFile = "CSV file"
+        static let noWorkoutsYet = "No workouts yet"
+        static let exportAction = "Export"
+        static let exportPreviewTitle = "Unit workouts"
+        /// True for every iPhone backup (iCloud or computer) and Quick Start:
+        /// the store lives in Application Support, which iOS backs up.
+        static let storageBackup = "Included in iPhone backups"
+
+        static func exportFileName(unitSystem: String) -> String {
+            "Unit workouts (\(unitSystem == "lb" ? "lb" : "kg")).csv"
+        }
+    }
+
     /// Copy for the exercise catalog — destructive flows in particular, which
     /// cascade through every template that references the deleted exercise.
     enum Exercises {
