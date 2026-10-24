@@ -208,7 +208,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var preferencesSection: some View {
         SettingsSection(title: "Preferences", contentInset: AppSpacing.sm) {
-            AppDividedList(data: ["Weight unit", "Anonymous analytics"], id: \.self) { row in
+            AppDividedList(data: ["Weight unit", AppCopy.Preferences.anonymousAnalytics], id: \.self) { row in
                 if row == "Weight unit" {
                     AppListRow(title: row) {
                         AppSegmentedControl(
@@ -226,7 +226,7 @@ struct SettingsView: View {
                         Toggle("", isOn: $analyticsEnabled)
                             .labelsHidden()
                             .tint(AppColor.accent)
-                            .accessibilityLabel("Anonymous analytics")
+                            .accessibilityLabel(AppCopy.Preferences.anonymousAnalytics)
                     }
                 }
             }
@@ -380,6 +380,35 @@ struct SettingsView: View {
             get: { store.infoMessage != nil },
             set: { if !$0 { store.infoMessage = nil } }
         )
+    }
+}
+
+/// One switch for the stored analytics setting, so setup and the paywall
+/// can turn it off before purchase. Settings uses the same label and key.
+struct AnonymousAnalyticsToggle: View {
+    @State private var isEnabled = UnitAnalytics.shared.isEnabled
+
+    var body: some View {
+        Toggle(isOn: $isEnabled) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(AppCopy.Preferences.anonymousAnalytics)
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(AppCopy.Preferences.anonymousAnalyticsCaption)
+                    .font(AppFont.muted.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .tint(AppColor.accent)
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("anonymous-analytics-toggle")
+        .onAppear {
+            isEnabled = UnitAnalytics.shared.isEnabled
+        }
+        .onChange(of: isEnabled) { _, enabled in
+            UnitAnalytics.shared.setEnabled(enabled)
+        }
     }
 }
 
