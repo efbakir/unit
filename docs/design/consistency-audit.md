@@ -78,7 +78,7 @@ All in `Unit/UI/DesignSystem.swift` unless noted.
 | 4 | Paywall links 11pt gray; Settings "Restore Purchases" looks like static text | [paywall](../qa/consistency-audit-2026-10-24/before/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | [paywall](../qa/consistency-audit-2026-10-24/after-pr1/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/after-pr1/04b-settings.png) |
 | 5 | Same numbers in SF Mono (summary) and SF Pro (Analytics) | [summary](../qa/consistency-audit-2026-10-24/before/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/before/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/before/11-ax3-summary-evidence.png) | [summary](../qa/consistency-audit-2026-10-24/after-pr2/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/after-pr2/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/after-pr2/11-ax3-summary-evidence.png) |
 | 6 | SF Mono rows next to 13pt summaries on one screen | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr2/03c-active-undo-add-set.png) |
-| 7 | "3 × 60 kg × 10" vs "3 × 10 at 60 kg" vs "3 × 8" | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/before/07-today-up-next.png) | PR 3 |
+| 7 | "3 × 60 kg × 10" vs "3 × 10 at 60 kg" vs "3 × 10"; "62.5" next to "62,5" in region Italy | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/before/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/before/12-italy-active.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr3/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/after-pr3/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/after-pr3/12-italy-active.png) |
 | 8 | Sheet close: X vs "Done" vs "Cancel" and "Done" | [picker](../qa/consistency-audit-2026-10-24/before/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/before/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/before/08c-main-lifts-sheet.png) | PR 4 |
 | 9 | Analytics switch: caption in setup, none in Settings | [setup](../qa/consistency-audit-2026-10-24/before/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | PR 6 |
 | 10 | Empty filter result: centered box, other empty states left on the page | [History](../qa/consistency-audit-2026-10-24/before/10-history-filter-empty.png) | PR 6 |
@@ -120,11 +120,11 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Now | Fix | Effort | Status |
 |---|---|---|---|---|---|---|
-| 20 | 4 weight formatters, 2 decimal marks | DS:1083, `Today/WorkoutTargetFormatter.swift:14-29`, `Analytics/AnalyticsFormatting.swift:4-10` | Italy: "82.5" while logging, "82,5" in Analytics and the input field | one formatter, the phone's decimal mark | M | Planned |
-| 21 | One exercise, 3 summaries | `Today/ActiveWorkoutView.swift:656-667`, History, `Today/TodayView.swift:798-812` | "3 × 80 kg × 8" / "3 × 8 at 80 kg" / "3 × 8" | "3 × 8 at 80 kg"; mixed sets "80 kg · 8/8/7 reps" | S | Planned |
-| 22 | "Last time" two ways | `UI/AppCopy.swift:14` vs Today | "Last time 80 × 8" (no unit) | "Last time · 80 kg × 8" | S | Planned |
-| 23 | Bodyweight plus load drops "BW" | `Today/WorkoutTargetFormatter.swift:310-318`, `Analytics/AnalyticsFormatting.swift:11-16, 68-72` | "10 kg × 8", "10 × 8" | "BW + 10 kg × 8" | M | Planned |
-| 24 | Zero load shows as BW in History | `Today/WorkoutTargetFormatter.swift:315` | logging "0 kg × 8", History "BW × 8" | never infer BW from zero (Final B) | S | Planned |
+| 20 | 4 weight formatters, 2 decimal marks | DS:1083, `Today/WorkoutTargetFormatter.swift:14-29`, `Analytics/AnalyticsFormatting.swift:4-10` | Italy: "82.5" while logging, "82,5" in Analytics and the input field | one formatter, the phone's decimal mark; editable weights keep 2 decimals so a 61.25 kg target is not shown as 61.3 | M | Fixed (PR 3) |
+| 21 | One exercise, 3 summaries | `Today/ActiveWorkoutView.swift:656-667`, History, `Today/TodayView.swift:798-812` | "3 × 80 kg × 8" / "3 × 8 at 80 kg" / "3 × 8" | "3 × 8 at 80 kg"; mixed sets "80 kg · 8/8/7 reps" | S | Fixed (PR 3) |
+| 22 | "Last time" two ways | `UI/AppCopy.swift:14` vs Today | "Last time 80 × 8" (no unit) | "Last time · 80 kg × 8" | S | Fixed (PR 3) |
+| 23 | Bodyweight plus load drops "BW" | `Today/WorkoutTargetFormatter.swift:310-318`, `Analytics/AnalyticsFormatting.swift:11-16, 68-72` | "10 kg × 8", "10 × 8" | "BW + 10 kg × 8" (the Analytics hero number still shows the load alone) | M | Fixed (PR 3) |
+| 24 | Zero load shows as BW in History | `Today/WorkoutTargetFormatter.swift:315` | logging "0 kg × 8", History "BW × 8" | never infer BW from zero (Final B) | S | Fixed (PR 3) |
 
 ### PR 4 - Toolbars, sheet close buttons, one tint owner
 

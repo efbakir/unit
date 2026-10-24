@@ -799,10 +799,16 @@ final class TodayDashboardViewModel {
             }
 
             let setCount = max(lastSets.count, 1)
-            let displayTarget = WorkoutTargetFormatter.setRepDisplay(
-                setCount: setCount,
-                reps: representative.reps
+            // Same wording as History: "3 × 8 at 80 kg" keeps the weight.
+            let displayTarget = WorkoutTargetFormatter.completedPerformanceText(
+                weightsKg: lastSets.map(\.weight),
+                reps: lastSets.map(\.reps),
+                isBodyweight: exercise.isBodyweight
             )
+                ?? WorkoutTargetFormatter.setRepDisplay(
+                    setCount: setCount,
+                    reps: representative.reps
+                )
                 ?? "\(representative.reps)"
 
             return ExerciseTarget(

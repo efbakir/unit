@@ -11,7 +11,7 @@ enum AppCopy {
     enum Workout {
         static let finishShort = "Finish"
         static func completeSetNumbered(_ number: Int) -> String { "Complete set \(number)" }
-        static func lastTimeValue(_ weight: String, _ reps: Int) -> String { "Last time \(weight) × \(reps)" }
+        static func lastTimeValue(_ setText: String) -> String { "Last time · \(setText)" }
         static let noStartingTarget = "No starting target yet"
         static let saveStartingTarget = "Save starting target"
         static let markNotDone = "Mark not done"

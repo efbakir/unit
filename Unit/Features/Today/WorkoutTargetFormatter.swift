@@ -12,21 +12,42 @@ enum WorkoutTargetFormatter {
     /// Final B logging distinguishes explicit zero external load from bodyweight.
     /// Kept scoped so historical/progression presentation retains its contracts.
     static func loggingSetText(weightKg: Double, reps: Int, isBodyweight: Bool, unitSystem: String) -> String {
-        let display = unitSystem == "lb" ? weightKg * 2.20462 : weightKg
-        let number = display.formatted(.number.locale(englishNumberLocale).grouping(.never).precision(.fractionLength(0...1)))
-        let load = "\(number) \(unitSystem)"
-        let weight = isBodyweight ? (weightKg == 0 ? "BW" : "BW + \(load)") : load
-        return "\(weight) × \(reps)"
+        "\(loadText(weightKg: weightKg, isBodyweight: isBodyweight, unitSystem: unitSystem)) × \(reps)"
     }
-
-    private static let englishNumberLocale = Locale(identifier: "en_US")
 
     /// Positive weight step in the same number style (`+2.5 kg`, `+5 lb`).
     static func loggingIncrementText(weightKg: Double, unitSystem: String) -> String {
-        let display = unitSystem == "lb" ? weightKg * 2.20462 : weightKg
-        let number = display.formatted(.number.locale(englishNumberLocale).grouping(.never).precision(.fractionLength(0...1)))
-        return "+\(number) \(unitSystem)"
+        "+\(weightNumber(kg: weightKg, unit: unitSystem)) \(unitSystem)"
     }
+
+    /// The one way a weight number is written on screen (decision 2026-10-24):
+    /// the phone's decimal mark, up to 2 decimals in kg and 1 in lb, trailing
+    /// zeros dropped. Every set, target and Analytics value goes through it.
+    static func weightNumber(display value: Double, unit: String, locale: Locale = .current) -> String {
+        value.formatted(
+            .number.locale(locale).grouping(.automatic)
+                .precision(.fractionLength(0...(unit == "lb" ? 1 : 2)))
+        )
+    }
+
+    static func weightNumber(kg: Double, unit: String, locale: Locale = .current) -> String {
+        weightNumber(display: unit == "lb" ? kg * 2.20462 : kg, unit: unit, locale: locale)
+    }
+
+    /// Load in one set: "80 kg", "BW", "BW + 10 kg". Bodyweight is chosen
+    /// explicitly and never inferred from zero (Final B), so a weighted lift
+    /// logged at zero reads "0 kg".
+    static func loadText(weightKg: Double, isBodyweight: Bool, unitSystem: String) -> String {
+        let load = "\(weightNumber(kg: weightKg, unit: unitSystem)) \(unitSystem)"
+        guard isBodyweight else { return load }
+        return weightKg > 0 ? "BW + \(load)" : "BW"
+    }
+
+    private static var preferredUnit: String {
+        UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
+    }
+
+    private static let englishNumberLocale = Locale(identifier: "en_US")
 
     /// Unit token beside the active set-entry weight field. Bodyweight means
     /// `BW` only while added load is blank or zero; a positive external load
@@ -47,12 +68,8 @@ enum WorkoutTargetFormatter {
 
     /// Format a weight value with the user's preferred unit label (spaced, for labels and sentences).
     static func weightDisplay(_ kg: Double) -> String {
-        let unit = UserDefaults.standard.string(forKey: "unitSystem") ?? "kg"
-        if unit == "lb" {
-            let lb = kg * 2.20462
-            return "\(lb.weightString) lb"
-        }
-        return "\(kg.weightString) kg"
+        let unit = preferredUnit
+        return "\(weightNumber(kg: kg, unit: unit)) \(unit)"
     }
 
     /// Compact display spacing shared by the large workout readout and set chips.
@@ -250,6 +267,9 @@ enum WorkoutTargetFormatter {
         let uniformReps = reps.allSatisfy { $0 == firstReps }
 
         if uniformWeight, uniformReps {
+            if firstWeight > 0, isBodyweight {
+                return "\(reps.count) × \(firstReps) at \(loadText(weightKg: firstWeight, isBodyweight: true, unitSystem: preferredUnit))"
+            }
             if firstWeight > 0 {
                 return completeTargetText(
                     weightKg: firstWeight,
@@ -266,13 +286,13 @@ enum WorkoutTargetFormatter {
         let repSequence = reps.map(String.init).joined(separator: "/")
         if uniformWeight {
             if firstWeight > 0 {
-                return "\(weightDisplay(firstWeight)) · \(repSequence) reps"
+                return "\(loadText(weightKg: firstWeight, isBodyweight: isBodyweight, unitSystem: preferredUnit)) · \(repSequence) reps"
             }
             return isBodyweight ? "BW · \(repSequence) reps" : nil
         }
 
         let weightSequence = weightsKg.map { weightKg in
-            weightKg > 0 ? weightDisplay(weightKg) : "BW"
+            loadText(weightKg: weightKg, isBodyweight: isBodyweight, unitSystem: preferredUnit)
         }.joined(separator: "/")
         return "\(weightSequence) · \(repSequence) reps"
     }
@@ -308,13 +328,7 @@ enum WorkoutTargetFormatter {
     /// Intentionally distinct from `compactLoadText` (`145kgx8`): readability over chip density,
     /// since the milestone line gets one quiet beat of attention before fading.
     static func milestoneText(weightKg: Double, reps: Int, isBodyweight: Bool) -> String? {
-        guard reps > 0 else { return nil }
-        if weightKg > 0 {
-            return "\(weightDisplay(weightKg)) × \(reps)"
-        }
-        if isBodyweight || weightKg == 0 {
-            return "BW × \(reps)"
-        }
-        return nil
+        guard reps > 0, weightKg >= 0 else { return nil }
+        return loggingSetText(weightKg: weightKg, reps: reps, isBodyweight: isBodyweight, unitSystem: preferredUnit)
     }
 }

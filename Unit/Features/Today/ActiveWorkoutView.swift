@@ -653,26 +653,32 @@ struct ActiveWorkoutView: View {
                     .repeatTarget)
         }
     }
+    /// Same set-block wording as History and Today: "3 × 8 at 80 kg", or
+    /// "80 kg · 8/8/7 reps" when the sets differ.
     private func summary(for section: WorkoutExerciseSectionModel) -> String {
         if section.hasReachedPlannedSetGoal {
             let entries = section.entries
-            if let first = entries.first, entries.allSatisfy({ $0.weight == first.weight && $0.reps == first.reps }) {
-                return "\(entries.count) × \(valueText(weight: first.weight, reps: first.reps, exercise: section.exercise))"
-            }
-            return "\(entries.count) sets"
+            return WorkoutTargetFormatter.completedPerformanceText(
+                weightsKg: entries.map(\.weight), reps: entries.map(\.reps),
+                isBodyweight: section.exercise.isBodyweight
+            ) ?? "\(entries.count) sets"
         }
         guard let target = resolvedTarget(section, row: section.entries.count + 1),
               !needsStartingTarget(section, row: section.entries.count + 1) else { return "" }
-        return "\(section.plannedSetCount) × \(valueText(weight: target.weight, reps: target.reps, exercise: section.exercise))"
+        let count = section.plannedSetCount
+        return WorkoutTargetFormatter.completedPerformanceText(
+            weightsKg: Array(repeating: target.weight, count: count),
+            reps: Array(repeating: target.reps, count: count),
+            isBodyweight: section.exercise.isBodyweight
+        ) ?? "\(count) × \(valueText(weight: target.weight, reps: target.reps, exercise: section.exercise))"
     }
     private func supportingText(for section: WorkoutExerciseSectionModel, row: Int) -> String {
         if needsStartingTarget(section, row: row) { return AppCopy.Workout.noStartingTarget }
         if let prior = SetEntry.latestValidWorkingSets(for: section.id, in: sessions, excluding: session.id).last {
-            let load = displayWeight(prior.weight).weightString
-            let weight = section.exercise.isBodyweight
-                ? (prior.weight > 0 ? "\(AppCopy.Workout.bodyweightAbbrev) + \(load)" : AppCopy.Workout.bodyweightAbbrev)
-                : load
-            return AppCopy.Workout.lastTimeValue(weight, prior.reps)
+            return AppCopy.Workout.lastTimeValue(WorkoutTargetFormatter.loggingSetText(
+                weightKg: prior.weight, reps: prior.reps,
+                isBodyweight: section.exercise.isBodyweight, unitSystem: unitSystem
+            ))
         }
         return AppCopy.Workout.startingTargetLabel
     }

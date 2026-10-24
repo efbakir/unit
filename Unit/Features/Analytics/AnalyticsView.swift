@@ -58,7 +58,7 @@ struct AnalyticsView: View {
                                         NavigationLink(value: id) {
                                             AppListRow(
                                                 title: lift.exercise.name,
-                                                value: WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit),
+                                                value: WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight),
                                                 style: .cardListContent,
                                                 showsDisclosure: true
                                             )

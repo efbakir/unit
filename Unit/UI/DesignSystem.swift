@@ -1085,12 +1085,16 @@ enum AppIconSize {
 }
 
 extension Double {
-    /// One decimal at most, trailing ".0" dropped. Rounds first: pounds are
-    /// stored as converted kilograms, so 155 lb comes back as 154.99999 and an
-    /// exact whole-number test printed "155.0".
+    /// Editable weight text: up to 2 decimals (so a 61.25 kg target is not
+    /// shown as 61.3), trailing zeros dropped, "." as the mark; input fields
+    /// swap in the phone's mark. Rounds first: pounds are stored as converted
+    /// kilograms, so 155 lb comes back as 154.99999. Display text uses
+    /// `WorkoutTargetFormatter.weightNumber`.
     var weightString: String {
-        let rounded = (self * 10).rounded() / 10
-        return rounded == rounded.rounded() ? "\(Int(rounded))" : String(format: "%.1f", rounded)
+        let rounded = (self * 100).rounded() / 100
+        if rounded == rounded.rounded() { return "\(Int(rounded))" }
+        let text = String(format: "%.2f", rounded)
+        return text.hasSuffix("0") ? String(text.dropLast()) : text
     }
 }
 
@@ -6762,13 +6766,13 @@ struct AppMainLiftCard: View {
     @ViewBuilder private func footer(_ lift: AnalyticsEngine.Lift, best: AnalyticsEngine.Performance) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Best").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-            Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
+            Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
                 .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
         }.frame(maxWidth: .infinity, alignment: .leading)
         if let target = lift.target {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Next").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
+                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }

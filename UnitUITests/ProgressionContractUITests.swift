@@ -302,7 +302,7 @@ final class ProgressionContractUITests: XCTestCase {
             "Accepted complete target is not prefilled in the next workout"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time 60 × 10").exists,
+            staticText(in: app, containing: "Last time · 60 kg × 10").exists,
             "The next workout lost the prior-session evidence"
         )
         assertNoProgressionDecisionUI(in: app)
@@ -434,7 +434,7 @@ final class ProgressionContractUITests: XCTestCase {
             "Accepted US target was not prefilled"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time 135 × 10").exists,
+            staticText(in: app, containing: "Last time · 135 lb × 10").exists,
             "US active workout lost previous-session evidence"
         )
         attachScreenshot(of: app, named: "store-02-one-tap-workout")

@@ -67,7 +67,7 @@ struct ExerciseProgressView: View {
                                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                         Text("4-week comparison · \(Self.comparisonText(for: lift, unit: unit))")
                                             .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
-                                        Text("\(WorkoutTargetFormatter.analyticsPerformance(previous, bodyweight: lift.bodyweight, unit: unit)) → \(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: lift.bodyweight, unit: unit))")
+                                        Text("\(WorkoutTargetFormatter.analyticsPerformance(previous, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)) → \(WorkoutTargetFormatter.analyticsPerformance(current, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight))")
                                             .font(AppFont.performance.font).monospacedDigit()
                                             .fixedSize(horizontal: false, vertical: true)
                                             .accessibilityLabel("Previous 4 weeks: \(WorkoutTargetFormatter.analyticsSpokenSet(previous, bodyweight: lift.bodyweight, unit: unit)). Last 4 weeks: \(WorkoutTargetFormatter.analyticsSpokenSet(current, bodyweight: lift.bodyweight, unit: unit)).")
@@ -84,7 +84,7 @@ struct ExerciseProgressView: View {
                         AppCard(contentInset: AppSpacing.md) {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Next")
-                                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit))
+                                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight))
                                     .font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                                 Text(target.templateName)
@@ -98,7 +98,7 @@ struct ExerciseProgressView: View {
                         if row == "Best set", let best = lift.best {
                             AppListRow(title: "Best set", style: .cardListContent) {
                                 VStack(alignment: .trailing, spacing: AppSpacing.xs) {
-                                    Text(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
+                                    Text(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).monospacedDigit()
                                     Text(WorkoutTargetFormatter.analyticsDate(best.date, now: output.today)).font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
                                 }
                             }
@@ -132,7 +132,11 @@ struct ExerciseProgressView: View {
                                     .font(AppFont.body.font)
                                     .tracking(AppFont.title.tracking)
                                     .foregroundStyle(AppColor.textPrimary)
-                                Text(session.sets.map { WorkoutTargetFormatter.analyticsRecentSet($0, unit: unit) }.joined(separator: " · "))
+                                // Same set-block wording as History, with the unit.
+                                Text(WorkoutTargetFormatter.completedPerformanceText(
+                                    weightsKg: session.sets.map(\.weight), reps: session.sets.map(\.reps),
+                                    isBodyweight: lift.exercise.isBodyweight
+                                ) ?? session.sets.map { WorkoutTargetFormatter.analyticsPerformance($0, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight) }.joined(separator: " · "))
                                     .font(AppFont.performance.font).foregroundStyle(AppColor.textPrimary).monospacedDigit()
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
