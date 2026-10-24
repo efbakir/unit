@@ -830,7 +830,10 @@ final class ProgressionContractUITests: XCTestCase {
         maximumSwipes: Int = 8
     ) {
         var remaining = maximumSwipes
-        while remaining > 0 && (!element.exists || !element.isHittable) {
+        // Also scroll when the element sits at the bottom edge: it can read as
+        // hittable there and then settle out of reach before the tap.
+        while remaining > 0
+            && (!element.exists || !element.isHittable || element.frame.maxY > app.frame.maxY * 0.85) {
             let shouldScrollDown = element.exists
                 && element.frame.maxY < app.frame.midY
             let startY = shouldScrollDown ? 0.34 : 0.66
