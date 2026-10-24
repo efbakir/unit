@@ -94,26 +94,17 @@ enum AppCopy {
         static let repeatingForNextTime = "Kept"
         static let editedForNextTime = "Edited"
         static let noAutomaticTarget = "No automatic target"
-        /// "Use next workout" was misread as "go to the next workout" in the
-        /// 2026-10-23 persona panel; "Save" also matches the "Saved" status.
-        /// Since 2026-10-24 Finish saves targets by itself; this shows only for
-        /// a suggestion that could not be saved then.
-        static let useThisTarget = "Save for next workout"
-        /// After "Keep previous target" or an edit: back to the suggestion.
-        static let useSuggestedTarget = "Use suggested target"
-        /// Completed progression exercise during the workout. Read-only
-        /// preview of the target Finish saves (2026-10-24); the summary
-        /// offers "Keep previous target" and "Edit".
-        static func exerciseDoneSuggestion(_ target: String, change: String) -> String {
-            "Next time: \(target) · \(change)"
-        }
-        static func exerciseDoneNoSuggestion(_ reason: String) -> String {
-            "No suggestion · \(reason)"
-        }
+        /// Summary row tag for a suggestion Finish could not save (an older
+        /// workout or a broken rule); tapping the row saves it.
+        static let notSavedForNextTime = "Not saved"
+        static let opensNextTarget = "Opens the next target."
+        static let previousTargetLabel = "Previous target"
+        static let loggedLabel = "Logged"
         static let suggestionAddOneRep = "+1 rep"
         static let suggestionSameTarget = "same target"
-        /// Pairs with the "Kept" status.
-        static let keepPreviousTarget = "Keep previous target"
+        /// The one shortcut in the next-target sheet (2026-10-24).
+        static func usePrevious(_ target: String) -> String { "Use previous: \(target)" }
+        static func useSuggested(_ target: String) -> String { "Use suggested: \(target)" }
         static let edit = "Edit"
         static let editNextTarget = "Edit next target"
         static let targetsSaved = "Next targets saved"

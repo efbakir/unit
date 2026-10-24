@@ -7,6 +7,17 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Founder feedback: post-workout summary and done card
+
+Efe tested the merged build on his phone and called the summary "the most important part, but still very problematic". He approved these in the progression-loop session.
+
+- **Done card:** shows only this workout (name, logged sets, PR tag, check). The "Next time" line is gone. Supersedes the exercise-done suggestion of 2026-10-23 and the done-card wording of the earlier 2026-10-24 entry. The `progressionPreviewShown` event no longer fires.
+- **Summary layout:** one "Next time" card with saved targets, one "No automatic target" card, then the logged exercises. Each row is compact: name small and grey, the next target large and darkest, a short tag ("+2.5 kg", "+1 rep", "Kept", "Edited").
+- **One action model:** tapping a row opens one sheet with Previous target, Logged, the reason, editable weight and reps, and one shortcut ("Use previous" or "Use suggested"). The inline "Keep previous target", "Use suggested target", "Edit" and "Save for next workout" buttons are gone.
+- **Long names:** in the logged list a long name wraps on the left; the PR tag and numbers stay on the right.
+- **Kept:** confetti, automatic saving at Finish, the stall line naming the short set.
+- **Colors and PR tag size:** tokens only (textPrimary for the target, textSecondary for the rest); the consistency chat owns tag size.
+
 ## 2026-10-24 - Founder override: next targets apply at Finish
 
 Efe chose this in the progression-loop session, after benchmark 4 (`docs/research/2026-10-24-benchmarks/4-exercise-done-summary.md`) and persona panel round 2.

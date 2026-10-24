@@ -847,9 +847,10 @@ struct SessionExerciseSummary: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             ViewThatFits(in: .horizontal) {
+                // A long name wraps on the left; PR and numbers stay on the
+                // right instead of dropping under it (2026-10-24).
                 HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-                    exerciseTitle.fixedSize(horizontal: true, vertical: false)
-                    Spacer(minLength: AppSpacing.sm)
+                    exerciseTitle.frame(maxWidth: .infinity, alignment: .leading)
                     headerMetric.fixedSize(horizontal: true, vertical: false)
                 }
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
