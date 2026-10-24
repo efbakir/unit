@@ -248,7 +248,12 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
 
     func testAddExerciseInARoutineWorkoutWithItsOwnSetCount() throws {
         let app = launch()
-        tap(app.buttons["Add exercise"], in: app)
+        // The button ends the list; scroll it above the fixed rest bar first.
+        let add = app.buttons["Add exercise"]
+        XCTAssertTrue(add.waitForExistence(timeout: 8))
+        let restBar = app.otherElements["workout-rest-bar"]
+        for _ in 0..<6 where add.frame.maxY > restBar.frame.minY { app.swipeUp() }
+        add.tap()
         let search = exerciseSearch(in: app)
         search.typeText("Test Curl")
         tap(app.buttons["Create \"Test Curl\""], in: app)
