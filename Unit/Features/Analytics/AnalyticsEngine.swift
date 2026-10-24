@@ -117,6 +117,13 @@ nonisolated enum AnalyticsEngine {
         let lastDay: Date
     }
     enum MainSource: Sendable, Equatable { case automatic, custom }
+    /// Valid sets in the last 28 days for one main muscle. Each set counts once.
+    struct MuscleSets: Identifiable, Sendable, Hashable {
+        /// `MuscleGroup` raw value; empty when the exercise's muscle is unknown.
+        let muscle: String
+        let sets: Int
+        var id: String { muscle }
+    }
     struct Output: Sendable {
         let summary: Summary?
         let lifts: [UUID: Lift]
@@ -124,6 +131,8 @@ nonisolated enum AnalyticsEngine {
         let mainIDs: [UUID]
         let mainSource: MainSource
         let other: [UUID]
+        /// Muscles trained in the 12-week chart window, most sets first; unknown last.
+        let muscleSets: [MuscleSets]
         let weekStarts: [Date]
         let today: Date
     }
@@ -215,6 +224,9 @@ nonisolated enum AnalyticsEngine {
         var accumulators: [UUID: Accumulator] = [:]
         var sessionDays: [Date] = []
         var lastTemplateDates: [UUID: Date] = [:]
+        // Sets per exercise in the last 28 days, keyed for every exercise in the chart window.
+        var recentSetCounts: [UUID: Int] = [:]
+        let recentStart = day(-27, from: today)
         // Exactly one traversal of source sets; all windows derive from day buckets.
         for session in input.sessions where session.isCompleted {
             let date = calendar.startOfDay(for: session.date)
@@ -224,6 +236,7 @@ nonisolated enum AnalyticsEngine {
             sessionDays.append(date)
             lastTemplateDates[session.templateID] = max(lastTemplateDates[session.templateID] ?? .distantPast, session.date)
             for (exerciseID, sets) in groups {
+                if date >= weekStarts[0] { recentSetCounts[exerciseID, default: 0] += date >= recentStart ? sets.count : 0 }
                 let performances = sets.map { Performance(weight: $0.weight, reps: $0.reps, date: session.date, sessionID: session.id, templateID: session.templateID, setIndex: $0.index) }
                 let loaded = performances.filter { $0.weight > 0 }
                 let bodyweight = loaded.isEmpty
@@ -374,7 +387,18 @@ nonisolated enum AnalyticsEngine {
             if a.latest?.date != b.latest?.date { return (a.latest?.date ?? .distantPast) > (b.latest?.date ?? .distantPast) }
             return a.exercise.name.localizedStandardCompare(b.exercise.name) == .orderedAscending
         }.map(\.id)
-        return Output(summary: summary, lifts: lifts, main: main, mainIDs: mainIDs, mainSource: custom.isEmpty ? .automatic : .custom, other: other, weekStarts: weekStarts, today: today)
+        // Main muscle only: no secondary-muscle data exists, so a set never counts twice.
+        let muscleByExercise = Dictionary(input.exercises.map { ($0.id, $0.muscleGroup) }, uniquingKeysWith: { first, _ in first })
+        var setsByMuscle: [String: Int] = [:]
+        for (exerciseID, count) in recentSetCounts { setsByMuscle[muscleByExercise[exerciseID] ?? "", default: 0] += count }
+        let muscleSets = setsByMuscle
+            .filter { !$0.key.isEmpty || $0.value > 0 }
+            .map { MuscleSets(muscle: $0.key, sets: $0.value) }
+            .sorted { a, b in
+                if a.muscle.isEmpty != b.muscle.isEmpty { return !a.muscle.isEmpty }
+                return a.sets == b.sets ? a.muscle < b.muscle : a.sets > b.sets
+            }
+        return Output(summary: summary, lifts: lifts, main: main, mainIDs: mainIDs, mainSource: custom.isEmpty ? .automatic : .custom, other: other, muscleSets: muscleSets, weekStarts: weekStarts, today: today)
     }
 }
 
