@@ -461,8 +461,11 @@ enum AppCopy {
         static let timelineTodayMessage = "Full Unit access starts immediately."
         static let timelineBeforeRenewalTitle = "Before renewal"
         static let timelineBeforeRenewalMessage = "Cancel anytime in App Store settings."
-        static func timelineRenewalTitle(_ period: String?) -> String {
-            period.map { "Every \($0)" } ?? "Renewal"
+        /// The first renewal date when StoreKit gives a period; the
+        /// billed price in the subtitle still names the cadence.
+        static func timelineRenewalTitle(date: Date?, period: String?) -> String {
+            if let date { return timelineDate(date) }
+            return period.map { "Every \($0)" } ?? "Renewal"
         }
         static func timelineRenewalMessage(_ billedPrice: String) -> String {
             "Renews at \(billedPrice) unless cancelled."
@@ -475,11 +478,9 @@ enum AppCopy {
         }
 
         static let trialTimelineTitle = "How your free trial works"
-        static let trialTimelineDayZeroTitle = "Day 0"
         static let trialTimelineDayZeroMessage = "Full Unit access starts immediately."
-        static func trialTimelineReminderTitle(dayCount: Int?) -> String {
-            guard let dayCount else { return "Two days before" }
-            return "Day \(max(0, dayCount - 2))"
+        static func trialTimelineReminderTitle(date: Date?) -> String {
+            date.map { timelineDate($0) } ?? "Two days before"
         }
         static let trialTimelineReminderOffMessage =
             "Turn on a reminder for two days before your trial ends."
@@ -488,8 +489,22 @@ enum AppCopy {
         static let trialReminderLabel = "Remind me 2 days before"
         static let trialReminderCaption =
             "Optional. Notification permission is requested after purchase."
-        static func trialTimelineEndTitle(dayCount: Int?) -> String {
-            dayCount.map { "Day \($0)" } ?? "After the trial"
+        static func trialTimelineEndTitle(date: Date?) -> String {
+            date.map { timelineDate($0) } ?? "After the trial"
+        }
+        /// Real calendar dates on the timeline ("Oct 31"), in the phone's
+        /// format, so the charge day is never a sum to work out. The year
+        /// shows only when it differs from this year.
+        static func timelineDate(
+            _ date: Date,
+            now: Date = .now,
+            calendar: Calendar = .current,
+            locale: Locale = .autoupdatingCurrent
+        ) -> String {
+            let style = Date.FormatStyle.dateTime.month(.abbreviated).day().locale(locale)
+            return calendar.isDate(date, equalTo: now, toGranularity: .year)
+                ? date.formatted(style)
+                : date.formatted(style.year())
         }
         static func trialTimelineEndMessage(_ billedPrice: String) -> String {
             "Renews at \(billedPrice) unless cancelled."

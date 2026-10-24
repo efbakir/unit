@@ -267,12 +267,14 @@ struct PaywallView: View {
 
     private var purchaseTimelineItems: [AppTimelineItem] {
         guard let presentation = selectedPresentation else { return [] }
+        // Real dates from today, so the charge day reads at a glance.
+        let now = Date.now
 
         if let trial = presentation.trial {
             return [
                 AppTimelineItem(
                     id: "trial-day-zero",
-                    title: AppCopy.Paywall.trialTimelineDayZeroTitle,
+                    title: AppCopy.Paywall.timelineTodayTitle,
                     subtitle: AppCopy.Paywall.trialTimelineDayZeroMessage,
                     icon: .bolt,
                     isCurrent: true
@@ -280,7 +282,7 @@ struct PaywallView: View {
                 AppTimelineItem(
                     id: "trial-reminder",
                     title: AppCopy.Paywall.trialTimelineReminderTitle(
-                        dayCount: trial.dayCount
+                        date: trial.reminderDate(from: now)
                     ),
                     subtitle: reminderRequested
                         ? AppCopy.Paywall.trialTimelineReminderOnMessage
@@ -290,7 +292,7 @@ struct PaywallView: View {
                 AppTimelineItem(
                     id: "trial-end",
                     title: AppCopy.Paywall.trialTimelineEndTitle(
-                        dayCount: trial.dayCount
+                        date: trial.endDate(from: now)
                     ),
                     subtitle: AppCopy.Paywall.trialTimelineEndMessage(
                         presentation.billedPriceText
@@ -346,7 +348,8 @@ struct PaywallView: View {
             AppTimelineItem(
                 id: "subscription-renewal",
                 title: AppCopy.Paywall.timelineRenewalTitle(
-                    presentation.billingPeriodText
+                    date: presentation.renewalDate(from: now),
+                    period: presentation.billingPeriodText
                 ),
                 subtitle: AppCopy.Paywall.timelineRenewalMessage(
                     presentation.billedPriceText

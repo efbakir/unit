@@ -519,9 +519,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
         scrollTo(trialTimeline, in: app)
         XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")
-        XCTAssertTrue(staticText(in: app, containing: "Day 0").exists)
-        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
-        XCTAssertTrue(staticText(in: app, containing: "Day 7").exists)
+        // Real dates, not "Day 5" / "Day 7" (benchmark 2026-10-24, paywall row 3).
+        XCTAssertTrue(staticText(in: app, containing: AppCopy.Paywall.timelineTodayTitle).exists)
+        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 5)).exists)
+        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 7)).exists)
         XCTAssertTrue(staticText(in: app, containing: "Keep making progress").exists)
         XCTAssertTrue(
             app.switches[AppCopy.Paywall.trialReminderLabel].exists,
@@ -576,7 +577,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         attachScreenshot(named: "03-eligible-monthly-purchase", app: app)
 
-        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
+        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 5)).exists)
 
         // Yearly against 52 weeks of Weekly ($29.99 vs $155.48).
         XCTAssertTrue(
@@ -1036,6 +1037,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
     private func button(in app: XCUIApplication, containing text: String) -> XCUIElement {
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    /// The timeline date the app shows for a 7-day trial bought today.
+    private func trialTimelineDate(daysFromToday days: Int) -> String {
+        let date = Calendar.current.date(byAdding: .day, value: days, to: .now) ?? .now
+        return AppCopy.Paywall.timelineDate(date)
     }
 
     private func staticText(in app: XCUIApplication, containing text: String) -> XCUIElement {

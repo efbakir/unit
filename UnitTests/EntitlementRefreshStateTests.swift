@@ -373,6 +373,53 @@ final class StorePlanPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.billedPriceText, "₺199,99/month")
     }
 
+    /// Benchmark 2026-10-24, paywall row 3: the timeline shows real dates.
+    func testTrialTimelineShowsRealDatesFromToday() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let trial = try XCTUnwrap(resolve(
+            snapshot: subscriptionSnapshot(displayPrice: "$29.99", renewalUnit: .year),
+            eligible: true
+        ).trial)
+        let english = Locale(identifier: "en_US")
+
+        let end = try XCTUnwrap(trial.endDate(from: start, calendar: calendar))
+        let reminder = try XCTUnwrap(trial.reminderDate(from: start, calendar: calendar))
+
+        XCTAssertEqual(AppCopy.Paywall.timelineDate(end, now: start, calendar: calendar, locale: english), "Oct 31")
+        XCTAssertEqual(AppCopy.Paywall.timelineDate(reminder, now: start, calendar: calendar, locale: english), "Oct 29")
+    }
+
+    func testRenewalDateAddsOneBillingPeriodAndShowsTheYearWhenItChanges() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let english = Locale(identifier: "en_US")
+        let yearly = resolve(snapshot: subscriptionSnapshot(renewalUnit: .year), eligible: false)
+        let weekly = resolve(
+            snapshot: StoreProductSnapshot(
+                isAutoRenewable: true,
+                displayPrice: "$2.99",
+                renewalPeriod: .init(unit: .week, value: 1),
+                introductoryOffer: nil
+            ),
+            eligible: false
+        )
+
+        let yearlyRenewal = try XCTUnwrap(yearly.renewalDate(from: start, calendar: calendar))
+        let weeklyRenewal = try XCTUnwrap(weekly.renewalDate(from: start, calendar: calendar))
+
+        XCTAssertEqual(
+            AppCopy.Paywall.timelineDate(yearlyRenewal, now: start, calendar: calendar, locale: english),
+            "Oct 24, 2027"
+        )
+        XCTAssertEqual(
+            AppCopy.Paywall.timelineDate(weeklyRenewal, now: start, calendar: calendar, locale: english),
+            "Oct 31"
+        )
+        XCTAssertEqual(AppCopy.Paywall.timelineRenewalTitle(date: nil, period: "year"), "Every year")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(date: nil), "After the trial")
+    }
+
     func testInvalidTrialDurationDoesNotCreateTrial() {
         let snapshot = StoreProductSnapshot(
             isAutoRenewable: true,

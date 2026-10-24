@@ -279,6 +279,21 @@ struct StoreSubscriptionPeriodSnapshot: Equatable, Sendable {
         }
         return value == 1 ? unitText : "\(value) \(unitText)"
     }
+
+    /// The day one billing period after `start`, so the paywall can show a
+    /// real renewal date instead of "Every year".
+    func date(after start: Date, calendar: Calendar = .current) -> Date? {
+        guard value > 0 else { return nil }
+        let component: Calendar.Component
+        switch unit {
+        case .day: component = .day
+        case .week: component = .weekOfYear
+        case .month: component = .month
+        case .year: component = .year
+        case .other: return nil
+        }
+        return calendar.date(byAdding: component, value: value, to: start)
+    }
 }
 
 struct StoreIntroductoryOfferSnapshot: Equatable, Sendable {
@@ -348,15 +363,33 @@ struct StorePlanPresentation: Equatable, Sendable {
         /// offers stay nil because their calendar boundary is not a fixed
         /// number of days.
         let dayCount: Int?
+
+        /// Calendar day the free trial ends and the plan renews, for the
+        /// paywall timeline. Nil when the trial has no fixed day count.
+        func endDate(from start: Date, calendar: Calendar = .current) -> Date? {
+            dayCount.flatMap { calendar.date(byAdding: .day, value: $0, to: start) }
+        }
+
+        /// Calendar day of the optional reminder, two days before the end
+        /// (the scheduler fires 48 hours before expiration).
+        func reminderDate(from start: Date, calendar: Calendar = .current) -> Date? {
+            dayCount.flatMap { calendar.date(byAdding: .day, value: max(0, $0 - 2), to: start) }
+        }
     }
 
     let displayPrice: String
     let billingPeriodText: String?
     let trial: Trial?
+    var renewalPeriod: StoreSubscriptionPeriodSnapshot? = nil
 
     var billedPriceText: String {
         guard let billingPeriodText else { return displayPrice }
         return "\(displayPrice)/\(billingPeriodText)"
+    }
+
+    /// First renewal of a plan bought now without a trial.
+    func renewalDate(from start: Date, calendar: Calendar = .current) -> Date? {
+        renewalPeriod?.date(after: start, calendar: calendar)
     }
 
     static func resolve(
@@ -378,7 +411,8 @@ struct StorePlanPresentation: Equatable, Sendable {
         return StorePlanPresentation(
             displayPrice: snapshot.displayPrice,
             billingPeriodText: billingPeriod,
-            trial: trial
+            trial: trial,
+            renewalPeriod: snapshot.renewalPeriod
         )
     }
 
