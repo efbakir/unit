@@ -262,7 +262,8 @@ struct SettingsView: View {
     private func confirmAppleHealthAccess() async {
         guard !(await HealthWorkoutSync.requestAccess()) else { return }
         savesToAppleHealth = false
-        toastMessage = AppToastEvent(AppCopy.Preferences.appleHealthDenied)
+        // Stays until dismissed: it tells the lifter what to change in another app.
+        toastMessage = AppToastEvent(AppCopy.Preferences.appleHealthDenied, kind: .error)
     }
 
     @ViewBuilder
