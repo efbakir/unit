@@ -773,6 +773,67 @@ final class ProgramImportParserTests: XCTestCase {
                       "Free-text coach notes should surface as a noisyLines warning, not drop silently")
     }
 
+    // MARK: - Benchmark 2026-10-24, setup row 3
+
+    /// `RPE 8` written word-first used to save 8 kg and the name "Bench Press RPE".
+    func testWordFirstRPEAndRIRAreNotesNotWeights() {
+        let input = """
+        Upper
+        Bench Press 3x8 RPE 8
+        Barbell Row 3x10 RIR 2
+        Overhead Press 3x5 RPE 7-8
+        Bench 3x5 100kg RPE 8
+        """
+        let exercises = ProgramImportParser.parse(input, defaultUnit: "kg").first?.exercises ?? []
+        XCTAssertEqual(exercises.map(\.name), ["Bench Press", "Barbell Row", "Overhead Press", "Bench"])
+        XCTAssertEqual(exercises.map(\.note), ["RPE 8", "RIR 2", "RPE 7-8", "RPE 8"])
+        XCTAssertNil(exercises[0].weightKg, "RPE 8 is effort, not 8 kg")
+        XCTAssertNil(exercises[1].weightKg, "RIR 2 is effort, not 2 kg")
+        XCTAssertNil(exercises[2].weightKg)
+        XCTAssertEqual(exercises[3].weightKg ?? 0, 100, accuracy: 0.01, "an explicit weight survives the cue")
+    }
+
+    /// `@ 8` with no RPE word stays a weight: `Curl 3x10 @ 8` is 8 kg dumbbells.
+    func testBareAtNumberStaysAWeight() {
+        let curl = ProgramImportParser.parse("Curl 3x10 @ 8", defaultUnit: "kg").first?.exercises.first
+        XCTAssertEqual(curl?.name, "Curl")
+        XCTAssertEqual(curl?.weightKg ?? 0, 8, accuracy: 0.01)
+    }
+
+    /// `75% 1RM` used to leave "1RM" in the name ("Squat 1RM").
+    func testPercentLabelStaysInTheNoteNotTheName() {
+        let input = """
+        Lower
+        Squat 5x5 @ 75% 1RM
+        Front Squat 3x3 @75% of 1RM
+        Deadlift 3x5 70% TM
+        """
+        let exercises = ProgramImportParser.parse(input, defaultUnit: "kg").first?.exercises ?? []
+        XCTAssertEqual(exercises.map(\.name), ["Squat", "Front Squat", "Deadlift"])
+        XCTAssertEqual(exercises.map(\.note), ["75% 1RM", "75% 1RM", "70% TM"])
+        XCTAssertTrue(exercises.allSatisfy { $0.weightKg == nil })
+    }
+
+    /// Rest, total-time and warm-up lines used to become 1 x 1 exercises
+    /// ("Between Sets", "Total Time"). They are skipped lines now.
+    func testTimingInstructionsAreSkippedNotExercises() {
+        let input = """
+        Push
+        Bench Press 3x8 60
+        Rest 90s between sets
+        Total time 60 min
+        Warm up 10 min bike
+        Plank 60s
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.first?.exercises.map(\.name), ["Bench Press", "Plank"],
+                       "timed holds stay; timing instructions do not")
+        XCTAssertTrue(result.warnings.contains { warning in
+            if case .noisyLines = warning { return true }
+            return false
+        })
+    }
+
     // MARK: - Weight seed path (parser weight → first-session starting target)
 
     // The parser already extracts `weightKg` (see the table / explicit-unit

@@ -4,7 +4,7 @@
 - Taps from first launch to the paywall: ready-made path 8 taps on 7 screens; paste path 6 to 7 taps on 4 screens (2 to 3 of them are the iOS paste gesture). Both start with a 2 second opener.
 - Risk 1 (was High, fixed 2026-10-23): paywall dead ends. Restore, Terms, Privacy and Support now show in every paywall state, and Restore works while a purchase is pending.
 - Risk 2 (was High, fixed 2026-10-23): App Review and trust. The button now says "Start free trial" and the line above it starts with the billed price. The "Paid plan required after setup." line was removed by founder decision (2026-10-23).
-- Risk 3 (Med, partly fixed 2026-10-23): wrong program data from setup. Fixed: comma decimals, a cut 7th day is reported, unit-free numbers are re-read when kg/lb changes. Still open: "RPE 8" is read as 8 kg and junk rows cannot be deleted.
+- Risk 3 (Med, partly fixed 2026-10-23): wrong program data from setup. Fixed: comma decimals, a cut 7th day is reported, unit-free numbers are re-read when kg/lb changes. Fixed 2026-10-24: "RPE 8" and "RIR 2" are notes, not weights. Still open: junk rows cannot be deleted.
 
 Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup and summary fixes) (branch `claude/app-finalization-launch-34a116`), read on 2026-10-23. That commit cut setup to 3 steps (the weight-unit and weekday screens are gone). Other sessions were editing this branch while this was written, so line numbers can drift. Nothing here was run on a phone or simulator; paste edge cases were checked by running a Mac copy of ProgramImportParser.swift. Where the code does not answer a question, the text says "unclear from code".
 
@@ -132,8 +132,8 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
   - Names only, no numbers ("Push / Bench Press / Incline Press") -> every exercise line is dropped. The alert says "Put each day on its own line, then list each exercise below it", which is not the real cause (sets x reps are missing) -> Med -> partial. [ProgramImportParser.swift:809](Unit/Features/Onboarding/ProgramImportParser.swift:809)
   - Some lines without numbers -> those lines are dropped; Review says "N lines didn't parse." without naming them -> Med -> partial. [OnboardingProgramPreviewView.swift:391](Unit/Features/Onboarding/OnboardingProgramPreviewView.swift:391)
   - 7 or more days -> day 7 and later are cut. The parser creates a warning, but Review never shows it -> Med -> no. [ProgramImportParser.swift:51](Unit/Features/Onboarding/ProgramImportParser.swift:51)
-  - "RPE 8" or "RIR 2" written before the number -> read as a weight of 8 kg or 2 kg, and "RPE" stays in the name ("Bench RPE"). "@8 RPE" works. "@ 75% 1RM" leaves "1RM" in the name -> Med -> no. [ProgramImportParser.swift:1279](Unit/Features/Onboarding/ProgramImportParser.swift:1279)
-  - Instruction lines with numbers ("Rest 90s between sets", "Total time 60 min") -> become exercises ("Between Sets", "Total Time"). Visible on Review, but rows cannot be deleted there -> Med -> partial.
+  - "RPE 8", "RIR 2" or "RPE 7-8" written before the number -> a note, never a weight (fixed 2026-10-24). "@8 RPE" works. "@ 75% 1RM" -> note "75% 1RM", name stays clean. A bare "@ 8" with no RPE word stays 8 kg ("Curl 3x10 @ 8" means 8 kg dumbbells) -> Low -> yes.
+  - Instruction lines with only a time ("Rest 90s between sets", "Total time 60 min", "Warm up 10 min bike") -> skipped and counted, not exercises (fixed 2026-10-24) -> Low -> yes.
   - Day heading with a long dash ("Day 1" + long dash + "Upper") -> the day name gets double spaces -> Low -> no. [ProgramImportParser.swift:171](Unit/Features/Onboarding/ProgramImportParser.swift:171)
   - Same heading twice -> two days with the same name -> Low -> yes.
   - Weekday headings (Monday, Wednesday) -> used as day names only; the program still starts as a rotation -> Low -> partial.

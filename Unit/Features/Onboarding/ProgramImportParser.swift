@@ -473,6 +473,10 @@ enum ProgramImportParser {
                     skippedConditioning.append(line)
                     continue
                 }
+                if Filter.isTimingInstruction(line: line, tokenized: tokenized) {
+                    noisyLineCount += 1
+                    continue
+                }
                 if var normalized = Normalizer.normalize(tokenized: tokenized) {
                     // Thread the raw line through so the Exercises step can
                     // render `From: <line>` under each parsed row in paste
@@ -650,6 +654,15 @@ enum ProgramImportParser {
                 weightKg = added
             }
             remaining = bw.remaining
+        }
+
+        // 9b. Word-first autoregulation (`RPE 8`, `RIR 2`, `RPE 7-8`). The
+        // number-first form (`@8 RPE`) is handled by the bare-number fallback
+        // below; word-first used to fall through to it and save 8 kg with
+        // `RPE` left in the name (benchmark 2026-10-24, setup row 3).
+        if let r = matchAutoregulationCue(remaining) {
+            capturedFormNotes.append(r.note)
+            remaining = r.remaining
         }
 
         // 10. Explicit weight (60kg / 60lb / 60#).
@@ -860,6 +873,20 @@ enum ProgramImportParser {
         /// `Cable Crossover` keeps: neither token is conditioning. The
         /// risk is that single-word conditioning lines like just "Bike"
         /// always drop — which is the intent.
+        /// Rest, total-time and warm-up instructions (`Rest 90s between
+        /// sets`, `Total time 60 min`, `Warm up 10 min bike`) carry only a
+        /// duration. They used to become 1 x 1 exercises named "Between
+        /// Sets" or "Total Time" (benchmark 2026-10-24, setup row 3).
+        static func isTimingInstruction(line: String, tokenized: TokenizedExercise) -> Bool {
+            guard tokenized.sets == nil, tokenized.reps == nil, tokenized.weightKg == nil else {
+                return false
+            }
+            return line.range(
+                of: #"(?i)\b(rest|between sets|total time|session time|workout time|warm[\s-]?up|cool[\s-]?down)\b"#,
+                options: .regularExpression
+            ) != nil
+        }
+
         static func isPureConditioning(tokenized: TokenizedExercise) -> Bool {
             let lowered = tokenized
                 .name
@@ -1281,9 +1308,21 @@ enum ProgramImportParser {
             let suffix = String(line[afterIndex...]).trimmingCharacters(in: .whitespaces)
             let lower = suffix.lowercased()
             if lower.hasPrefix("%") {
-                let remaining = replacingFirst(in: line, match: m[0])
+                var remaining = replacingFirst(in: line, match: m[0])
+                var note = "\(Int(value))%"
+                // `75% 1RM`, `75% of 1RM`, `70% TM`: the label belongs with
+                // the percent, not in the exercise name ("Squat 1RM").
+                let afterPercent = String(suffix.dropFirst()).trimmingCharacters(in: .whitespaces)
+                if let label = firstMatch(
+                    in: afterPercent,
+                    pattern: #"(?i)^(?:of\s+)?(?:1\s*rm|e1rm|1\s*rep\s*max|training\s*max|tm)\b"#
+                )?.first {
+                    let lowered = label.lowercased()
+                    note += lowered.hasSuffix("tm") || lowered.contains("training") ? " TM" : " 1RM"
+                    remaining = replacingFirst(in: remaining, match: label)
+                }
                 let cleaned = collapseWhitespace(remaining.replacingOccurrences(of: "%", with: " "))
-                return (nil, "\(Int(value))%", cleaned)
+                return (nil, note, cleaned)
             }
             if lower.hasPrefix("rpe") || lower.hasPrefix("rir") {
                 // Strip the cue token along with the number — same pattern
@@ -1300,6 +1339,18 @@ enum ProgramImportParser {
         let kg = defaultUnit == "lb" ? value / 2.20462 : value
         let remaining = replacingFirst(in: line, match: m[0])
         return (kg, nil, collapseWhitespace(remaining))
+    }
+
+    /// Word-first RPE / RIR cue (`RPE 8`, `RPE8`, `RIR 2`, `RPE 7.5`,
+    /// `RPE 7-8`), returned as a note so the number never becomes a weight.
+    private static func matchAutoregulationCue(_ line: String) -> (note: String, remaining: String)? {
+        let pattern = #"(?i)\b(rpe|rir)\s*@?\s*(\d{1,2}(?:[.,]\d)?(?:\s*-\s*\d{1,2}(?:[.,]\d)?)?)\b"#
+        guard let m = firstMatch(in: line, pattern: pattern), m.count == 3 else { return nil }
+        let value = m[2]
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+        let remaining = collapseWhitespace(replacingFirst(in: line, match: m[0]))
+        return ("\(m[1].uppercased()) \(value)", remaining)
     }
 
     private static func stripIntentQualifiers(_ line: String) -> (remaining: String, stripped: [String]) {
