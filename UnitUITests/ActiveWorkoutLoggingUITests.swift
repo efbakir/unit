@@ -129,6 +129,101 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         capture(app, "final-b-finished-update")
     }
 
+    func testSkippingTheLastExerciseShowsFinishAndTheCardReopens() throws {
+        let app = launch()
+        for sets in [4, 3, 3] {
+            for number in 1...sets { tap(app.buttons["complete-set-\(number)"], in: app) }
+        }
+        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["workout-complete-finish"].exists)
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Skip exercise"], in: app)
+        tap(app.alerts.buttons["Skip exercise"], in: app)
+        XCTAssertTrue(app.buttons["workout-complete-finish"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["complete-set-1"].exists)
+        capture(app, "skip-last-exercise-finish")
+        tap(app.buttons["Deadlift"], in: app)
+        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["workout-complete-finish"].exists)
+    }
+
+    func testHeavierSetShowsPRTagOnTheRowAndTheDoneCard() throws {
+        let app = launch(extra: ["-logging-history"])
+        tap(app.textFields["logging-weight"].firstMatch, in: app)
+        tap(app.buttons["+2.5"], in: app)
+        tap(app.buttons["Done"].firstMatch, in: app)
+        tap(app.buttons["complete-set-1"], in: app)
+        let first = app.buttons["logged-set-1"]
+        XCTAssertTrue(first.waitForExistence(timeout: 5))
+        XCTAssertTrue(first.label.contains("Personal record"), first.label)
+        capture(app, "pr-tag-logged-set")
+        // Same weight and reps as the new best: no tag.
+        tap(app.buttons["complete-set-2"], in: app)
+        XCTAssertTrue(app.buttons["logged-set-2"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["logged-set-2"].label.contains("Personal record"))
+        tap(app.buttons["complete-set-3"], in: app)
+        tap(app.buttons["complete-set-4"], in: app)
+        let doneCard = app.buttons["Bench Press"].firstMatch
+        XCTAssertTrue(doneCard.waitForExistence(timeout: 5))
+        XCTAssertTrue((doneCard.value as? String)?.contains("Personal record") == true, String(describing: doneCard.value))
+        capture(app, "pr-tag-done-card")
+    }
+
+    func testAddedSetCanBeRemovedAndUndone() throws {
+        let app = launch()
+        let addSet = app.buttons.matching(NSPredicate(format: "label ENDSWITH[c] 'add set'")).firstMatch
+        tap(addSet, in: app)
+        XCTAssertTrue(app.buttons["planned-set-5"].waitForExistence(timeout: 5))
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Remove added set"], in: app)
+        XCTAssertTrue(app.buttons["planned-set-5"].waitForNonExistence(timeout: 5))
+        capture(app, "added-set-removed-toast")
+        tap(app.buttons["Undo"].firstMatch, in: app)
+        XCTAssertTrue(app.buttons["planned-set-5"].waitForExistence(timeout: 5))
+        // The plan's own rows cannot be removed this way.
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Remove added set"], in: app)
+        XCTAssertTrue(app.buttons["planned-set-5"].waitForNonExistence(timeout: 5))
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        XCTAssertFalse(app.buttons["Remove added set"].waitForExistence(timeout: 2))
+    }
+
+    func testExerciseHistoryOpensFromTheWorkoutAndReturns() throws {
+        let app = launch(extra: ["-logging-history"])
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Exercise history"], in: app)
+        let latest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Latest'")).firstMatch
+        XCTAssertTrue(latest.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["complete-set-1"].exists)
+        XCTAssertFalse(app.tabBars.firstMatch.exists && app.tabBars.firstMatch.isHittable)
+        capture(app, "exercise-history-mid-workout")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
+    }
+
+    func testPinnedNoteShowsUnderTheNameAndSurvivesRelaunch() throws {
+        let app = launch()
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Add note"], in: app)
+        let field = app.alerts.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.typeText("Seat 4")
+        tap(app.alerts.buttons["Save"], in: app)
+        XCTAssertTrue(app.staticTexts["Seat 4"].waitForExistence(timeout: 5))
+        capture(app, "pinned-note")
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-ui-testing-reset" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Seat 4"].waitForExistence(timeout: 15))
+        tap(app.buttons["exercise-menu"].firstMatch, in: app)
+        tap(app.buttons["Edit note"], in: app)
+        let editField = app.alerts.textFields.firstMatch
+        XCTAssertTrue(editField.waitForExistence(timeout: 5))
+        editField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6))
+        tap(app.alerts.buttons["Save"], in: app)
+        XCTAssertTrue(app.staticTexts["Seat 4"].waitForNonExistence(timeout: 5))
+    }
+
     // Build 90 removed the toolbar reorder sheet; exercise cards are reordered
     // by long-pressing a card and dropping it on another (direct drag only).
     func testReorderKeepsLoggedSetRestAndSurvivesRelaunch() throws {

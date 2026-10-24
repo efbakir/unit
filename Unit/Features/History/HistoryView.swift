@@ -534,52 +534,64 @@ struct RecentSessionsView: View {
 
 /// Derives which historical sets were PRs *at the time they were logged* by
 /// replaying completed sessions chronologically with a per-exercise running
-/// best. Mirrors `ActiveWorkoutView.priorBest` exactly — keep the two in
-/// lockstep: completed, non-warmup working sets only; completed sessions
+/// best. The active workout uses the same replay for its open session
+/// (`prSetEntryIDs(inOpen:history:)`), so the two never disagree (decision
+/// 2026-06-11): completed, non-warmup working sets only; completed sessions
 /// only; weight ranks first, reps break ties; the first-ever log of an
 /// exercise sets the baseline without firing (no baseline → no PR).
 ///
 /// Pure derivation — nothing is persisted, so badges appear for sessions
 /// logged before this feature existed and survive edits/deletes by
-/// recomputing from stored truth. One divergence from the live screen:
-/// editing an old set re-ranks everything after it here, while the live
-/// session freezes at-log-time flags for unedited entries. Stored truth
-/// wins in History.
+/// recomputing from stored truth.
 enum PRHistory {
+    private typealias Best = (weight: Double, reps: Int)
+
     static func prSetEntryIDs(in sessions: [WorkoutSession]) -> Set<UUID> {
-        var bestByExercise: [UUID: (weight: Double, reps: Int)] = [:]
+        var bestByExercise: [UUID: Best] = [:]
         var prIDs: Set<UUID> = []
         let ordered = sessions
             .filter(\.isCompleted)
             .sorted { $0.date < $1.date }
         for session in ordered {
-            let entries = session.setEntries
-                .filter { $0.isCompleted && !$0.isWarmup }
-                .sorted { $0.setIndex < $1.setIndex }
-            for entry in entries {
-                guard let prior = bestByExercise[entry.exerciseId] else {
-                    bestByExercise[entry.exerciseId] = (entry.weight, entry.reps)
-                    continue
-                }
-                let beats = entry.weight > prior.weight
-                    || (entry.weight == prior.weight && entry.reps > prior.reps)
-                if beats {
-                    prIDs.insert(entry.id)
-                    bestByExercise[entry.exerciseId] = (entry.weight, entry.reps)
-                }
-            }
+            replay(session, bests: &bestByExercise, prIDs: &prIDs)
         }
         return prIDs
     }
-}
 
-/// Ink "PR" chip shared by the History session rows, detail header, and set
-/// rows — neutral status language as completed working sets. Composition
-/// of existing atoms only; lives here because all call sites are in this file.
-@ViewBuilder
-func historyPRTag() -> some View {
-    AppTag(text: AppCopy.Workout.prTag, style: .ink, layout: .compactCapsule)
-        .accessibilityLabel(AppCopy.Workout.personalRecord)
+    /// PRs in a workout that is still open: finished workouts set the bests,
+    /// then this workout's sets replay in order. A set shows PR live exactly
+    /// when History will show it after Finish.
+    static func prSetEntryIDs(inOpen session: WorkoutSession, history sessions: [WorkoutSession]) -> Set<UUID> {
+        var bestByExercise: [UUID: Best] = [:]
+        var finishedIDs: Set<UUID> = []
+        let finished = sessions
+            .filter { $0.isCompleted && $0.id != session.id }
+            .sorted { $0.date < $1.date }
+        for prior in finished {
+            replay(prior, bests: &bestByExercise, prIDs: &finishedIDs)
+        }
+        var openIDs: Set<UUID> = []
+        replay(session, bests: &bestByExercise, prIDs: &openIDs)
+        return openIDs
+    }
+
+    private static func replay(_ session: WorkoutSession, bests: inout [UUID: Best], prIDs: inout Set<UUID>) {
+        let entries = session.setEntries
+            .filter { $0.isCompleted && !$0.isWarmup }
+            .sorted { $0.setIndex < $1.setIndex }
+        for entry in entries {
+            guard let prior = bests[entry.exerciseId] else {
+                bests[entry.exerciseId] = (entry.weight, entry.reps)
+                continue
+            }
+            let beats = entry.weight > prior.weight
+                || (entry.weight == prior.weight && entry.reps > prior.reps)
+            if beats {
+                prIDs.insert(entry.id)
+                bests[entry.exerciseId] = (entry.weight, entry.reps)
+            }
+        }
+    }
 }
 
 func makeHistorySessionSnapshot(

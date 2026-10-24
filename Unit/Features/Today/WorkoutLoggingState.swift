@@ -124,26 +124,49 @@ struct WorkoutLoggingState {
         }
     }
 
-    static func currentExerciseID(in exercises: [ExerciseState], selectedID: UUID? = nil) -> UUID? {
-        if let selectedID, exercises.contains(where: { $0.id == selectedID }) { return selectedID }
-        return exercises.first(where: { !$0.isComplete })?.id
+    /// `skipped` holds exercises skipped for the rest of this workout. Only the
+    /// last unfinished exercise is ever skipped this way; earlier skips just
+    /// move on and come back later.
+    static func currentExerciseID(in exercises: [ExerciseState], selectedID: UUID? = nil,
+                                  skipped: Set<UUID> = []) -> UUID? {
+        if let selectedID, !skipped.contains(selectedID),
+           exercises.contains(where: { $0.id == selectedID }) { return selectedID }
+        return exercises.first(where: { !$0.isComplete && !skipped.contains($0.id) })?.id
     }
 
-    static func nextUnfinishedExerciseID(in exercises: [ExerciseState], after id: UUID) -> UUID? {
+    static func nextUnfinishedExerciseID(in exercises: [ExerciseState], after id: UUID,
+                                         skipped: Set<UUID> = []) -> UUID? {
+        let isOpen = { (exercise: ExerciseState) in !exercise.isComplete && !skipped.contains(exercise.id) }
         guard let index = exercises.firstIndex(where: { $0.id == id }) else {
-            return exercises.first(where: { !$0.isComplete })?.id
+            return exercises.first(where: isOpen)?.id
         }
-        return exercises.dropFirst(index + 1).first(where: { !$0.isComplete })?.id
-            ?? exercises.prefix(index).first(where: { !$0.isComplete })?.id
+        return exercises.dropFirst(index + 1).first(where: isOpen)?.id
+            ?? exercises.prefix(index).first(where: isOpen)?.id
     }
 
-    static func upNextText(exercises: [ExerciseState], currentExerciseID: UUID?) -> String? {
+    /// Every exercise is logged or skipped: the day is over and Finish replaces rest.
+    static func isDayDone(_ exercises: [ExerciseState], skipped: Set<UUID> = []) -> Bool {
+        !exercises.isEmpty && exercises.allSatisfy { $0.isComplete || skipped.contains($0.id) }
+    }
+
+    /// The set the lifter does next: the current exercise's next row, or the
+    /// next unfinished exercise's first open row. Nil when the day is done.
+    struct UpNext: Equatable {
+        let exerciseID: UUID
+        let name: String
+        let setNumber: Int
+    }
+
+    static func upNext(exercises: [ExerciseState], currentExerciseID: UUID?,
+                       skipped: Set<UUID> = []) -> UpNext? {
         guard let id = currentExerciseID,
               let current = exercises.first(where: { $0.id == id }) else { return nil }
-        if !current.isComplete { return "\(current.name) · Set \(current.logged.count + 1)" }
-        guard let nextID = nextUnfinishedExerciseID(in: exercises, after: id),
+        if !current.isComplete {
+            return UpNext(exerciseID: current.id, name: current.name, setNumber: current.logged.count + 1)
+        }
+        guard let nextID = nextUnfinishedExerciseID(in: exercises, after: id, skipped: skipped),
               let next = exercises.first(where: { $0.id == nextID }) else { return nil }
-        return "\(next.name) · Set \(next.logged.count + 1)"
+        return UpNext(exerciseID: next.id, name: next.name, setNumber: next.logged.count + 1)
     }
 
     static func shouldStopRest(removing entryID: UUID, sourceEntryID: UUID?) -> Bool {

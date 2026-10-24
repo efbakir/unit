@@ -7,6 +7,16 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 — Logging fixes from the benchmarks (PR A)
+
+Efe approved the logging and Lock Screen plan from the 2026-10-24 benchmarks (`docs/research/2026-10-24-benchmarks/`, reports 3, 5 and 6). This entry covers the small changes; rest per exercise, swap and Lock Screen buttons get their own entries.
+
+- **Skip on the last exercise works.** Confirming "Skip exercise" on the last unfinished exercise used to do nothing. Now its card closes for this workout, rest stops, and "Finish workout" takes the rest bar's place. Tapping the card reopens it. With no set logged at all, X stays the only exit.
+- **PR tag during the workout is back.** The Final B rebuild (2026-10-20) dropped the in-workout PR moment that `docs/goals.md` promises for 2.1. A logged set that beats the best so far shows the same ink "PR" tag as History, and so does the closed done card. Same rule as History (decision 2026-06-11). No banner, sound or extra haptic.
+- **Next set's numbers on the Lock Screen and rest alert.** "Up next" shows the exercise name and a second line, "Set 2 · 135 lb × 10". The rest alert says "Next: Bench Press · Set 2 · 135 lb × 10". Running Live Activities from older builds still decode.
+- **Card menu.** "Exercise history" opens the exercise page and back returns to the same set. "Add note" pins one line under the name (`Exercise.notes`, no schema change), shown in every workout. "Remove added set" undoes "+ Add set" while that row is open, with the same 4-second Undo toast. The menu's VoiceOver name is "Exercise options".
+- **Not done, with reasons:** rest steps stay ±30 (2026-10-23); no warm-up sets (2026-07-13, 2026-04-30); no drop or failure tags (schema change); no RPE; "Complete set" stays in the row (Final B).
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

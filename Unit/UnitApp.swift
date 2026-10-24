@@ -529,6 +529,18 @@ extension StartingTargetUITestSeeder {
             bench.isBodyweight = true
             template.setPlannedWeight(0, for: benchID)
         }
+        if CommandLine.arguments.contains("-logging-history") {
+            // One finished Bench Press workout (3 × 8 at 55 kg) to beat.
+            let finished = WorkoutSession(date: Date().addingTimeInterval(-2 * 86_400),
+                                          templateId: template.id, isCompleted: true)
+            context.insert(finished)
+            for index in 0..<3 {
+                let set = SetEntry(sessionId: finished.id, exerciseId: benchID, weight: 55, reps: 8,
+                                   isCompleted: true, setIndex: index)
+                set.session = finished
+                context.insert(set)
+            }
+        }
         UserDefaults.standard.set(CommandLine.arguments.contains("-logging-lb") ? "lb" : "kg", forKey: "unitSystem")
         UserDefaults.standard.set(120, forKey: "restDurationSeconds")
         try context.save()

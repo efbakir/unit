@@ -66,10 +66,20 @@ struct RestTimerLiveActivityView: View {
                         .minimumScaleFactor(0.7)
                         .truncationMode(.tail)
                         .multilineTextAlignment(.trailing)
+
+                    if let detail = context.state.upNextDetail, !detail.isEmpty {
+                        Text(detail)
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.trailing)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Up next, \(upNext)")
+                .accessibilityLabel(["Up next", upNext, context.state.upNextDetail]
+                    .compactMap { $0 }.joined(separator: ", "))
             }
         }
         .padding(.horizontal, 20)
@@ -185,9 +195,18 @@ enum RestTimerLiveActivityIsland {
                     .truncationMode(.tail)
 
                 Spacer(minLength: 0)
+
+                if let detail = state.upNextDetail, !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Up next, \(upNext)")
+            .accessibilityLabel(["Up next", upNext, state.upNextDetail]
+                .compactMap { $0 }.joined(separator: ", "))
         }
     }
 }

@@ -27,14 +27,19 @@ public nonisolated struct RestTimerAttributes: ActivityAttributes {
         public var startDate: Date
         /// When the rest period ends.
         public var endDate: Date
-        /// Next exercise and set (including remaining sets of the current exercise).
-        /// The host supplies plain text, or nil when no set remains.
+        /// Name of the next exercise (the current one while it has sets left),
+        /// or nil when no set remains. Activities started before 2026-10-24
+        /// hold "Name · Set N" here and no detail.
         public var upNext: String?
+        /// The next set's line, e.g. "Set 2 · 135 lb × 10". Optional, so an
+        /// activity that is running when the app updates still decodes.
+        public var upNextDetail: String?
 
-        public init(startDate: Date, endDate: Date, upNext: String? = nil) {
+        public init(startDate: Date, endDate: Date, upNext: String? = nil, upNextDetail: String? = nil) {
             self.startDate = startDate
             self.endDate = endDate
             self.upNext = upNext
+            self.upNextDetail = upNextDetail
         }
     }
 

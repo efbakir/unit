@@ -70,6 +70,30 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: "unit.restTimer.endDate") as? Date, deadline)
     }
 
+    func testNextSetLineReachesTheAlertSurvivesRelaunchAndClearsOnStop() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let timer = timer(defaults, notifications, now: { now })
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: 120, upNext: "Bench Press", upNextDetail: "Set 2 · 135 lb × 10")
+        }
+        XCTAssertEqual(notifications.requests.last?.content.body, "Next: Bench Press · Set 2 · 135 lb × 10")
+        XCTAssertEqual(defaults.string(forKey: "unit.restTimer.upNextDetail"), "Set 2 · 135 lb × 10")
+        await notifications.waitForRequest { timer.updateUpNext("Bench Press", detail: "Set 2 · 140 lb × 10") }
+        XCTAssertEqual(notifications.requests.last?.content.body, "Next: Bench Press · Set 2 · 140 lb × 10")
+        // A relaunched timer restores the line: repeating it schedules nothing new.
+        let restored = self.timer(defaults, notifications, now: { now })
+        // A reschedule cancels the old request synchronously, so an unchanged
+        // cancel list proves nothing was rescheduled.
+        let cancelled = notifications.cancelled.count
+        restored.updateUpNext("Bench Press", detail: "Set 2 · 140 lb × 10")
+        XCTAssertEqual(notifications.cancelled.count, cancelled)
+        restored.stop()
+        timer.stop()
+        XCTAssertNil(defaults.object(forKey: "unit.restTimer.upNextDetail"))
+    }
+
     func testRestStepAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()
@@ -113,7 +137,7 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertNil(timer.sourceEntryID)
         XCTAssertNil(timer.endDate)
         XCTAssertTrue(notifications.cancelled.contains(identifier))
-        for key in ["endDate", "totalDuration", "upNext", "sourceEntryID", "finishedAt", "notificationID"] {
+        for key in ["endDate", "totalDuration", "upNext", "upNextDetail", "sourceEntryID", "finishedAt", "notificationID"] {
             XCTAssertNil(defaults.object(forKey: "unit.restTimer.\(key)"))
         }
     }

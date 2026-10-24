@@ -123,15 +123,23 @@ final class WorkoutLoggingStateTests: XCTestCase {
         let benchID = UUID(), inclineID = UUID()
         let incline = exercise([], count: 3, id: inclineID, name: "Incline")
         let two = exercise([entry(0), entry(1)], id: benchID)
-        XCTAssertEqual(WorkoutLoggingState.upNextText(exercises: [two, incline], currentExerciseID: benchID), "Bench · Set 3")
+        XCTAssertEqual(WorkoutLoggingState.upNext(exercises: [two, incline], currentExerciseID: benchID),
+                       .init(exerciseID: benchID, name: "Bench", setNumber: 3))
         let four = (0..<4).map { entry($0) }
         let done = exercise(four, id: benchID)
-        XCTAssertEqual(WorkoutLoggingState.upNextText(exercises: [done, incline], currentExerciseID: benchID), "Incline · Set 1")
-        XCTAssertNil(WorkoutLoggingState.upNextText(exercises: [done], currentExerciseID: benchID))
+        XCTAssertEqual(WorkoutLoggingState.upNext(exercises: [done, incline], currentExerciseID: benchID),
+                       .init(exerciseID: inclineID, name: "Incline", setNumber: 1))
+        XCTAssertNil(WorkoutLoggingState.upNext(exercises: [done], currentExerciseID: benchID))
         let added = exercise(four, count: 5, id: benchID)
-        XCTAssertEqual(WorkoutLoggingState.upNextText(exercises: [added], currentExerciseID: benchID), "Bench · Set 5")
+        XCTAssertEqual(WorkoutLoggingState.upNext(exercises: [added], currentExerciseID: benchID)?.setNumber, 5)
         let deleted = exercise(Array(four.dropFirst()), id: benchID)
-        XCTAssertEqual(WorkoutLoggingState.upNextText(exercises: [deleted], currentExerciseID: benchID), "Bench · Set 4")
+        XCTAssertEqual(WorkoutLoggingState.upNext(exercises: [deleted], currentExerciseID: benchID)?.setNumber, 4)
+    }
+
+    func testUpNextDetailShowsTheNextSetsNumbersWhenKnown() {
+        XCTAssertEqual(AppCopy.Workout.upNextDetail(setNumber: 2, value: "135 lb × 10"), "Set 2 · 135 lb × 10")
+        XCTAssertEqual(AppCopy.Workout.upNextDetail(setNumber: 1, value: "BW × 12"), "Set 1 · BW × 12")
+        XCTAssertEqual(AppCopy.Workout.upNextDetail(setNumber: 1, value: nil), "Set 1")
     }
 
     func testUpcomingExercisesGroupWithoutSwallowingCurrentOrPartialCards() {
@@ -153,6 +161,23 @@ final class WorkoutLoggingStateTests: XCTestCase {
         XCTAssertEqual(WorkoutLoggingState.currentExerciseID(in: [first, last]), first.id)
         XCTAssertEqual(WorkoutLoggingState.currentExerciseID(in: [first, last], selectedID: last.id), last.id)
         XCTAssertEqual(WorkoutLoggingState.nextUnfinishedExerciseID(in: [first, last], after: last.id), first.id)
+    }
+
+    func testSkippingTheLastUnfinishedExerciseEndsTheDayUntilReopened() {
+        let first = exercise((0..<4).map { entry($0) }, name: "First")
+        let last = exercise([entry(0)], count: 3, name: "Last")
+        XCTAssertEqual(WorkoutLoggingState.currentExerciseID(in: [first, last]), last.id)
+        XCTAssertNil(WorkoutLoggingState.nextUnfinishedExerciseID(in: [first, last], after: last.id))
+        XCTAssertFalse(WorkoutLoggingState.isDayDone([first, last]))
+        let skipped: Set<UUID> = [last.id]
+        XCTAssertNil(WorkoutLoggingState.currentExerciseID(in: [first, last], skipped: skipped))
+        XCTAssertNil(WorkoutLoggingState.currentExerciseID(in: [first, last], selectedID: last.id, skipped: skipped))
+        XCTAssertTrue(WorkoutLoggingState.isDayDone([first, last], skipped: skipped))
+        XCTAssertNil(WorkoutLoggingState.nextUnfinishedExerciseID(in: [first, last], after: first.id, skipped: skipped))
+        XCTAssertNil(WorkoutLoggingState.upNext(exercises: [first, last], currentExerciseID: first.id, skipped: skipped))
+        // Reopening (an empty skip set) restores the normal order.
+        XCTAssertEqual(WorkoutLoggingState.currentExerciseID(in: [first, last], selectedID: last.id), last.id)
+        XCTAssertFalse(WorkoutLoggingState.isDayDone([]))
     }
 
     func testZeroPreparationOnlyChangesTargetDictionary() throws {
