@@ -416,8 +416,32 @@ final class StorePlanPresentationTests: XCTestCase {
             AppCopy.Paywall.timelineDate(weeklyRenewal, now: start, calendar: calendar, locale: english),
             "Oct 31"
         )
-        XCTAssertEqual(AppCopy.Paywall.timelineRenewalTitle(date: nil, period: "year"), "Every year")
-        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(date: nil), "After the trial")
+        XCTAssertEqual(AppCopy.Paywall.timelineRenewalTitle("year"), "Every year")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(dayCount: 7), "Day 7")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(dayCount: nil), "After the trial")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderTitle(dayCount: 7), "Day 5")
+    }
+
+    /// Blinkist / Mesh pattern: the real date sits in the row text.
+    func testTimelineTextNamesTheRealDates() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let end = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: start))
+        let reminder = try XCTUnwrap(calendar.date(byAdding: .day, value: 5, to: start))
+        let endText = AppCopy.Paywall.timelineDate(end)
+        let reminderText = AppCopy.Paywall.timelineDate(reminder)
+
+        XCTAssertEqual(
+            AppCopy.Paywall.trialTimelineEndMessage("$29.99/year", date: end),
+            "You will be charged $29.99/year on \(endText). Cancel anytime before."
+        )
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderMessage(isOn: true, date: reminder),
+                       "Unit reminds you on \(reminderText).")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderMessage(isOn: false, date: reminder),
+                       "Turn on a reminder for \(reminderText).")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndMessage("$29.99/year", date: nil),
+                       "Renews at $29.99/year unless cancelled.")
+        XCTAssertTrue(AppCopy.Paywall.timelineRenewalMessage("$2.99/week", date: end).hasPrefix("Next charge "))
     }
 
     func testInvalidTrialDurationDoesNotCreateTrial() {

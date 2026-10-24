@@ -557,10 +557,15 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
         scrollTo(trialTimeline, in: app)
         XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")
-        // Real dates, not "Day 5" / "Day 7" (benchmark 2026-10-24, paywall row 3).
+        // "Day 5" / "Day 7" with the real dates in the text (2026-10-24,
+        // Blinkist and Mesh pattern).
         XCTAssertTrue(staticText(in: app, containing: AppCopy.Paywall.timelineTodayTitle).exists)
-        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 5)).exists)
-        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 7)).exists)
+        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
+        XCTAssertTrue(staticText(in: app, containing: "Day 7").exists)
+        XCTAssertTrue(
+            staticText(in: app, containing: "on \(trialTimelineDate(daysFromToday: 7)). Cancel anytime before.").exists,
+            "the Day 7 row does not name the real charge date"
+        )
         XCTAssertTrue(staticText(in: app, containing: "Keep making progress").exists)
         XCTAssertTrue(
             app.switches[AppCopy.Paywall.trialReminderLabel].exists,
@@ -572,7 +577,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             "trial reminder must default on (2026-10-23)"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOnMessage).exists
+            staticText(in: app, containing: "Unit reminds you on \(trialTimelineDate(daysFromToday: 5)).").exists
         )
         attachScreenshot(named: "01-eligible-yearly-single-page", app: app)
 
@@ -597,7 +602,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(reminder, "trial reminder preference")
         XCTAssertEqual(reminder.value as? String, "0")
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOffMessage).exists
+            staticText(in: app, containing: "Turn on a reminder for \(trialTimelineDate(daysFromToday: 5)).").exists
         )
 
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
@@ -615,7 +620,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         attachScreenshot(named: "03-eligible-monthly-purchase", app: app)
 
-        XCTAssertTrue(staticText(in: app, containing: trialTimelineDate(daysFromToday: 5)).exists)
+        XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
 
         // Yearly against 52 weeks of Weekly ($29.99 vs $155.48).
         XCTAssertTrue(

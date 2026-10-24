@@ -267,7 +267,8 @@ struct PaywallView: View {
 
     private var purchaseTimelineItems: [AppTimelineItem] {
         guard let presentation = selectedPresentation else { return [] }
-        // Real dates from today, so the charge day reads at a glance.
+        // Real dates from today in the row text, so the charge day reads at
+        // a glance without counting days.
         let now = Date.now
 
         if let trial = presentation.trial {
@@ -282,20 +283,22 @@ struct PaywallView: View {
                 AppTimelineItem(
                     id: "trial-reminder",
                     title: AppCopy.Paywall.trialTimelineReminderTitle(
+                        dayCount: trial.dayCount
+                    ),
+                    subtitle: AppCopy.Paywall.trialTimelineReminderMessage(
+                        isOn: reminderRequested,
                         date: trial.reminderDate(from: now)
                     ),
-                    subtitle: reminderRequested
-                        ? AppCopy.Paywall.trialTimelineReminderOnMessage
-                        : AppCopy.Paywall.trialTimelineReminderOffMessage,
                     icon: .bell
                 ),
                 AppTimelineItem(
                     id: "trial-end",
                     title: AppCopy.Paywall.trialTimelineEndTitle(
-                        date: trial.endDate(from: now)
+                        dayCount: trial.dayCount
                     ),
                     subtitle: AppCopy.Paywall.trialTimelineEndMessage(
-                        presentation.billedPriceText
+                        presentation.billedPriceText,
+                        date: trial.endDate(from: now)
                     ),
                     icon: .calendarClock
                 ),
@@ -348,11 +351,11 @@ struct PaywallView: View {
             AppTimelineItem(
                 id: "subscription-renewal",
                 title: AppCopy.Paywall.timelineRenewalTitle(
-                    date: presentation.renewalDate(from: now),
-                    period: presentation.billingPeriodText
+                    presentation.billingPeriodText
                 ),
                 subtitle: AppCopy.Paywall.timelineRenewalMessage(
-                    presentation.billedPriceText
+                    presentation.billedPriceText,
+                    date: presentation.renewalDate(from: now)
                 ),
                 icon: .calendarClock
             )
