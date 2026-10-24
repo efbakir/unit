@@ -65,14 +65,14 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Purpose**: A short brand moment, three value slides, then start setup.
 - **Entry**: First screen when no program exists. [OnboardingView.swift:374](Unit/Features/Onboarding/OnboardingView.swift:374)
 - **Steps**:
-  - Opener: black screen, logo, "Welcome to Unit", "Progressive overload made simple." -> taps do nothing -> after 2 seconds it fades into the carousel. With Reduce Motion or VoiceOver on there is no wait. [OnboardingSplashView.swift:31](Unit/Features/Onboarding/OnboardingSplashView.swift:31), [OnboardingSplashView.swift:104](Unit/Features/Onboarding/OnboardingSplashView.swift:104)
+  - Opener: black screen, logo, "Welcome to Unit", "Progressive overload made simple." -> a tap skips the wait (2026-10-24) -> otherwise after 2 seconds it fades into the carousel. With Reduce Motion or VoiceOver on there is no wait. [OnboardingSplashView.swift:31](Unit/Features/Onboarding/OnboardingSplashView.swift:31), [OnboardingSplashView.swift:104](Unit/Features/Onboarding/OnboardingSplashView.swift:104)
   - Carousel: 3 slides move on their own (first after 3 seconds, then every 4.5 seconds); swiping works. Slides: "Know what to lift next", "Build reps, then weight", "Log every set in one tap". Example weights follow the phone region (lb in the US, kg elsewhere). [OnboardingSplashView.swift:319](Unit/Features/Onboarding/OnboardingSplashView.swift:319), [OnboardingSplashView.swift:348](Unit/Features/Onboarding/OnboardingSplashView.swift:348)
   - Tap "Set up your program" -> "Choose your path". [OnboardingSplashView.swift:175](Unit/Features/Onboarding/OnboardingSplashView.swift:175), [OnboardingView.swift:379](Unit/Features/Onboarding/OnboardingView.swift:379)
 - **Saved data**: Nothing until the button is tapped. Then the current step and its history are saved as a draft.
 - **Events**: `onboarding_started`, `onboarding_slide_viewed`, then `onboarding_step_viewed` (method) on the button tap.
 - **Edge cases**:
   - App closed on the carousel -> the 2 second opener plays again next time -> Low -> yes.
-  - The opener cannot be skipped with a tap -> 2 seconds added to every fresh start -> Low -> no.
+  - A tap anywhere on the opener ends the 2-second wait, the same way Reduce Motion does (2026-10-24) -> Low -> yes.
   - The largest text sizes -> slide text stops growing at xxxLarge and slides scroll -> Low -> yes. [OnboardingSplashView.swift:192](Unit/Features/Onboarding/OnboardingSplashView.swift:192)
   - User spends 1 to 2 minutes on setup before learning a paid plan is needed -> Med (trust, App Review) -> no.
 

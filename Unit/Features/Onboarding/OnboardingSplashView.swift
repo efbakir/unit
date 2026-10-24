@@ -49,6 +49,9 @@ struct OnboardingSplashView: View {
     /// Keeps the opener mounted through its exit animation, then unmounts it once
     /// the lift-away has played so it leaves the view hierarchy.
     @State private var openerVisible = true
+    /// A tap on the opener ends the two-second wait, the same way Reduce
+    /// Motion and VoiceOver skip it (benchmark 2026-10-24, setup row 10).
+    @State private var skipsOpenerWait = false
     @State private var slideViewTracker = OnboardingSlideViewTracker()
 
     private let slides = MarketingSlide.all
@@ -64,6 +67,15 @@ struct OnboardingSplashView: View {
             // Keep the opener mounted until its departure finishes above the carousel.
             if openerVisible {
                 SplashOpener(logoSide: Self.logoSide, leaving: openerLeaving)
+                    .overlay {
+                        if phase == .opener {
+                            Button(action: skipOpenerWait) {
+                                Color.clear.contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Skip intro")
+                        }
+                    }
                     // Once the hand-off starts the opener is fading away on top of
                     // the live carousel — stop it absorbing taps meant for the CTA.
                     .allowsHitTesting(!openerLeaving)
@@ -101,11 +113,11 @@ struct OnboardingSplashView: View {
         .preferredColorScheme(openerVisible ? .dark : .light)
         .environment(\.appRevealSession, revealSession)
         // Changing accessibility or scene state cancels the current sleep immediately.
-        .task(id: "\(reduceMotion)-\(voiceOver)-\(scenePhase)") {
+        .task(id: "\(reduceMotion)-\(voiceOver)-\(scenePhase)-\(skipsOpenerWait)") {
             guard scenePhase == .active else { return }
             if phase == .opener {
                 // Accessible users reach the manually controlled carousel directly.
-                if allowsAutoplay {
+                if allowsAutoplay && !skipsOpenerWait {
                     do { try await Task.sleep(for: .seconds(Self.openerDuration)) }
                     catch { return }
                 }
@@ -136,6 +148,10 @@ struct OnboardingSplashView: View {
             guard phase == .carousel else { return }
             recordVisibleSlide()
         }
+    }
+
+    private func skipOpenerWait() {
+        skipsOpenerWait = true
     }
 
     private var allowsAutoplay: Bool {

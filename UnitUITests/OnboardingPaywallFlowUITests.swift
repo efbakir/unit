@@ -312,6 +312,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // ── Launch 1: splash → import → parser failure + recovery ──
         var app = makeApp(reset: true)
         app.launch()
+        // A tap skips the two-second opener when it is still showing
+        // (benchmark 2026-10-24, setup row 10).
+        let skipIntro = app.buttons["Skip intro"]
+        if skipIntro.waitForExistence(timeout: 1), skipIntro.isHittable {
+            skipIntro.tap()
+        }
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
         // Analytics is opt-in (App Review 5.1.1(ii)): a fresh install shows
