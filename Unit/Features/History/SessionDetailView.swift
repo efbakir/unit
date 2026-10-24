@@ -2,7 +2,7 @@
 //  SessionDetailView.swift
 //  Unit
 //
-//  Read-only session detail grouped by exercise.
+//  Session detail grouped by exercise. The pencil opens Edit workout.
 //
 
 import SwiftUI
@@ -17,6 +17,8 @@ struct SessionDetailView: View {
     @Bindable var session: WorkoutSession
     let templateName: String
     var completionMoment: AppCelebrationMoment? = nil
+    /// Lapsed-subscriber History: no edits, no saved targets, no writes.
+    var isReadOnly = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -38,6 +40,9 @@ struct SessionDetailView: View {
     @State private var editingRepsText = ""
     @FocusState private var editingTargetField: String?
     @State private var didTrackRecommendations = false
+    @State private var showsEditWorkout = false
+    /// Set just before the workout is deleted, so the screen never reads it again.
+    @State private var isDeleted = false
 
     private struct ProgressionRecommendationRow: Identifiable {
         let exerciseID: UUID
@@ -68,35 +73,12 @@ struct SessionDetailView: View {
     }
 
     private var exerciseSnapshots: [SessionExerciseSnapshot] {
-        let prIDs = PRHistory.prSetEntryIDs(in: allSessions)
-        let templateOrder = templates.first(where: { $0.id == session.templateId })?.orderedExerciseIds ?? []
-        let orderByID = exerciseOrderIndex(for: templateOrder)
-        let grouped = Dictionary(grouping: session.setEntries.filter(\.isCompleted), by: \.exerciseId)
-        return grouped.compactMap { exerciseID, entries -> SessionExerciseSnapshot? in
-            guard let exercise = exercises.first(where: { $0.id == exerciseID }) else { return nil }
-            let sortedEntries = entries.sorted { $0.setIndex < $1.setIndex }
-            let sets = sortedEntries.map { entry in
-                SessionSetSnapshot(
-                    id: entry.id,
-                    setIndex: entry.setIndex,
-                    actualWeight: entry.weight,
-                    actualReps: entry.reps,
-                    note: entry.note.trimmingCharacters(in: .whitespacesAndNewlines),
-                    isPR: prIDs.contains(entry.id)
-                )
-            }
-            return SessionExerciseSnapshot(
-                id: exerciseID,
-                name: exercise.displayName,
-                isBodyweight: exercise.isBodyweight,
-                sets: sets
-            )
-        }
-        .sorted { lhs, rhs in
-            let left = orderByID[lhs.id] ?? Int.max
-            let right = orderByID[rhs.id] ?? Int.max
-            return left == right ? lhs.name < rhs.name : left < right
-        }
+        makeSessionDetailExerciseSnapshots(
+            for: session,
+            exercises: exercises,
+            templates: templates,
+            prSetEntryIDs: PRHistory.prSetEntryIDs(in: allSessions)
+        )
     }
 
     private var progressionTemplate: DayTemplate? {
@@ -130,61 +112,39 @@ struct SessionDetailView: View {
         AppScreen(
             showsNativeNavigationBar: true
         ) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(templateName)
-                        .font(AppFont.title.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-
-                    Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Right after Finish, decisions come first: the next targets
-                // are the payoff of the workout and were below the whole log.
-                if completionMoment != nil, !progressionRecommendations.isEmpty {
-                    progressionCard
-                }
-
-                if !exerciseSnapshots.isEmpty {
-                    AppCardList(exerciseSnapshots) { exercise in
-                        NavigationLink {
-                            ExerciseProgressView(
-                                exerciseId: exercise.id,
-                                exerciseName: exercise.name,
-                                isBodyweight: exercise.isBodyweight,
-                                sessions: allSessions,
-                                templates: templates
-                            )
-                        } label: {
-                            SessionExerciseSummary(exercise: exercise)
-                                .appNavigationDisclosure()
-                                .padding(.vertical, AppSpacing.sm)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(ScaleButtonStyle())
-                        .accessibilityHint("Opens progress history for \(exercise.name).")
-                    }
-                }
-
-                if completionMoment == nil, !progressionRecommendations.isEmpty {
-                    progressionCard
-                }
-
-                if showsFeedbackInvitation {
-                    feedbackInvitationCard
-                }
+            // Once the workout is deleted, nothing here may read it while the
+            // screen leaves. The modifiers below stay, so the pop completes.
+            if !isDeleted {
+                detailStack
             }
-            .appScreenEnter()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !isReadOnly {
+                // Same entry as Programs > Edit program.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Group {
+                        Button { showsEditWorkout = true } label: {
+                            Label(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName)
+                                .labelStyle(.iconOnly)
+                        }
+                        .accessibilityLabel(AppCopy.History.editWorkout)
+                        .accessibilityIdentifier("edit-workout")
+                    }
+                    .tint(AppColor.textPrimary)
+                }
+            }
+        }
         .appNavigationBarChrome()
         .toolbar(.hidden, for: .tabBar)
+        .navigationDestination(isPresented: $showsEditWorkout) {
+            EditWorkoutView(session: session, onDeleteWorkout: deleteWorkout)
+        }
+        .onChange(of: showsEditWorkout) { _, isPresented in
+            // Second step of a delete: Edit workout has closed, now leave too.
+            if !isPresented, isDeleted { dismiss() }
+        }
         .overlay { AppCelebration(moment: completionMoment) }
         .appToast(event: editingRecommendationID == nil ? $toastMessage : .constant(nil))
         .sheet(
@@ -201,6 +161,59 @@ struct SessionDetailView: View {
             presentFeedbackInvitationIfNeeded()
             trackRecommendationsIfNeeded()
         }
+    }
+
+    private var detailStack: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(templateName)
+                    .font(AppFont.title.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+
+                Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Right after Finish, decisions come first: the next targets
+            // are the payoff of the workout and were below the whole log.
+            if completionMoment != nil, !progressionRecommendations.isEmpty {
+                progressionCard
+            }
+
+            if !exerciseSnapshots.isEmpty {
+                AppCardList(exerciseSnapshots) { exercise in
+                    NavigationLink {
+                        ExerciseProgressView(
+                            exerciseId: exercise.id,
+                            exerciseName: exercise.name,
+                            isBodyweight: exercise.isBodyweight,
+                            sessions: allSessions,
+                            templates: templates
+                        )
+                    } label: {
+                        SessionExerciseSummary(exercise: exercise)
+                            .appNavigationDisclosure()
+                            .padding(.vertical, AppSpacing.sm)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .accessibilityHint("Opens progress history for \(exercise.name).")
+                }
+            }
+
+            if completionMoment == nil, !progressionRecommendations.isEmpty {
+                progressionCard
+            }
+
+            if showsFeedbackInvitation {
+                feedbackInvitationCard
+            }
+        }
+        .appScreenEnter()
     }
 
     private var progressionCard: some View {
@@ -587,7 +600,8 @@ struct SessionDetailView: View {
     }
 
     private func isActionable(_ record: SessionProgressionRecord) -> Bool {
-        guard let template = progressionTemplate,
+        guard !isReadOnly,
+              let template = progressionTemplate,
               let currentState = template.progressionState(
                   for: record.exerciseID
               ),
@@ -618,17 +632,28 @@ struct SessionDetailView: View {
     }
 
     private func hasNewerCompletedSession(for exerciseID: UUID) -> Bool {
-        allSessions.contains { candidate in
-            candidate.id != session.id
-                && candidate.templateId == session.templateId
-                && candidate.isCompleted
-                && candidate.date > session.date
-                && candidate.setEntries.contains(where: {
-                    $0.exerciseId == exerciseID
-                        && $0.isCompleted
-                        && !$0.isWarmup
-                })
+        session.hasNewerCompletedWorkout(for: exerciseID, in: allSessions)
+    }
+
+    /// Edit workout calls this after its confirm. The screen stops reading
+    /// the workout first, then deletes it, closes Edit workout and leaves
+    /// once that pop is done (`onChange` above). A dismiss from here would
+    /// not pop while Edit workout is on top. False when the save failed and
+    /// nothing was deleted.
+    private func deleteWorkout() -> Bool {
+        isDeleted = true
+        let context = PastWorkoutEditor.Context(
+            modelContext: modelContext,
+            sessions: allSessions,
+            templates: templates,
+            exercises: exercises
+        )
+        guard PastWorkoutEditor.deleteWorkout(session, context) else {
+            isDeleted = false
+            return false
         }
+        showsEditWorkout = false
+        return true
     }
 
     private func statusText(_ record: SessionProgressionRecord) -> String {
@@ -703,7 +728,7 @@ struct SessionDetailView: View {
     }
 
     private func backfillAcceptedProgressionRecordsIfNeeded() {
-        guard let template = progressionTemplate else { return }
+        guard !isReadOnly, let template = progressionTemplate else { return }
         let didChange = session.captureProgressionRecords(
             template: template,
             exercises: exercises,
@@ -795,6 +820,7 @@ struct SessionDetailView: View {
     }
 
     private func presentFeedbackInvitationIfNeeded() {
+        guard !isReadOnly else { return }
         let tracker = EngagementPromptTracker()
         guard tracker.shouldShowFeedback(for: session.id) else { return }
         tracker.markFeedbackPromptShown()
@@ -810,7 +836,7 @@ struct SessionDetailView: View {
     }
 
     private func trackRecommendationsIfNeeded() {
-        guard !didTrackRecommendations else { return }
+        guard !isReadOnly, !didTrackRecommendations else { return }
         didTrackRecommendations = true
         let outcomes = Set(progressionRecommendations.map {
             analyticsOutcome(for: $0.record.recommendationReason)

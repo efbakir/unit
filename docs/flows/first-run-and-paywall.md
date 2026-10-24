@@ -232,7 +232,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
   - Reminder on, notification permission denied -> access still opens, no reminder is set, and the app shows no trial end date anywhere -> Med -> partial.
   - Billed price prominence -> fixed 2026-10-23: no "$0.00" on the button; the billed price leads the line above it and stays the plan card's price -> Low -> yes.
   - "Save N%" badge -> compares Yearly with 52 weeks of Weekly ("Save 80%" at US prices; founder decision 2026-10-23) -> Low -> yes.
-  - Lapsed subscriber -> same "Your program is ready" copy. History, Settings and support sit behind the wall, and there is no export -> Med -> no.
+  - Lapsed subscriber -> same "Your program is ready" copy. Since 2026-10-24 the footer shows "View workout history" when the phone has logged sets: History opens read-only with "Export" (founder override of the hard gate for History only). Settings stays behind the wall -> Med -> partial. [PaywallView.swift:834](Unit/Features/Subscription/PaywallView.swift:834)
   - Support on the paywall -> a "Support" mail link sits in the footer (2026-10-23) -> Low -> yes.
   - Lifetime not set up in App Store Connect -> its card is hidden -> Low -> yes.
 
@@ -270,7 +270,7 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
   - Renewal payment fails -> access ends at once unless Billing Grace Period is on in App Store Connect. Not visible in code -> Med -> unclear.
   - Offline -> see section 1 -> Med -> partial.
   - Reinstall -> setup runs again (data lived on the phone). Apple's purchase is found, so there is no paywall at the end -> Low -> yes.
-  - New phone with the same Apple Account -> same as reinstall. Workout history does not move (no sync, no export) -> Med -> no.
+  - New phone with the same Apple Account -> restored from an iPhone backup or Quick Start, History comes along (the store lives in Application Support, which backups include). Set up as new -> History does not move; no sync. Export (Settings > Data) keeps a CSV copy -> Med -> partial.
   - Purchase with a broken signature -> ignored and logged -> Low -> yes.
 
 ## 11. Settings
@@ -279,18 +279,19 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Entry**: Programs tab -> gear button (top right) -> sheet. Only reachable with an active plan. [TemplatesView.swift:83](Unit/Features/Templates/TemplatesView.swift:83), [TemplatesView.swift:109](Unit/Features/Templates/TemplatesView.swift:109)
 - **Steps**:
   - Preferences -> "Weight unit" kg or lb (changes the display only; weights are stored in kg). "Anonymous analytics" switch, off by default (opt-in, 2026-10-24); off stops all events. The same switch is on setup step 1, and on the paywall while it is on. [SettingsView.swift:211](Unit/Features/Settings/SettingsView.swift:211), [UnitAnalytics.swift:339](Unit/Analytics/UnitAnalytics.swift:339)
-  - Data -> "Storage: On this iPhone", "Account: None". The "Export data" row is hidden by an old v1 filter. There is no export anywhere in the app. [SettingsView.swift:187](Unit/Features/Settings/SettingsView.swift:187)
+  - Data -> "Storage: On this iPhone" ("Included in iPhone backups"), "Account: None", "Export workouts" (CSV file in Strong's columns through the iOS share sheet; "No workouts yet" with no logged sets). [SettingsView.swift:183](Unit/Features/Settings/SettingsView.swift:183), [WorkoutCSVExport.swift](Unit/Data/WorkoutCSVExport.swift)
+  - Data -> "Import from Strong or Hevy" -> Files picker -> preview (workouts, sets, dates, already in Unit, matched and new exercises, kg/lb for Strong's comma file) -> "Import N workouts" -> toast "Imported N workouts". After an import, "Undo last import" (with a confirm) removes only what it added. [ImportHistorySheet.swift](Unit/Features/Settings/ImportHistorySheet.swift), [WorkoutHistoryImporter.swift](Unit/Data/WorkoutHistoryImporter.swift)
   - Subscription -> "Unit Pro" status ("Monthly active" and so on), then "Trial ends", "Renews" or "Ends" with the date (2026-10-24; none for Lifetime or an unknown renewal state), "Restore Purchases", "Manage Subscription" (Apple's own sheet; hidden for Lifetime). [SettingsView.swift:240](Unit/Features/Settings/SettingsView.swift:240), [SettingsView.swift:282](Unit/Features/Settings/SettingsView.swift:282)
   - Feedback -> "Request a feature" opens unitlift.featurebase.app. [SettingsView.swift:336](Unit/Features/Settings/SettingsView.swift:336)
   - Legal -> Privacy Policy, Terms of Service, "Contact me" (an email with the app version and iOS version filled in). [SettingsView.swift:302](Unit/Features/Settings/SettingsView.swift:302), [SettingsView.swift:64](Unit/Features/Settings/SettingsView.swift:64)
   - Footer -> "Made with (heart emoji) in my room" and support@unitlift.app.
 - **Saved data**: `unitSystem`, `analytics.enabled` (Settings storage).
-- **Events**: `feedback_action` (portal). `restore_outcome` on restore.
+- **Events**: `feedback_action` (portal). `restore_outcome` on restore. `data_exported` when the CSV file is written. `history_imported` after an import.
 - **Edge cases**:
   - Restore while the plan is active -> spinner, then nothing. The "Purchases restored" alert only shows when access was off before, which cannot happen on this screen -> Low -> partial. [SettingsView.swift:350](Unit/Features/Settings/SettingsView.swift:350)
   - Restore finds nothing -> access is removed, the root swaps to the paywall, and the paywall shows "No purchases to restore." -> Low -> yes.
   - Trial user -> status says "Monthly active", and "Trial ends" shows the date (2026-10-24). Paid plans show "Renews" or, after cancelling, "Ends" -> Low -> yes. [SettingsView.swift:358](Unit/Features/Settings/SettingsView.swift:358)
-  - Lapsed user -> cannot open Settings at all (behind the paywall) -> Med -> no.
+  - Lapsed user -> cannot open Settings (behind the paywall). History and Export are on the paywall instead (2026-10-24) -> Med -> partial.
   - Analytics off -> no events at all, including purchases. No event about the opt-out itself -> Low -> yes.
   - docs/pricing.md still lists the removed unit and weekday steps [pricing.md:42](docs/pricing.md:42) and "export, theming" in Settings [pricing.md:52](docs/pricing.md:52). None of these exist now -> Low -> no.
 
@@ -346,6 +347,8 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 | `progression_recommendation_shown` | `outcome`: add_weight, add_rep, repeat, unsupported | Workout summary opens, once per outcome | [SessionDetailView.swift:781](Unit/Features/History/SessionDetailView.swift:781) |
 | `progression_decision` | `action`: accept, repeat, edit (a `dismiss` value exists but is never sent); `outcome` | Next target accepted, repeated or edited | [SessionDetailView.swift:521](Unit/Features/History/SessionDetailView.swift:521) |
 | `feedback_action` | `action`: book, email, dismiss, portal | Feedback card buttons and "Request a feature" | [SessionDetailView.swift:724](Unit/Features/History/SessionDetailView.swift:724), [SettingsView.swift:342](Unit/Features/Settings/SettingsView.swift:342) |
+| `data_exported` | none | The export CSV file is written (Settings or read-only History) | [WorkoutCSVExport.swift](Unit/Data/WorkoutCSVExport.swift) |
+| `history_imported` | `source`: strong, hevy; `workouts`: 1_10, 11_50, 51_200, over_200 | A Strong or Hevy history is saved | [SettingsView.swift](Unit/Features/Settings/SettingsView.swift) |
 
 **Funnel gaps** (install -> setup done -> paywall -> trial or purchase -> first workout -> week 1)
 

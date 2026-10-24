@@ -49,8 +49,12 @@ The onboarding flow (opener → path choice → paste or ready-made program → 
 **Paid post-paywall surfaces:**
 - Today tab (start workout, log sets, rest timer)
 - Programs tab (view / edit / reorder templates)
-- Analytics tab and History (sessions, PRs, lift progress)
-- Settings (manage subscription, weight unit, analytics opt-out, feedback)
+- Analytics tab and History (sessions, PRs, lift progress, edit and delete past workouts)
+- Settings (manage subscription, weight unit, analytics opt-out, export workouts, feedback)
+
+**After a subscription ends (founder decision 2026-10-24):**
+- The paywall shows "View workout history" when the phone has logged sets. History opens read-only (list, workout detail, exercise pages) with "Export". Nothing starts, saves or changes.
+- Everything else stays behind the paywall. New installs never see the link.
 
 ## App Review metadata checklist
 

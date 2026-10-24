@@ -147,6 +147,13 @@ enum AppCopy {
             return "Weight (\(unitSystem))"
         }
 
+        /// Row title beside a field that already shows the unit.
+        static func weightTitle(isBodyweight: Bool) -> String {
+            isBodyweight ? "Added weight" : "Weight"
+        }
+        /// Unit beside the reps field in Edit set.
+        static let repsUnit = "reps"
+
         /// Field caption above the reps input in `AdjustResultSheet`. Tokenized
         /// alongside `weightLabel` so all set-entry copy lives in one place
         /// instead of split between the design system and the view.
@@ -165,6 +172,8 @@ enum AppCopy {
         static let saveChanges = "Save changes"
         /// Destructive secondary in edit mode — removes the logged set.
         static let deleteSet = "Delete set"
+        /// Edit workout menu action that opens a logged set's weight and reps.
+        static let editSetAction = "Edit set"
         /// Prefix for the PR milestone delta line. Pairs with a kg×rep token (`Beat 145 kg × 8`).
         static func priorBest(_ priorBestText: String) -> String { "Beat \(priorBestText)" }
 
@@ -318,6 +327,103 @@ enum AppCopy {
     enum History {
         /// Neutral label for routines scheduled earlier in the week that are still available to do.
         static let earlierThisWeek = "Earlier this week"
+
+        /// Edit workout: correct or remove what was logged after Finish.
+        static let editWorkout = "Edit workout"
+        static let deleteWorkout = "Delete workout"
+        static let deleteWorkoutMessage = "Removes this workout from History, PRs and Analytics. Can't be undone."
+        /// Shown in Edit workout when a next target was saved from it: editing
+        /// a logged set never changes a target the lifter saved.
+        static let savedTargetsStay = "Next targets you saved stay the same."
+        static let setRemoved = "Set removed"
+        static let noLoggedSets = "No logged sets"
+        static let setSaveFailedTitle = "Couldn't save set"
+        static let setSaveFailedMessage = "Your changes are still here. Try saving again."
+        static let saveFailed = "Couldn't save. Your workout is unchanged. Try again."
+        static let invalidSetValues = "Enter a valid weight and reps."
+
+        /// Paywall footer link for lapsed subscribers: History stays readable.
+        static let viewHistory = "View workout history"
+    }
+
+    /// Settings > Data: export, backup and import of workout history.
+    enum DataTransfer {
+        static let exportTitle = "Export workouts"
+        static let csvFile = "CSV file"
+        static let noWorkoutsYet = "No workouts yet"
+        static let exportAction = "Export"
+        static let exportPreviewTitle = "Unit workouts"
+        /// True for every iPhone backup (iCloud or computer) and Quick Start:
+        /// the store lives in Application Support, which iOS backs up.
+        static let storageBackup = "Included in iPhone backups"
+
+        static func exportFileName(unitSystem: String) -> String {
+            "Unit workouts (\(unitSystem == "lb" ? "lb" : "kg")).csv"
+        }
+
+        // MARK: Import from Strong or Hevy
+        static let importTitle = "Import from Strong or Hevy"
+        static let importSheetTitle = "Import history"
+        static func fromSource(_ appName: String) -> String { "From \(appName)" }
+        static let workoutsRow = "Workouts"
+        static let setsRow = "Sets"
+        static let datesRow = "Dates"
+        static let alreadyInUnit = "Already in Unit"
+        static let alreadyInUnitDetail = "Skipped, so nothing is added twice"
+        static let skippedRows = "Skipped rows"
+        static let skippedRowsDetail = "Timed, cardio and unreadable rows"
+        static let weightsInFile = "Weights in this file"
+        static let weightUnit = "Unit"
+        static let exercisesSection = "Exercises"
+        static let matchYours = "Match yours"
+        static let newExercises = "New"
+        static let recalculatedNote = "PRs and Analytics are recalculated with this history."
+        static let nothingNew = "Nothing new to import."
+        static let unknownFormat = "This file isn't a Strong or Hevy export."
+        static let noWorkouts = "No workouts found in this file."
+        static let readFailed = "Couldn't read this file."
+        static let importFailedTitle = "Couldn't import"
+        static let importFailedMessage = "Nothing was saved. Try again."
+
+        static func importAction(_ count: Int) -> String {
+            switch count {
+            case 0: "Import"
+            case 1: "Import 1 workout"
+            default: "Import \(count.formatted()) workouts"
+            }
+        }
+
+        static func imported(_ count: Int) -> String {
+            count == 1 ? "Imported 1 workout" : "Imported \(count.formatted()) workouts"
+        }
+
+        static func dateRange(_ first: Date, _ last: Date) -> String {
+            let start = first.formatted(.dateTime.month(.abbreviated).year())
+            let end = last.formatted(.dateTime.month(.abbreviated).year())
+            return start == end ? start : "\(start) to \(end)"
+        }
+
+        /// The first few new exercise names, so the lifter sees what will be added.
+        static func nameList(_ names: [String]) -> String? {
+            guard !names.isEmpty else { return nil }
+            let shown = names.prefix(6).joined(separator: ", ")
+            return names.count > 6 ? "\(shown) and \(names.count - 6) more" : shown
+        }
+
+        // MARK: Undo last import
+        static let undoImportTitle = "Undo last import"
+        static let undoImportConfirmTitle = "Undo import?"
+        static let undoImportAction = "Undo import"
+        static let importUndone = "Import undone"
+        static let undoFailed = "Couldn't undo. Nothing was changed."
+
+        static func workoutCount(_ count: Int) -> String {
+            count == 1 ? "1 workout" : "\(count.formatted()) workouts"
+        }
+
+        static func undoImportMessage(_ count: Int) -> String {
+            "Removes the \(workoutCount(count)) this import added. Workouts you logged in Unit stay."
+        }
     }
 
     /// Copy for the exercise catalog — destructive flows in particular, which

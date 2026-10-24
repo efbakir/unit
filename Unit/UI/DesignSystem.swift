@@ -1382,17 +1382,18 @@ struct AppListRowValueLabel: View {
 /// §4) and no bare "0" (reads as a real entered value, the sibling of the
 /// banned "0 kg"). The filled surface plus the inline unit is the affordance.
 /// The caller binds a plain string and owns any unit conversion (kg / lb) at
-/// its boundary.
+/// its boundary. Whole-number values (reps in Edit set) pass `.numberPad`.
 struct AppInlineWeightField: View {
     @Binding var text: String
     let unitSuffix: String
     var accessibilityLabel: String = "Weight"
+    var keyboardType: UIKeyboardType = .decimalPad
     @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
             TextField("", text: $text)
-                .keyboardType(.decimalPad)
+                .keyboardType(keyboardType)
                 .focused($isFocused)
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()

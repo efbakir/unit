@@ -6,8 +6,10 @@
 //
 
 import StoreKit
+import SwiftData
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 /// kg / lb segments shared by Settings and the onboarding review step.
 enum WeightUnitOption: String, CaseIterable, Identifiable, Hashable {
@@ -20,7 +22,9 @@ enum WeightUnitOption: String, CaseIterable, Identifiable, Hashable {
 private enum DataRow: String, CaseIterable, Identifiable {
     case storage = "Storage"
     case account = "Account"
-    case export = "Export data"
+    case export = "Export workouts"
+    case importHistory = "Import from Strong or Hevy"
+    case undoImport = "Undo last import"
 
     var id: String { rawValue }
 }
@@ -95,11 +99,18 @@ struct SettingsView: View {
     @AppStorage("unitSystem") private var unitSystem: String = "kg"
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
+    @Query(.anyLoggedSet) private var anyLoggedSet: [SetEntry]
 
     @State private var showingRestoreSuccess = false
     @State private var showingManageSubscriptions = false
     @State private var toastMessage: AppToastEvent?
+    @State private var showsHistoryImporter = false
+    @State private var importPlan: ImportPlanItem?
+    @State private var importError: String?
+    @State private var lastImport = WorkoutHistoryImporter.lastBatch()
+    @State private var showsUndoImportConfirmation = false
 
     init(showsCloseButton: Bool = true) {
         self.shouldShowCloseButton = showsCloseButton
@@ -128,6 +139,29 @@ struct SettingsView: View {
         }
         .tint(AppColor.accent)
         .appToast(event: $toastMessage)
+        .fileImporter(
+            isPresented: $showsHistoryImporter,
+            allowedContentTypes: [.commaSeparatedText, .plainText, .text]
+        ) { result in
+            readHistoryFile(result)
+        }
+        .sheet(item: $importPlan) { item in
+            ImportHistorySheet(
+                plan: item.plan,
+                defaultUnit: unitSystem == "lb" ? .lb : .kg
+            ) { unit in
+                importHistory(item.plan, weightUnit: unit)
+            }
+        }
+        .alert(
+            AppCopy.DataTransfer.importFailedTitle,
+            isPresented: importErrorBinding,
+            presenting: importError
+        ) { _ in
+            Button(AppCopy.Nav.close, role: .cancel) { importError = nil }
+        } message: { message in
+            Text(message)
+        }
         .alert("Purchases restored", isPresented: $showingRestoreSuccess) {
             Button("OK", role: .cancel) { }
         }
@@ -180,29 +214,129 @@ struct SettingsView: View {
     @ViewBuilder
     private var dataSection: some View {
         SettingsSection(title: "Data", contentInset: AppSpacing.sm) {
-            // `.export` is filtered out for v1.0.0 — same rationale as
-            // `subscriptionSection` (Guideline 2.1(b) rejection 2026-06-03):
-            // a PRO chip with no IAP behind it reads as undelivered paid
-            // content to App Review. Re-include `.export` when Pro IAPs are
-            // submitted in v1.1+. See docs/decision-log.md 2026-06-03.
-            AppDividedList(DataRow.allCases.filter { $0 != .export }) { row in
+            AppDividedList(DataRow.allCases.filter { $0 != .undoImport || lastImport != nil }) { row in
                 switch row {
                 case .storage:
-                    AppListRow(title: row.rawValue, value: "On this iPhone")
+                    AppListRow(
+                        title: row.rawValue,
+                        value: "On this iPhone",
+                        subtitle: AppCopy.DataTransfer.storageBackup
+                    )
                 case .account:
                     AppListRow(title: row.rawValue, value: "None")
                 case .export:
-                    // Unreachable in v1.0.0 (filtered above). Switch case
-                    // retained so the v1.1+ Pro launch only needs to remove
-                    // the filter, not re-add the rendering.
-                    Button { } label: {
-                        AppListRow(title: row.rawValue) {
-                            AppTag(text: "PRO", style: .accent, layout: .compactCapsule)
-                        }
+                    exportRow(title: row.rawValue)
+                case .importHistory:
+                    Button {
+                        showsHistoryImporter = true
+                    } label: {
+                        AppListRow(title: row.rawValue, subtitle: AppCopy.DataTransfer.csvFile)
                     }
                     .buttonStyle(ScaleButtonStyle())
+                    .accessibilityIdentifier("settings-import-history")
+                case .undoImport:
+                    Button {
+                        showsUndoImportConfirmation = true
+                    } label: {
+                        AppListRow(
+                            title: row.rawValue,
+                            value: AppCopy.DataTransfer.workoutCount(lastImport?.workoutCount ?? 0)
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .accessibilityIdentifier("settings-undo-import")
+                    .confirmationDialog(
+                        AppCopy.DataTransfer.undoImportConfirmTitle,
+                        isPresented: $showsUndoImportConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button(AppCopy.DataTransfer.undoImportAction, role: .destructive, action: undoLastImport)
+                    } message: {
+                        Text(AppCopy.DataTransfer.undoImportMessage(lastImport?.workoutCount ?? 0))
+                    }
                 }
             }
+        }
+    }
+
+    /// Reads the picked file and parses it off the main actor; the preview
+    /// sheet opens with what would be imported. Nothing is saved yet.
+    private func readHistoryFile(_ result: Result<URL, any Error>) {
+        guard case .success(let url) = result else { return }
+        let isScoped = url.startAccessingSecurityScopedResource()
+        defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url),
+              let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+            importError = AppCopy.DataTransfer.readFailed
+            return
+        }
+        Task {
+            let parsed = await Task.detached(priority: .userInitiated) {
+                Result { try WorkoutHistoryParser.parse(text) }
+            }.value
+            switch parsed {
+            case .success(let file):
+                let sessions = (try? modelContext.fetch(FetchDescriptor<WorkoutSession>())) ?? []
+                let exercises = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
+                importPlan = ImportPlanItem(plan: WorkoutHistoryImporter.plan(
+                    for: file,
+                    existingSessions: sessions,
+                    exercises: exercises
+                ))
+            case .failure(let error):
+                importError = (error as? WorkoutHistoryImportError) == .noWorkouts
+                    ? AppCopy.DataTransfer.noWorkouts
+                    : AppCopy.DataTransfer.unknownFormat
+            }
+        }
+    }
+
+    private func importHistory(_ plan: WorkoutHistoryImportPlan, weightUnit: ImportWeightUnit) -> Bool {
+        do {
+            let batch = try WorkoutHistoryImporter.importHistory(plan, weightUnit: weightUnit, into: modelContext)
+            lastImport = batch
+            UnitAnalytics.shared.track(.historyImported(
+                source: plan.source,
+                size: AnalyticsImportSizeBucket(workoutCount: batch.workoutCount)
+            ))
+            toastMessage = .init(AppCopy.DataTransfer.imported(batch.workoutCount), kind: .success)
+            AppHaptic.success.fire()
+            return true
+        } catch {
+            AppHaptic.error.fire()
+            return false
+        }
+    }
+
+    private func undoLastImport() {
+        guard let batch = lastImport else { return }
+        do {
+            try WorkoutHistoryImporter.undo(batch, in: modelContext)
+            lastImport = nil
+            toastMessage = .init(AppCopy.DataTransfer.importUndone, kind: .success)
+            AppHaptic.warning.fire()
+        } catch {
+            toastMessage = .init(AppCopy.DataTransfer.undoFailed, kind: .error)
+            AppHaptic.error.fire()
+        }
+    }
+
+    /// The native share sheet with every logged set as a CSV file. A plain
+    /// value row while there is nothing to export, so the row never looks
+    /// tappable without doing anything.
+    @ViewBuilder
+    private func exportRow(title: String) -> some View {
+        if anyLoggedSet.isEmpty {
+            AppListRow(title: title, value: AppCopy.DataTransfer.noWorkoutsYet)
+        } else {
+            ShareLink(
+                item: WorkoutCSVFile(container: modelContext.container, unitSystem: unitSystem),
+                preview: SharePreview(AppCopy.DataTransfer.exportPreviewTitle)
+            ) {
+                AppListRow(title: title, subtitle: AppCopy.DataTransfer.csvFile)
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityIdentifier("settings-export-workouts")
         }
     }
 
@@ -385,6 +519,13 @@ struct SettingsView: View {
         Binding(
             get: { store.purchaseError != nil },
             set: { if !$0 { store.purchaseError = nil } }
+        )
+    }
+
+    private var importErrorBinding: Binding<Bool> {
+        Binding(
+            get: { importError != nil },
+            set: { if !$0 { importError = nil } }
         )
     }
 

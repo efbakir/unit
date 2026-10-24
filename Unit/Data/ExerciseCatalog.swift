@@ -21,84 +21,84 @@ struct CatalogExercise {
 enum ExerciseCatalog {
     private static let curated: [CatalogExercise] = [
         // MARK: Chest
-        .init(displayName: "Bench Press", aliases: ["Bench Press (BB)", "Barbell Bench"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
-        .init(displayName: "Incline Bench Press", aliases: ["Incline BB Bench"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
-        .init(displayName: "Close-Grip Bench", aliases: ["Close Grip Bench Press"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
-        .init(displayName: "DB Bench Press", aliases: ["Dumbbell Bench Press"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
-        .init(displayName: "Incline DB Press", aliases: ["Incline DB Bench"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
-        .init(displayName: "DB Fly", aliases: ["Dumbbell Fly"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
-        .init(displayName: "Chest Press Machine", aliases: ["Machine Chest Press"], isBodyweight: false, muscleGroup: .chest, equipment: .machine),
-        .init(displayName: "Pec Dec", aliases: ["Pec Deck", "Pectec"], isBodyweight: false, muscleGroup: .chest, equipment: .machine),
-        .init(displayName: "Cable Crossover", aliases: ["Cable Fly"], isBodyweight: false, muscleGroup: .chest, equipment: .cable),
-        .init(displayName: "Push-Up", aliases: ["Pushup"], isBodyweight: true, muscleGroup: .chest, equipment: .bodyweight),
+        .init(displayName: "Bench Press", aliases: ["Bench Press (BB)", "Barbell Bench", "Bench Press (Barbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
+        .init(displayName: "Incline Bench Press", aliases: ["Incline BB Bench", "Incline Bench Press (Barbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
+        .init(displayName: "Close-Grip Bench", aliases: ["Close Grip Bench Press", "Close Grip Bench Press (Barbell)", "Bench Press - Close Grip (Barbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .barbell),
+        .init(displayName: "DB Bench Press", aliases: ["Dumbbell Bench Press", "Bench Press (Dumbbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
+        .init(displayName: "Incline DB Press", aliases: ["Incline DB Bench", "Incline Bench Press (Dumbbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
+        .init(displayName: "DB Fly", aliases: ["Dumbbell Fly", "Chest Fly (Dumbbell)"], isBodyweight: false, muscleGroup: .chest, equipment: .dumbbell),
+        .init(displayName: "Chest Press Machine", aliases: ["Machine Chest Press", "Chest Press (Machine)"], isBodyweight: false, muscleGroup: .chest, equipment: .machine),
+        .init(displayName: "Pec Dec", aliases: ["Pec Deck", "Pectec", "Pec Deck (Machine)"], isBodyweight: false, muscleGroup: .chest, equipment: .machine),
+        .init(displayName: "Cable Crossover", aliases: ["Cable Fly", "Cable Fly Crossovers"], isBodyweight: false, muscleGroup: .chest, equipment: .cable),
+        .init(displayName: "Push-Up", aliases: ["Pushup", "Push Up"], isBodyweight: true, muscleGroup: .chest, equipment: .bodyweight),
         .init(displayName: "Push-Up Plus", aliases: ["Serratus Push-Up", "Stable Push-Up Plus"], isBodyweight: true, muscleGroup: .chest, equipment: .bodyweight),
         .init(displayName: "Plyo Push-Up", aliases: ["Plyometric Push-Up"], isBodyweight: true, muscleGroup: .chest, equipment: .bodyweight),
         .init(displayName: "Weighted Dips", aliases: ["Dips"], isBodyweight: false, muscleGroup: .chest, equipment: .bodyweight),
 
         // MARK: Back
-        .init(displayName: "Deadlift (Conv)", aliases: ["Conventional Deadlift", "Deadlift"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
+        .init(displayName: "Deadlift (Conv)", aliases: ["Conventional Deadlift", "Deadlift", "Deadlift (Barbell)"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
         .init(displayName: "Trap Bar Deadlift", aliases: ["Trap-Bar Deadlift", "Hex Bar Deadlift"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
-        .init(displayName: "Bent Over Row (BB)", aliases: ["Barbell Row"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
-        .init(displayName: "Pendlay Row", aliases: [], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
-        .init(displayName: "T-Bar Row", aliases: [], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
-        .init(displayName: "Single-Arm DB Row", aliases: ["One-Arm DB Row", "DB Row"], isBodyweight: false, muscleGroup: .back, equipment: .dumbbell),
-        .init(displayName: "Lat Pulldown", aliases: [], isBodyweight: false, muscleGroup: .back, equipment: .cable),
-        .init(displayName: "Seated Cable Row", aliases: ["Cable Row"], isBodyweight: false, muscleGroup: .back, equipment: .cable),
+        .init(displayName: "Bent Over Row (BB)", aliases: ["Barbell Row", "Bent Over Row (Barbell)"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
+        .init(displayName: "Pendlay Row", aliases: ["Pendlay Row (Barbell)"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
+        .init(displayName: "T-Bar Row", aliases: ["T Bar Row"], isBodyweight: false, muscleGroup: .back, equipment: .barbell),
+        .init(displayName: "Single-Arm DB Row", aliases: ["One-Arm DB Row", "DB Row", "Bent Over One Arm Row (Dumbbell)", "Dumbbell Row"], isBodyweight: false, muscleGroup: .back, equipment: .dumbbell),
+        .init(displayName: "Lat Pulldown", aliases: ["Lat Pulldown (Cable)"], isBodyweight: false, muscleGroup: .back, equipment: .cable),
+        .init(displayName: "Seated Cable Row", aliases: ["Cable Row", "Seated Row (Cable)", "Seated Cable Row - V Grip (Cable)"], isBodyweight: false, muscleGroup: .back, equipment: .cable),
         .init(displayName: "Chest-Supported Row", aliases: ["Machine Row"], isBodyweight: false, muscleGroup: .back, equipment: .machine),
-        .init(displayName: "Pull-Up", aliases: ["Pullup"], isBodyweight: true, muscleGroup: .back, equipment: .bodyweight),
-        .init(displayName: "Weighted Pull-Up", aliases: [], isBodyweight: false, muscleGroup: .back, equipment: .bodyweight),
-        .init(displayName: "Chin-Up", aliases: ["Chinup"], isBodyweight: true, muscleGroup: .back, equipment: .bodyweight),
-        .init(displayName: "Face Pull", aliases: [], isBodyweight: false, muscleGroup: .back, equipment: .cable),
+        .init(displayName: "Pull-Up", aliases: ["Pullup", "Pull Up"], isBodyweight: true, muscleGroup: .back, equipment: .bodyweight),
+        .init(displayName: "Weighted Pull-Up", aliases: ["Pull Up (Weighted)"], isBodyweight: false, muscleGroup: .back, equipment: .bodyweight),
+        .init(displayName: "Chin-Up", aliases: ["Chinup", "Chin Up"], isBodyweight: true, muscleGroup: .back, equipment: .bodyweight),
+        .init(displayName: "Face Pull", aliases: ["Face Pull (Cable)"], isBodyweight: false, muscleGroup: .back, equipment: .cable),
 
         // MARK: Shoulders
-        .init(displayName: "OHP (BB)", aliases: ["Overhead Press", "OHP", "Military Press"], isBodyweight: false, muscleGroup: .shoulders, equipment: .barbell),
+        .init(displayName: "OHP (BB)", aliases: ["Overhead Press", "OHP", "Military Press", "Overhead Press (Barbell)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .barbell),
         .init(displayName: "Push Press", aliases: [], isBodyweight: false, muscleGroup: .shoulders, equipment: .barbell),
-        .init(displayName: "DB Shoulder Press", aliases: ["DB Press", "Seated DB Press"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
+        .init(displayName: "DB Shoulder Press", aliases: ["DB Press", "Seated DB Press", "Overhead Press (Dumbbell)", "Shoulder Press (Dumbbell)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
         .init(displayName: "Single-Arm DB Press", aliases: ["One-Arm DB Press"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
-        .init(displayName: "Lateral Raise (DB)", aliases: ["Lateral Raise", "Side Raise"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
-        .init(displayName: "Rear Delt Fly", aliases: ["Reverse Fly"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
-        .init(displayName: "Cable Lateral Raise", aliases: [], isBodyweight: false, muscleGroup: .shoulders, equipment: .cable),
-        .init(displayName: "Shrug (DB)", aliases: ["DB Shrug"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
+        .init(displayName: "Lateral Raise (DB)", aliases: ["Lateral Raise", "Side Raise", "Lateral Raise (Dumbbell)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
+        .init(displayName: "Rear Delt Fly", aliases: ["Reverse Fly", "Reverse Fly (Dumbbell)", "Rear Delt Reverse Fly (Dumbbell)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
+        .init(displayName: "Cable Lateral Raise", aliases: ["Lateral Raise (Cable)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .cable),
+        .init(displayName: "Shrug (DB)", aliases: ["DB Shrug", "Shrug (Dumbbell)"], isBodyweight: false, muscleGroup: .shoulders, equipment: .dumbbell),
 
         // MARK: Biceps
-        .init(displayName: "Barbell Curl", aliases: ["BB Curl"], isBodyweight: false, muscleGroup: .biceps, equipment: .barbell),
-        .init(displayName: "DB Curl", aliases: ["Curl", "Biceps Curl", "Dumbbell Curl"], isBodyweight: false, muscleGroup: .biceps, equipment: .dumbbell),
-        .init(displayName: "Hammer Curl", aliases: [], isBodyweight: false, muscleGroup: .biceps, equipment: .dumbbell),
-        .init(displayName: "Preacher Curl", aliases: [], isBodyweight: false, muscleGroup: .biceps, equipment: .machine),
-        .init(displayName: "Cable Curl", aliases: [], isBodyweight: false, muscleGroup: .biceps, equipment: .cable),
+        .init(displayName: "Barbell Curl", aliases: ["BB Curl", "Bicep Curl (Barbell)"], isBodyweight: false, muscleGroup: .biceps, equipment: .barbell),
+        .init(displayName: "DB Curl", aliases: ["Curl", "Biceps Curl", "Dumbbell Curl", "Bicep Curl (Dumbbell)"], isBodyweight: false, muscleGroup: .biceps, equipment: .dumbbell),
+        .init(displayName: "Hammer Curl", aliases: ["Hammer Curl (Dumbbell)"], isBodyweight: false, muscleGroup: .biceps, equipment: .dumbbell),
+        .init(displayName: "Preacher Curl", aliases: ["Preacher Curl (Machine)"], isBodyweight: false, muscleGroup: .biceps, equipment: .machine),
+        .init(displayName: "Cable Curl", aliases: ["Bicep Curl (Cable)"], isBodyweight: false, muscleGroup: .biceps, equipment: .cable),
 
         // MARK: Triceps
-        .init(displayName: "Triceps Extension", aliases: ["Triceps", "Overhead Triceps Extension"], isBodyweight: false, muscleGroup: .triceps, equipment: .dumbbell),
-        .init(displayName: "Triceps Pushdown", aliases: ["Cable Pushdown"], isBodyweight: false, muscleGroup: .triceps, equipment: .cable),
-        .init(displayName: "Skullcrusher", aliases: ["Lying Triceps Extension"], isBodyweight: false, muscleGroup: .triceps, equipment: .barbell),
+        .init(displayName: "Triceps Extension", aliases: ["Triceps", "Overhead Triceps Extension", "Triceps Extension (Dumbbell)"], isBodyweight: false, muscleGroup: .triceps, equipment: .dumbbell),
+        .init(displayName: "Triceps Pushdown", aliases: ["Cable Pushdown", "Triceps Pushdown (Cable - Straight Bar)"], isBodyweight: false, muscleGroup: .triceps, equipment: .cable),
+        .init(displayName: "Skullcrusher", aliases: ["Lying Triceps Extension", "Skullcrusher (Barbell)"], isBodyweight: false, muscleGroup: .triceps, equipment: .barbell),
         .init(displayName: "Triceps Dip", aliases: ["Bench Dip"], isBodyweight: true, muscleGroup: .triceps, equipment: .bodyweight),
 
         // MARK: Quads
-        .init(displayName: "Back Squat (BB)", aliases: ["Back Squat", "Squat"], isBodyweight: false, muscleGroup: .quads, equipment: .barbell),
-        .init(displayName: "Front Squat", aliases: [], isBodyweight: false, muscleGroup: .quads, equipment: .barbell),
+        .init(displayName: "Back Squat (BB)", aliases: ["Back Squat", "Squat", "Squat (Barbell)"], isBodyweight: false, muscleGroup: .quads, equipment: .barbell),
+        .init(displayName: "Front Squat", aliases: ["Front Squat (Barbell)"], isBodyweight: false, muscleGroup: .quads, equipment: .barbell),
         .init(displayName: "Goblet Squat", aliases: [], isBodyweight: false, muscleGroup: .quads, equipment: .dumbbell),
-        .init(displayName: "Leg Press", aliases: [], isBodyweight: false, muscleGroup: .quads, equipment: .machine),
-        .init(displayName: "Leg Extension", aliases: [], isBodyweight: false, muscleGroup: .quads, equipment: .machine),
+        .init(displayName: "Leg Press", aliases: ["Leg Press (Machine)"], isBodyweight: false, muscleGroup: .quads, equipment: .machine),
+        .init(displayName: "Leg Extension", aliases: ["Leg Extension (Machine)"], isBodyweight: false, muscleGroup: .quads, equipment: .machine),
         .init(displayName: "Bulgarian Split Squat", aliases: ["Split Squat"], isBodyweight: false, muscleGroup: .quads, equipment: .dumbbell),
-        .init(displayName: "Walking Lunge", aliases: ["Lunge"], isBodyweight: false, muscleGroup: .quads, equipment: .dumbbell),
+        .init(displayName: "Walking Lunge", aliases: ["Lunge", "Walking Lunge (Dumbbell)", "Lunge (Dumbbell)"], isBodyweight: false, muscleGroup: .quads, equipment: .dumbbell),
         .init(displayName: "Step-Up", aliases: [], isBodyweight: false, muscleGroup: .quads, equipment: .dumbbell),
 
         // MARK: Hamstrings
-        .init(displayName: "Romanian DL", aliases: ["Romanian Deadlift", "RDL"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .barbell),
-        .init(displayName: "DB Romanian DL", aliases: ["DB RDL"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .dumbbell),
-        .init(displayName: "Hamstring Curl", aliases: ["Leg Curl", "Seated Leg Curl"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .machine),
+        .init(displayName: "Romanian DL", aliases: ["Romanian Deadlift", "RDL", "Romanian Deadlift (Barbell)"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .barbell),
+        .init(displayName: "DB Romanian DL", aliases: ["DB RDL", "Romanian Deadlift (Dumbbell)"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .dumbbell),
+        .init(displayName: "Hamstring Curl", aliases: ["Leg Curl", "Seated Leg Curl", "Seated Leg Curl (Machine)", "Lying Leg Curl (Machine)"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .machine),
         .init(displayName: "Nordic Curl", aliases: [], isBodyweight: true, muscleGroup: .hamstrings, equipment: .bodyweight),
-        .init(displayName: "Good Morning", aliases: [], isBodyweight: false, muscleGroup: .hamstrings, equipment: .barbell),
+        .init(displayName: "Good Morning", aliases: ["Good Morning (Barbell)"], isBodyweight: false, muscleGroup: .hamstrings, equipment: .barbell),
 
         // MARK: Glutes
-        .init(displayName: "Hip Thrust", aliases: ["Barbell Hip Thrust"], isBodyweight: false, muscleGroup: .glutes, equipment: .barbell),
+        .init(displayName: "Hip Thrust", aliases: ["Barbell Hip Thrust", "Hip Thrust (Barbell)"], isBodyweight: false, muscleGroup: .glutes, equipment: .barbell),
         .init(displayName: "Glute Bridge", aliases: [], isBodyweight: true, muscleGroup: .glutes, equipment: .bodyweight),
         .init(displayName: "Cable Kickback", aliases: [], isBodyweight: false, muscleGroup: .glutes, equipment: .cable),
         .init(displayName: "Glute Ham Raise", aliases: ["GHR"], isBodyweight: true, muscleGroup: .glutes, equipment: .bodyweight),
 
         // MARK: Calves
-        .init(displayName: "Standing Calf Raise", aliases: ["Calf Raise"], isBodyweight: false, muscleGroup: .calves, equipment: .machine),
-        .init(displayName: "Seated Calf Raise", aliases: [], isBodyweight: false, muscleGroup: .calves, equipment: .machine),
+        .init(displayName: "Standing Calf Raise", aliases: ["Calf Raise", "Standing Calf Raise (Machine)"], isBodyweight: false, muscleGroup: .calves, equipment: .machine),
+        .init(displayName: "Seated Calf Raise", aliases: ["Seated Calf Raise (Machine)", "Seated Calf Raise (Plate Loaded)"], isBodyweight: false, muscleGroup: .calves, equipment: .machine),
         .init(displayName: "DB Calf Raise", aliases: [], isBodyweight: false, muscleGroup: .calves, equipment: .dumbbell),
 
         // MARK: Core
@@ -1077,7 +1077,8 @@ enum ExerciseCatalog {
     Zottman Preacher Curl|dumbbell|biceps
     """
 
-    nonisolated private static func normalize(_ value: String) -> String {
+    /// Trimmed, case- and accent-insensitive: how names and aliases are compared.
+    nonisolated static func normalize(_ value: String) -> String {
         value
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)

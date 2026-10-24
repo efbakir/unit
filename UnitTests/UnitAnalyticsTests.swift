@@ -77,7 +77,7 @@ final class UnitAnalyticsTests: XCTestCase {
             "purchase_started", "trial_started", "purchase_completed", "purchase_outcome", "restore_outcome",
             "workout_started", "workout_completed",
             "progression_recommendation_shown", "progression_preview_shown", "progression_decision",
-            "feedback_action"
+            "feedback_action", "data_exported", "history_imported"
         ])
     }
 
@@ -122,7 +122,9 @@ final class UnitAnalyticsTests: XCTestCase {
             .workoutCompleted(duration: .from30To60, setCount: .from11To20, noKeyboardRatio: .from90To99),
             .progressionPreviewShown(outcome: .addWeight),
             .progressionDecision(action: .edit, outcome: .addWeight),
-            .feedbackAction(action: .book)
+            .feedbackAction(action: .book),
+            .dataExported,
+            .historyImported(source: .strong, size: AnalyticsImportSizeBucket(workoutCount: 312))
         ]
         let forbiddenKeys = Set([
             "exercise", "program", "weight", "reps", "note", "bodyweight", "email",
@@ -136,6 +138,17 @@ final class UnitAnalyticsTests: XCTestCase {
             XCTAssertFalse(payload.parameters.values.contains("Bench Press"))
             XCTAssertFalse(payload.parameters.values.contains("60"))
         }
+    }
+
+    func testImportSizeNeverExposesTheExactCount() {
+        XCTAssertEqual(AnalyticsImportSizeBucket(workoutCount: 1), .from1To10)
+        XCTAssertEqual(AnalyticsImportSizeBucket(workoutCount: 11), .from11To50)
+        XCTAssertEqual(AnalyticsImportSizeBucket(workoutCount: 200), .from51To200)
+        XCTAssertEqual(AnalyticsImportSizeBucket(workoutCount: 201), .over200)
+        XCTAssertEqual(
+            UnitAnalyticsEvent.historyImported(source: .hevy, size: .from11To50).payload.parameters,
+            ["source": "hevy", "workouts": "11_50"]
+        )
     }
 
     func testWorkoutBucketsNeverExposeExactValues() {

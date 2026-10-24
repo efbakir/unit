@@ -72,6 +72,30 @@ Efe approved the logging and Lock Screen plan from the 2026-10-24 benchmarks (`d
 - **Card menu.** "Exercise history" opens the exercise page and back returns to the same set. "Add note" pins one line under the name (`Exercise.notes`, no schema change), shown in every workout. "Remove added set" undoes "+ Add set" while that row is open, with the same 4-second Undo toast. The menu's VoiceOver name is "Exercise options".
 - **Not done, with reasons:** rest steps stay ±30 (2026-10-23); no warm-up sets (2026-07-13, 2026-04-30); no drop or failure tags (schema change); no RPE; "Complete set" stays in the row (Final B).
 
+## 2026-10-24 - Import history from Strong or Hevy
+
+Part of the approved trust-layer plan (ships after the export and edit PR).
+
+- **Settings > Data > Import from Strong or Hevy:** pick a CSV export in Files; a preview shows workouts, sets, dates, what is already in Unit, and which exercises match or are new. A kg / lb choice appears only for Strong's comma file, which has no unit.
+- **Formats:** Strong 6.2.3+ (semicolons, "Weight (kg)"), Strong's older comma layout, Strong's per-row unit layout, Hevy in kg or lbs. Checked against real files on 2026-10-24. Rest timer, note, timed and cardio rows are left out; W and warmup stay warm-ups (never PRs); drop and failure sets count as normal sets.
+- **Where it lands:** each workout is a finished workout on a hidden routine (no program), like Freestyle. Programs, Today and the rotation do not change. History, PR tags, "Last time", the exercise pages and Analytics use it at once.
+- **Exercises:** exact match to the lifter's exercises, then Unit's catalog, which now lists the Strong and Hevy names of its lifts as aliases. Everything else becomes a new exercise with its file name. No fuzzy matching, so dumbbell and barbell work never merge. A manual match step and an exercise merge tool are follow-ups.
+- **Safety:** a workout that starts in the same minute as one in Unit is skipped, so importing twice adds nothing. "Undo last import" removes only what the import added. A failed save changes nothing.
+- **Not doing:** routine import, Fitbod or JEFIT files, an import link in onboarding.
+- **Undo:** remove `DataRow.importHistory` and `DataRow.undoImport` in `SettingsView`.
+
+## 2026-10-24 - Trust layer: export, edit and delete, History after a lapse
+
+Efe approved the trust-layer plan built from the 2026-10-24 benchmarks (reports 1, 2, 5 and 6; `docs/research/2026-10-24-benchmarks/`).
+
+- **Export workouts** (Settings > Data): every logged set as a CSV file in Strong's comma columns, through the iOS share sheet, so Hevy, Liftosaur and others can read it. Weights in the current unit; the file name says which. Brings back the row hidden on 2026-06-03 for the free v1 build, without the PRO tag.
+- **Backup line:** Storage says "Included in iPhone backups". True because the store lives in Application Support, which iCloud and computer backups include. Corrects benchmark 5 row 2 ("a replaced phone loses all history").
+- **Edit and delete a past workout:** the pencil on the workout detail (and the summary after Finish) opens Edit workout, the same pattern as Edit program. Each logged set has "Edit set" / "Delete set" (Undo); the trash deletes the workout after a confirm. A saved next target never changes. The workout's "Next time" evidence follows the corrected sets. Deleting a routine's newest workout restores its last-done date.
+- **History after a lapse (founder override):** the paywall shows "View workout history" when the phone has logged sets. History opens read-only with Export; nothing starts, saves or changes. Overrides the "no change to the access gate" line in `docs/claude/scope.md` and the 2026-06-16 rule that History is paid, for History only. `docs/pricing.md` updated.
+- **Not doing:** iCloud sync (CLAUDE.md §3; export plus the backup line instead), an import link in onboarding, a manual exercise-matching step, adding sets or changing dates later.
+- **Release:** the PR stays open until 2.1 is approved, then ships in the next update.
+- **Undo:** `SettingsView.exportRow` and the Storage subtitle; the pencil and `deleteWorkout` in `SessionDetailView`; `historyLink` in `PaywallView`.
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.
