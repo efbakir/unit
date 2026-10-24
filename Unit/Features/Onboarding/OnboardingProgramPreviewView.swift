@@ -326,15 +326,20 @@ struct OnboardingProgramPreviewView: View {
 
     @ViewBuilder
     private func exerciseEditor(for target: PreviewExerciseEditTarget) -> some View {
-        if let index = exerciseIndex(for: target) {
+        if exerciseIndex(for: target) != nil {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     AppSectionHeader("Exercise")
+                    // Looked up by id on every read: after "Remove exercise"
+                    // the sheet is still dismissing and `index` is stale.
                     TextField(
                         "Exercise name",
                         text: Binding(
-                            get: { vm.dayExercises[target.dayIndex][index].name },
-                            set: { vm.dayExercises[target.dayIndex][index].name = $0 }
+                            get: {
+                                exerciseIndex(for: target)
+                                    .map { vm.dayExercises[target.dayIndex][$0].name } ?? ""
+                            },
+                            set: { name in updateExercise(target) { $0.name = name } }
                         )
                     )
                     .font(AppFont.body.font)
@@ -348,7 +353,7 @@ struct OnboardingProgramPreviewView: View {
                             .font(AppFont.body.font)
                             .foregroundStyle(AppColor.textPrimary)
                         Spacer(minLength: 0)
-                        previewStepper(label: label, target: target, index: index)
+                        previewStepper(label: label, target: target)
                     }
                 }
             }
@@ -357,9 +362,9 @@ struct OnboardingProgramPreviewView: View {
         }
     }
 
-    private func previewStepper(label: String, target: PreviewExerciseEditTarget, index: Int) -> some View {
-        let exercise = vm.dayExercises[target.dayIndex][index]
-        let value = label == "Sets" ? exercise.plannedSets : exercise.plannedReps
+    private func previewStepper(label: String, target: PreviewExerciseEditTarget) -> some View {
+        let exercise = exerciseIndex(for: target).map { vm.dayExercises[target.dayIndex][$0] }
+        let value = exercise.map { label == "Sets" ? $0.plannedSets : $0.plannedReps } ?? 0
         let range = label == "Sets"
             ? OnboardingExercise.plannedSetsRange
             : OnboardingExercise.plannedRepsRange
@@ -369,23 +374,37 @@ struct OnboardingProgramPreviewView: View {
             isDecrementEnabled: value > range.lowerBound,
             isIncrementEnabled: value < range.upperBound,
             onDecrement: {
-                if label == "Sets" {
-                    vm.dayExercises[target.dayIndex][index].plannedSets = max(range.lowerBound, value - 1)
-                } else {
-                    vm.dayExercises[target.dayIndex][index].plannedReps = max(range.lowerBound, value - 1)
+                updateExercise(target) { exercise in
+                    if label == "Sets" {
+                        exercise.plannedSets = max(range.lowerBound, value - 1)
+                    } else {
+                        exercise.plannedReps = max(range.lowerBound, value - 1)
+                    }
+                    // User has reviewed the values — the defaulted hint is served.
+                    exercise.usedDefaultSetsReps = false
                 }
-                // User has reviewed the values — the defaulted hint is served.
-                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             },
             onIncrement: {
-                if label == "Sets" {
-                    vm.dayExercises[target.dayIndex][index].plannedSets = min(range.upperBound, value + 1)
-                } else {
-                    vm.dayExercises[target.dayIndex][index].plannedReps = min(range.upperBound, value + 1)
+                updateExercise(target) { exercise in
+                    if label == "Sets" {
+                        exercise.plannedSets = min(range.upperBound, value + 1)
+                    } else {
+                        exercise.plannedReps = min(range.upperBound, value + 1)
+                    }
+                    exercise.usedDefaultSetsReps = false
                 }
-                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             }
         )
+    }
+
+    /// Edits the row by id, so a removed or moved row is never written
+    /// through a stale index.
+    private func updateExercise(
+        _ target: PreviewExerciseEditTarget,
+        _ change: (inout OnboardingExercise) -> Void
+    ) {
+        guard let index = exerciseIndex(for: target) else { return }
+        change(&vm.dayExercises[target.dayIndex][index])
     }
 
     private func exerciseIndex(for target: PreviewExerciseEditTarget) -> Int? {
