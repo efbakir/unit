@@ -26,7 +26,7 @@
 | No color-only meaning; reduced motion | PASS | Counts are text; no new motion |
 | Gym Test on the logging path | PASS | Finish adds one background call, no new tap |
 | No dead or misleading affordance | PASS | Muscle rows have no press effect or chevron |
-| Distinct states render differently | UNVERIFIED | Allowed vs denied Health switch captured by UI test |
+| Distinct states render differently | UNVERIFIED | UI test for allowed vs denied Health switch is written, not run yet |
 | Light-only, portrait-only | PASS | No appearance or orientation code |
 
 ## Priority fixes
@@ -40,7 +40,7 @@
 - Muscle lookup from the exercise library (`ExerciseCatalog.muscleGroup(forName:aliases:saved:)`), read-only. Unknown muscles show nothing instead of "Full Body".
 - "Sets per muscle · last 4 weeks" list between Main lifts and Other exercises.
 - "Save to Apple Health" switch in Settings > Preferences.
-- Captures: `analytics-sets-per-muscle`, `settings-apple-health-on`, `settings-apple-health-denied` (UI test attachments).
+- No captures yet: the UI tests that save `analytics-sets-per-muscle`, `settings-apple-health-on` and `settings-apple-health-denied` have not run (the shared Mac was overloaded on 2026-10-24).
 
 ## Carry forward
 - "Other exercises" trailing value moves to `AppListRow(value:)` on the consistency branch; recheck the two lists side by side after that merge.
