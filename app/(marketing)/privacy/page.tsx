@@ -9,7 +9,7 @@ import {
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Unit privacy policy. Workout details stay on your device. Limited anonymous product analytics can be disabled in Settings.",
+    "Unit privacy policy. Workout details stay on your device. Limited anonymous product analytics are off until you turn them on.",
   alternates: { canonical: "/privacy" },
 }
 
@@ -50,16 +50,18 @@ export default function PrivacyPage() {
             Unit is designed with privacy as a default. Your raw workout data
             stays on your device and Unit does not require an account. Unit sends
             limited anonymous product-usage events to help me understand where
-            setup or workout flows fail. You can disable analytics in Settings.
+            setup or workout flows fail, only if you turn analytics on.
           </p>
 
           <h2 id="analytics">Anonymous Analytics</h2>
           <p>
             Unit uses TelemetryDeck for limited product analytics. Analytics are
-            enabled by default and can be disabled at any time under Settings
-            → Anonymous analytics. Disabling the toggle stops future analytics
-            events immediately. Unit remains fully functional offline and when
-            analytics are disabled or unavailable.
+            off until you turn them on: on the first setup step, or under
+            Settings → Anonymous analytics. Nothing is sent before that. You can
+            turn analytics off at any time in the same places, and the paywall
+            shows the switch while it is on. Turning it off stops future
+            analytics events immediately. Unit remains fully functional offline
+            and when analytics are off or unavailable.
           </p>
           <p>
             TelemetryDeck processes these events for Unit under its privacy

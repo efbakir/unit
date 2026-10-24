@@ -386,7 +386,7 @@ enum AppCopy {
 
     enum Preferences {
         static let anonymousAnalytics = "Anonymous analytics"
-        static let anonymousAnalyticsCaption = "Anonymous usage data. Turn off anytime."
+        static let anonymousAnalyticsCaption = "Helps me improve Unit. Never sends exercise names or weights."
     }
 
     /// Paywall copy — marketing surface only. Legal disclosure, renewal

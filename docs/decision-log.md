@@ -7,6 +7,16 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Anonymous analytics is opt-in
+
+- **Decision:** Analytics are off until the person turns them on. A missing `analytics.enabled` key now means off, so nothing is sent at launch.
+- **Where:** The opt-in switch is on setup step 1 and in Settings. The paywall footer shows it only while it is on, so people who opted in (including lapsed subscribers, who cannot reach Settings) can turn it off before paying.
+- **Why:** App Review Guideline 5.1.1(ii) asks for consent "even if such data is considered to be anonymous". A switch that starts on is not consent, and 2.1 is the first paywall Apple reviews.
+- **Cost:** Funnel numbers come only from people who opt in, so the default-plan test (about 300 eligible paywall views per arm) reads later. If the numbers are too thin, the follow-up is a one-time "Share anonymous usage data?" question.
+- **Copy:** Caption "Helps me improve Unit. Never sends exercise names or weights."
+- **Supersedes:** The 2026-08-05 "on by default with a Settings opt-out" and the "Default stays on" line of the App Review fixes entry below.
+- **Undo:** `UnitAnalytics.isEnabled` (missing key), `PaywallView.showsAnalyticsToggle`.
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

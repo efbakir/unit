@@ -17,13 +17,34 @@ final class UnitAnalyticsTests: XCTestCase {
 
     private let appID = "11111111-1111-1111-1111-111111111111"
 
-    func testDefaultsOnAndOptOutStopsFutureEventsImmediately() {
+    /// App Review 5.1.1(ii): nothing is sent before the person opts in.
+    func testDefaultsOffAndSendsNothingUntilOptIn() {
         let fixture = makeFixture(appIDProvider: { [appID] in appID })
         defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
         let analytics = fixture.analytics
         let transport = fixture.transport
-        XCTAssertTrue(analytics.isEnabled)
+        XCTAssertFalse(analytics.isEnabled)
         analytics.configure()
+        analytics.track(.onboardingStarted)
+
+        XCTAssertTrue(transport.initializedAppIDs.isEmpty)
+        XCTAssertTrue(transport.signals.isEmpty)
+        XCTAssertFalse(analytics.isConfigured)
+
+        analytics.setEnabled(true)
+        analytics.track(.onboardingStarted)
+
+        XCTAssertEqual(transport.initializedAppIDs, [appID])
+        XCTAssertEqual(transport.signals.map(\.0), ["onboarding_started"])
+    }
+
+    func testOptOutStopsFutureEventsImmediately() {
+        let fixture = makeFixture(appIDProvider: { [appID] in appID })
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        let analytics = fixture.analytics
+        let transport = fixture.transport
+        analytics.setEnabled(true)
+        XCTAssertTrue(analytics.isEnabled)
         analytics.track(.workoutStarted)
         XCTAssertEqual(transport.signals.count, 1)
 
