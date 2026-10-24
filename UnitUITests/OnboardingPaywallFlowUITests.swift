@@ -313,6 +313,11 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
+        // Analytics is opt-in (App Review 5.1.1(ii)): a fresh install shows
+        // the step-1 switch off, so nothing is sent before consent.
+        let analyticsSwitch = app.switches["anonymous-analytics-toggle"]
+        XCTAssertTrue(analyticsSwitch.waitForExistence(timeout: 8), "analytics switch missing on step 1")
+        XCTAssertEqual(analyticsSwitch.value as? String, "0", "analytics must start off on a fresh install")
         tap(button(in: app, containing: AppCopy.Onboarding.methodPasteOption), "import method — paste")
 
         let editor = app.textViews.firstMatch
@@ -375,6 +380,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(staticText(in: app, containing: "$29.99/year").exists, "yearly price missing")
 
         app.swipeUp()
+        XCTAssertFalse(
+            app.switches["anonymous-analytics-toggle"].exists,
+            "the paywall shows the analytics switch only while analytics is on"
+        )
         let restorePurchases = app.buttons["Restore Purchases"]
         XCTAssertTrue(
             restorePurchases.waitForExistence(timeout: 8),

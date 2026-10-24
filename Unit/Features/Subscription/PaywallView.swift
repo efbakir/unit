@@ -28,6 +28,10 @@ struct PaywallView: View {
     /// after a verified trial purchase, and one tap turns it off.
     @State private var reminderRequested = true
     @State private var didChooseReminder = false
+    /// Analytics is opt-in. The switch shows here only for people who turned
+    /// it on (step 1, or Settings before a plan lapsed), as their way to turn
+    /// it off; read once so it does not vanish mid-visit.
+    @State private var showsAnalyticsToggle = UnitAnalytics.shared.isEnabled
     var onDismiss: () -> Void
 
     var body: some View {
@@ -698,9 +702,9 @@ struct PaywallView: View {
         return annualSavingsBadgeText ?? "Best value"
     }
 
-    /// "Save 80% vs weekly": 52 weeks at the live Weekly price
-    /// (founder decision 2026-10-23 keeps this anchor). The badge names
-    /// the comparison so the percent is not an unlabeled claim.
+    /// "Save 80%": 52 weeks at the live Weekly price (founder decision
+    /// 2026-10-23 keeps this anchor). Compact badge per the 2026-10-24
+    /// founder call; the Weekly price sits two rows above.
     private var annualSavingsBadgeText: String? {
         guard let annual = store.product(for: .annual),
               let weekly = store.product(for: .weekly) else { return nil }
@@ -794,7 +798,9 @@ struct PaywallView: View {
 
     private var footer: some View {
         VStack(spacing: AppSpacing.sm) {
-            AnonymousAnalyticsToggle()
+            if showsAnalyticsToggle {
+                AnonymousAnalyticsToggle()
+            }
             // Keep the low-emphasis legal actions on one line when they fit.
             // Decorative "·" separators are dropped in the vertical fallback
             // since they only frame horizontal layout.

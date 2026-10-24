@@ -138,13 +138,13 @@ a **Pro Max**, at default Dynamic Type and one AX size:
 
 - [ ] Complete onboarding (paste a routine OR pick a starter program → review →
       **Save program**). The app saves the program and lands on **PaywallView**, not the tabs.
-      The first setup step and the paywall footer both show **Anonymous analytics**. Turning it
-      off matches Settings after purchase.
+      The first setup step shows **Anonymous analytics**, off on a fresh install. The paywall
+      footer shows it only if it was turned on. Turning it on or off matches Settings after purchase.
 - [ ] Paywall shows **Weekly / Monthly / Yearly** with real prices ($2.99/week, $4.99/month,
       $29.99/year — ladder authority: `docs/pricing.md`). An eligible new customer defaults to
       Yearly and sees the verified seven-day offer only on products StoreKit marks eligible
       (Yearly `com.unit.annual` has the 1-week free offer). The trial headline includes the
-      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80% vs weekly**.
+      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80%**.
       An ineligible customer defaults to Weekly and sees no trial claims. Lifetime ($44.99) appears
       only if returned by StoreKit.
 - [ ] No clipped tier card; no CTA below the fold (CTA is pinned, body scrolls). The legal footer

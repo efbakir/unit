@@ -4,4 +4,4 @@
 export const SUPPORT_EMAIL = "support@unitlift.app"
 export const DEVELOPER_NAME = "Efe Bakir"
 export const LEGAL_LAST_UPDATED = "May 11, 2026"
-export const PRIVACY_LAST_UPDATED = "August 5, 2026"
+export const PRIVACY_LAST_UPDATED = "October 24, 2026"

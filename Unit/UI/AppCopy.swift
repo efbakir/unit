@@ -398,7 +398,7 @@ enum AppCopy {
 
     enum Preferences {
         static let anonymousAnalytics = "Anonymous analytics"
-        static let anonymousAnalyticsCaption = "Anonymous usage data. Turn off anytime."
+        static let anonymousAnalyticsCaption = "Helps me improve Unit. Never sends exercise names or weights."
     }
 
     /// Paywall copy — marketing surface only. Legal disclosure, renewal
@@ -411,7 +411,7 @@ enum AppCopy {
             "\(billedPrice) after \(duration) free"
         }
         static func annualSavings(percent: Int) -> String {
-            "Save \(percent)% vs weekly"
+            "Save \(percent)%"
         }
         static let standardHeadline = "Unlock Unit"
         static func supportingCopy(for goal: String?) -> String {

@@ -17,9 +17,26 @@ Efe chose this in the progression-loop session, after benchmark 4 (`docs/researc
 - **Summary.** Blocks without a suggestion (weights varied, sets unfinished) get Edit. A repeated target names the short sets ("Set 3: 6 of 8 reps. Keep this target."). Going back to the previous target plays no burst.
 - **Done card:** "Next time: 3 × 8 at 62.5 kg · +2.5 kg", the same-set wording as Today and History.
 - **Analytics:** no new event. A target saved at Finish sends no decision event; "Keep previous target", "Edit" and "Use suggested target" send `progressionDecision` (repeat, edit, accept). Read accept counts as returns to the suggestion, not as approvals.
-- **Copy:** the website FAQ and compare pages, the App Review notes (`docs/app-store-copy.md`), CLAUDE.md, PRODUCT.md principle 2, goals, scope, compass and flow docs now say targets are saved at Finish. The App Review note ships in the same upload as the build with this change; the frozen listing lines stay true and unchanged.
+- **Copy:** the website FAQ and compare pages, the App Review notes (`docs/app-store-copy.md`), CLAUDE.md, PRODUCT.md principle 2, goals, scope, compass and flow docs now say targets are saved at Finish. Build 96 (the 2.1 submission) was cut before this change, so it ships in the next build, and the App Review note goes into App Store Connect with that build. The frozen listing lines stay true and unchanged.
 - **Not changed:** lifts pasted with fixed reps ("3x8") still have no rule, so they never move up by themselves.
 - **Undo:** remove the `applySuggestedTargets` calls in `ActiveWorkoutView.finishWorkout` and `TodayView.saveStaleSession`; the summary then falls back to "Save for next workout".
+
+## 2026-10-24 - Yearly badge back to "Save 80%"
+
+- **Decision:** The yearly badge says `Save N%` again, not `Save N% vs weekly`. Founder call on the paywall review.
+- **Why:** Same as 2026-07-13: the long badge overpowered the plan card. The Weekly price sits two rows above, so the comparison stays readable.
+- **Supersedes:** The badge half of the "Paywall price" line in the App Review fixes entry below. The price headline stays.
+- **Effect:** Copy only. Savings math (52 × Weekly) and purchase behavior do not change.
+
+## 2026-10-24 - Anonymous analytics is opt-in
+
+- **Decision:** Analytics are off until the person turns them on. A missing `analytics.enabled` key now means off, so nothing is sent at launch.
+- **Where:** The opt-in switch is on setup step 1 and in Settings. The paywall footer shows it only while it is on, so people who opted in (including lapsed subscribers, who cannot reach Settings) can turn it off before paying.
+- **Why:** App Review Guideline 5.1.1(ii) asks for consent "even if such data is considered to be anonymous". A switch that starts on is not consent, and 2.1 is the first paywall Apple reviews.
+- **Cost:** Funnel numbers come only from people who opt in, so the default-plan test (about 300 eligible paywall views per arm) reads later. If the numbers are too thin, the follow-up is a one-time "Share anonymous usage data?" question.
+- **Copy:** Caption "Helps me improve Unit. Never sends exercise names or weights."
+- **Supersedes:** The 2026-08-05 "on by default with a Settings opt-out" and the "Default stays on" line of the App Review fixes entry below.
+- **Undo:** `UnitAnalytics.isEnabled` (missing key), `PaywallView.showsAnalyticsToggle`.
 
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
