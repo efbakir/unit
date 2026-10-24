@@ -193,7 +193,8 @@ final class UnitAnalyticsTests: XCTestCase {
         let fixture = makeFixture(appIDProvider: { [appID] in appID })
         defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
         fixture.defaults.set("annual", forKey: PaywallDefaultPlanExperiment.key)
-        fixture.analytics.configure()
+        // Analytics is opt-in: only someone who turned it on sends events.
+        fixture.analytics.setEnabled(true)
 
         fixture.analytics.track(.paywallViewed(trialEligibility: "eligible"))
         fixture.analytics.track(.workoutStarted)
