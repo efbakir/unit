@@ -904,10 +904,10 @@ final class ProgressionPersistenceTests: XCTestCase {
             )
             return AppCopy.Workout.stallReason(shortSets: record.shortSets, targetReps: 8)
         }
-        XCTAssertEqual(reason([8, 8, 8, 5]), "Keep this target.", "An extra set never counts")
-        XCTAssertEqual(reason([8, 8, 6]), "Set 3: 6 of 8 reps. Keep this target.")
-        XCTAssertEqual(reason([8, 7, 6]), "Sets 2 and 3: under 8 reps. Keep this target.")
-        XCTAssertEqual(reason([7, 7, 6]), "Sets 1, 2 and 3: under 8 reps. Keep this target.")
+        XCTAssertEqual(reason([8, 8, 8, 5]), "Target stays.", "An extra set never counts")
+        XCTAssertEqual(reason([8, 8, 6]), "Set 3: 6 of 8 reps. Target stays.")
+        XCTAssertEqual(reason([8, 7, 6]), "Sets 2 and 3: under 8 reps. Target stays.")
+        XCTAssertEqual(reason([7, 7, 6]), "Sets 1, 2 and 3: under 8 reps. Target stays.")
     }
 
     func testSheetSaveReadsAsSuggestionPreviousOrEdit() {

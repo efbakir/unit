@@ -327,13 +327,13 @@ Source: branch `claude/app-finalization-launch-34a116`, written at commit `94be7
 
 **Where it appears**
 - At exercise done: read-only line (flow 5).
-- Summary page: a "Next time" card with saved targets, then a "No automatic target" card, each row compact. Right after Finish they come first; from History they sit below the exercise list ([SessionDetailView.swift](Unit/Features/History/SessionDetailView.swift)). Tap a row to see the details or change it.
+- Summary page: a header ("2 targets go up · 2 stay the same", "Save all"), then one card per exercise. Right after Finish they come first; from History they sit below the exercise list ([SessionDetailView.swift](Unit/Features/History/SessionDetailView.swift)).
 - Today: the saved target is the row's main line, "Last time" under it. Inside the workout only as set 1's prefill.
 
 **Steps**
-- Summary -> one row per exercise: name (small, grey), next target (large, darkest) and a tag ("+2.5 kg", "+1 rep", "same target", "Kept", "Edited", or "Not saved" for an old suggestion). Rows without a target show the reason instead.
+- Card -> "Last: 3 × 9 at 107 kg" (small, grey), the next target (large, bold) with a chip ("+1 rep", "+2.5 kg", "Same"), the reason, and one control: `+1 rep | Keep 3 × 9 | Change…`.
 - Finish already saved the target as fixed numbers (saving twice cannot add a second step) and updated the routine's planned weight and reps ([WorkoutSession.swift:156](Unit/Models/WorkoutSession.swift:156), [DayTemplate.swift:210](Unit/Models/DayTemplate.swift:210)). "Save for next workout" remains only for a suggestion Finish could not save.
-- Tap a row -> one sheet: Previous target, Logged, the reason, editable weight and reps, and one shortcut ("Use previous: 3 × 9 at 107 kg", or "Use suggested: ..." after a change). "Save changes" saves what the fields hold; a retyped suggestion or previous target counts as that, anything else as "Edited".
+- A choice only selects. Choices save on "Save all" or when the screen goes away; Finish already saved the suggestions, so doing nothing keeps them. "Change…" opens the sheet with weight and reps; at accessibility text sizes one "Change…" button replaces the segments and the sheet lists "Suggested" and "Keep previous target".
 - The sheet keeps Save grey while reps are outside the range or the weight is empty.
 - Back arrow without deciding -> the saved targets stay; the next workout starts from them.
 - Next workout -> set 1 of that exercise prefills the saved target ([ActiveWorkoutView.swift:1254](Unit/Features/Today/ActiveWorkoutView.swift:1254)); Today row shows "3 × 9 at 60 kg"; Analytics shows "Next 60 kg × 9".

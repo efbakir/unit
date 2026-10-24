@@ -2,7 +2,7 @@
 //  SessionDetailView.swift
 //  Unit
 //
-//  Session detail grouped by exercise. The pencil opens Edit workout.
+//  Session detail grouped by exercise. "···" > Edit workout edits it.
 //
 
 import SwiftUI
@@ -31,15 +31,17 @@ struct SessionDetailView: View {
     @AppStorage("unitSystem") private var unitSystem = "kg"
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsFeedbackInvitation = false
-    @State private var acceptedMoment: AppCelebrationMoment?
-    @State private var acceptedExerciseID: UUID?
-    @State private var pendingAcceptedExerciseID: UUID?
     @State private var toastMessage: AppToastEvent?
     @State private var editingRecommendationID: UUID?
     @State private var editingWeightText = ""
     @State private var editingRepsText = ""
     @FocusState private var editingTargetField: String?
     @State private var didTrackRecommendations = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Next-target choices made here. Finish already saved the suggestions;
+    /// these save on "Save all" or when the screen goes away (2026-10-24).
+    @State private var pendingTargets: [UUID: DoubleProgressionTarget] = [:]
+    @State private var savedMoment: AppCelebrationMoment?
     @State private var showsEditWorkout = false
     /// Set just before the workout is deleted, so the screen never reads it again.
     @State private var isDeleted = false
@@ -58,7 +60,7 @@ struct SessionDetailView: View {
             record.acceptedTarget ?? record.suggestedTarget
         }
 
-        /// Where Edit starts. Without a suggestion (weights varied, sets
+        /// Where "Change…" starts. Without a suggestion (weights varied, sets
         /// unfinished) the lifter sets the next target from the previous one.
         var editTarget: DoubleProgressionTarget? {
             guard isActionable else { return nil }
@@ -118,20 +120,24 @@ struct SessionDetailView: View {
                 detailStack
             }
         }
-        .navigationTitle("")
+        // A native title gives the bar its own edge, so the floating back
+        // and menu buttons never sit on card content.
+        .navigationTitle(templateName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if !isReadOnly {
-                // Same entry as Programs > Edit program.
+                // Away from the target choices, with a full label (2026-10-24).
                 ToolbarItem(placement: .topBarTrailing) {
-                    Group {
-                        Button { showsEditWorkout = true } label: {
-                            Label(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName)
-                                .labelStyle(.iconOnly)
+                    Menu {
+                        Button(AppCopy.History.editWorkout, systemImage: AppIcon.edit.systemName) {
+                            showsEditWorkout = true
                         }
-                        .accessibilityLabel(AppCopy.History.editWorkout)
                         .accessibilityIdentifier("edit-workout")
+                    } label: {
+                        Label(AppCopy.History.moreActions, systemImage: AppIcon.more.systemName)
+                            .labelStyle(.iconOnly)
                     }
+                    .accessibilityIdentifier("session-more")
                     .tint(AppColor.textPrimary)
                 }
             }
@@ -145,14 +151,13 @@ struct SessionDetailView: View {
             // Second step of a delete: Edit workout has closed, now leave too.
             if !isPresented, isDeleted { dismiss() }
         }
-        .overlay { AppCelebration(moment: completionMoment) }
         .appToast(event: editingRecommendationID == nil ? $toastMessage : .constant(nil))
         .sheet(
             isPresented: Binding(
                 get: { editingRecommendationID != nil },
                 set: { if !$0 { editingRecommendationID = nil } }
             ),
-            onDismiss: playAcceptedMomentIfNeeded
+            onDismiss: { editingRecommendationID = nil }
         ) {
             recommendationEditSheet
         }
@@ -161,22 +166,16 @@ struct SessionDetailView: View {
             presentFeedbackInvitationIfNeeded()
             trackRecommendationsIfNeeded()
         }
+        // Leaving keeps every choice: nothing made here is lost.
+        .onDisappear { savePendingTargets(announces: false) }
     }
 
     private var detailStack: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(templateName)
-                    .appFont(.productHeading)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-
-                Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(session.date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // Right after Finish, decisions come first: the next targets
             // are the payoff of the workout and were below the whole log.
@@ -215,121 +214,212 @@ struct SessionDetailView: View {
         .appScreenEnter()
     }
 
-    /// Saved targets in one card, exercises without one in another
-    /// (2026-10-24). Each row is compact; tapping it opens the details.
+    /// Direction A (2026-10-24): a header with what happened and one
+    /// "Save all", then one card per exercise with the next target as the hero
+    /// and every target choice in one control under it.
     @ViewBuilder
     private var progressionSections: some View {
         let rows = progressionRecommendations
-        let withTarget = rows.filter { $0.displayTarget != nil }
-        let withoutTarget = rows.filter { $0.displayTarget == nil }
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            if !withTarget.isEmpty {
-                progressionSection(AppCopy.Workout.nextTimeTitle, rows: withTarget)
-            }
-            if !withoutTarget.isEmpty {
-                progressionSection(AppCopy.Workout.noAutomaticTarget, rows: withoutTarget)
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            progressionHeader(rows)
+            ForEach(rows) { recommendation in
+                progressionCard(recommendation)
             }
         }
     }
 
-    private func progressionSection(_ title: String, rows: [ProgressionRecommendationRow]) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title)
-            AppCardList(rows) { recommendation in
-                progressionRow(recommendation)
-            }
+    private func progressionHeader(_ rows: [ProgressionRecommendationRow]) -> some View {
+        let changes = rows.compactMap { row -> Int? in
+            guard let next = nextTarget(row), let previous = row.record.previousTarget else { return nil }
+            return next == previous ? 0 : (next.isAbove(previous) ? 1 : -1)
         }
-    }
-
-    @ViewBuilder
-    private func progressionRow(_ recommendation: ProgressionRecommendationRow) -> some View {
-        let content = progressionRowContent(recommendation)
-            .appAnimation(.appState, value: recommendation.record.acceptedTarget, reduceMotion: reduceMotion)
-            .overlay {
-                AppCelebration(moment: acceptedExerciseID == recommendation.exerciseID ? acceptedMoment : nil)
-            }
-        if recommendation.editTarget != nil {
-            Button { beginEditing(recommendation) } label: {
-                content
-                    .appNavigationDisclosure()
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(ScaleButtonStyle())
-            .accessibilityHint(AppCopy.Workout.opensNextTarget)
-            .accessibilityIdentifier("next-target-\(recommendation.exerciseName)")
-        } else {
-            content
-        }
-    }
-
-    /// The next target is the one strong element; name and change stay quiet.
-    private func progressionRowContent(_ recommendation: ProgressionRecommendationRow) -> some View {
-        let targetText = recommendation.displayTarget.flatMap {
-            completeTargetText($0, setCount: recommendation.record.configuredSetCount)
-        }
-        return VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(recommendation.exerciseName)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let targetText {
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                    Text(targetText)
-                        .appNumericValue(value: targetText)
-                        .font(AppFont.title.font)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .monospacedDigit()
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: AppSpacing.sm)
-                    Text(changeTag(recommendation.record))
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .contentTransition(.opacity)
+        return AppCard {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    AppSectionHeader(AppCopy.Workout.nextTimeTitle)
+                    Text(AppCopy.Workout.nextTimeCount(
+                        up: changes.filter { $0 > 0 }.count,
+                        same: changes.filter { $0 == 0 }.count,
+                        down: changes.filter { $0 < 0 }.count
+                    ))
+                    .font(AppFont.sectionHeader.font)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .contentTransition(.opacity)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
-            } else {
-                Text(explanationText(recommendation.record, offersEdit: recommendation.editTarget != nil))
-                    .font(AppFont.body.font)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // Finish confetti and the saved burst stay in this text area,
+                // never over the cards or their actions.
+                .overlay { AppCelebration(moment: savedMoment ?? completionMoment).clipped() }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("next-time-header")
+
+                if !isReadOnly, rows.contains(where: \.isActionable) {
+                    AppPrimaryButton(AppCopy.Workout.saveAll) {
+                        savePendingTargets(announces: true)
+                    }
+                    .accessibilityIdentifier("save-all-targets")
+                }
+            }
+        }
+    }
+
+    private func progressionCard(_ recommendation: ProgressionRecommendationRow) -> some View {
+        let record = recommendation.record
+        let next = nextTarget(recommendation)
+        return AppCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(recommendation.exerciseName)
+                    .font(AppFont.caption.font)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let previous = record.previousTarget,
+                   let text = completeTargetText(previous, setCount: record.configuredSetCount) {
+                    Text(AppCopy.Workout.lastTarget(text))
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .monospacedDigit()
+                }
+                if let next, let heroText = completeTargetText(next, setCount: record.configuredSetCount) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                        Text(heroText)
+                            .appNumericValue(value: heroText)
+                            .font(AppFont.title.font)
+                            .foregroundStyle(AppColor.textPrimary)
+                            .monospacedDigit()
+                            .fixedSize(horizontal: false, vertical: true)
+                        AppTag(text: changeChip(next, from: record), style: .muted, layout: .compactCapsule)
+                        Spacer(minLength: 0)
+                    }
+                }
+                Text(reasonText(recommendation, next: next))
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .contentTransition(.opacity)
+                    .fixedSize(horizontal: false, vertical: true)
+                if recommendation.editTarget != nil {
+                    targetChoiceControl(recommendation)
+                        .padding(.top, AppSpacing.xs)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, AppSpacing.sm)
-        .accessibilityElement(children: .combine)
+        .appAnimation(.appState, value: next, reduceMotion: reduceMotion)
+        .accessibilityIdentifier("next-target-\(recommendation.exerciseName)")
     }
 
-    /// What changed, or the lifter's own decision.
-    private func changeTag(_ record: SessionProgressionRecord) -> String {
-        switch record.decisionAction {
-        case .repeatedPreviousTarget: return AppCopy.Workout.repeatingForNextTime
-        case .edited: return AppCopy.Workout.editedForNextTime
-        case .usedSuggestion, nil: break
-        }
-        guard record.acceptedTarget != nil else { return AppCopy.Workout.notSavedForNextTime }
-        switch record.recommendationReason {
-        case .allSetsReachedTop:
-            return WorkoutTargetFormatter.loggingIncrementText(weightKg: record.weightIncrementKg,
-                                                              unitSystem: unitSystem)
-        case .addARep: return AppCopy.Workout.suggestionAddOneRep
-        case .repeatTarget, nil: return AppCopy.Workout.suggestionSameTarget
+    private enum TargetChoice: Hashable, Identifiable {
+        case suggested
+        case previous
+        case change
+        /// A plain ID keeps the segmented control's ID-based init out of play.
+        var id: String { "\(self)" }
+    }
+
+    /// `+1 rep | Keep 3 × 9 | Change…`. Tapping only selects; "Change…" opens
+    /// the sheet. At accessibility sizes the three segments do not fit, so one
+    /// "Change…" button opens the sheet with every option instead.
+    @ViewBuilder
+    private func targetChoiceControl(_ recommendation: ProgressionRecommendationRow) -> some View {
+        let choices = targetChoices(recommendation)
+        let selection: Binding<TargetChoice> = Binding(
+            get: { selectedChoice(recommendation) },
+            set: { choose($0, for: recommendation) }
+        )
+        if dynamicTypeSize.isAccessibilitySize {
+            AppSecondaryButton(AppCopy.Workout.changeTarget) { beginEditing(recommendation) }
+                .accessibilityIdentifier("change-target-\(recommendation.exerciseName)")
+        } else {
+            AppSegmentedControl(
+                selection: selection,
+                items: choices,
+                label: AppCopy.Workout.nextTargetFor(recommendation.exerciseName),
+                title: { (choice: TargetChoice) -> String in choiceTitle(choice, for: recommendation) }
+            )
+            .accessibilityIdentifier("target-choice-\(recommendation.exerciseName)")
         }
     }
 
-    private func evidenceLine(label: String, value: String) -> some View {
-        AppListRow(title: label, style: .cardListContent) {
-            Text(value)
-                .appNumericValue(value: value)
-                .font(AppFont.performance.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .monospacedDigit()
-                .multilineTextAlignment(.trailing)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityElement(children: .combine)
+    private func targetChoices(_ recommendation: ProgressionRecommendationRow) -> [TargetChoice] {
+        let record = recommendation.record
+        var choices: [TargetChoice] = []
+        if let suggested = record.suggestedTarget, suggested != record.previousTarget { choices.append(.suggested) }
+        if record.previousTarget != nil { choices.append(.previous) }
+        return choices + [.change]
     }
 
-    /// One place to change a next target: the evidence, the editable
-    /// target and one shortcut to the other option (2026-10-24).
+    private func choiceTitle(_ choice: TargetChoice, for recommendation: ProgressionRecommendationRow) -> String {
+        let record = recommendation.record
+        switch choice {
+        case .suggested:
+            return record.suggestedTarget.map { changeChip($0, from: record) } ?? AppCopy.Workout.suggestedForNextTime
+        case .previous:
+            return AppCopy.Workout.keepTarget(record.previousTarget.flatMap {
+                WorkoutTargetFormatter.setRepDisplay(setCount: record.configuredSetCount, reps: $0.reps)
+            } ?? "")
+        case .change:
+            return AppCopy.Workout.changeTarget
+        }
+    }
+
+    private func selectedChoice(_ recommendation: ProgressionRecommendationRow) -> TargetChoice {
+        let record = recommendation.record
+        guard let next = nextTarget(recommendation) else { return .change }
+        if next == record.suggestedTarget, record.suggestedTarget != record.previousTarget { return .suggested }
+        if next == record.previousTarget { return .previous }
+        return .change
+    }
+
+    private func choose(_ choice: TargetChoice, for recommendation: ProgressionRecommendationRow) {
+        switch choice {
+        case .suggested: pendingTargets[recommendation.id] = recommendation.record.suggestedTarget
+        case .previous: pendingTargets[recommendation.id] = recommendation.record.previousTarget
+        case .change: beginEditing(recommendation)
+        }
+    }
+
+    /// The target the next workout will use: a choice made here, else what
+    /// Finish saved, else the target that stays.
+    private func nextTarget(_ recommendation: ProgressionRecommendationRow) -> DoubleProgressionTarget? {
+        let record = recommendation.record
+        return pendingTargets[recommendation.id] ?? record.acceptedTarget
+            ?? record.suggestedTarget ?? record.previousTarget
+    }
+
+    /// "+1 rep", "+2.5 kg" or "Same", measured from the previous target.
+    private func changeChip(_ next: DoubleProgressionTarget, from record: SessionProgressionRecord) -> String {
+        guard let previous = record.previousTarget else { return AppCopy.Workout.sameTarget }
+        let weightChange = next.weightKg - previous.weightKg
+        if abs(weightChange) >= 0.01 {
+            return WorkoutTargetFormatter.signedWeightChangeText(weightKg: weightChange, unitSystem: unitSystem)
+        }
+        let repChange = next.reps - previous.reps
+        return repChange == 0 ? AppCopy.Workout.sameTarget : AppCopy.Workout.repChange(repChange)
+    }
+
+    /// Why this target, or what the lifter changed. Never a reason that
+    /// contradicts the target shown above it.
+    private func reasonText(_ recommendation: ProgressionRecommendationRow, next: DoubleProgressionTarget?) -> String {
+        let record = recommendation.record
+        let suggestedText = record.suggestedTarget.flatMap { suggested in
+            suggested.weightKg == record.previousTarget?.weightKg
+                ? WorkoutTargetFormatter.setRepDisplay(setCount: record.configuredSetCount, reps: suggested.reps)
+                : completeTargetText(suggested, setCount: record.configuredSetCount)
+        }
+        if let next, let suggested = record.suggestedTarget, next != suggested {
+            if next == record.previousTarget, let suggestedText {
+                return AppCopy.Workout.keptReason(suggestedWas: suggestedText)
+            }
+            return AppCopy.Workout.changedReason(suggestedWas: suggestedText)
+        }
+        if let next, record.suggestedTarget == nil, next != record.previousTarget {
+            return AppCopy.Workout.changedReason(suggestedWas: nil)
+        }
+        return explanationText(record, offersEdit: recommendation.editTarget != nil)
+    }
+
+    /// "Change…": the exercise, its last target, weight and reps. At
+    /// accessibility sizes it also lists Suggested and Keep previous target.
     private var recommendationEditSheet: some View {
         AppSheetScreen(
             title: editingRecommendation?.exerciseName ?? AppCopy.Workout.editNextTarget,
@@ -345,36 +435,25 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 if let recommendation = editingRecommendation {
                     let record = recommendation.record
-                    VStack(alignment: .leading, spacing: AppSpacing.smd) {
-                        if let previous = record.previousTarget,
-                           let text = completeTargetText(previous, setCount: record.configuredSetCount) {
-                            evidenceLine(label: AppCopy.Workout.previousTargetLabel, value: text)
+                    Text(AppCopy.Workout.changeSheetSubtitle(
+                        last: record.previousTarget.flatMap { completeTargetText($0, setCount: record.configuredSetCount) }
+                    ))
+                    .font(AppFont.caption.font)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                    if dynamicTypeSize.isAccessibilitySize {
+                        ForEach(targetChoices(recommendation).filter { $0 != .change }) { choice in
+                            AppSecondaryButton(sheetOptionTitle(choice, for: recommendation)) {
+                                choose(choice, for: recommendation)
+                                editingRecommendationID = nil
+                            }
                         }
-                        if let actualText = actualPerformanceText(record) {
-                            evidenceLine(label: AppCopy.Workout.loggedLabel, value: actualText)
-                        }
-                        if let suggested = record.suggestedTarget, suggested != record.acceptedTarget,
-                           let text = completeTargetText(suggested, setCount: record.configuredSetCount) {
-                            evidenceLine(label: AppCopy.Workout.suggestedForNextTime, value: text)
-                        }
-                        Text(explanationText(record, offersEdit: true))
-                            .font(AppFont.caption.font)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     HStack(alignment: .bottom, spacing: AppSpacing.lg) {
                         recommendationWeightEditor(for: recommendation)
                         recommendationRepsEditor(for: recommendation)
-                    }
-
-                    if let shortcut = editShortcut(for: recommendation) {
-                        AppGhostButton(shortcut.label) {
-                            persistTarget(shortcut.target, for: recommendation,
-                                          action: shortcut.action, reason: shortcut.reason)
-                            editingRecommendationID = nil
-                        }
-                        .accessibilityIdentifier("next-target-shortcut")
                     }
                 }
             }
@@ -385,22 +464,12 @@ struct SessionDetailView: View {
         .appToast(event: $toastMessage)
     }
 
-    /// "Use previous" while the suggestion is saved; "Use suggested" after
-    /// the lifter kept the previous target or edited it.
-    private func editShortcut(for recommendation: ProgressionRecommendationRow)
-        -> (label: String, target: DoubleProgressionTarget, action: ProgressionDecisionAction, reason: DoubleProgressionReason)? {
-        let record = recommendation.record
-        let current = record.acceptedTarget ?? record.suggestedTarget
-        if let suggested = record.suggestedTarget, let reason = record.recommendationReason,
-           current != suggested,
-           let text = completeTargetText(suggested, setCount: record.configuredSetCount) {
-            return (AppCopy.Workout.useSuggested(text), suggested, .usedSuggestion, reason)
+    private func sheetOptionTitle(_ choice: TargetChoice, for recommendation: ProgressionRecommendationRow) -> String {
+        switch choice {
+        case .suggested: return AppCopy.Workout.suggestedOption(choiceTitle(.suggested, for: recommendation))
+        case .previous: return AppCopy.Workout.keepPreviousOption
+        case .change: return AppCopy.Workout.changeTarget
         }
-        if let previous = record.previousTarget, current != nil, current != previous,
-           let text = completeTargetText(previous, setCount: record.configuredSetCount) {
-            return (AppCopy.Workout.usePrevious(text), previous, .repeatedPreviousTarget, .repeatTarget)
-        }
-        return nil
     }
 
     private func recommendationWeightEditor(
@@ -453,95 +522,72 @@ struct SessionDetailView: View {
 
     private func beginEditing(_ recommendation: ProgressionRecommendationRow) {
         toastMessage = nil
-        guard let target = recommendation.editTarget else { return }
+        guard recommendation.editTarget != nil,
+              let target = nextTarget(recommendation) ?? recommendation.editTarget else { return }
         editingWeightText = displayedWeight(target.weightKg)
         editingRepsText = String(target.reps)
         editingRecommendationID = recommendation.id
     }
 
+    /// The sheet sets a choice; it saves with the others (Save all or leave).
     private func saveEditedRecommendation() {
         guard let recommendation = editingRecommendation,
               let weightKg = parsedEditingWeightKg,
               let reps = parsedEditingReps else { return }
-        let typed = DoubleProgressionTarget(
-            weightKg: weightKg,
-            reps: reps
-        )
+        let typed = DoubleProgressionTarget(weightKg: weightKg, reps: reps)
         let record = recommendation.record
-        let action = record.decisionAction(saving: typed)
-        // A retyped suggestion or previous target saves the exact stored value.
-        let target = switch action {
+        // A retyped suggestion or previous target keeps the exact stored value.
+        pendingTargets[recommendation.id] = switch record.decisionAction(saving: typed) {
         case .usedSuggestion: record.suggestedTarget ?? typed
         case .repeatedPreviousTarget: record.previousTarget ?? typed
         case .edited: typed
         }
-        let saved = persistTarget(
-            target,
-            for: recommendation,
-            action: action,
-            reason: action == .repeatedPreviousTarget ? .repeatTarget : (record.recommendationReason ?? .repeatTarget)
-        )
-        if saved { editingRecommendationID = nil }
+        editingRecommendationID = nil
     }
 
-    @discardableResult
-    private func persistTarget(
-        _ target: DoubleProgressionTarget,
-        for recommendation: ProgressionRecommendationRow,
-        action: ProgressionDecisionAction,
-        reason: DoubleProgressionReason
-    ) -> Bool {
-        guard isActionable(recommendation.record),
-              let template = progressionTemplate,
-              target.weightKg.isFinite,
-              target.weightKg > 0,
-              target.reps >= recommendation.record.lowerRepBound,
-              target.reps <= recommendation.record.upperRepBound else {
-            return false
+    /// Saves every choice that differs from what is stored, in one save.
+    /// `announces` adds the toast, haptic and burst for "Save all"; leaving
+    /// the screen saves quietly.
+    private func savePendingTargets(announces: Bool) {
+        guard !isReadOnly, !isDeleted, let template = progressionTemplate else { return }
+        var decisions: [(ProgressionDecisionAction, DoubleProgressionReason)] = []
+        for row in progressionRecommendations {
+            guard let target = pendingTargets[row.id], target != row.record.acceptedTarget,
+                  isActionable(row.record), target.weightKg.isFinite, target.weightKg > 0,
+                  target.reps >= row.record.lowerRepBound,
+                  target.reps <= row.record.upperRepBound else { continue }
+            let action = row.record.decisionAction(saving: target)
+            let reason = action == .repeatedPreviousTarget
+                ? DoubleProgressionReason.repeatTarget : (row.record.recommendationReason ?? .repeatTarget)
+            guard session.saveProgressionDecision(target, action: action, reason: reason,
+                                                  for: row.exerciseID, template: template) else {
+                modelContext.rollbackRestoringLoadedModels()
+                toastMessage = .init(AppCopy.Workout.targetsSaveFailed, kind: .error)
+                return
+            }
+            decisions.append((action, reason))
         }
-        let previousTarget = template.progressionState(for: recommendation.exerciseID)?.acceptedTarget
-        guard session.saveProgressionDecision(
-            target,
-            action: action,
-            reason: reason,
-            for: recommendation.exerciseID,
-            template: template
-        ) else {
-            modelContext.rollbackRestoringLoadedModels()
-            return false
-        }
-
-        do {
-            try modelContext.save()
-            UnitAnalytics.shared.track(
-                .progressionDecision(
+        pendingTargets = [:]
+        if !decisions.isEmpty {
+            do {
+                try modelContext.save()
+            } catch {
+                modelContext.rollbackRestoringLoadedModels()
+                toastMessage = .init(AppCopy.Workout.targetsSaveFailed, kind: .error)
+                AppHaptic.error.fire()
+                return
+            }
+            for (action, reason) in decisions {
+                UnitAnalytics.shared.track(.progressionDecision(
                     action: analyticsDecision(for: action),
                     outcome: analyticsOutcome(for: reason)
-                )
-            )
-            if previousTarget != target {
-                // Going back to the previous target is not a celebration.
-                if action != .repeatedPreviousTarget {
-                    pendingAcceptedExerciseID = recommendation.exerciseID
-                    if editingRecommendationID == nil { playAcceptedMomentIfNeeded() }
-                }
-                AppHaptic.success.fire()
+                ))
             }
-            toastMessage = .init(AppCopy.Workout.targetsSaved, kind: .success)
-            return true
-        } catch {
-            modelContext.rollbackRestoringLoadedModels()
-            toastMessage = .init(AppCopy.Workout.targetsSaveFailed, kind: .error)
-            AppHaptic.error.fire()
-            return false
         }
-    }
-
-    private func playAcceptedMomentIfNeeded() {
-        guard let exerciseID = pendingAcceptedExerciseID else { return }
-        acceptedExerciseID = exerciseID
-        acceptedMoment = AppCelebrationMoment(style: .burst)
-        pendingAcceptedExerciseID = nil
+        guard announces else { return }
+        AppHaptic.success.fire()
+        savedMoment = AppCelebrationMoment(style: .burst)
+        toastMessage = .init(AppCopy.Workout.targetsSaved, kind: .success)
     }
 
     private func isActionable(_ record: SessionProgressionRecord) -> Bool {
@@ -641,9 +687,14 @@ struct SessionDetailView: View {
 
         switch record.recommendationReason {
         case .allSetsReachedTop:
-            return AppCopy.Workout.allSetsReachedTopReason
+            return AppCopy.Workout.allSetsReachedTopReason(
+                topReps: record.upperRepBound,
+                increment: WorkoutTargetFormatter.signedWeightChangeText(weightKg: record.weightIncrementKg,
+                                                                        unitSystem: unitSystem)
+                    .replacingOccurrences(of: "+", with: "")
+            )
         case .addARep:
-            return AppCopy.Workout.addARepReason
+            return AppCopy.Workout.addARepReason(targetReps: record.previousTarget?.reps ?? record.lowerRepBound)
         case .repeatTarget:
             return AppCopy.Workout.stallReason(
                 shortSets: record.shortSets,

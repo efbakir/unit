@@ -94,24 +94,47 @@ enum AppCopy {
         static let repeatingForNextTime = "Kept"
         static let editedForNextTime = "Edited"
         static let noAutomaticTarget = "No automatic target"
-        /// Summary row tag for a suggestion Finish could not save (an older
-        /// workout or a broken rule); tapping the row saves it.
-        static let notSavedForNextTime = "Not saved"
-        static let opensNextTarget = "Opens the next target."
-        static let previousTargetLabel = "Previous target"
-        static let loggedLabel = "Logged"
         static let suggestionAddOneRep = "+1 rep"
-        static let suggestionSameTarget = "same target"
-        /// The one shortcut in the next-target sheet (2026-10-24).
-        static func usePrevious(_ target: String) -> String { "Use previous: \(target)" }
-        static func useSuggested(_ target: String) -> String { "Use suggested: \(target)" }
+        // Summary, Direction A (2026-10-24). Copy from the external review.
+        static let saveAll = "Save all"
+        static let sameTarget = "Same"
+        static let changeTarget = "Change…"
+        static let keepPreviousOption = "Keep previous target"
+        static func lastTarget(_ target: String) -> String { "Last: \(target)" }
+        static func keepTarget(_ setsAndReps: String) -> String { "Keep \(setsAndReps)" }
+        static func repChange(_ reps: Int) -> String {
+            "\(reps > 0 ? "+" : "−")\(abs(reps)) \(abs(reps) == 1 ? "rep" : "reps")"
+        }
+        static func suggestedOption(_ change: String) -> String { "Suggested · \(change)" }
+        static func nextTargetFor(_ exercise: String) -> String { "Next target for \(exercise)" }
+        static func changeSheetSubtitle(last: String?) -> String {
+            last.map { "Next target · Last: \($0)" } ?? "Next target"
+        }
+        static func keptReason(suggestedWas: String) -> String {
+            "You chose to keep it. Suggested was \(suggestedWas)."
+        }
+        static func changedReason(suggestedWas: String?) -> String {
+            suggestedWas.map { "You changed it. Suggested was \($0)." } ?? "You changed it."
+        }
+        /// "2 targets go up · 2 stay the same"; a part with 0 is left out.
+        static func nextTimeCount(up: Int, same: Int, down: Int) -> String {
+            var parts: [String] = []
+            if up > 0 { parts.append("\(up) \(up == 1 ? "target goes" : "targets go") up") }
+            if same > 0 { parts.append(parts.isEmpty ? "\(same) \(same == 1 ? "target stays" : "targets stay") the same"
+                                                     : "\(same) \(same == 1 ? "stays" : "stay") the same") }
+            if down > 0 { parts.append(parts.isEmpty ? "\(down) \(down == 1 ? "target goes" : "targets go") down"
+                                                     : "\(down) \(down == 1 ? "goes" : "go") down") }
+            return parts.isEmpty ? "No targets yet" : parts.joined(separator: " · ")
+        }
         static let edit = "Edit"
         static let editNextTarget = "Edit next target"
         static let targetsSaved = "Next targets saved"
         static let targetsSaveFailed = "Targets weren’t saved. Try again."
-        static let allSetsReachedTopReason = "Every set reached the top."
-        static let addARepReason = "Same weight. Add one rep."
-        static let repeatTargetReason = "Keep this target."
+        static func allSetsReachedTopReason(topReps: Int, increment: String) -> String {
+            "Every set hit \(topReps). Add \(increment)."
+        }
+        static func addARepReason(targetReps: Int) -> String { "Every set hit \(targetReps). Add one rep." }
+        static let repeatTargetReason = "Target stays."
         /// A repeated target names the planned sets that fell short
         /// (2026-10-24). Same target, no deload.
         static func stallReason(shortSets: [(number: Int, reps: Int)], targetReps: Int) -> String {
@@ -123,8 +146,8 @@ enum AppCopy {
             return "Sets \(earlier) and \(last.number): under \(targetReps) reps. \(repeatTargetReason)"
         }
         static let chooseTargetManually = "Set a target next workout."
-        static let mixedWeightsUnavailable = "Weights varied."
-        static let incompleteSetsUnavailable = "Some sets are unfinished."
+        static let mixedWeightsUnavailable = "Weights varied. Target stays."
+        static let incompleteSetsUnavailable = "Some sets unfinished. Target stays."
         static let invalidIncrementUnavailable = "Set a weight increase."
         static let bodyweightUnavailable = "Added weight is required."
         static let invalidDataUnavailable = "No target available."
@@ -326,6 +349,7 @@ enum AppCopy {
 
         /// Edit workout: correct or remove what was logged after Finish.
         static let editWorkout = "Edit workout"
+        static let moreActions = "More"
         static let deleteWorkout = "Delete workout"
         static let deleteWorkoutMessage = "Removes this workout from History, PRs and Analytics. Can't be undone."
         /// Shown in Edit workout when a next target was saved from it: editing

@@ -23,9 +23,14 @@ struct DoubleProgressionConfiguration: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-struct DoubleProgressionTarget: Codable, Equatable, Sendable {
+struct DoubleProgressionTarget: Codable, Equatable, Hashable, Sendable {
     let weightKg: Double
     let reps: Int
+
+    /// Heavier, or the same weight for more reps.
+    func isAbove(_ other: DoubleProgressionTarget) -> Bool {
+        abs(weightKg - other.weightKg) >= 0.01 ? weightKg > other.weightKg : reps > other.reps
+    }
 }
 
 enum DoubleProgressionReason: String, Codable, Equatable, Sendable {

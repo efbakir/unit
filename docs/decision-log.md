@@ -7,6 +7,18 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Summary Direction A: one choice per card, saved with "Save all"
+
+Efe chose Direction A from the external review (`report.md`, "Hero target + one choice control").
+
+- **Card:** small grey "Last: 3 × 9 at 107 kg", then the next target large and bold with a chip ("+1 rep", "+2.5 kg", "Same"), the reason under it, then one control: `+1 rep | Keep 3 × 9 | Change…`. "Change…" opens the "Edit next target" sheet. The status label, the inline Edit and the separate "Keep previous target" button are gone.
+- **Save model:** Finish still saves every suggestion, so doing nothing keeps the 2026-10-24 behavior. A choice on the summary is only selected; it saves on "Save all" or when the screen goes away, so nothing is lost. Supersedes the instant save of "Keep previous target".
+- **Header:** "2 targets go up · 2 stay the same" with one "Save all". The Finish confetti and the save burst play inside the header text only, never over cards or actions.
+- **Reasons:** "Every set hit 9. Add one rep.", "Some sets unfinished. Target stays.", "Set 2: 10 of 12 reps. Target stays.", "You chose to keep it. Suggested was …", "You changed it. Suggested was …". An edited target never sits under "Target stays."
+- **Navigation:** the workout name is the native title, and "Edit workout" moves into the "···" menu. No forced opaque bar (Oct 19 SwiftUI-defaults rule).
+- **Accessibility sizes:** the three segments become one "Change…" button; its sheet lists "Suggested · +1 rep", "Keep previous target" and the weight and reps fields.
+- **Not changed here:** card edge contrast and button colors (consistency chat's tokens).
+
 ## 2026-10-24 - Founder feedback: post-workout summary and done card
 
 Efe tested the merged build on his phone and called the summary "the most important part, but still very problematic". He approved these in the progression-loop session.

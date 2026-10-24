@@ -24,8 +24,12 @@ final class TrustLayerUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         row.tap()
 
+        // "Edit workout" sits in the "···" menu since 2026-10-24.
+        let more = app.buttons["session-more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
         let pencil = app.buttons["edit-workout"]
-        XCTAssertTrue(pencil.waitForExistence(timeout: 10))
+        XCTAssertTrue(pencil.waitForExistence(timeout: 5))
         pencil.tap()
 
         // Edit set: reps 5 -> 6.
@@ -85,8 +89,12 @@ final class TrustLayerUITests: XCTestCase {
         XCTAssertTrue(confirmFinish.waitForExistence(timeout: 5))
         confirmFinish.tap()
 
+        // "Edit workout" sits in the "···" menu since 2026-10-24.
+        let more = app.buttons["session-more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 15))
+        more.tap()
         let pencil = app.buttons["edit-workout"]
-        XCTAssertTrue(pencil.waitForExistence(timeout: 15))
+        XCTAssertTrue(pencil.waitForExistence(timeout: 5))
         pencil.tap()
         let trash = app.buttons["delete-workout"]
         XCTAssertTrue(trash.waitForExistence(timeout: 5))
@@ -128,7 +136,8 @@ final class TrustLayerUITests: XCTestCase {
 
         row.tap()
         XCTAssertTrue(app.staticTexts.firstMatch.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["edit-workout"].exists, "No editing for a lapsed subscriber")
+        XCTAssertFalse(app.buttons["session-more"].exists, "No editing for a lapsed subscriber")
+        XCTAssertFalse(app.buttons["save-all-targets"].exists)
         XCTAssertFalse(app.buttons["Save for next workout"].exists)
         XCTAssertFalse(app.buttons["Repeat previous target"].exists)
     }
