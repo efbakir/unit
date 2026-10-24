@@ -54,7 +54,7 @@ typography:
     lineHeight: 1.3
     letterSpacing: "normal"
   numeric:
-    fontFamily: "ui-monospace, SFMono-Regular, monospace"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "36px"
     fontWeight: 700
     lineHeight: 1
@@ -208,7 +208,7 @@ This system explicitly rejects the visual category of "fitness tracker" software
 - Flat by doctrine — separation through fill contrast, never shadows
 - Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)
 - One Ink-black primary CTA per stress screen, full-width, 60pt tall
-- Surface area kept small: 12 colors, ~14 `AppFont` cases (native SF Pro + SF Mono), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
+- Surface area kept small: 12 colors, ~14 `AppFont` cases (native SF Pro, tabular digits for numbers), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
 
 ## 2. Colors: The Material-Shop Palette
 
@@ -249,7 +249,7 @@ The palette is named like materials in a workshop, not like UI states. There is 
 **October 19 user override:** native SF Pro, restrained letter spacing, standard-size layout priority. Existing point sizes and native Dynamic Type scaling remain. This supersedes the bundled Geist decision for the iOS app; website typography is a separate surface.
 
 **Sans:** SF Pro for body, headings, buttons, and caps labels.
-**Mono:** SF Mono for workout numerics and set-result rows.
+**Numbers:** SF Pro with tabular digits (`geistTabular`, `.monospacedDigit()`). SF Mono is retired (decision 2026-10-24): it put wide gaps around "." and "×", made row numbers look small and made them wrap.
 
 Use `AppFont`. The existing `Font.geist` / `UIFont.geist` names are compatibility helpers backed by system font factories; they no longer request bundled Geist. Bundled asset removal is separate cleanup.
 
@@ -260,10 +260,12 @@ Use `AppFont`. The existing `Font.geist` / `UIFont.geist` names are compatibilit
 - **Section header / body:** SF Pro SemiBold / Medium 17, native spacing.
 - **Caption / muted / metadata:** SF Pro Medium 15 / 13 / 11, native spacing.
 - **Overline / small label:** SF Pro Medium 13 / 11, uppercase with zero extra tracking; emphasized overline is Bold.
-- **Numeric display:** SF Mono Bold 36, neutral tracking.
+- **Numeric display:** SF Pro Bold 36, tabular digits, neutral tracking.
 - **Numeric input:** SF Pro Bold 36 with tabular digits.
 - **Product action:** SF Pro Bold 17.
-- **Performance / step indicator:** SF Mono SemiBold 15 / 14.
+- **Performance / step indicator:** SF Pro Medium 17 / 15, tabular digits.
+
+**The Row-Number Rule.** Set data (sets, reps, weight) is 17pt wherever it sits, the same size as the row name. Supporting numbers (dates, "Last time", comparisons, counts) are 15pt. Never 13 or 11pt for set data. At accessibility text sizes a row's value moves under its name instead of shrinking.
 
 ### Marketing type ramp
 
@@ -348,7 +350,7 @@ Elements nested inside a card use `AppColor.cardRowFill` (Milk `#F5F5F5`) + `App
 
 ### Signature: The Workout Command Card
 
-`WorkoutCommandCard` is the screen's center of gravity during a session. It uses `appWorkoutPanelChrome()`, displays the exercise name in Title, the working numeric (weight × reps) in `numericDisplay` (36px monospaced bold), and one Ink primary action ("Done"). An optional rest timer divides off the bottom with a 1pt divider at 32% opacity. There is no decorative chrome, no progress arc, no "next exercise" preview competing with the current action.
+`WorkoutCommandCard` is the screen's center of gravity during a session. It uses `appWorkoutPanelChrome()`, displays the exercise name in Title, the working numeric (weight × reps) in `numericDisplay` (36px bold, tabular digits), and one Ink primary action ("Done"). An optional rest timer divides off the bottom with a 1pt divider at 32% opacity. There is no decorative chrome, no progress arc, no "next exercise" preview competing with the current action.
 
 ## 6. Do's and Don'ts
 
@@ -420,10 +422,14 @@ separation on both #F5F5F5 pages and white cards. No new tokens/components.
 
 ### 21 October corrections
 
-Standard SF Pro restored at user request; SF Mono unchanged. Collapsed exercise
+Standard SF Pro restored at user request; SF Mono unchanged (retired on 24 October, see below). Collapsed exercise
 cards use 16pt inner spacing, full-width leading content and trailing completion
 marks; expired Undo no longer reserves invisible space. Shared sticky action
 chrome uses 16pt bottom spacing above native navigation.
 
 Analytics correction: simplification must retain charts and Best/Next tables.
 Keep single-point and no-recent-data chart states; simplify repeated wording only.
+
+### 24 October consistency rules
+
+SF Mono retired: every number uses SF Pro with tabular digits and set data is 17pt. Text buttons are blue through `AppGhostButton`. Full rules and the issue list: `docs/design/consistency-audit.md`.

@@ -198,13 +198,13 @@ struct OnboardingProgramPreviewView: View {
             } label: {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(exercise.name)
-                        .font(AppFont.body.font)
+                        .font(AppFont.sectionHeader.font)
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.leading)
 
                     HStack(spacing: AppSpacing.xxs) {
                         Text(prescriptionText(for: exercise))
-                            .font(AppFont.caption.font)
+                            .font(AppFont.body.font)
                             .foregroundStyle(AppColor.textSecondary)
                             .monospacedDigit()
 

@@ -100,7 +100,7 @@
       "body": { "displayName": "Body", "purpose": "Default reading copy. List rows, descriptions, paragraph text." },
       "label": { "displayName": "Label", "purpose": "Button labels, primary control text. Heavier than body so CTAs have authority." },
       "caption": { "displayName": "Caption", "purpose": "Secondary metadata, helper text, timer subtitles." },
-      "numeric": { "displayName": "Numeric", "purpose": "Weights, reps, rest-timer countdown. Monospaced digits so columns align at every Dynamic Type size. The workout signature." }
+      "numeric": { "displayName": "Numeric", "purpose": "Weights, reps, rest-timer countdown. SF Pro with tabular digits so columns align at every Dynamic Type size; SF Mono retired 2026-10-24. Set data is 17pt in rows." }
     },
     "shadows": [],
     "shadowsNote": "Unit is a flat system by doctrine. Cards lift off the page through fill contrast (Bond #FFFFFF on Milk #F5F5F5, a 6.25% lightness step). The Flat-By-Default Rule is non-negotiable.",

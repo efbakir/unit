@@ -203,7 +203,7 @@ struct TemplateDetailView: View {
     private func exerciseTargetSubtitle(for exercise: Exercise) -> some View {
         if let progression = progressionSummary(for: exercise) {
             Text(progression)
-                .appFont(.caption)
+                .appFont(.body)
                 .foregroundStyle(AppColor.textSecondary)
                 .monospacedDigit()
         } else if let planned = plannedTargetDisplay(for: exercise) {
@@ -211,7 +211,7 @@ struct TemplateDetailView: View {
                 setCount: planned.setCount,
                 reps: planned.reps
             ) ?? "")
-                .appFont(.caption)
+                .appFont(.body)
                 .foregroundStyle(AppColor.textSecondary)
                 .monospacedDigit()
         } else {

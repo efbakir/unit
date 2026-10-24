@@ -76,8 +76,8 @@ All in `Unit/UI/DesignSystem.swift` unless noted.
 | 2 | "Add exercise" black in a workout, blue row in a routine | [workout](../qa/consistency-audit-2026-10-24/before/03d-active-add-exercise.png), [routine](../qa/consistency-audit-2026-10-24/before/03-routine-detail.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr1/03d-active-add-exercise.png), [routine](../qa/consistency-audit-2026-10-24/after-pr1/03-routine-detail.png) |
 | 3 | Black underlined "Undo" and black "+ Add set" | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr1/03c-active-undo-add-set.png) |
 | 4 | Paywall links 11pt gray; Settings "Restore Purchases" looks like static text | [paywall](../qa/consistency-audit-2026-10-24/before/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | [paywall](../qa/consistency-audit-2026-10-24/after-pr1/04-paywall-footer.png), [Settings](../qa/consistency-audit-2026-10-24/after-pr1/04b-settings.png) |
-| 5 | Same numbers in SF Mono (summary) and SF Pro (Analytics) | [summary](../qa/consistency-audit-2026-10-24/before/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/before/05b-summary-exercise-log.png) | PR 2 |
-| 6 | SF Mono rows next to 13pt summaries on one screen | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png) | PR 2 |
+| 5 | Same numbers in SF Mono (summary) and SF Pro (Analytics) | [summary](../qa/consistency-audit-2026-10-24/before/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/before/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/before/11-ax3-summary-evidence.png) | [summary](../qa/consistency-audit-2026-10-24/after-pr2/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/after-pr2/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/after-pr2/11-ax3-summary-evidence.png) |
+| 6 | SF Mono rows next to 13pt summaries on one screen | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr2/03c-active-undo-add-set.png) |
 | 7 | "3 × 60 kg × 10" vs "3 × 10 at 60 kg" vs "3 × 8" | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/before/07-today-up-next.png) | PR 3 |
 | 8 | Sheet close: X vs "Done" vs "Cancel" and "Done" | [picker](../qa/consistency-audit-2026-10-24/before/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/before/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/before/08c-main-lifts-sheet.png) | PR 4 |
 | 9 | Analytics switch: caption in setup, none in Settings | [setup](../qa/consistency-audit-2026-10-24/before/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | PR 6 |
@@ -105,16 +105,16 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Now | Fix | Effort | Status |
 |---|---|---|---|---|---|---|
-| 10 | Same data in SF Mono and SF Pro | `History/HistoryView.swift:815, 841`, `History/SessionDetailView.swift:344`, DS:6905, 6946, 7079, `Today/ActiveWorkoutView.swift:275` vs `Analytics/AnalyticsView.swift:64` and others | 5 SF Mono tokens | the mono factory (DS:140-143) returns SF Pro with tabular digits | S | Planned |
-| 11 | Row numbers too small | `performance` DS:238, `stepIndicator` DS:236 | 15pt / 14pt | 17pt / 15pt, medium | S | Planned |
-| 12 | Same exercise, two weights | collapsed card DS:6981 vs expanded header DS:6799 | 17 medium vs 17 semibold | name semibold; summary 13 to 17; suggestion 13 to 15 | S | Planned |
-| 13 | Set data under names at 15 or 13 | `Templates/TemplateDetailView.swift:204-216`; `Onboarding/OnboardingProgramPreviewView.swift:200-209`; Today "Last time" DS:2874 | 15 / 15 / 13 | 17 / 17 / 15 | S | Planned |
-| 14 | Analytics row value shrinks | `Analytics/AnalyticsView.swift:62-67` | 15pt, -0.3 tracking, shrinks to 70% | `AppListRow(title:value:)` | S | Planned |
-| 15 | Bold override | `History/SessionDetailView.swift:345` | `.bold(emphasized)` | color only | S | Planned |
-| 16 | Next-target inputs tiny | `History/SessionDetailView.swift:400, 420` | 15pt mono fields | `numericInput` (30 bold) | S | Planned |
-| 17 | Rows don't adapt to large text | DS:1260-1299 `AppListRow` | value squeezed beside the name | value moves under the name at accessibility sizes | M | Planned |
-| 18 | Double side inset | `Templates/ProgramLibraryDetailView.swift:38-43` | 32pt | `.cardListContent` (16pt) | S | Planned |
-| 19 | Same row, two paddings | `History/SessionDetailView.swift:150` vs `History/HistoryView.swift:736` | 24pt vs 16pt | drop the extra 8pt | S | Planned |
+| 10 | Same data in SF Mono and SF Pro | `History/HistoryView.swift:815, 841`, `History/SessionDetailView.swift:344`, DS:6905, 6946, 7079, `Today/ActiveWorkoutView.swift:275` vs `Analytics/AnalyticsView.swift:64` and others | 5 SF Mono tokens | the mono factory (DS:140-143) returns SF Pro with tabular digits | S | Fixed (PR 2) |
+| 11 | Row numbers too small | `performance` DS:238, `stepIndicator` DS:236 | 15pt / 14pt | 17pt / 15pt, medium | S | Fixed (PR 2) |
+| 12 | Same exercise, two weights | collapsed card DS:6981 vs expanded header DS:6799 | 17 medium vs 17 semibold | name semibold; summary 13 to 17; suggestion 13 to 15 | S | Fixed (PR 2) |
+| 13 | Set data under names at 15 or 13 | `Templates/TemplateDetailView.swift:204-216`; `Onboarding/OnboardingProgramPreviewView.swift:200-209`; Today "Last time" DS:2874 | 15 / 15 / 13 | 17 / 17 / 15 | S | Fixed (PR 2) |
+| 14 | Analytics row value shrinks | `Analytics/AnalyticsView.swift:62-67` | 15pt, -0.3 tracking, shrinks to 70% | `AppListRow(title:value:)` | S | Fixed (PR 2) |
+| 15 | Bold override | `History/SessionDetailView.swift:345` | `.bold(emphasized)` | color only | S | Fixed (PR 2) |
+| 16 | Next-target inputs tiny | `History/SessionDetailView.swift:400, 420` | 15pt mono fields | `numericInput` (30 bold) | S | Fixed (PR 2) |
+| 17 | Rows don't adapt to large text | DS:1260-1299 `AppListRow` | value squeezed beside the name | value moves under the name at accessibility sizes | M | Fixed (PR 2) |
+| 18 | Double side inset | `Templates/ProgramLibraryDetailView.swift:38-43`, also the onboarding weight-unit row | 32pt | `AppListRow` `.display` rows no longer add a second 16pt inset | S | Fixed (PR 2) |
+| 19 | Same row, two paddings | `History/SessionDetailView.swift:150` vs `History/HistoryView.swift:736` | 24pt vs 16pt | drop the extra 8pt | S | Fixed (PR 2) |
 
 ### PR 3 - One number format
 

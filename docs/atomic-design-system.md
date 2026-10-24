@@ -43,7 +43,7 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 ### Typography — `AppFont`
 
-Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` or `.font(AppFont.X.font)` elsewhere. Native **SF Pro** is the default; `numericDisplay`, `stepIndicator`, and `performance` use native **SF Mono**. Compatibility helpers retain their `geist` names but resolve system fonts. Caps labels use SF Pro with neutral tracking; headings have restrained negative tracking. Point sizes and native Dynamic Type scaling are preserved. The October 19 user instruction supersedes the earlier Geist family decision.
+Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` or `.font(AppFont.X.font)` elsewhere. Native **SF Pro** everywhere. Number tokens (`numericDisplay`, `setValue`, `setValueCompact`, `stepIndicator`, `performance`) use SF Pro with tabular digits through `geistTabular`; SF Mono was retired on 2026-10-24. Set data is 17pt (`performance`). Compatibility helpers retain their `geist` names but resolve system fonts. Caps labels use SF Pro with neutral tracking; headings have restrained negative tracking. Point sizes and native Dynamic Type scaling are preserved. The October 19 user instruction supersedes the earlier Geist family decision.
 
 Body hierarchy: `largeTitle`, `title`, `sectionHeader`, `body`, `caption`, `muted`, `metadata`.
 Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`, `numericDisplay`, `stepIndicator`, `productHeading`, `productAction`, `performance`.
@@ -51,7 +51,7 @@ Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`,
 **Rules**
 
 - **Never use regular (400) font weight.** The minimum weight across the entire app is **medium** (500). Native system fonts use the existing Medium, SemiBold, and Bold roles.
-- Avoid inline `.font(.geist(...))` / `.font(.geistMono(...))` in page files for standard hierarchy; use `AppFont` cases. Inline `.font(.system(...))` is reserved for SF Symbol weight on `AppIcon` only.
+- Avoid inline `.font(.geist(...))` / `.font(.geistTabular(...))` in page files for standard hierarchy; use `AppFont` cases. Inline `.font(.system(...))` is reserved for SF Symbol weight on `AppIcon` only.
 - Tracking is **bundled with each case** — never load a loose `*Tracking` constant; either use `.appFont(.X)` (Text) or `.tracking(AppFont.X.tracking)`.
 - For 17pt bold section headings AND button labels, use `sectionHeader` (or `productAction` if the label needs monospaced digits). There is no separate `label` case.
 
@@ -273,7 +273,7 @@ The native TabView, tab-bar appearance and selection behavior are unchanged. Log
 `PlannedSetRow`, `ExerciseSummaryRow` and `RestBar` are the approved active-workout
 owners in `DesignSystem.swift`. They compose existing card, button, input, icon,
 color, spacing and press owners. `AppFont.setValue` / `setValueCompact` provide
-30/28pt SF Mono values; `AppWorkoutMetrics` contains their geometry. Controls
+30/28pt values (SF Pro, tabular digits since 2026-10-24); `AppWorkoutMetrics` contains their geometry. Controls
 retain Unit's approved blue accent and native navigation/keyboard behavior.
 
 The current row alone contains Complete set. A successful save immediately

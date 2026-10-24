@@ -94,7 +94,7 @@ enum AppColor {
     }
 }
 
-/// Compatibility names retained for callers; faces now come from native SF Pro/SF Mono.
+/// Compatibility names retained for callers; faces come from native SF Pro.
 /// AppFont remains the single typography owner.
 extension Font {
     enum AppWeight {
@@ -107,8 +107,11 @@ extension Font {
         Font(UIFont.geist(weight, size: size, relativeTo: textStyle.uiKitStyle))
     }
 
-    static func geistMono(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        Font(UIFont.geistMono(weight, size: size, relativeTo: textStyle.uiKitStyle))
+    /// SF Pro with tabular (fixed-width) digits for numbers that change or
+    /// line up in columns. Letters, units and punctuation stay proportional,
+    /// so "82.5 kg × 8" reads like text. SF Mono retired 2026-10-24.
+    static func geistTabular(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+        Font(UIFont.geistTabular(weight, size: size, relativeTo: textStyle.uiKitStyle))
     }
 }
 
@@ -137,8 +140,8 @@ extension UIFont {
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 
-    static func geistMono(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
-        let base = monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
+    static func geistTabular(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let base = monospacedDigitSystemFont(ofSize: size, weight: weight.uiKitWeight)
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 }
@@ -158,9 +161,9 @@ extension Font.AppWeight {
 /// `.appFont(.X)` (Text) or `.font(AppFont.X.font)` + `.tracking(AppFont.X.tracking)`
 /// (other views).
 ///
-/// Native SF Pro is the default for body, headings, buttons, and small labels.
-/// SF Mono is reserved for workout numerics. Existing sizes stay stable;
-/// tracking is neutral, with restrained tightening on headings.
+/// Native SF Pro everywhere. Numbers use SF Pro with tabular digits
+/// (`geistTabular`); set data is 17pt wherever it sits (decision 2026-10-24).
+/// Tracking is neutral, with restrained tightening on headings.
 enum AppFont {
     // Body hierarchy
     case largeTitle
@@ -190,7 +193,7 @@ enum AppFont {
     case analyticsStatus
     /// 16pt medium — splash welcome eyebrow / tagline pair.
     case splashWelcome
-    /// 36pt mono bold — workout metric hero, big numerics.
+    /// 36pt bold, tabular digits — workout metric hero, big numerics.
     case numericDisplay
     /// 30pt sans bold + tabular digits — workout targets and numeric input fields
     /// (`AdjustResultSheet` weight / reps). Proportional
@@ -198,25 +201,26 @@ enum AppFont {
     /// (mono cells inflate punctuation). `.monospacedDigit()` keeps digits tabular
     /// so values still align if rendered in a column.
     case numericInput
-    /// Approved inline working-set value, SF Mono.
+    /// Approved inline working-set value (30pt bold, tabular digits).
     case setValue
     case setValueCompact
-    /// 14pt mono semibold — set step counters in `SetProgressIndicator` (numeric).
+    /// 15pt medium, tabular digits — small counters: set numbers, the
+    /// elapsed timer, the onboarding step counter.
     case stepIndicator
     /// 24pt bold — product-screen heading on `ProductTopBar`, hero copy on empty states.
     case productHeading
-    /// 17pt sans bold — primary CTA labels, top-bar text actions. **Never mono**
-    /// (mono is reserved for numerics).
+    /// 17pt sans bold — primary CTA labels and full-width text buttons.
     case productAction
-    /// 15pt mono semibold — set-result / PR rows in History (numeric).
+    /// 17pt medium, tabular digits — set data in rows (History, summary,
+    /// logged and planned sets, rest time). Same size as the row name.
     case performance
     /// 15pt system — emoji glyphs use native Apple Color Emoji fallback.
     case emojiCaption
 
     var font: Font {
         switch self {
-        case .setValue: return .geistMono(.bold, size: 30, relativeTo: .title)
-        case .setValueCompact: return .geistMono(.bold, size: 28, relativeTo: .title)
+        case .setValue: return .geistTabular(.bold, size: 30, relativeTo: .title)
+        case .setValueCompact: return .geistTabular(.bold, size: 28, relativeTo: .title)
         case .analyticsStatus: return .geist(.bold, size: 34, relativeTo: .largeTitle)
         case .largeTitle:     return .geist(.bold,     size: 22, relativeTo: .title2)
         case .title:          return .geist(.bold,     size: 20, relativeTo: .title3)
@@ -231,11 +235,11 @@ enum AppFont {
         case .splashTitle:    return .geist(.bold,     size: 56, relativeTo: .largeTitle)
         case .splashWelcome:  return .geist(.medium,   size: 16, relativeTo: .callout)
         case .productHeading: return .geist(.bold,     size: 24, relativeTo: .title2)
-        case .numericDisplay: return .geistMono(.bold,     size: 36, relativeTo: .title)
+        case .numericDisplay: return .geistTabular(.bold,  size: 36, relativeTo: .title)
         case .numericInput:   return .geist(.bold,         size: 30, relativeTo: .title).monospacedDigit()
-        case .stepIndicator:  return .geistMono(.semibold, size: 14, relativeTo: .footnote)
+        case .stepIndicator:  return .geistTabular(.medium, size: 15, relativeTo: .subheadline)
         case .productAction:  return .geist(.bold,         size: 17, relativeTo: .body)
-        case .performance:    return .geistMono(.semibold, size: 15, relativeTo: .subheadline)
+        case .performance:    return .geistTabular(.medium, size: 17, relativeTo: .body)
         case .emojiCaption:
             // Use SwiftUI's public system-font path so supported runtimes and
             // physical devices resolve composed sequences through Apple Color
@@ -1250,6 +1254,7 @@ struct AppListRow<Trailing: View>: View {
     var tone: Tone = .default
     @ViewBuilder let trailing: () -> Trailing
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(
         title: String,
@@ -1275,7 +1280,13 @@ struct AppListRow<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
+        // At accessibility sizes the trailing value moves under the title
+        // instead of squeezing beside it (Apple: fewer columns as text grows).
+        let stacks = dynamicTypeSize.isAccessibilitySize
+        let layout = stacks
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.xs))
+            : AnyLayout(HStackLayout(spacing: AppSpacing.sm))
+        layout {
             if let leadingIcon {
                 leadingIcon.image(size: 15, weight: .semibold)
                     .foregroundStyle(AppColor.textSecondary)
@@ -1304,7 +1315,9 @@ struct AppListRow<Trailing: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
+            if !stacks {
+                Spacer(minLength: 0)
+            }
 
             trailing()
         }
@@ -1315,8 +1328,10 @@ struct AppListRow<Trailing: View>: View {
         .contentShape(Rectangle())
     }
 
+    /// Only free-standing tappable rows own the 16pt gutter. Display and
+    /// card-list rows sit in containers that already provide it.
     private var horizontalInset: CGFloat {
-        style == .cardListContent ? 0 : AppSpacing.md
+        style == .tappable ? AppSpacing.md : 0
     }
 
     private var verticalInset: CGFloat {
@@ -2900,8 +2915,9 @@ struct PreviewListRow: View {
                     .foregroundStyle(AppColor.textSecondary)
                 if let supportingText, !supportingText.isEmpty {
                     Text(supportingText)
-                        .font(AppFont.muted.font)
+                        .font(AppFont.caption.font)
                         .foregroundStyle(AppColor.textSecondary)
+                        .monospacedDigit()
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -7000,11 +7016,11 @@ struct ExerciseSummaryRow: View {
             HStack(spacing: AppSpacing.sm) {
                 Button(action: onSelect) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(name).font(AppFont.body.font).lineLimit(2)
+                        Text(name).font(AppFont.sectionHeader.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if !summary.isEmpty {
-                            Text(summary).appFont(.muted).monospacedDigit()
+                            Text(summary).appFont(.body).monospacedDigit()
                                 .foregroundStyle(AppColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -7014,7 +7030,7 @@ struct ExerciseSummaryRow: View {
                                     AppIcon.chart.image(size: AppIconSize.compact)
                                         .accessibilityHidden(true)
                                 }
-                                Text(detail).appFont(.muted).monospacedDigit()
+                                Text(detail).appFont(.caption).monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .foregroundStyle(detailIsSuggestion ? AppColor.textPrimary : AppColor.textSecondary)

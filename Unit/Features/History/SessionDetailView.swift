@@ -147,7 +147,6 @@ struct SessionDetailView: View {
                         } label: {
                             SessionExerciseSummary(exercise: exercise)
                                 .appNavigationDisclosure()
-                                .padding(.vertical, AppSpacing.sm)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(ScaleButtonStyle())
@@ -338,7 +337,6 @@ struct SessionDetailView: View {
             Text(value)
                 .appNumericValue(value: value)
                 .font(AppFont.performance.font)
-                .bold(emphasized)
                 .foregroundStyle(emphasized ? AppColor.textPrimary : AppColor.textSecondary)
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
@@ -393,7 +391,7 @@ struct SessionDetailView: View {
             TextField("", text: $editingWeightText)
                 .focused($editingTargetField, equals: "weight")
                 .keyboardType(.decimalPad)
-                .font(AppFont.performance.font)
+                .font(AppFont.numericInput.font)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .appInputFieldStyle()
@@ -413,7 +411,7 @@ struct SessionDetailView: View {
             TextField("", text: $editingRepsText)
                 .focused($editingTargetField, equals: "reps")
                 .keyboardType(.numberPad)
-                .font(AppFont.performance.font)
+                .font(AppFont.numericInput.font)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .appInputFieldStyle()

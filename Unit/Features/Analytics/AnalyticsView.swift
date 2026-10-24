@@ -56,14 +56,12 @@ struct AnalyticsView: View {
                                 AppCardList(data: output.other, id: \.self, rowVerticalInset: AppSpacing.xs) { id in
                                     if let lift = output.lifts[id], let latest = lift.latest {
                                         NavigationLink(value: id) {
-                                            HStack(spacing: AppSpacing.sm) {
-                                                AppListRow(title: lift.exercise.name, style: .cardListContent, showsDisclosure: true) {
-                                                    Text(WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit))
-                                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
-                                                        .foregroundStyle(AppColor.textSecondary)
-                                                        .minimumScaleFactor(0.7)
-                                                }
-                                            }
+                                            AppListRow(
+                                                title: lift.exercise.name,
+                                                value: WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit),
+                                                style: .cardListContent,
+                                                showsDisclosure: true
+                                            )
                                         }
                                         .buttonStyle(ScaleButtonStyle())
                                         .accessibilityIdentifier("analytics-other-\(id.uuidString)")
