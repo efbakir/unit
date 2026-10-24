@@ -54,6 +54,7 @@
 | `docs/research/2026-10-20-analytics-nine-metrics.md` | Nine fitness metrics and the implementation brief for clearer Analytics evidence | Improving lift comparisons or deciding which metrics belong in Analytics |
 | `docs/research/2026-10-24-benchmark-prompts.md` | 5 ready-to-paste Grok prompts, one per main flow, that find where Unit is weaker than similar apps | Benchmarking a flow against competitors |
 | `docs/research/2026-10-24-switch-targets.md` | Which big gym apps to win users from, Unit's goal and target user, plus a feature-gap prompt | Choosing who to win or which missing features to build next |
+| `docs/research/2026-10-24-benchmarks/` | Results of the 6 Grok benchmarks (setup, paywall, logging, exercise done, History and Analytics, feature gaps) with cross-report signals and conflicts | Deciding what to fix or build after 2.1 |
 
 ## Release & QA
 
