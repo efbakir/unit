@@ -71,7 +71,6 @@ struct TemplatesView: View {
                     Group {
                         NavigationLink(value: ProgramLibraryDestination()) {
                             Text("Browse")
-                                .appToolbarTextStyle()
                         }
                         .accessibilityLabel("Browse program library")
                     }
@@ -112,7 +111,6 @@ struct TemplatesView: View {
                 }
                 .appBottomSheetChrome()
             }
-            .tint(AppColor.accent)
             .onAppear {
                 FreestyleSessionSupport.cleanupOrphanedTemplates(
                     modelContext: modelContext,

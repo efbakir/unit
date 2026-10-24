@@ -22,7 +22,7 @@
 - **Action rows:** a list row that runs an action (no chevron) has a blue title. A row that opens something keeps a black title and a chevron.
 - **Icon buttons:** stay black. The symbol is the cue.
 - **Toolbars:** native and black. Close = X at the leading edge. Confirm = checkmark at the trailing edge. No "Done", "Cancel" or "Close" text. No custom weight on toolbar text.
-- **Tint:** one owner. The tab bar sets blue once; no per-tab black tint, no per-screen re-tints.
+- **Tint:** one owner. `AppScreen` tints page content blue; bars and toolbars stay black from `ContentView`. No per-screen re-tints.
 - **Numbers:** SF Pro with tabular digits for every number. SF Mono is not used.
 - **Number sizes:** set data (sets, reps, weight) is 17pt wherever it sits, the same size as the row name. Supporting numbers (dates, "Last time", comparisons, counts) are 15pt. Hero numbers are 30-56pt bold. Set data is never 13 or 11pt.
 - **Minimum for numbers on the right of a row:** 17pt at the default text size (iOS Body). Apple's iOS floor is 11pt and its default is 17pt. Every size scales with Dynamic Type through the existing `UIFontMetrics` tokens. Tabular digits do not change what VoiceOver reads.
@@ -79,7 +79,7 @@ All in `Unit/UI/DesignSystem.swift` unless noted.
 | 5 | Same numbers in SF Mono (summary) and SF Pro (Analytics) | [summary](../qa/consistency-audit-2026-10-24/before/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/before/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/before/11-ax3-summary-evidence.png) | [summary](../qa/consistency-audit-2026-10-24/after-pr2/05-summary-evidence.png), [log](../qa/consistency-audit-2026-10-24/after-pr2/05b-summary-exercise-log.png), [large text](../qa/consistency-audit-2026-10-24/after-pr2/11-ax3-summary-evidence.png) |
 | 6 | SF Mono rows next to 13pt summaries on one screen | [workout](../qa/consistency-audit-2026-10-24/before/03c-active-undo-add-set.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr2/03c-active-undo-add-set.png) |
 | 7 | "3 × 60 kg × 10" vs "3 × 10 at 60 kg" vs "3 × 10"; "62.5" next to "62,5" in region Italy | [workout](../qa/consistency-audit-2026-10-24/before/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/before/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/before/12-italy-active.png) | [workout](../qa/consistency-audit-2026-10-24/after-pr3/06-active-collapsed-summary.png), [Today](../qa/consistency-audit-2026-10-24/after-pr3/07-today-up-next.png), [Italy](../qa/consistency-audit-2026-10-24/after-pr3/12-italy-active.png) |
-| 8 | Sheet close: X vs "Done" vs "Cancel" and "Done" | [picker](../qa/consistency-audit-2026-10-24/before/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/before/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/before/08c-main-lifts-sheet.png) | PR 4 |
+| 8 | Sheet close: X vs "Done" vs "Cancel" and "Done" | [picker](../qa/consistency-audit-2026-10-24/before/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/before/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/before/08c-main-lifts-sheet.png) | [picker](../qa/consistency-audit-2026-10-24/after-pr4/08a-exercise-picker-sheet.png), [target](../qa/consistency-audit-2026-10-24/after-pr4/08b-target-editor-sheet.png), [main lifts](../qa/consistency-audit-2026-10-24/after-pr4/08c-main-lifts-sheet.png) |
 | 9 | Analytics switch: caption in setup, none in Settings | [setup](../qa/consistency-audit-2026-10-24/before/09-setup-analytics-toggle.png), [Settings](../qa/consistency-audit-2026-10-24/before/04b-settings.png) | PR 6 |
 | 10 | Empty filter result: centered box, other empty states left on the page | [History](../qa/consistency-audit-2026-10-24/before/10-history-filter-empty.png) | PR 6 |
 
@@ -130,10 +130,10 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Now | Fix | Effort | Status |
 |---|---|---|---|---|---|---|
-| 25 | Toolbar text in 2 weights | `appToolbarTextStyle` DS:5868 on "History", "Browse", picker "Done" vs system "Finish" | semibold vs regular | remove the modifier | S | Planned |
-| 26 | 4 ways to close a sheet | X (`AppSheetScreen`) vs "Done" (DS:5359, `Analytics/AnalyticsView.swift:166`) vs "Cancel" and "Done" (`Analytics/MainLiftsEditor.swift:98-106`) | mixed | X to close; Main lifts saves with a checkmark | S | Planned |
-| 27 | Keyboard "Done" in 2 fonts | DS:5675 vs DS:1428 | 17 semibold blue vs system | both native | S | Planned |
-| 28 | Tint fights itself | `ContentView.swift:85-95`; re-tints in 8 files; `Today/ActiveWorkoutView.swift:299` | Analytics black, Today and Programs blue | tab bar blue only | M | Planned |
+| 25 | Toolbar text in 2 weights | `appToolbarTextStyle` DS:5868 on "History", "Browse", picker "Done" vs system "Finish" | semibold vs regular | remove the modifier | S | Fixed (PR 4) |
+| 26 | 4 ways to close a sheet | X (`AppSheetScreen`) vs "Done" (DS:5359, `Analytics/AnalyticsView.swift:166`) vs "Cancel" and "Done" (`Analytics/MainLiftsEditor.swift:98-106`) | mixed | X to close; Main lifts saves with a checkmark | S | Fixed (PR 4) |
+| 27 | Keyboard "Done" in 2 fonts | DS:5675 vs DS:1428 | 17 semibold blue vs system | both native | S | Fixed (PR 4) |
+| 28 | Tint fights itself | `ContentView.swift:85-95`; re-tints in 8 files; `Today/ActiveWorkoutView.swift:299` | Analytics black, Today and Programs blue | `AppScreen` tints page content once; bars and toolbars stay black from `ContentView` (removing the tab tint would have turned back buttons blue, against D1) | M | Fixed (PR 4) |
 
 ### PR 5 - Words
 

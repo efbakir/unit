@@ -32,14 +32,14 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 - **Surfaces**: `background` = `#F5F5F5`, `cardBackground` = `#FFFFFF`, `cardRowFill` = `#F5F5F5` (nested-in-card recipe), `sheetBackground` = `#FFFFFF`, `controlBackground` = `#E8E8E8` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5`
 - **Text**: `textPrimary` = `#0A0A0A`, `textSecondary` = `#595959`, `textDisabled` = `#949494`
-- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). `accent` doubles as the `.tint(...)` on every NavigationStack — there is no separate `systemTint`. Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
+- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). Page content gets the blue tint once, in `AppScreen`; bars and toolbars stay black (`ContentView`), so screens never re-tint (2026-10-24). Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
 - **Status**: `success` = `#34C759`, `warning` = `#FF9500`, `error` = `#FF3B30`. Plus accessible chip pairs `successSoft`/`successOnSoft`, `warningSoft`/`warningOnSoft`, `errorSoft`/`errorOnSoft`.
 
 **Rules**
 
 - Do not scatter `Color(red:green:blue:)` or raw hex in feature views — extend `AppColor` if a new role is justified.
 - Prefer semantic names (`textSecondary`) over `.gray` / `.black` in new UI.
-- For `.tint(...)`, always pass `AppColor.accent` (not a local `Color`).
+- For `.tint(...)`, always pass an `AppColor` token; screens do not set their own content tint.
 
 ### Typography — `AppFont`
 

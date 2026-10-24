@@ -99,7 +99,6 @@ struct TemplateDetailView: View {
         } message: {
             Text("Your saved routine is unchanged. Try saving again.")
         }
-        .tint(AppColor.accent)
     }
 
     private func persistRoutine(reportsFailure: Bool = true) -> Bool {

@@ -346,7 +346,8 @@ Elements nested inside a card use `AppColor.cardRowFill` (Milk `#F5F5F5`) + `App
 
 - **`ProductTopBar`:** 64pt tall, Title typography (24px semibold rounded, tracking -0.3), title in Ash (secondary text), 16pt spacing between leading/title/trailing slots. Sizes: `.md` and `.large`.
 - **Root tab bar:** native SwiftUI `TabView` / `UITabBar` chrome. Today and Programs keep their navigation state, system selection feedback, Dynamic Type, and accessibility behavior. Do not recreate a custom tab bar.
-- **Toolbar buttons:** defer to iOS-native chrome. **`.weight()` modifiers on `ToolbarItem` buttons are banned** — they fight the system styling.
+- **Toolbar buttons:** defer to iOS-native chrome and stay black (Ink). Close is an X at the leading edge, confirm is a checkmark at the trailing edge; no "Done", "Cancel" or "Close" text (decision 2026-10-24). **`.weight()` modifiers on `ToolbarItem` buttons are banned** — they fight the system styling.
+- **Tint:** `AppScreen` tints page content blue in one place; tab content and bars stay black from `ContentView`. Do not re-tint screens.
 
 ### Signature: The Workout Command Card
 

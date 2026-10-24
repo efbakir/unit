@@ -55,7 +55,7 @@ final class AnalyticsR5UITests: XCTestCase {
         summary.tap()
         XCTAssertTrue(app.navigationBars["How this works"].waitForExistence(timeout: 5))
         capture(app, "r5-summary-info")
-        app.buttons["Done"].tap()
+        app.buttons["Close"].tap()
         let bench = app.buttons["analytics-main-Bench Press"]
         for name in ["Squat", "Deadlift"] {
             let card = app.buttons["analytics-main-\(name)"]

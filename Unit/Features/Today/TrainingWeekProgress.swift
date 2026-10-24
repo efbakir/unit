@@ -412,7 +412,6 @@ struct TodayWeekOverviewSheet: View {
                         Button(AppCopy.Nav.done) {
                             dismiss()
                         }
-                        .appToolbarTextStyle()
                     }
                     .tint(AppColor.textPrimary)
                 }

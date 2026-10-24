@@ -150,7 +150,7 @@ Two competing failure modes drift the codebase. **Both are equally bad.** This t
 
 | Surface | Use | Why |
 |---|---|---|
-| **Top toolbar — text buttons / icon buttons / titles** | iOS-native (`.toolbar { ToolbarItem }`, `Button`, `Label(systemImage:)`, `.navigationTitle`) | Defers to system styling, weight, and Dynamic Type. `appToolbarTextStyle()` exists for trailing text actions, but the chrome stays native. **Never apply `.weight(...)` to ToolbarItem buttons.** |
+| **Top toolbar — text buttons / icon buttons / titles** | iOS-native (`.toolbar { ToolbarItem }`, `Button`, `Label(systemImage:)`, `.navigationTitle`) | Defers to system styling, weight, and Dynamic Type. Toolbar text uses the system font and weight; close is an X, confirm is a checkmark (decision 2026-10-24). **Never apply `.weight(...)` to ToolbarItem buttons.** |
 | **Sheet wrapper** | iOS-native (`.sheet(isPresented:)` / `.sheet(item:)`, `.presentationDetents`, `.appBottomSheetChrome()`) | The sheet shell is iOS. The *body* of the sheet is custom DS — wrap it in `AppSheetScreen`. **Never** put `ScrollView` or `AppCard` as the root child of `.sheet { }`. |
 | **Search bar** | iOS-native via `.appExerciseSearchable(text:)` | Wraps `.searchable` to bake the canonical placement and animation. Pickers using search must use the sanctioned `List + .listStyle(.plain) + .appPlainListRowChrome()` recipe so the native search interacts with native scroll. |
 | **Navigation chrome** | iOS-native (`NavigationStack`, `.navigationTitle`, `.navigationDestination`, `.appNavigationBarChrome()`) | Custom navigation has been deleted from the system. Don't reintroduce. |

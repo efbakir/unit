@@ -114,7 +114,7 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if shouldShowCloseButton {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Group {
                         Button { dismiss() } label: {
                             Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)

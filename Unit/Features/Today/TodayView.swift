@@ -126,7 +126,6 @@ struct TodayView: View {
                     SessionDetailView(session: session, templateName: templateName, completionMoment: completionMoment)
                 }
             }
-            .tint(AppColor.accent)
             .onAppear {
                 checkStaleSession()
                 FreestyleSessionSupport.cleanupOrphanedTemplates(
@@ -230,7 +229,6 @@ struct TodayView: View {
                     Button(AppCopy.Nav.history) {
                         showsHistory = true
                     }
-                    .appToolbarTextStyle()
                 }
                 .tint(AppColor.textPrimary)
             }

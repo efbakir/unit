@@ -5402,10 +5402,12 @@ struct AppExercisePickerSheet: View {
                 createAndSelect(name: trimmedQuery)
             }
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Group {
-                        Button(AppCopy.Nav.done) { dismiss() }
-                            .appToolbarTextStyle()
+                        Button { dismiss() } label: {
+                            Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
+                                .labelStyle(.iconOnly)
+                        }
                     }
                     .tint(AppColor.textPrimary)
                 }
@@ -5562,6 +5564,9 @@ struct AppScreen<Content: View>: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             content()
         }
+        // The one owner of page tint: content is blue, while bars and
+        // toolbars stay black from ContentView (decision 2026-10-24).
+        .tint(AppColor.accent)
         .padding(.horizontal, AppSpacing.md)
         // Child-owned scrolling must reach the safe-area boundary. Fixed
         // sheet/onboarding content restores its own internal padding.
@@ -5720,7 +5725,7 @@ struct AppScreen<Content: View>: View {
             if showsKeyboardDismissToolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") {
+                    Button(AppCopy.Nav.done) {
                         UIApplication.shared.sendAction(
                             #selector(UIResponder.resignFirstResponder),
                             to: nil,
@@ -5728,8 +5733,6 @@ struct AppScreen<Content: View>: View {
                             for: nil
                         )
                     }
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.accent)
                 }
             }
         }
@@ -5909,12 +5912,6 @@ extension View {
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
         }
-    }
-
-    /// Canonical style for text-label toolbar buttons (e.g. "History", "Browse").
-    /// Matches iOS-native bold top-bar actions so every screen reads the same weight.
-    func appToolbarTextStyle() -> some View {
-        self.font(AppFont.body.font.weight(.semibold))
     }
 
     /// Compatibility entry point for existing screens. SwiftUI owns scroll edges:

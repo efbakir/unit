@@ -66,7 +66,6 @@ struct ProgramLibraryDetailView: View {
         } message: {
             Text("Your saved programs are unchanged. Try again.")
         }
-        .tint(AppColor.accent)
     }
 
     private func prescriptionText(for item: ProgramItem) -> String {

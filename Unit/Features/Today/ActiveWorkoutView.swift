@@ -296,7 +296,6 @@ struct ActiveWorkoutView: View {
         // This screen intentionally keeps the native navigation surface visible.
         .toolbarBackground(AppColor.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .tint(AppColor.textPrimary)
         .appHaptic(.success, trigger: setLoggedPhase)
         .appHaptic(.success, trigger: workoutFinishedPhase)
         .appHaptic(.success, trigger: restTimer.completionCount)

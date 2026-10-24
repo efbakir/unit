@@ -95,12 +95,21 @@ struct MainLiftsEditor: View {
                 .background(AppColor.background)
                 .navigationTitle("Main lifts").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Group { Button("Cancel") { dismiss() } }.tint(AppColor.textPrimary) }
+                    ToolbarItem(placement: .cancellationAction) {
+                        Group {
+                            Button { dismiss() } label: {
+                                Label(AppCopy.Nav.cancel, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                            }
+                        }
+                        .tint(AppColor.textPrimary)
+                    }
                     ToolbarItem(placement: .confirmationAction) {
                         Group {
-                            Button("Done") {
+                            Button {
                                 pinnedRaw = AnalyticsEngine.storedMainIDs(draft, automatic: automaticIDs)
                                 dismiss()
+                            } label: {
+                                Label(AppCopy.Nav.done, systemImage: AppIcon.checkmark.systemName).labelStyle(.iconOnly)
                             }
                         }
                         .tint(AppColor.textPrimary)

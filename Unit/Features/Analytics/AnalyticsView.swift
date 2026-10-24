@@ -159,7 +159,16 @@ struct AnalyticsView: View {
                     }
                 }
                 .navigationTitle("How this works").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Group { Button("Done") { showsExplanation = false } }.tint(AppColor.textPrimary) } }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Group {
+                            Button { showsExplanation = false } label: {
+                                Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                            }
+                        }
+                        .tint(AppColor.textPrimary)
+                    }
+                }
                 .appNavigationBarChrome()
             }
         }

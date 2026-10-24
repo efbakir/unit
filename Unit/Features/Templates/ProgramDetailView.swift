@@ -85,7 +85,6 @@ struct ProgramDetailView: View {
         .navigationDestination(isPresented: $showingEdit) {
             EditProgramView(split: split, onDelete: { dismiss() })
         }
-        .tint(AppColor.accent)
     }
 
     // MARK: - Routine Days
