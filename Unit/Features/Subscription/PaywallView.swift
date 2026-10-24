@@ -214,25 +214,30 @@ struct PaywallView: View {
     }
 
     private var reviewHeader: some View {
-        VStack(alignment: .center, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.xs) {
-                ForEach(0..<5, id: \.self) { _ in
-                    AppIcon.starFilled.image(size: AppSpacing.md)
+        VStack(alignment: .center, spacing: AppSpacing.md) {
+            AppCard(contentInset: AppSpacing.lg, verticalInset: AppSpacing.md) {
+                VStack(alignment: .center, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(0..<5, id: \.self) { _ in
+                            AppIcon.starFilled.image(size: AppSpacing.md)
+                                .foregroundStyle(AppColor.textPrimary)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("5 stars")
+
+                    Text(AppCopy.Paywall.reviewQuote)
+                        .font(AppFont.sectionHeader.font)
                         .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(AppCopy.Paywall.reviewAttribution)
+                        .font(AppFont.muted.font)
+                        .foregroundStyle(AppColor.textSecondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("5 stars")
-
-            Text(AppCopy.Paywall.reviewQuote)
-                .font(AppFont.sectionHeader.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(AppCopy.Paywall.reviewAttribution)
-                .font(AppFont.muted.font)
-                .foregroundStyle(AppColor.textSecondary)
 
             // What the subscription gives (Apple's sign-up screen rule);
             // the review alone does not say it.
@@ -241,7 +246,6 @@ struct PaywallView: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, AppSpacing.sm)
                 .accessibilityIdentifier("paywall-supporting-copy")
         }
         .frame(maxWidth: .infinity, alignment: .center)
