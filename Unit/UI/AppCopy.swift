@@ -393,6 +393,26 @@ enum AppCopy {
         static let previewTitle = "Review program"
         static let previewSubtitle = "Check the details before saving your program."
         static let previewCTA = "Save program"
+        static let removeExercise = "Remove exercise"
+        /// Review card for pasted lines the parser did not keep (benchmark
+        /// 2026-10-24, setup row 2). Plain "skipped", never "didn't parse".
+        static func importSkippedTitle(lines: Int, days: Int, weeks: Int = 0) -> String {
+            var parts: [String] = []
+            if lines > 0 { parts.append(lines == 1 ? "1 line" : "\(lines) lines") }
+            if days > 0 { parts.append(days == 1 ? "1 day" : "\(days) days") }
+            if weeks > 0 { parts.append(weeks == 1 ? "1 week" : "\(weeks) weeks") }
+            let joined = parts.count > 1
+                ? parts.dropLast().joined(separator: ", ") + " and " + (parts.last ?? "")
+                : parts.joined()
+            return joined + " skipped"
+        }
+        static let importSkippedWeeks = "Unit repeats the first week."
+        static func importSkippedDays(_ names: [String]) -> String {
+            "Unit keeps the first 6 days. Skipped: \(names.joined(separator: ", "))."
+        }
+        static func importSkippedMore(_ count: Int) -> String {
+            "\(count) more"
+        }
         static let previewCTASaving = "Saving…"
     }
 
@@ -476,8 +496,11 @@ enum AppCopy {
         static func timelineRenewalTitle(_ period: String?) -> String {
             period.map { "Every \($0)" } ?? "Renewal"
         }
-        static func timelineRenewalMessage(_ billedPrice: String) -> String {
-            "Renews at \(billedPrice) unless cancelled."
+        /// The real first-charge date sits in the sentence, as in the
+        /// Blinkist and Mesh trial timelines (2026-10-24).
+        static func timelineRenewalMessage(_ billedPrice: String, date: Date?) -> String {
+            guard let date else { return "Renews at \(billedPrice) unless cancelled." }
+            return "Next charge \(timelineDate(date)): \(billedPrice), unless cancelled."
         }
         static let lifetimeTimelineTitle = "Lifetime access"
         static let lifetimeTodayMessage = "Full Unit access starts immediately."
@@ -487,24 +510,55 @@ enum AppCopy {
         }
 
         static let trialTimelineTitle = "How your free trial works"
-        static let trialTimelineDayZeroTitle = "Day 0"
         static let trialTimelineDayZeroMessage = "Full Unit access starts immediately."
         static func trialTimelineReminderTitle(dayCount: Int?) -> String {
             guard let dayCount else { return "Two days before" }
             return "Day \(max(0, dayCount - 2))"
         }
-        static let trialTimelineReminderOffMessage =
-            "Turn on a reminder for two days before your trial ends."
-        static let trialTimelineReminderOnMessage =
-            "Unit reminds you two days before your trial ends."
+        static func trialTimelineReminderMessage(isOn: Bool, date: Date?) -> String {
+            guard let date else {
+                return isOn
+                    ? "Unit reminds you two days before your trial ends."
+                    : "Turn on a reminder for two days before your trial ends."
+            }
+            return isOn
+                ? "Unit reminds you on \(timelineDate(date))."
+                : "Turn on a reminder for \(timelineDate(date))."
+        }
+        /// "How do I cancel?" under the timeline (2026-10-24, Blinkist
+        /// pattern). Unit's own path first, then the iPhone path.
+        static let cancelHelpTitle = "How do I cancel?"
+        static let cancelHelpInApp = "In Unit: Programs, then Settings, then Manage Subscription."
+        static let cancelHelpOnPhone = "On your iPhone: Settings, then your name, then Subscriptions."
+        static func cancelHelpDeadline(trialEnd: Date?) -> String {
+            guard let trialEnd else {
+                return "Cancel at least 24 hours before your next charge to stop it."
+            }
+            return "Cancel at least 24 hours before \(timelineDate(trialEnd)) and you pay nothing."
+        }
         static let trialReminderLabel = "Remind me 2 days before"
         static let trialReminderCaption =
             "Optional. Notification permission is requested after purchase."
         static func trialTimelineEndTitle(dayCount: Int?) -> String {
             dayCount.map { "Day \($0)" } ?? "After the trial"
         }
-        static func trialTimelineEndMessage(_ billedPrice: String) -> String {
-            "Renews at \(billedPrice) unless cancelled."
+        /// Real calendar dates in the timeline text ("Oct 31"), in the
+        /// phone's format, so the charge day is never a sum to work out. The
+        /// year shows only when it differs from this year.
+        static func timelineDate(
+            _ date: Date,
+            now: Date = .now,
+            calendar: Calendar = .current,
+            locale: Locale = .autoupdatingCurrent
+        ) -> String {
+            let style = Date.FormatStyle.dateTime.month(.abbreviated).day().locale(locale)
+            return calendar.isDate(date, equalTo: now, toGranularity: .year)
+                ? date.formatted(style)
+                : date.formatted(style.year())
+        }
+        static func trialTimelineEndMessage(_ billedPrice: String, date: Date?) -> String {
+            guard let date else { return "Renews at \(billedPrice) unless cancelled." }
+            return "You will be charged \(billedPrice) on \(timelineDate(date)). Cancel anytime before."
         }
         static func trialTimelineRewardTitle(for goal: String?) -> String {
             switch goal {
@@ -516,14 +570,15 @@ enum AppCopy {
         }
         static let trialTimelineRewardMessage =
             "Your program, history, and next targets stay ready."
-        // Social proof — a real, published five-star App Store review
+        // Social proof: a real, published five-star App Store review
         // (Türkiye storefront, v1.0, 2026-06-09: "Yıllardır aradığım gym
-        // tracker app"). The user-facing quote is its English translation.
-        // Numeric aggregate-rating claims stay off the paywall until the
-        // rating count is meaningful.
+        // tracker app"). The user-facing quote is its English translation,
+        // labeled as translated. A rating number stays off the paywall
+        // until about 50 ratings exist; never an invented quote.
         static let reviewStars = "★★★★★"
+        static let reviewStarsAccessibility = "5 out of 5 stars"
         static let reviewQuote = "\u{201C}The gym tracker app I\u{2019}ve been looking for for years.\u{201D}"
-        static let reviewAttribution = "App Store review"
+        static let reviewAttribution = "App Store review · translated from Turkish"
     }
 
     /// Today dashboard state copy. One status line per state — the title

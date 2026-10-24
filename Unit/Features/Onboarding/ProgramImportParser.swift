@@ -54,17 +54,73 @@ struct ProgramImportResult: Equatable {
         /// Includes the original line text so the lifter sees what dropped.
         case skippedConditioning(lines: [String])
         /// Lines that didn't classify as heading, exercise, or conditioning —
-        /// previously dropped silently as `.noise`. Surfaces the count so a
-        /// lifter who pasted free-text intro paragraphs or stray coach
-        /// commentary sees the parser didn't keep them. Limited to the count
-        /// (not the raw text) because the originals are often boilerplate the
-        /// lifter doesn't need to re-read.
-        case noisyLines(count: Int)
+        /// previously dropped silently as `.noise`. Carries the original text
+        /// so Review can name each skipped line (an exercise written without
+        /// numbers, a coach note, a rest instruction) instead of a bare count.
+        case noisyLines(lines: [String])
         /// Lines that had a recognizable exercise name but no prescription
         /// data (sets / reps / weight / duration). Previously dropped; now
         /// kept as `sets=nil, reps=nil` so the lifter can fill in-app. The
         /// warning surfaces the names so they're visible above the day list.
         case exerciseNameOnly(names: [String])
+        /// The paste repeats its days per week ("Week 1" ... "Week 2" ...).
+        /// Unit runs one rotation of templates, so only the first week's
+        /// days are kept; `count` is how many later weeks were skipped.
+        case skippedWeeks(count: Int)
+    }
+}
+
+extension ProgramImportResult {
+    /// What Review lists in its "N lines skipped" card: every pasted line
+    /// the parser did not keep (noise first, then cardio, each in paste
+    /// order) and the day names cut by the 6-day cap.
+    struct SkipSummary: Equatable {
+        var lines: [String] = []
+        var droppedDayNames: [String] = []
+        var skippedWeekCount = 0
+
+        var isEmpty: Bool { lines.isEmpty && droppedDayNames.isEmpty && skippedWeekCount == 0 }
+
+        init(warnings: [Warning]) {
+            var noisy: [String] = []
+            var cardio: [String] = []
+            for warning in warnings {
+                switch warning {
+                case .noisyLines(let lines): noisy = lines
+                case .skippedConditioning(let lines): cardio = lines
+                case .truncatedAtSixDays(let names): droppedDayNames = names
+                case .skippedWeeks(let count): skippedWeekCount = count
+                case .exerciseNameOnly: break
+                }
+            }
+            lines = noisy + cardio
+        }
+
+        var title: String {
+            AppCopy.Onboarding.importSkippedTitle(
+                lines: lines.count,
+                days: droppedDayNames.count,
+                weeks: skippedWeekCount
+            )
+        }
+
+        /// Rows for the expanded card: the week and day-cap notes first, then up to
+        /// `limit` skipped lines, then "N more" so a long chat-style intro
+        /// cannot flood the screen.
+        func displayRows(limit: Int = 10) -> [String] {
+            var rows: [String] = []
+            if skippedWeekCount > 0 {
+                rows.append(AppCopy.Onboarding.importSkippedWeeks)
+            }
+            if !droppedDayNames.isEmpty {
+                rows.append(AppCopy.Onboarding.importSkippedDays(droppedDayNames))
+            }
+            rows += lines.prefix(limit)
+            if lines.count > limit {
+                rows.append(AppCopy.Onboarding.importSkippedMore(lines.count - limit))
+            }
+            return rows
+        }
     }
 }
 
@@ -102,10 +158,14 @@ enum ProgramImportParser {
         }
 
         // Noisy-line warning — un-parseable lines that previously dropped
-        // silently. Surfaced as a count so the lifter can spot-check the
-        // original paste and re-edit if something important was missed.
-        if grouped.noisyLineCount > 0 {
-            warnings.append(.noisyLines(count: grouped.noisyLineCount))
+        // silently. Review lists their text so the lifter can see exactly
+        // what was not kept and re-edit if something important was missed.
+        if !grouped.noisyLines.isEmpty {
+            warnings.append(.noisyLines(lines: grouped.noisyLines))
+        }
+
+        if grouped.skippedWeekCount > 0 {
+            warnings.append(.skippedWeeks(count: grouped.skippedWeekCount))
         }
 
         // 6-day cap warning
@@ -432,10 +492,13 @@ enum ProgramImportParser {
     private struct GroupedResult {
         var days: [ImportedProgramDay]
         var skippedConditioning: [String]
-        /// Count of lines classified as `.noise` (un-parseable). Previously
-        /// dropped silently; now surfaced as a warning footer so the lifter
-        /// sees the parser didn't keep them.
-        var noisyLineCount: Int
+        /// Lines classified as `.noise` (un-parseable), in paste order.
+        /// Previously dropped silently; Review now lists them.
+        var noisyLines: [String]
+        /// Weeks after the first "Week N" heading. Their days used to be
+        /// appended as extra days ("Day 1" twice), so a 3-day, 3-week paste
+        /// became a 6-day rotation (benchmark 2026-10-24, setup row 9).
+        var skippedWeekCount: Int
     }
 
     private static func groupIntoDays(
@@ -447,7 +510,9 @@ enum ProgramImportParser {
         var currentDayName = "Workout 1"
         var currentExercises: [ImportedProgramExercise] = []
         var skippedConditioning: [String] = []
-        var noisyLineCount = 0
+        var noisyLines: [String] = []
+        var weekHeadingCount = 0
+        var skippedWeekCount = 0
 
         func flush() {
             guard !currentExercises.isEmpty else { return }
@@ -456,6 +521,14 @@ enum ProgramImportParser {
         }
 
         for (index, classification) in classifications.enumerated() {
+            // Keep the first week; skip everything from the second "Week N"
+            // heading on. Unit repeats the first week as its rotation.
+            if case .heading(let name) = classification, isWeekHeading(name) {
+                weekHeadingCount += 1
+                if weekHeadingCount > 1 { skippedWeekCount += 1 }
+            }
+            if skippedWeekCount > 0 { continue }
+
             switch classification {
             case .heading(let name):
                 flush()
@@ -464,13 +537,17 @@ enum ProgramImportParser {
                 let line = sanitizedLines[index]
                 guard let tokenized = tokenizeExercise(line, defaultUnit: defaultUnit) else {
                     // Tokenizer dropped it (no letters survived cleanup) —
-                    // count this as a noisy line so the lifter sees it
-                    // didn't make it into the program.
-                    noisyLineCount += 1
+                    // list it so the lifter sees it didn't make it into the
+                    // program.
+                    noisyLines.append(line)
                     continue
                 }
                 if Filter.isPureConditioning(tokenized: tokenized) {
                     skippedConditioning.append(line)
+                    continue
+                }
+                if Filter.isTimingInstruction(line: line, tokenized: tokenized) {
+                    noisyLines.append(line)
                     continue
                 }
                 if var normalized = Normalizer.normalize(tokenized: tokenized) {
@@ -481,10 +558,10 @@ enum ProgramImportParser {
                     normalized.originalLine = line
                     currentExercises.append(normalized)
                 } else {
-                    noisyLineCount += 1
+                    noisyLines.append(line)
                 }
             case .noise:
-                noisyLineCount += 1
+                noisyLines.append(sanitizedLines[index])
             case .comment, .empty:
                 continue
             }
@@ -494,8 +571,13 @@ enum ProgramImportParser {
         return GroupedResult(
             days: days,
             skippedConditioning: skippedConditioning,
-            noisyLineCount: noisyLineCount
+            noisyLines: noisyLines,
+            skippedWeekCount: skippedWeekCount
         )
+    }
+
+    private static func isWeekHeading(_ name: String) -> Bool {
+        name.range(of: #"(?i)^week\s*\d+"#, options: .regularExpression) != nil
     }
 
     // MARK: Stage 4 — Tokenizer
@@ -650,6 +732,15 @@ enum ProgramImportParser {
                 weightKg = added
             }
             remaining = bw.remaining
+        }
+
+        // 9b. Word-first autoregulation (`RPE 8`, `RIR 2`, `RPE 7-8`). The
+        // number-first form (`@8 RPE`) is handled by the bare-number fallback
+        // below; word-first used to fall through to it and save 8 kg with
+        // `RPE` left in the name (benchmark 2026-10-24, setup row 3).
+        if let r = matchAutoregulationCue(remaining) {
+            capturedFormNotes.append(r.note)
+            remaining = r.remaining
         }
 
         // 10. Explicit weight (60kg / 60lb / 60#).
@@ -860,6 +951,20 @@ enum ProgramImportParser {
         /// `Cable Crossover` keeps: neither token is conditioning. The
         /// risk is that single-word conditioning lines like just "Bike"
         /// always drop — which is the intent.
+        /// Rest, total-time and warm-up instructions (`Rest 90s between
+        /// sets`, `Total time 60 min`, `Warm up 10 min bike`) carry only a
+        /// duration. They used to become 1 x 1 exercises named "Between
+        /// Sets" or "Total Time" (benchmark 2026-10-24, setup row 3).
+        static func isTimingInstruction(line: String, tokenized: TokenizedExercise) -> Bool {
+            guard tokenized.sets == nil, tokenized.reps == nil, tokenized.weightKg == nil else {
+                return false
+            }
+            return line.range(
+                of: #"(?i)\b(rest|between sets|total time|session time|workout time|warm[\s-]?up|cool[\s-]?down)\b"#,
+                options: .regularExpression
+            ) != nil
+        }
+
         static func isPureConditioning(tokenized: TokenizedExercise) -> Bool {
             let lowered = tokenized
                 .name
@@ -1281,9 +1386,21 @@ enum ProgramImportParser {
             let suffix = String(line[afterIndex...]).trimmingCharacters(in: .whitespaces)
             let lower = suffix.lowercased()
             if lower.hasPrefix("%") {
-                let remaining = replacingFirst(in: line, match: m[0])
+                var remaining = replacingFirst(in: line, match: m[0])
+                var note = "\(Int(value))%"
+                // `75% 1RM`, `75% of 1RM`, `70% TM`: the label belongs with
+                // the percent, not in the exercise name ("Squat 1RM").
+                let afterPercent = String(suffix.dropFirst()).trimmingCharacters(in: .whitespaces)
+                if let label = firstMatch(
+                    in: afterPercent,
+                    pattern: #"(?i)^(?:of\s+)?(?:1\s*rm|e1rm|1\s*rep\s*max|training\s*max|tm)\b"#
+                )?.first {
+                    let lowered = label.lowercased()
+                    note += lowered.hasSuffix("tm") || lowered.contains("training") ? " TM" : " 1RM"
+                    remaining = replacingFirst(in: remaining, match: label)
+                }
                 let cleaned = collapseWhitespace(remaining.replacingOccurrences(of: "%", with: " "))
-                return (nil, "\(Int(value))%", cleaned)
+                return (nil, note, cleaned)
             }
             if lower.hasPrefix("rpe") || lower.hasPrefix("rir") {
                 // Strip the cue token along with the number — same pattern
@@ -1300,6 +1417,18 @@ enum ProgramImportParser {
         let kg = defaultUnit == "lb" ? value / 2.20462 : value
         let remaining = replacingFirst(in: line, match: m[0])
         return (kg, nil, collapseWhitespace(remaining))
+    }
+
+    /// Word-first RPE / RIR cue (`RPE 8`, `RPE8`, `RIR 2`, `RPE 7.5`,
+    /// `RPE 7-8`), returned as a note so the number never becomes a weight.
+    private static func matchAutoregulationCue(_ line: String) -> (note: String, remaining: String)? {
+        let pattern = #"(?i)\b(rpe|rir)\s*@?\s*(\d{1,2}(?:[.,]\d)?(?:\s*-\s*\d{1,2}(?:[.,]\d)?)?)\b"#
+        guard let m = firstMatch(in: line, pattern: pattern), m.count == 3 else { return nil }
+        let value = m[2]
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+        let remaining = collapseWhitespace(replacingFirst(in: line, match: m[0]))
+        return ("\(m[1].uppercased()) \(value)", remaining)
     }
 
     private static func stripIntentQualifiers(_ line: String) -> (remaining: String, stripped: [String]) {

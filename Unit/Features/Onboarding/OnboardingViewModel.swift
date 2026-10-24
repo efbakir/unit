@@ -456,6 +456,9 @@ final class OnboardingViewModel {
             let dayOnbExs = dayExercises[i].filter {
                 !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
+            // Never save an empty routine (every row removed or renamed to
+            // nothing on Review).
+            guard !dayOnbExs.isEmpty else { continue }
             let exerciseIds = dayOnbExs.compactMap { exerciseMap[$0.id]?.id }
             var setsPlan: [UUID: Int] = [:]
             var repsPlan: [UUID: Int] = [:]
@@ -512,6 +515,65 @@ final class OnboardingViewModel {
         try modelContext.save()
 
         ActiveSplitStore.setCurrent(split.id)
+    }
+}
+
+// MARK: - Review edits
+
+extension OnboardingViewModel {
+    /// Everything a Review removal can change, so Undo restores it exactly.
+    struct RemovedExerciseSnapshot: Equatable {
+        let id = UUID()
+        let exerciseName: String
+        let dayIndex: Int
+        let removedDay: Bool
+        let dayCount: Int
+        let dayNames: [String]
+        let dayExercises: [[OnboardingExercise]]
+        let dayWeekdays: [Int]
+    }
+
+    /// The program's last remaining exercise cannot be removed; Review would
+    /// have nothing left to save.
+    var canRemoveExercise: Bool {
+        dayExercises.reduce(0) { $0 + $1.count } > 1
+    }
+
+    /// Removes one exercise on Review (benchmark 2026-10-24, setup row 4).
+    /// Removing a day's last exercise removes the day too.
+    @discardableResult
+    func removeExercise(dayIndex: Int, exerciseID: UUID) -> RemovedExerciseSnapshot? {
+        guard canRemoveExercise,
+              dayExercises.indices.contains(dayIndex),
+              let index = dayExercises[dayIndex].firstIndex(where: { $0.id == exerciseID }) else {
+            return nil
+        }
+        let removesDay = dayExercises[dayIndex].count == 1
+        let snapshot = RemovedExerciseSnapshot(
+            exerciseName: dayExercises[dayIndex][index].name,
+            dayIndex: dayIndex,
+            removedDay: removesDay,
+            dayCount: dayCount,
+            dayNames: dayNames,
+            dayExercises: dayExercises,
+            dayWeekdays: dayWeekdays
+        )
+        if removesDay {
+            dayExercises.remove(at: dayIndex)
+            if dayNames.indices.contains(dayIndex) { dayNames.remove(at: dayIndex) }
+            if dayWeekdays.indices.contains(dayIndex) { dayWeekdays.remove(at: dayIndex) }
+            dayCount = dayExercises.count
+        } else {
+            dayExercises[dayIndex].remove(at: index)
+        }
+        return snapshot
+    }
+
+    func undoRemoval(_ snapshot: RemovedExerciseSnapshot) {
+        dayCount = snapshot.dayCount
+        dayNames = snapshot.dayNames
+        dayWeekdays = snapshot.dayWeekdays
+        dayExercises = snapshot.dayExercises
     }
 }
 

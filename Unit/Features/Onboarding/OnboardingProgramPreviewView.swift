@@ -16,7 +16,7 @@
 //     to the hard paywall.
 //   - Row tap (name + sets×reps block) opens the edit sheet — no separate
 //     pencil button next to the weight field.
-//   - Paste warnings inline: banner for noisy lines + dropped conditioning;
+//   - Paste warnings inline: one closed card names each skipped line;
 //     hint on rows where the parser defaulted sets/reps (recorded flag,
 //     never value-equality against 3×8).
 //   - Empty-state fallback when parse produced zero exercises.
@@ -39,6 +39,18 @@ struct OnboardingProgramPreviewView: View {
     /// names can be edited post-paywall and we don't want state to leak.
     @State private var expandedDays: [Int: Bool] = [0: true]
     @State private var editingExercise: PreviewExerciseEditTarget?
+    /// The skipped-lines card starts closed: the count is the signal, the
+    /// lines are one tap away.
+    @State private var isSkippedExpanded = false
+    @State private var toastMessage: AppToastEvent?
+    @State private var pendingUndo: PendingUndo?
+
+    /// One removal that Undo can still reverse, with the day cards' open
+    /// state from before it (a removed day shifts the index-keyed cards).
+    private struct PendingUndo {
+        let snapshot: OnboardingViewModel.RemovedExerciseSnapshot
+        let expandedDays: [Int: Bool]
+    }
 
     private struct PreviewExerciseEditTarget: Identifiable {
         let dayIndex: Int
@@ -70,6 +82,13 @@ struct OnboardingProgramPreviewView: View {
         .sheet(item: $editingExercise) { target in
             AppSheetScreen(
                 title: "Edit exercise",
+                // Pinned under the editor so it fits the medium sheet. Undo
+                // makes the removal reversible, as in the routine editor.
+                secondaryButton: vm.canRemoveExercise
+                    ? SecondaryButtonConfig(label: AppCopy.Onboarding.removeExercise) {
+                        removeExercise(target)
+                    }
+                    : nil,
                 dismissLabel: AppCopy.Nav.done,
                 onDismissAction: { editingExercise = nil },
                 usesOuterScroll: false
@@ -79,6 +98,47 @@ struct OnboardingProgramPreviewView: View {
             .presentationDetents([.medium])
             .appBottomSheetChrome()
         }
+        .appToast(event: $toastMessage)
+    }
+
+    // MARK: - Remove with Undo
+
+    /// Benchmark 2026-10-24, setup row 4: junk rows from a paste can be
+    /// removed here instead of pasting again.
+    private func removeExercise(_ target: PreviewExerciseEditTarget) {
+        let openDays = expandedDays
+        editingExercise = nil
+        guard let snapshot = vm.removeExercise(
+            dayIndex: target.dayIndex,
+            exerciseID: target.exerciseID
+        ) else { return }
+        if snapshot.removedDay {
+            expandedDays = Self.expandedDays(openDays, removing: snapshot.dayIndex)
+        }
+        pendingUndo = PendingUndo(snapshot: snapshot, expandedDays: openDays)
+        toastMessage = AppToastEvent(
+            AppCopy.Toast.removedExercise(snapshot.exerciseName),
+            action: AppToastAction(id: snapshot.id, label: AppCopy.Toast.undo) {
+                undoRemoval(snapshot.id)
+            }
+        )
+    }
+
+    private func undoRemoval(_ id: UUID) {
+        guard let pending = pendingUndo, pending.snapshot.id == id else { return }
+        vm.undoRemoval(pending.snapshot)
+        expandedDays = pending.expandedDays
+        pendingUndo = nil
+    }
+
+    /// Day cards are keyed by index, so removing a day moves every later
+    /// day's open state down by one.
+    private static func expandedDays(_ days: [Int: Bool], removing index: Int) -> [Int: Bool] {
+        var result: [Int: Bool] = [:]
+        for (key, isOpen) in days where key != index {
+            result[key > index ? key - 1 : key] = isOpen
+        }
+        return result
     }
 
     // Sticky CTA — routed through OnboardingShell's pinned bottom button (the
@@ -107,7 +167,7 @@ struct OnboardingProgramPreviewView: View {
         VStack(spacing: AppSpacing.md) {
             weightUnitRow
 
-            warningBanner
+            skippedLinesCard
 
             ForEach(Array(vm.dayExercises.enumerated()), id: \.offset) { dayIndex, exercises in
                 AppDisclosureCard(
@@ -266,15 +326,20 @@ struct OnboardingProgramPreviewView: View {
 
     @ViewBuilder
     private func exerciseEditor(for target: PreviewExerciseEditTarget) -> some View {
-        if let index = exerciseIndex(for: target) {
+        if exerciseIndex(for: target) != nil {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     AppSectionHeader("Exercise")
+                    // Looked up by id on every read: after "Remove exercise"
+                    // the sheet is still dismissing and `index` is stale.
                     TextField(
                         "Exercise name",
                         text: Binding(
-                            get: { vm.dayExercises[target.dayIndex][index].name },
-                            set: { vm.dayExercises[target.dayIndex][index].name = $0 }
+                            get: {
+                                exerciseIndex(for: target)
+                                    .map { vm.dayExercises[target.dayIndex][$0].name } ?? ""
+                            },
+                            set: { name in updateExercise(target) { $0.name = name } }
                         )
                     )
                     .font(AppFont.body.font)
@@ -288,7 +353,7 @@ struct OnboardingProgramPreviewView: View {
                             .font(AppFont.body.font)
                             .foregroundStyle(AppColor.textPrimary)
                         Spacer(minLength: 0)
-                        previewStepper(label: label, target: target, index: index)
+                        previewStepper(label: label, target: target)
                     }
                 }
             }
@@ -297,9 +362,9 @@ struct OnboardingProgramPreviewView: View {
         }
     }
 
-    private func previewStepper(label: String, target: PreviewExerciseEditTarget, index: Int) -> some View {
-        let exercise = vm.dayExercises[target.dayIndex][index]
-        let value = label == "Sets" ? exercise.plannedSets : exercise.plannedReps
+    private func previewStepper(label: String, target: PreviewExerciseEditTarget) -> some View {
+        let exercise = exerciseIndex(for: target).map { vm.dayExercises[target.dayIndex][$0] }
+        let value = exercise.map { label == "Sets" ? $0.plannedSets : $0.plannedReps } ?? 0
         let range = label == "Sets"
             ? OnboardingExercise.plannedSetsRange
             : OnboardingExercise.plannedRepsRange
@@ -309,23 +374,37 @@ struct OnboardingProgramPreviewView: View {
             isDecrementEnabled: value > range.lowerBound,
             isIncrementEnabled: value < range.upperBound,
             onDecrement: {
-                if label == "Sets" {
-                    vm.dayExercises[target.dayIndex][index].plannedSets = max(range.lowerBound, value - 1)
-                } else {
-                    vm.dayExercises[target.dayIndex][index].plannedReps = max(range.lowerBound, value - 1)
+                updateExercise(target) { exercise in
+                    if label == "Sets" {
+                        exercise.plannedSets = max(range.lowerBound, value - 1)
+                    } else {
+                        exercise.plannedReps = max(range.lowerBound, value - 1)
+                    }
+                    // User has reviewed the values — the defaulted hint is served.
+                    exercise.usedDefaultSetsReps = false
                 }
-                // User has reviewed the values — the defaulted hint is served.
-                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             },
             onIncrement: {
-                if label == "Sets" {
-                    vm.dayExercises[target.dayIndex][index].plannedSets = min(range.upperBound, value + 1)
-                } else {
-                    vm.dayExercises[target.dayIndex][index].plannedReps = min(range.upperBound, value + 1)
+                updateExercise(target) { exercise in
+                    if label == "Sets" {
+                        exercise.plannedSets = min(range.upperBound, value + 1)
+                    } else {
+                        exercise.plannedReps = min(range.upperBound, value + 1)
+                    }
+                    exercise.usedDefaultSetsReps = false
                 }
-                vm.dayExercises[target.dayIndex][index].usedDefaultSetsReps = false
             }
         )
+    }
+
+    /// Edits the row by id, so a removed or moved row is never written
+    /// through a stale index.
+    private func updateExercise(
+        _ target: PreviewExerciseEditTarget,
+        _ change: (inout OnboardingExercise) -> Void
+    ) {
+        guard let index = exerciseIndex(for: target) else { return }
+        change(&vm.dayExercises[target.dayIndex][index])
     }
 
     private func exerciseIndex(for target: PreviewExerciseEditTarget) -> Int? {
@@ -386,70 +465,34 @@ struct OnboardingProgramPreviewView: View {
         )
     }
 
-    // MARK: - Warnings
+    // MARK: - Skipped lines
 
+    /// Names every pasted line the parser did not keep (benchmark 2026-10-24,
+    /// setup row 2), in the same disclosure card as the days below.
     @ViewBuilder
-    private var warningBanner: some View {
-        let noisy = noisyLinesCount
-        let conditioningLines = skippedConditioningLines
-        let droppedDays = droppedDayNames
-        if noisy > 0 || conditioningLines.isEmpty == false || droppedDays.isEmpty == false {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                if droppedDays.isEmpty == false {
-                    Text("Only the first 6 days were imported.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if noisy > 0 {
-                    Text(noisy == 1
-                         ? "1 line didn't parse."
-                         : "\(noisy) lines didn't parse.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if conditioningLines.isEmpty == false {
-                    Text(conditioningLines.count == 1
-                         ? "1 cardio line skipped."
-                         : "\(conditioningLines.count) cardio lines skipped.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
+    private var skippedLinesCard: some View {
+        let summary = ProgramImportResult.SkipSummary(warnings: vm.importWarnings)
+        if !summary.isEmpty {
+            AppDisclosureCard(isExpanded: $isSkippedExpanded) {
+                Text(summary.title)
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            } content: {
+                VStack(spacing: 0) {
+                    AppDivider()
+                    AppDividedList(data: Array(summary.displayRows().enumerated()), id: \.offset) { row in
+                        Text(row.element)
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .lineLimit(2)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardRowChrome()
+                    }
                 }
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(AppColor.controlBackground)
-            )
+            .accessibilityIdentifier("onboarding-review-skipped")
         }
-    }
-
-    private var noisyLinesCount: Int {
-        for warning in vm.importWarnings {
-            if case .noisyLines(let count) = warning {
-                return count
-            }
-        }
-        return 0
-    }
-
-    private var droppedDayNames: [String] {
-        for warning in vm.importWarnings {
-            if case .truncatedAtSixDays(let names) = warning {
-                return names
-            }
-        }
-        return []
-    }
-
-    private var skippedConditioningLines: [String] {
-        for warning in vm.importWarnings {
-            if case .skippedConditioning(let lines) = warning {
-                return lines
-            }
-        }
-        return []
     }
 
     // MARK: - Empty state

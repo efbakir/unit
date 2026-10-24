@@ -20,6 +20,7 @@
 //
 
 import XCTest
+import SwiftData
 @testable import Unit
 
 @MainActor
@@ -773,6 +774,178 @@ final class ProgramImportParserTests: XCTestCase {
                       "Free-text coach notes should surface as a noisyLines warning, not drop silently")
     }
 
+    // MARK: - Benchmark 2026-10-24, setup row 2
+
+    /// Skipped lines keep their text so Review can name them.
+    func testSkippedLinesKeepTheirTextForReview() {
+        let input = """
+        Push
+        Bench Press 4x8 60kg
+        Focus on form
+        Incline Press
+        Treadmill 10min
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        let summary = ProgramImportResult.SkipSummary(warnings: result.warnings)
+
+        XCTAssertEqual(summary.lines, ["Focus on form", "Incline Press", "Treadmill 10min"],
+                       "noise first, then cardio, each in paste order")
+        XCTAssertEqual(summary.title, "3 lines skipped")
+        XCTAssertEqual(summary.displayRows(), summary.lines)
+    }
+
+    func testSkipSummaryCapsLongPastesAndNamesCutDays() {
+        let noise = (1...12).map { "Coach note \($0)" }
+        let summary = ProgramImportResult.SkipSummary(warnings: [
+            .noisyLines(lines: noise),
+            .truncatedAtSixDays(droppedNames: ["Day 7", "Day 8"])
+        ])
+
+        XCTAssertEqual(summary.title, "12 lines and 2 days skipped")
+        let rows = summary.displayRows(limit: 10)
+        XCTAssertEqual(rows.first, "Unit keeps the first 6 days. Skipped: Day 7, Day 8.")
+        XCTAssertEqual(rows.count, 12, "day note + 10 lines + 'N more'")
+        XCTAssertEqual(rows.last, "2 more")
+        XCTAssertTrue(ProgramImportResult.SkipSummary(warnings: []).isEmpty)
+    }
+
+    // MARK: - Benchmark 2026-10-24, setup row 9
+
+    /// Week 2+ used to be appended as extra days ("Day 1" twice): a 3-day,
+    /// 3-week paste became a 6-day rotation and Week 3 was cut.
+    func testLaterWeeksAreSkippedAndTheFirstWeekIsKept() {
+        let input = """
+        # Week 1
+        ## Day 1
+        Squat 3x5 100
+        ## Day 2
+        Bench 3x5 80
+        ## Day 3
+        Deadlift 1x5 140
+        # Week 2
+        ## Day 1
+        Squat 3x5 102.5
+        ## Day 2
+        Bench 3x5 82.5
+        ## Day 3
+        Deadlift 1x5 145
+        # Week 3
+        ## Day 1
+        Squat 3x5 105
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Day 1", "Day 2", "Day 3"])
+        XCTAssertEqual(result.days.first?.exercises.first?.weightKg ?? 0, 100, accuracy: 0.01,
+                       "the first week's numbers are kept")
+        XCTAssertTrue(result.warnings.contains(.skippedWeeks(count: 2)))
+        XCTAssertFalse(result.warnings.contains { warning in
+            if case .truncatedAtSixDays = warning { return true }
+            return false
+        }, "later weeks no longer hit the 6-day cap")
+
+        let summary = ProgramImportResult.SkipSummary(warnings: result.warnings)
+        XCTAssertEqual(summary.title, "2 weeks skipped")
+        XCTAssertEqual(summary.displayRows(), ["Unit repeats the first week."])
+    }
+
+    func testPlainWeekHeadingsWithoutDaysKeepWeekOneAsTheDay() {
+        let input = """
+        Week 1
+        Squat 5x5 100
+        Bench 5x5 80
+
+        Week 2
+        Squat 5x5 102.5
+        Bench 5x5 82.5
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Week 1"])
+        XCTAssertTrue(result.warnings.contains(.skippedWeeks(count: 1)))
+    }
+
+    func testALoneWeekHeadingChangesNothing() {
+        let input = """
+        Week 1
+        Day 1
+        Squat 3x5 100
+        Day 2
+        Bench 3x5 80
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.map(\.name), ["Day 1", "Day 2"])
+        XCTAssertFalse(result.warnings.contains { warning in
+            if case .skippedWeeks = warning { return true }
+            return false
+        })
+    }
+
+    func testSkippedTitleJoinsEveryPart() {
+        XCTAssertEqual(AppCopy.Onboarding.importSkippedTitle(lines: 1, days: 0), "1 line skipped")
+        XCTAssertEqual(AppCopy.Onboarding.importSkippedTitle(lines: 3, days: 1, weeks: 2),
+                       "3 lines, 1 day and 2 weeks skipped")
+    }
+
+    // MARK: - Benchmark 2026-10-24, setup row 3
+
+    /// `RPE 8` written word-first used to save 8 kg and the name "Bench Press RPE".
+    func testWordFirstRPEAndRIRAreNotesNotWeights() {
+        let input = """
+        Upper
+        Bench Press 3x8 RPE 8
+        Barbell Row 3x10 RIR 2
+        Overhead Press 3x5 RPE 7-8
+        Bench 3x5 100kg RPE 8
+        """
+        let exercises = ProgramImportParser.parse(input, defaultUnit: "kg").first?.exercises ?? []
+        XCTAssertEqual(exercises.map(\.name), ["Bench Press", "Barbell Row", "Overhead Press", "Bench"])
+        XCTAssertEqual(exercises.map(\.note), ["RPE 8", "RIR 2", "RPE 7-8", "RPE 8"])
+        XCTAssertNil(exercises[0].weightKg, "RPE 8 is effort, not 8 kg")
+        XCTAssertNil(exercises[1].weightKg, "RIR 2 is effort, not 2 kg")
+        XCTAssertNil(exercises[2].weightKg)
+        XCTAssertEqual(exercises[3].weightKg ?? 0, 100, accuracy: 0.01, "an explicit weight survives the cue")
+    }
+
+    /// `@ 8` with no RPE word stays a weight: `Curl 3x10 @ 8` is 8 kg dumbbells.
+    func testBareAtNumberStaysAWeight() {
+        let curl = ProgramImportParser.parse("Curl 3x10 @ 8", defaultUnit: "kg").first?.exercises.first
+        XCTAssertEqual(curl?.name, "Curl")
+        XCTAssertEqual(curl?.weightKg ?? 0, 8, accuracy: 0.01)
+    }
+
+    /// `75% 1RM` used to leave "1RM" in the name ("Squat 1RM").
+    func testPercentLabelStaysInTheNoteNotTheName() {
+        let input = """
+        Lower
+        Squat 5x5 @ 75% 1RM
+        Front Squat 3x3 @75% of 1RM
+        Deadlift 3x5 70% TM
+        """
+        let exercises = ProgramImportParser.parse(input, defaultUnit: "kg").first?.exercises ?? []
+        XCTAssertEqual(exercises.map(\.name), ["Squat", "Front Squat", "Deadlift"])
+        XCTAssertEqual(exercises.map(\.note), ["75% 1RM", "75% 1RM", "70% TM"])
+        XCTAssertTrue(exercises.allSatisfy { $0.weightKg == nil })
+    }
+
+    /// Rest, total-time and warm-up lines used to become 1 x 1 exercises
+    /// ("Between Sets", "Total Time"). They are skipped lines now.
+    func testTimingInstructionsAreSkippedNotExercises() {
+        let input = """
+        Push
+        Bench Press 3x8 60
+        Rest 90s between sets
+        Total time 60 min
+        Warm up 10 min bike
+        Plank 60s
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        XCTAssertEqual(result.days.first?.exercises.map(\.name), ["Bench Press", "Plank"],
+                       "timed holds stay; timing instructions do not")
+        XCTAssertTrue(result.warnings.contains { warning in
+            if case .noisyLines = warning { return true }
+            return false
+        })
+    }
+
     // MARK: - Weight seed path (parser weight → first-session starting target)
 
     // The parser already extracts `weightKg` (see the table / explicit-unit
@@ -1152,5 +1325,96 @@ final class ParserDefaultFlagTests: XCTestCase {
         XCTAssertEqual(exercises.first?.plannedSets, 4)
         XCTAssertEqual(exercises.first?.plannedReps, 8)
         XCTAssertNotEqual(exercises.first?.usedDefaultSetsReps, true)
+    }
+}
+
+// MARK: - Review: remove an exercise (benchmark 2026-10-24, setup row 4)
+
+/// Lives in this file for the same reason as `PRHistoryTests`: the UnitTests
+/// target lists source files explicitly in project.pbxproj.
+@MainActor
+final class OnboardingReviewRemovalTests: XCTestCase {
+    private func pastedProgram() -> OnboardingViewModel {
+        let vm = OnboardingViewModel()
+        vm.importMethod = .paste
+        vm.applyImportedProgram([
+            ImportedProgramDay(name: "Push", exercises: [
+                ImportedProgramExercise(name: "Bench Press", sets: 4, reps: 8, weightKg: 60),
+                ImportedProgramExercise(name: "Between Sets", sets: 1, reps: 1)
+            ]),
+            ImportedProgramDay(name: "Notes", exercises: [
+                ImportedProgramExercise(name: "Total Time", sets: 1, reps: 1)
+            ]),
+            ImportedProgramDay(name: "Pull", exercises: [
+                ImportedProgramExercise(name: "Barbell Row", sets: 4, reps: 6, weightKg: 70)
+            ])
+        ])
+        return vm
+    }
+
+    func testRemovingARowKeepsTheDayAndUndoRestoresIt() throws {
+        let vm = pastedProgram()
+        let junk = try XCTUnwrap(vm.dayExercises[0].last)
+
+        let snapshot = try XCTUnwrap(vm.removeExercise(dayIndex: 0, exerciseID: junk.id))
+
+        XCTAssertEqual(snapshot.exerciseName, "Between Sets")
+        XCTAssertFalse(snapshot.removedDay)
+        XCTAssertEqual(vm.dayExercises[0].map(\.name), ["Bench Press"])
+        XCTAssertEqual(vm.dayNames, ["Push", "Notes", "Pull"])
+
+        vm.undoRemoval(snapshot)
+        XCTAssertEqual(vm.dayExercises[0].map(\.name), ["Bench Press", "Between Sets"])
+    }
+
+    func testRemovingADaysLastRowRemovesTheDayInEveryArray() throws {
+        let vm = pastedProgram()
+        let onlyRow = try XCTUnwrap(vm.dayExercises[1].first)
+
+        let snapshot = try XCTUnwrap(vm.removeExercise(dayIndex: 1, exerciseID: onlyRow.id))
+
+        XCTAssertTrue(snapshot.removedDay)
+        XCTAssertEqual(vm.dayNames, ["Push", "Pull"])
+        XCTAssertEqual(vm.dayExercises.map { $0.map(\.name) }, [["Bench Press", "Between Sets"], ["Barbell Row"]])
+        XCTAssertEqual(vm.dayWeekdays.count, 2)
+        XCTAssertEqual(vm.dayCount, 2)
+
+        vm.undoRemoval(snapshot)
+        XCTAssertEqual(vm.dayNames, ["Push", "Notes", "Pull"])
+        XCTAssertEqual(vm.dayCount, 3)
+    }
+
+    func testTheLastRemainingExerciseCannotBeRemoved() throws {
+        let vm = OnboardingViewModel()
+        vm.applyImportedProgram([
+            ImportedProgramDay(name: "Full Body", exercises: [
+                ImportedProgramExercise(name: "Squat", sets: 3, reps: 5)
+            ])
+        ])
+        let squat = try XCTUnwrap(vm.dayExercises.first?.first)
+
+        XCTAssertFalse(vm.canRemoveExercise)
+        XCTAssertNil(vm.removeExercise(dayIndex: 0, exerciseID: squat.id))
+        XCTAssertEqual(vm.dayExercises.first?.count, 1)
+    }
+
+    /// A day emptied by renaming every row to nothing is not saved as an
+    /// empty routine.
+    func testSaveSkipsAnEmptyDay() throws {
+        let container = try ModelContainer(
+            for: Split.self,
+            Exercise.self,
+            DayTemplate.self,
+            WorkoutSession.self,
+            SetEntry.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let vm = pastedProgram()
+        vm.dayExercises[1][0].name = " "
+
+        try vm.commit(modelContext: container.mainContext)
+
+        let names = try container.mainContext.fetch(FetchDescriptor<DayTemplate>()).map(\.name)
+        XCTAssertEqual(Set(names), ["Push", "Pull"])
     }
 }

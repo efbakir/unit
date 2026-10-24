@@ -27,6 +27,7 @@ private enum DataRow: String, CaseIterable, Identifiable {
 
 private enum SubscriptionRow: String, CaseIterable, Identifiable {
     case status = "Unit Pro"
+    case renewal = "Renewal"
     case restore = "Restore Purchases"
     case manage = "Manage Subscription"
 
@@ -131,6 +132,7 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
+        .task { await store.refreshRenewalSummary() }
         .alert(
             "Restore",
             isPresented: infoAlertBinding,
@@ -234,6 +236,14 @@ struct SettingsView: View {
                 switch row {
                 case .status:
                     AppListRow(title: row.rawValue, value: subscriptionStatusValue)
+                case .renewal:
+                    // Trial end or next charge (benchmark 2026-10-24).
+                    if let summary = store.renewalSummary {
+                        AppListRow(
+                            title: renewalTitle(summary.kind),
+                            value: AppCopy.Paywall.timelineDate(summary.date)
+                        )
+                    }
                 case .restore:
                     Button {
                         Task { await runRestore() }
@@ -266,7 +276,11 @@ struct SettingsView: View {
 
     private var subscriptionRows: [SubscriptionRow] {
         SubscriptionRow.allCases.filter { row in
-            row != .manage || canShowManageSubscriptions
+            switch row {
+            case .manage: canShowManageSubscriptions
+            case .renewal: store.renewalSummary != nil
+            case .status, .restore: true
+            }
         }
     }
 
@@ -343,6 +357,14 @@ struct SettingsView: View {
         await store.restore()
         if !wasPurchased && store.isPurchased {
             showingRestoreSuccess = true
+        }
+    }
+
+    private func renewalTitle(_ kind: SubscriptionRenewalSummary.Kind) -> String {
+        switch kind {
+        case .trialEnds: "Trial ends"
+        case .renews: "Renews"
+        case .ends: "Ends"
         }
     }
 

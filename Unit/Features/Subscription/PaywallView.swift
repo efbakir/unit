@@ -32,6 +32,7 @@ struct PaywallView: View {
     /// it on (step 1, or Settings before a plan lapsed), as their way to turn
     /// it off; read once so it does not vanish mid-visit.
     @State private var showsAnalyticsToggle = UnitAnalytics.shared.isEnabled
+    @State private var isCancelHelpExpanded = false
     var onDismiss: () -> Void
 
     var body: some View {
@@ -115,6 +116,9 @@ struct PaywallView: View {
                     .appScreenEnter(index: 1, staged: true)
                     .padding(.top, AppSpacing.xl)
 
+                reviewQuoteBlock
+                    .padding(.top, AppSpacing.xl)
+
                 planSelectionSection
                     .padding(.top, AppSpacing.xxl)
 
@@ -130,6 +134,11 @@ struct PaywallView: View {
                     reminderPreferenceCard
                         .transition(AppBlurTransition().animation(.appReveal))
                         .padding(.top, AppSpacing.xl)
+                }
+
+                if store.selectedTier != .lifetime {
+                    cancelHelpCard
+                        .padding(.top, AppSpacing.md)
                 }
 
                 includedFeaturesSection
@@ -267,12 +276,15 @@ struct PaywallView: View {
 
     private var purchaseTimelineItems: [AppTimelineItem] {
         guard let presentation = selectedPresentation else { return [] }
+        // Real dates from today in the row text, so the charge day reads at
+        // a glance without counting days.
+        let now = Date.now
 
         if let trial = presentation.trial {
             return [
                 AppTimelineItem(
                     id: "trial-day-zero",
-                    title: AppCopy.Paywall.trialTimelineDayZeroTitle,
+                    title: AppCopy.Paywall.timelineTodayTitle,
                     subtitle: AppCopy.Paywall.trialTimelineDayZeroMessage,
                     icon: .bolt,
                     isCurrent: true
@@ -282,9 +294,10 @@ struct PaywallView: View {
                     title: AppCopy.Paywall.trialTimelineReminderTitle(
                         dayCount: trial.dayCount
                     ),
-                    subtitle: reminderRequested
-                        ? AppCopy.Paywall.trialTimelineReminderOnMessage
-                        : AppCopy.Paywall.trialTimelineReminderOffMessage,
+                    subtitle: AppCopy.Paywall.trialTimelineReminderMessage(
+                        isOn: reminderRequested,
+                        date: trial.reminderDate(from: now)
+                    ),
                     icon: .bell
                 ),
                 AppTimelineItem(
@@ -293,7 +306,8 @@ struct PaywallView: View {
                         dayCount: trial.dayCount
                     ),
                     subtitle: AppCopy.Paywall.trialTimelineEndMessage(
-                        presentation.billedPriceText
+                        presentation.billedPriceText,
+                        date: trial.endDate(from: now)
                     ),
                     icon: .calendarClock
                 ),
@@ -349,7 +363,8 @@ struct PaywallView: View {
                     presentation.billingPeriodText
                 ),
                 subtitle: AppCopy.Paywall.timelineRenewalMessage(
-                    presentation.billedPriceText
+                    presentation.billedPriceText,
+                    date: presentation.renewalDate(from: now)
                 ),
                 icon: .calendarClock
             )
@@ -380,6 +395,37 @@ struct PaywallView: View {
             }
         }
         .accessibilityIdentifier("paywall-trial-reminder-preference")
+    }
+
+    /// Closed by default: the question alone reassures, the steps are one
+    /// tap away. Lifetime has nothing to cancel.
+    private var cancelHelpCard: some View {
+        AppDisclosureCard(isExpanded: $isCancelHelpExpanded, cornerRadius: AppRadius.lg) {
+            Text(AppCopy.Paywall.cancelHelpTitle)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+        } content: {
+            VStack(spacing: 0) {
+                AppDivider()
+                AppDividedList(data: cancelHelpRows, id: \.self) { row in
+                    Text(row)
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCardRowChrome()
+                }
+            }
+        }
+        .accessibilityIdentifier("paywall-cancel-help")
+    }
+
+    private var cancelHelpRows: [String] {
+        [
+            AppCopy.Paywall.cancelHelpInApp,
+            AppCopy.Paywall.cancelHelpOnPhone,
+            AppCopy.Paywall.cancelHelpDeadline(trialEnd: selectedTrial?.endDate(from: .now))
+        ]
     }
 
     private var reminderPreferenceBinding: Binding<Bool> {
@@ -445,6 +491,32 @@ struct PaywallView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("paywall-program-summary")
+    }
+
+    /// One real App Store review above the plans (Runtastic reference,
+    /// 2026-10-24; founder call 2026-07-13). No heading and no rating
+    /// number until about 50 ratings exist.
+    private var reviewQuoteBlock: some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(AppCopy.Paywall.reviewStars)
+                .font(AppFont.caption.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .accessibilityLabel(AppCopy.Paywall.reviewStarsAccessibility)
+
+            Text(AppCopy.Paywall.reviewQuote)
+                .font(AppFont.body.font)
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(AppCopy.Paywall.reviewAttribution)
+                .font(AppFont.muted.font)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall-review")
     }
 
     private var activeSubscriptionHeader: some View {
@@ -660,7 +732,10 @@ struct PaywallView: View {
     private func sublabel(for tier: StoreManager.Tier) -> String {
         if let presentation = store.presentation(for: tier),
            let trial = presentation.trial {
-            return "\(trial.durationText) free · then \(presentation.billedPriceText)"
+            // The billed price stays first (3.1.2); the per-week figure
+            // follows in brackets, as in the Mesh reference (2026-10-24).
+            let perWeek = perWeekEquivalentText(for: tier).map { " (\($0)/week)" } ?? ""
+            return "\(trial.durationText) free · then \(presentation.billedPriceText)\(perWeek)"
         }
 
         switch tier {

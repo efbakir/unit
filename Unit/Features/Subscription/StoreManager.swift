@@ -279,6 +279,21 @@ struct StoreSubscriptionPeriodSnapshot: Equatable, Sendable {
         }
         return value == 1 ? unitText : "\(value) \(unitText)"
     }
+
+    /// The day one billing period after `start`, so the paywall can show a
+    /// real renewal date instead of "Every year".
+    func date(after start: Date, calendar: Calendar = .current) -> Date? {
+        guard value > 0 else { return nil }
+        let component: Calendar.Component
+        switch unit {
+        case .day: component = .day
+        case .week: component = .weekOfYear
+        case .month: component = .month
+        case .year: component = .year
+        case .other: return nil
+        }
+        return calendar.date(byAdding: component, value: value, to: start)
+    }
 }
 
 struct StoreIntroductoryOfferSnapshot: Equatable, Sendable {
@@ -348,15 +363,33 @@ struct StorePlanPresentation: Equatable, Sendable {
         /// offers stay nil because their calendar boundary is not a fixed
         /// number of days.
         let dayCount: Int?
+
+        /// Calendar day the free trial ends and the plan renews, for the
+        /// paywall timeline. Nil when the trial has no fixed day count.
+        func endDate(from start: Date, calendar: Calendar = .current) -> Date? {
+            dayCount.flatMap { calendar.date(byAdding: .day, value: $0, to: start) }
+        }
+
+        /// Calendar day of the optional reminder, two days before the end
+        /// (the scheduler fires 48 hours before expiration).
+        func reminderDate(from start: Date, calendar: Calendar = .current) -> Date? {
+            dayCount.flatMap { calendar.date(byAdding: .day, value: max(0, $0 - 2), to: start) }
+        }
     }
 
     let displayPrice: String
     let billingPeriodText: String?
     let trial: Trial?
+    var renewalPeriod: StoreSubscriptionPeriodSnapshot? = nil
 
     var billedPriceText: String {
         guard let billingPeriodText else { return displayPrice }
         return "\(displayPrice)/\(billingPeriodText)"
+    }
+
+    /// First renewal of a plan bought now without a trial.
+    func renewalDate(from start: Date, calendar: Calendar = .current) -> Date? {
+        renewalPeriod?.date(after: start, calendar: calendar)
     }
 
     static func resolve(
@@ -378,7 +411,8 @@ struct StorePlanPresentation: Equatable, Sendable {
         return StorePlanPresentation(
             displayPrice: snapshot.displayPrice,
             billingPeriodText: billingPeriod,
-            trial: trial
+            trial: trial,
+            renewalPeriod: snapshot.renewalPeriod
         )
     }
 
@@ -428,6 +462,35 @@ struct StorePlanPresentation: Equatable, Sendable {
             adjectiveText: "\(value)-\(singular)",
             dayCount: dayCount
         )
+    }
+}
+
+/// What Settings shows under "Unit Pro" (benchmark 2026-10-24, paywall
+/// row 4): the day a free trial ends, or the day a paid plan renews or ends.
+struct SubscriptionRenewalSummary: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case trialEnds
+        case renews
+        case ends
+    }
+
+    let kind: Kind
+    let date: Date
+
+    /// Lifetime (no expiration) and past dates give no row. A paid plan
+    /// whose auto-renew state is unknown gives no row rather than a guess.
+    static func resolve(
+        expirationDate: Date?,
+        isFreeTrial: Bool,
+        willAutoRenew: Bool?,
+        now: Date = .now
+    ) -> SubscriptionRenewalSummary? {
+        guard let expirationDate, expirationDate > now else { return nil }
+        if isFreeTrial {
+            return SubscriptionRenewalSummary(kind: .trialEnds, date: expirationDate)
+        }
+        guard let willAutoRenew else { return nil }
+        return SubscriptionRenewalSummary(kind: willAutoRenew ? .renews : .ends, date: expirationDate)
     }
 }
 
@@ -567,6 +630,9 @@ final class StoreManager {
     var hasAttemptedProductLoad = false
     var isPurchased = false
     var activeTier: Tier?
+    /// Trial end or next renewal of the active plan, for Settings. Nil for
+    /// Lifetime, no plan, or an unknown renewal state.
+    private(set) var renewalSummary: SubscriptionRenewalSummary?
     /// Flips true the first time `checkEntitlement()` completes (success or no
     /// entitlement). Read by `ContentView` to avoid flashing the hard paywall
     /// over `mainTabView` on cold launch before the StoreKit check returns.
@@ -789,6 +855,14 @@ final class StoreManager {
         if CommandLine.arguments.contains(Self.purchaseSuccessUITestArgument) {
             trialReminderPreferences.clearStagedPreference()
             confirmEntitlement(tier)
+            // Mirror the date a real purchase gives, so Settings can be tested.
+            if let presentation = presentation(for: tier) {
+                if let trialEnd = presentation.trial?.endDate(from: .now) {
+                    renewalSummary = SubscriptionRenewalSummary(kind: .trialEnds, date: trialEnd)
+                } else if let renewal = presentation.renewalDate(from: .now) {
+                    renewalSummary = SubscriptionRenewalSummary(kind: .renews, date: renewal)
+                }
+            }
             return
         }
         if CommandLine.arguments.contains(Self.purchaseCancelledUITestArgument) {
@@ -813,6 +887,8 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 if let tier = Tier(rawValue: transaction.productID) {
                     confirmEntitlement(tier)
+                    // A plan bought this second always starts auto-renewing.
+                    renewalSummary = await Self.renewalSummary(for: transaction, assumesAutoRenew: true)
                     let isIntroductoryTrial = transaction.offer?.type == .introductory
                         && transaction.offer?.paymentMode == .freeTrial
                     if isIntroductoryTrial {
@@ -938,6 +1014,7 @@ final class StoreManager {
         }
         if let entitlementTier, let entitlementTransaction {
             confirmEntitlement(entitlementTier)
+            renewalSummary = await Self.renewalSummary(for: entitlementTransaction)
             await reconcileTrialReminder(
                 for: entitlementTransaction,
                 requestAuthorizationIfNeeded: false
@@ -961,6 +1038,45 @@ final class StoreManager {
             logger.error("Entitlement check did not answer within \(Self.entitlementGateTimeout.components.seconds)s; releasing launch gate unpurchased.")
             hasCheckedEntitlement = true
         }
+    }
+
+    // MARK: - Renewal summary
+
+    /// Settings calls this on open, so a plan bought in this session (which
+    /// unlocks through the purchase result or the live feed, not
+    /// `checkEntitlement()`) still shows its date.
+    @MainActor
+    func refreshRenewalSummary() async {
+        for await result in Transaction.currentEntitlements {
+            guard let transaction = try? checkVerified(result),
+                  Tier(rawValue: transaction.productID) != nil else { continue }
+            renewalSummary = await Self.renewalSummary(for: transaction)
+            return
+        }
+        // StoreKit can briefly list nothing right after a purchase; keep a
+        // known date while access stays on. Losing access clears it.
+        if !isPurchased { renewalSummary = nil }
+    }
+
+    private func applyRenewalSummary(for transaction: Transaction) async {
+        renewalSummary = await Self.renewalSummary(for: transaction)
+    }
+
+    private static func renewalSummary(
+        for transaction: Transaction,
+        assumesAutoRenew: Bool = false
+    ) async -> SubscriptionRenewalSummary? {
+        var willAutoRenew: Bool? = assumesAutoRenew ? true : nil
+        if let status = await transaction.subscriptionStatus,
+           case .verified(let renewalInfo) = status.renewalInfo {
+            willAutoRenew = renewalInfo.willAutoRenew
+        }
+        return SubscriptionRenewalSummary.resolve(
+            expirationDate: transaction.expirationDate,
+            isFreeTrial: transaction.offer?.type == .introductory
+                && transaction.offer?.paymentMode == .freeTrial,
+            willAutoRenew: willAutoRenew
+        )
     }
 
     // MARK: - Transaction Listener
@@ -987,6 +1103,7 @@ final class StoreManager {
                             // StoreKit race where currentEntitlements briefly
                             // returns empty after an Xcode/device purchase.
                             await self.confirmEntitlement(tier)
+                            await self.applyRenewalSummary(for: transaction)
                             var shouldRequestReminderAuthorization = false
                             if transaction.offer?.type == .introductory,
                                transaction.offer?.paymentMode == .freeTrial {
@@ -1024,6 +1141,7 @@ final class StoreManager {
         entitlementRefreshState.recordAuthoritativeChange()
         activeTier = nil
         isPurchased = false
+        renewalSummary = nil
         UserDefaults.standard.set("", forKey: Self.lastKnownEntitlementKey)
         logger.info("Entitlement inactive.")
     }

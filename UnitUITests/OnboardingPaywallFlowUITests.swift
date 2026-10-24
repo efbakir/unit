@@ -40,6 +40,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
     Push
     Bench Press 4x5 80
     Overhead Press 3x5 50
+    Rest 90s between sets
 
     Pull
     Deadlift 2x5 140
@@ -311,6 +312,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         // ── Launch 1: splash → import → parser failure + recovery ──
         var app = makeApp(reset: true)
         app.launch()
+        // A tap skips the two-second opener when it is still showing
+        // (benchmark 2026-10-24, setup row 10).
+        let skipIntro = app.buttons["Skip intro"]
+        if skipIntro.waitForExistence(timeout: 1), skipIntro.isHittable {
+            skipIntro.tap()
+        }
 
         tap(app.buttons[AppCopy.Onboarding.splashCTA], "splash CTA", timeout: 20)
         // Analytics is opt-in (App Review 5.1.1(ii)): a fresh install shows
@@ -356,6 +363,29 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(
             staticText(in: app, containing: "Bench Press").waitForExistence(timeout: 5),
             "parsed exercise missing from preview"
+        )
+        // Skipped lines are named, not only counted (benchmark 2026-10-24).
+        tap(
+            button(in: app, containing: AppCopy.Onboarding.importSkippedTitle(lines: 1, days: 0)),
+            "skipped-lines card"
+        )
+        XCTAssertTrue(
+            staticText(in: app, containing: "Rest 90s between sets").waitForExistence(timeout: 5),
+            "the skipped rest line is not named on Review"
+        )
+        // A row can be removed from the edit sheet and brought back with Undo
+        // (benchmark 2026-10-24, setup row 4).
+        tap(app.buttons["Edit Overhead Press, sets, and reps"], "Overhead Press row")
+        tap(app.buttons[AppCopy.Onboarding.removeExercise], "Remove exercise")
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Toast.removedExercise("Overhead Press")).waitForExistence(timeout: 5),
+            "removal toast missing"
+        )
+        XCTAssertFalse(app.buttons["Edit Overhead Press, sets, and reps"].exists, "removed row still shown")
+        tap(app.buttons[AppCopy.Toast.undo], "Undo removal")
+        XCTAssertTrue(
+            app.buttons["Edit Overhead Press, sets, and reps"].waitForExistence(timeout: 5),
+            "Undo did not bring the row back"
         )
         tap(app.buttons[AppCopy.Onboarding.previewCTA], "preview — save program")
 
@@ -429,6 +459,14 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             staticText(in: app, containing: "Push").waitForExistence(timeout: 8),
             "committed program missing from Programs"
         )
+        // Settings names the trial end or the next charge (benchmark 2026-10-24).
+        tap(app.buttons["Settings"], "Settings")
+        XCTAssertTrue(
+            staticText(in: app, containing: "Trial ends").waitForExistence(timeout: 8)
+                || staticText(in: app, containing: "Renews").exists,
+            "Settings shows no trial end or renewal date"
+        )
+        tap(app.buttons["Close"], "Close Settings")
         tap(app.tabBars.buttons["Today"], "back to Today")
 
         // ── Gym Test: start → one-tap sets → finish → History ──
@@ -516,12 +554,28 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             descendant(in: app, identifier: "paywall-plan-com.unit.annual").isSelected,
             "eligible Yearly did not become the default"
         )
+        XCTAssertTrue(
+            staticText(in: app, containing: "7 days free · then $29.99/year ($0.58/week)").exists,
+            "the per-week price does not follow the yearly price"
+        )
+        // One real, translated App Store review; no rating number yet.
+        XCTAssertTrue(
+            descendant(in: app, identifier: "paywall-review").exists,
+            "the real review is missing above the plans"
+        )
+        XCTAssertFalse(staticText(in: app, containing: " ratings").exists, "no rating count before about 50 ratings")
         let trialTimeline = descendant(in: app, identifier: "paywall-timeline")
         scrollTo(trialTimeline, in: app)
         XCTAssertTrue(trialTimeline.exists, "eligible trial timeline is missing")
-        XCTAssertTrue(staticText(in: app, containing: "Day 0").exists)
+        // "Day 5" / "Day 7" with the real dates in the text (2026-10-24,
+        // Blinkist and Mesh pattern).
+        XCTAssertTrue(staticText(in: app, containing: AppCopy.Paywall.timelineTodayTitle).exists)
         XCTAssertTrue(staticText(in: app, containing: "Day 5").exists)
         XCTAssertTrue(staticText(in: app, containing: "Day 7").exists)
+        XCTAssertTrue(
+            staticText(in: app, containing: "on \(trialTimelineDate(daysFromToday: 7)). Cancel anytime before.").exists,
+            "the Day 7 row does not name the real charge date"
+        )
         XCTAssertTrue(staticText(in: app, containing: "Keep making progress").exists)
         XCTAssertTrue(
             app.switches[AppCopy.Paywall.trialReminderLabel].exists,
@@ -533,7 +587,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             "trial reminder must default on (2026-10-23)"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOnMessage).exists
+            staticText(in: app, containing: "Unit reminds you on \(trialTimelineDate(daysFromToday: 5)).").exists
         )
         attachScreenshot(named: "01-eligible-yearly-single-page", app: app)
 
@@ -558,7 +612,19 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(reminder, "trial reminder preference")
         XCTAssertEqual(reminder.value as? String, "0")
         XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Paywall.trialTimelineReminderOffMessage).exists
+            staticText(in: app, containing: "Turn on a reminder for \(trialTimelineDate(daysFromToday: 5)).").exists
+        )
+        // "How do I cancel?" answers before purchase (2026-10-24).
+        let cancelHelp = button(in: app, containing: AppCopy.Paywall.cancelHelpTitle)
+        scrollTo(cancelHelp, in: app)
+        tap(cancelHelp, "How do I cancel?")
+        XCTAssertTrue(
+            staticText(in: app, containing: "Manage Subscription").waitForExistence(timeout: 5),
+            "cancel steps missing"
+        )
+        XCTAssertTrue(
+            staticText(in: app, containing: "before \(trialTimelineDate(daysFromToday: 7)) and you pay nothing").exists,
+            "cancel deadline does not name the trial end"
         )
 
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
@@ -1036,6 +1102,12 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
     private func button(in app: XCUIApplication, containing text: String) -> XCUIElement {
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    /// The timeline date the app shows for a 7-day trial bought today.
+    private func trialTimelineDate(daysFromToday days: Int) -> String {
+        let date = Calendar.current.date(byAdding: .day, value: days, to: .now) ?? .now
+        return AppCopy.Paywall.timelineDate(date)
     }
 
     private func staticText(in app: XCUIApplication, containing text: String) -> XCUIElement {

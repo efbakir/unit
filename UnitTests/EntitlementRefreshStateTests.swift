@@ -373,6 +373,77 @@ final class StorePlanPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.billedPriceText, "₺199,99/month")
     }
 
+    /// Benchmark 2026-10-24, paywall row 3: the timeline shows real dates.
+    func testTrialTimelineShowsRealDatesFromToday() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let trial = try XCTUnwrap(resolve(
+            snapshot: subscriptionSnapshot(displayPrice: "$29.99", renewalUnit: .year),
+            eligible: true
+        ).trial)
+        let english = Locale(identifier: "en_US")
+
+        let end = try XCTUnwrap(trial.endDate(from: start, calendar: calendar))
+        let reminder = try XCTUnwrap(trial.reminderDate(from: start, calendar: calendar))
+
+        XCTAssertEqual(AppCopy.Paywall.timelineDate(end, now: start, calendar: calendar, locale: english), "Oct 31")
+        XCTAssertEqual(AppCopy.Paywall.timelineDate(reminder, now: start, calendar: calendar, locale: english), "Oct 29")
+    }
+
+    func testRenewalDateAddsOneBillingPeriodAndShowsTheYearWhenItChanges() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let english = Locale(identifier: "en_US")
+        let yearly = resolve(snapshot: subscriptionSnapshot(renewalUnit: .year), eligible: false)
+        let weekly = resolve(
+            snapshot: StoreProductSnapshot(
+                isAutoRenewable: true,
+                displayPrice: "$2.99",
+                renewalPeriod: .init(unit: .week, value: 1),
+                introductoryOffer: nil
+            ),
+            eligible: false
+        )
+
+        let yearlyRenewal = try XCTUnwrap(yearly.renewalDate(from: start, calendar: calendar))
+        let weeklyRenewal = try XCTUnwrap(weekly.renewalDate(from: start, calendar: calendar))
+
+        XCTAssertEqual(
+            AppCopy.Paywall.timelineDate(yearlyRenewal, now: start, calendar: calendar, locale: english),
+            "Oct 24, 2027"
+        )
+        XCTAssertEqual(
+            AppCopy.Paywall.timelineDate(weeklyRenewal, now: start, calendar: calendar, locale: english),
+            "Oct 31"
+        )
+        XCTAssertEqual(AppCopy.Paywall.timelineRenewalTitle("year"), "Every year")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(dayCount: 7), "Day 7")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndTitle(dayCount: nil), "After the trial")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderTitle(dayCount: 7), "Day 5")
+    }
+
+    /// Blinkist / Mesh pattern: the real date sits in the row text.
+    func testTimelineTextNamesTheRealDates() throws {
+        let calendar = Calendar.current
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 24, hour: 12)))
+        let end = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: start))
+        let reminder = try XCTUnwrap(calendar.date(byAdding: .day, value: 5, to: start))
+        let endText = AppCopy.Paywall.timelineDate(end)
+        let reminderText = AppCopy.Paywall.timelineDate(reminder)
+
+        XCTAssertEqual(
+            AppCopy.Paywall.trialTimelineEndMessage("$29.99/year", date: end),
+            "You will be charged $29.99/year on \(endText). Cancel anytime before."
+        )
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderMessage(isOn: true, date: reminder),
+                       "Unit reminds you on \(reminderText).")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineReminderMessage(isOn: false, date: reminder),
+                       "Turn on a reminder for \(reminderText).")
+        XCTAssertEqual(AppCopy.Paywall.trialTimelineEndMessage("$29.99/year", date: nil),
+                       "Renews at $29.99/year unless cancelled.")
+        XCTAssertTrue(AppCopy.Paywall.timelineRenewalMessage("$2.99/week", date: end).hasPrefix("Next charge "))
+    }
+
     func testInvalidTrialDurationDoesNotCreateTrial() {
         let snapshot = StoreProductSnapshot(
             isAutoRenewable: true,
@@ -581,5 +652,43 @@ final class PurchaseAttemptStateTests: XCTestCase {
 
         XCTAssertEqual(state.phase, .idle)
         XCTAssertTrue(state.begin())
+    }
+}
+
+/// Benchmark 2026-10-24, paywall row 4: Settings shows the trial end or the
+/// next charge date.
+@MainActor
+final class SubscriptionRenewalSummaryTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 1_793_000_000)
+    private var nextWeek: Date { now.addingTimeInterval(7 * 86_400) }
+
+    func testFreeTrialShowsWhenItEndsWhetherOrNotItRenews() {
+        for willAutoRenew in [true, false, nil] as [Bool?] {
+            XCTAssertEqual(
+                SubscriptionRenewalSummary.resolve(
+                    expirationDate: nextWeek, isFreeTrial: true, willAutoRenew: willAutoRenew, now: now
+                ),
+                SubscriptionRenewalSummary(kind: .trialEnds, date: nextWeek)
+            )
+        }
+    }
+
+    func testPaidPlanRenewsOrEnds() {
+        XCTAssertEqual(
+            SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: true, now: now)?.kind,
+            .renews
+        )
+        XCTAssertEqual(
+            SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: false, now: now)?.kind,
+            .ends
+        )
+    }
+
+    func testNoRowForLifetimePastDatesOrUnknownRenewal() {
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: nil, isFreeTrial: false, willAutoRenew: true, now: now),
+                     "Lifetime has no expiration")
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: now.addingTimeInterval(-60), isFreeTrial: true, willAutoRenew: true, now: now))
+        XCTAssertNil(SubscriptionRenewalSummary.resolve(expirationDate: nextWeek, isFreeTrial: false, willAutoRenew: nil, now: now),
+                     "an unknown renewal state shows nothing rather than a guess")
     }
 }
