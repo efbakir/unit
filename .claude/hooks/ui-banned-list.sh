@@ -56,7 +56,7 @@ if grep -nE 'RoundedRectangle\(cornerRadius:' <<< "$new_content" \
    | grep -q .; then
   violations+=('RoundedRectangle(cornerRadius:) without style: .continuous — every radius container must use the iOS-native squircle. Use RoundedRectangle(cornerRadius: AppRadius.x, style: .continuous).')
 fi
-check 'preferredColorScheme\(\.dark\)'                                     '.preferredColorScheme(.dark) — Unit is light-mode only (CLAUDE.md §5 P3)'
+check 'preferredColorScheme\(\.(dark|light)\)'                              '.preferredColorScheme(.light/.dark) — Unit follows the system appearance; only the splash opener forces dark (CLAUDE.md §4 rule 3)'
 check '\.scrollEdgeEffectStyle\(\.(automatic|hard)'                        'scrollEdgeEffectStyle .automatic/.hard — use appScrollEdgeSoft(top:bottom:)'
 check 'ProcessInfo\.processInfo\.environment\["UNIT_'                      'UNIT_* env scaffolding — must be reverted before turn end (CLAUDE.md §5)'
 check '\.fontWeight\(\.regular\)|\.weight\(\.regular\)'                    '.weight(.regular) — banned per recurring-rules memory'

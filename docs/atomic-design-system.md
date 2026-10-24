@@ -28,11 +28,12 @@ All atoms, molecules, organisms, and the screen template live in **one file** (`
 ### Colour — `AppColor`
 
 Defined in code today (hex → `Color` via `UIColor`). Names express **role**, not implementation.
-**Light-mode only** per CLAUDE.md §4 rule 3 — no dark-mode variants are maintained.
+Every token has a light and a dark value; the app follows the system appearance (2026-10-24). Values below are light / dark.
 
-- **Surfaces**: `background` = `#F5F5F5`, `cardBackground` = `#FFFFFF`, `cardRowFill` = `#F5F5F5` (nested-in-card recipe), `sheetBackground` = `#FFFFFF`, `controlBackground` = `#E8E8E8` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5`
-- **Text**: `textPrimary` = `#0A0A0A`, `textSecondary` = `#595959`, `textDisabled` = `#949494`
-- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). Page content gets the blue tint once, in `AppScreen`; bars and toolbars stay black (`ContentView`), so screens never re-tint (2026-10-24). Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
+- **Surfaces**: `background` = `#F5F5F5` / `#000000`, `cardBackground` = `#FFFFFF` / `#1C1C1E`, `cardRowFill` = `#F5F5F5` / `#2C2C2E` (nested-in-card recipe), `sheetBackground` = `#FFFFFF` / `#1C1C1E`, `controlBackground` = `#E8E8E8` / `#3A3A3C` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5` / `#38383A`
+- **Text**: `textPrimary` = `#0A0A0A` / `#F5F5F7` (titles, names, the main number), `textSecondary` = `#68686D` / `#98989F` (supporting text and decorative icons; 4.5:1 or more on every surface), `textDisabled` = `#949494` / `#636366`. `textTertiary` folded into `textSecondary` (2026-10-24).
+- **Status**: `success` = `#248A3D` / `#30D158` marks done and PR (checks, PR chip, completed calendar days). `shadow` stays black in both appearances.
+- **Interactive**: `accent` = `#0068E0` / `#0A84FF`, `accentForeground` = `#F6F6F6` / `#FFFFFF`, `accentSoft` = `#EAF2FF` / `#0F2A47` (October 20 user-approved blue). Blue also marks selected states (filter chip, calendar day, current week day) and chart lines. Page content gets the blue tint once, in `AppScreen`; bars and toolbars stay black (`ContentView`), so screens never re-tint (2026-10-24). Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
 - **Status**: `success` = `#34C759`, `warning` = `#FF9500`, `error` = `#FF3B30`. Plus accessible chip pairs `successSoft`/`successOnSoft`, `warningSoft`/`warningOnSoft`, `errorSoft`/`errorOnSoft`.
 
 **Rules**
@@ -265,7 +266,7 @@ Keep stateful presentation layers mounted when they crossfade. Bind animation af
 
 Analytics is read-only. `AnalyticsStore` fetches completed sessions with set-entry prefetch, snapshots model values on their actor and computes off the main actor. A day/calendar/source-value cache invalidates on appear, context save, foreground, day/time-zone and active-program changes. `AnalyticsEngine` owns comparison windows, status persistence, best-set selection, main-lift identity, weekly series and estimates. `WorkoutTargetFormatter` owns locale-aware presentation. `ExerciseProgressView.SessionPoint` and the compatibility projection use this same engine.
 
-The native TabView, tab-bar appearance and selection behavior are unchanged. Logging, progression and the SwiftData schema are outside this change. System dark appearance still presents Unit in light mode.
+The native TabView, tab-bar appearance and selection behavior are unchanged. Logging, progression and the SwiftData schema are outside this change. Unit follows the system light/dark appearance (2026-10-24).
 
 ## Whole-day workout logging — approved 20 October 2026
 

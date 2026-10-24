@@ -25,7 +25,7 @@ Other source-of-truth docs:
 - **Gym Test**: one-handed, sweaty, ≤ 3 seconds to log a set.
 - **Last time** values (pre-fill from last session; formerly "ghost values", still `metricIsGhost` in code) are the primary logging mechanism.
 - **Templates** are the program unit — not cycles, not weeks, not engines.
-- **Local-first, light-only, quiet UI.** The recorded two-second black onboarding opener is a transition, not dark mode. No social or feeds. Progression is opt-in and transparent: the next target is saved when the workout is finished, never during it, and the summary offers Keep previous target and Edit.
+- **Local-first, quiet UI that follows the system light/dark setting** (founder decision 2026-10-24). The two-second black onboarding opener stays a transition. No social or feeds. Progression is opt-in and transparent: the next target is saved when the workout is finished, never during it, and the summary offers Keep previous target and Edit.
 
 ---
 
@@ -82,7 +82,7 @@ Files deleted from repo (don't recreate): see [`docs/claude/scope.md`](docs/clau
 
 1. **Keep it simple.** Default to removing. Fewer tokens, variants, words, screens.
 2. **Reuse components.** Grep `Unit/UI/DesignSystem.swift` first. ~80% fit → use or extend. *New primitives require explicit user okay.*
-3. **Light mode only.** No dark-first decisions. The only recorded appearance exception is the two-second black opener in `OnboardingSplashView`; it must return to light as soon as the opener unmounts and must not spread into the product UI.
+3. **Light and dark follow the system** (founder decision 2026-10-24, replaces "light mode only"). Every `AppColor` token carries a light and a dark value in `DesignSystem.swift`; never force an appearance. The only forced appearance is the two-second black opener in `OnboardingSplashView`. Color roles: black for titles and the main number, gray for supporting text and decorative icons, blue for what you can tap or what is selected, green for done and PR.
 4. **Portrait only.** No landscape support.
 5. **Gatekeeper every UI change.** Run the inline checklist below. Fail-closed.
 
@@ -106,12 +106,12 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 - [ ] No new `struct X: View` / `ViewModifier` without a one-line justification.
 - [ ] No parallel `LinearGradient` / `.mask` / `.scrollEdgeEffectStyle(.automatic, ...)` where `appScrollEdgeSoft(...)` exists.
 - [ ] No new raw colors, fonts, spacings, or radii — only tokens.
-- [ ] Light-mode correct. No landscape assumptions.
+- [ ] Correct in light and dark (tokens only, no color that assumes a light page). No landscape assumptions.
 - [ ] Bug fix: confirmed whether the bug is at the atom/molecule layer. If yes, fix only `DesignSystem.swift`.
 - [ ] `ToolbarItem` button has no `.weight(...)`.
 - [ ] `.sheet { }` root is a plain `VStack` with `presentationDetents`.
 - [ ] Screen wrapped in `AppScreen`. CTAs use `AppPrimaryButton`. Cards use `AppCard`. Navigation rows show shared disclosure chevrons; no raw glyph literals. No raw `Divider()`.
-- [ ] Touch targets ≥ 44×44pt. No regular weight. No orange `#FF4400` (accent is `0x0A0A0A`).
+- [ ] Touch targets ≥ 44×44pt. No regular weight. No orange `#FF4400` (accent is blue `0x0068E0`).
 - [ ] Copy is explicit. Bodyweight shows "BW", not "0 kg". No `–` / `—` placeholders.
 - [ ] No `ProcessInfo.processInfo.environment["UNIT_*"]` scaffolding left in `ContentView.swift` or `Features/**/*.swift`.
 
@@ -122,7 +122,7 @@ Concrete recent violations + full rules: [`docs/claude/design-system.md`](docs/c
 - Raw `chevron.right` / `chevron.forward` literals (use shared navigation disclosure); `Divider()` where `AppDivider` applies
 - Inline button/card chrome instead of `AppPrimaryButton` / `AppCard` / `AppScreen`
 - `regular` font weight; orange `#FF4400`
-- `.preferredColorScheme(.dark)` outside the recorded two-second `OnboardingSplashView` opener; landscape assumptions
+- `.preferredColorScheme(...)` (light or dark) outside the recorded two-second `OnboardingSplashView` opener; landscape assumptions
 - Inline `.scrollEdgeEffectStyle(...)` — route through `appScrollEdgeSoft(top:bottom:)`; the latest October 19 user correction removes forced hard/soft styles and leaves SwiftUI defaults.
 - `LinearGradient` / `.mask` fade under fixed bars in `Features/**/*.swift`
 - `.weight(.semibold/.bold/.heavy)` on `ToolbarItem` buttons

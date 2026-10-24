@@ -466,7 +466,7 @@ struct PaywallView: View {
             VStack(alignment: .center, spacing: AppSpacing.md) {
                 HStack(spacing: AppSpacing.sm) {
                     AppIcon.checkmarkFilled.image(size: AppIconSize.readiness)
-                        .foregroundStyle(AppColor.textPrimary)
+                        .foregroundStyle(AppColor.success)
                         .accessibilityHidden(true)
 
                     Text(AppCopy.Paywall.programReady)

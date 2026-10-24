@@ -107,10 +107,9 @@ struct OnboardingSplashView: View {
         // bar by default for every step; splash has its own dismiss affordance
         // and no back action, so hide the bar at this level only.
         .toolbar(.hidden, for: .navigationBar)
-        // Explicit brand-opener exception: keep status-bar chrome legible on
-        // the black two-second opener, then return to Unit's light appearance
-        // as soon as the opener unmounts.
-        .preferredColorScheme(openerVisible ? .dark : .light)
+        // Explicit brand-opener exception: the two-second opener is always
+        // black, then the app follows the system appearance again.
+        .preferredColorScheme(openerVisible ? .dark : nil)
         .environment(\.appRevealSession, revealSession)
         // Changing accessibility or scene state cancels the current sleep immediately.
         .task(id: "\(reduceMotion)-\(voiceOver)-\(scenePhase)-\(skipsOpenerWait)") {
@@ -257,7 +256,7 @@ private struct SplashOpener: View {
                 VStack(spacing: AppSpacing.xxs) {
                     Text("Welcome to")
                         .font(AppFont.splashWelcome.font)
-                        .foregroundStyle(AppColor.textDisabled)
+                        .foregroundStyle(AppColor.textSecondary)
 
                     Text("Unit")
                         .font(AppFont.splashTitle.font)
@@ -269,7 +268,7 @@ private struct SplashOpener: View {
 
                 Text(AppCopy.Onboarding.splashTagline)
                     .font(AppFont.splashWelcome.font)
-                    .foregroundStyle(AppColor.textDisabled)
+                    .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
@@ -281,7 +280,8 @@ private struct SplashOpener: View {
             Spacer(minLength: AppSpacing.lg)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColor.textPrimary.ignoresSafeArea())
+        // The opener forces the dark appearance, so the page color is black.
+        .background(AppColor.background.ignoresSafeArea())
     }
 }
 
