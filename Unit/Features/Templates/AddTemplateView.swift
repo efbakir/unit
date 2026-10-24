@@ -23,9 +23,9 @@ struct AddTemplateView: View {
 
     var body: some View {
         AppSheetScreen(
-            title: "New day",
+            title: "New routine",
             primaryButton: PrimaryButtonConfig(
-                label: "Create day",
+                label: "Create routine",
                 isEnabled: canSave && !isSaving,
                 isLoading: isSaving,
                 disabledReason: AppCopy.FormHint.dayNameRequired,
@@ -36,7 +36,7 @@ struct AddTemplateView: View {
             usesOuterScroll: false
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                AppSectionHeader("Day name")
+                AppSectionHeader("Routine name")
 
                 TextField("e.g. Push", text: $name)
                     .font(AppFont.body.font)
@@ -45,10 +45,10 @@ struct AddTemplateView: View {
                     .appInputFieldStyle(height: 52)
             }
         }
-        .alert("Couldn't save routine", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save routine", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
-            Text("Your changes weren't saved. Try again.")
+            Text("Your changes weren’t saved. Try again.")
         }
     }
 

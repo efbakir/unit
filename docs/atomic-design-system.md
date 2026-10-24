@@ -32,18 +32,18 @@ Defined in code today (hex → `Color` via `UIColor`). Names express **role**, n
 
 - **Surfaces**: `background` = `#F5F5F5`, `cardBackground` = `#FFFFFF`, `cardRowFill` = `#F5F5F5` (nested-in-card recipe), `sheetBackground` = `#FFFFFF`, `controlBackground` = `#E8E8E8` (single canonical neutral surface — steppers, segmented track, disabled buttons, muted chips), `border` = `#E5E5E5`
 - **Text**: `textPrimary` = `#0A0A0A`, `textSecondary` = `#595959`, `textDisabled` = `#949494`
-- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). `accent` doubles as the `.tint(...)` on every NavigationStack — there is no separate `systemTint`. Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
+- **Interactive**: `accent` = `#0068E0`, `accentForeground` = `#F6F6F6`, `accentSoft` = `#EAF2FF` (October 20 user-approved blue). Page content gets the blue tint once, in `AppScreen`; bars and toolbars stay black (`ContentView`), so screens never re-tint (2026-10-24). Exercise data and charts retain neutral text colors; no exercise-family colors were approved.
 - **Status**: `success` = `#34C759`, `warning` = `#FF9500`, `error` = `#FF3B30`. Plus accessible chip pairs `successSoft`/`successOnSoft`, `warningSoft`/`warningOnSoft`, `errorSoft`/`errorOnSoft`.
 
 **Rules**
 
 - Do not scatter `Color(red:green:blue:)` or raw hex in feature views — extend `AppColor` if a new role is justified.
 - Prefer semantic names (`textSecondary`) over `.gray` / `.black` in new UI.
-- For `.tint(...)`, always pass `AppColor.accent` (not a local `Color`).
+- For `.tint(...)`, always pass an `AppColor` token; screens do not set their own content tint.
 
 ### Typography — `AppFont`
 
-Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` or `.font(AppFont.X.font)` elsewhere. Native **SF Pro** is the default; `numericDisplay`, `stepIndicator`, and `performance` use native **SF Mono**. Compatibility helpers retain their `geist` names but resolve system fonts. Caps labels use SF Pro with neutral tracking; headings have restrained negative tracking. Point sizes and native Dynamic Type scaling are preserved. The October 19 user instruction supersedes the earlier Geist family decision.
+Every font is an enum case that bundles its `font`, `color`, and `tracking`. Apply via `.appFont(.X)` on `Text` or `.font(AppFont.X.font)` elsewhere. Native **SF Pro** everywhere. Number tokens (`numericDisplay`, `setValue`, `setValueCompact`, `stepIndicator`, `performance`) use SF Pro with tabular digits through `geistTabular`; SF Mono was retired on 2026-10-24. Set data is 17pt (`performance`). Compatibility helpers retain their `geist` names but resolve system fonts. Caps labels use SF Pro with neutral tracking; headings have restrained negative tracking. Point sizes and native Dynamic Type scaling are preserved. The October 19 user instruction supersedes the earlier Geist family decision.
 
 Body hierarchy: `largeTitle`, `title`, `sectionHeader`, `body`, `caption`, `muted`, `metadata`.
 Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`, `numericDisplay`, `stepIndicator`, `productHeading`, `productAction`, `performance`.
@@ -51,7 +51,7 @@ Display / specialized: `overline`, `smallLabel`, `splashTitle`, `splashWelcome`,
 **Rules**
 
 - **Never use regular (400) font weight.** The minimum weight across the entire app is **medium** (500). Native system fonts use the existing Medium, SemiBold, and Bold roles.
-- Avoid inline `.font(.geist(...))` / `.font(.geistMono(...))` in page files for standard hierarchy; use `AppFont` cases. Inline `.font(.system(...))` is reserved for SF Symbol weight on `AppIcon` only.
+- Avoid inline `.font(.geist(...))` / `.font(.geistTabular(...))` in page files for standard hierarchy; use `AppFont` cases. Inline `.font(.system(...))` is reserved for SF Symbol weight on `AppIcon` only.
 - Tracking is **bundled with each case** — never load a loose `*Tracking` constant; either use `.appFont(.X)` (Text) or `.tracking(AppFont.X.tracking)`.
 - For 17pt bold section headings AND button labels, use `sectionHeader` (or `productAction` if the label needs monospaced digits). There is no separate `label` case.
 
@@ -94,7 +94,7 @@ Use instead of bare `Divider()` where the design system specifies a hairline wit
 | `AppTag` | Pills (default, accent, success, warning, error, muted, custom) |
 | `AppPrimaryButton` | Full-width primary CTA (see `visual-language.md` for height/contrast) |
 | `AppSecondaryButton` | Pumice-fill secondary action; tones `.default`, `.accentSoft`, `.destructive` |
-| `AppGhostButton` | Text-only "Add X" trigger for inside-card affordances |
+| `AppGhostButton` | Every text button: blue label, no fill. Full width, or `layout: .inline` inside rows and headers |
 | `ProductTopBarAction` | Shared pill-style header action for text and icon affordances |
 | `SetProgressIndicator` | Set-step tracker with Ink current, neutral completed/failed/upcoming, and Verde PR-completed states |
 | `RestTimerControl` | Rest countdown control with `-15`, central timer pill, and `+15` |
@@ -273,7 +273,7 @@ The native TabView, tab-bar appearance and selection behavior are unchanged. Log
 `PlannedSetRow`, `ExerciseSummaryRow` and `RestBar` are the approved active-workout
 owners in `DesignSystem.swift`. They compose existing card, button, input, icon,
 color, spacing and press owners. `AppFont.setValue` / `setValueCompact` provide
-30/28pt SF Mono values; `AppWorkoutMetrics` contains their geometry. Controls
+30/28pt values (SF Pro, tabular digits since 2026-10-24); `AppWorkoutMetrics` contains their geometry. Controls
 retain Unit's approved blue accent and native navigation/keyboard behavior.
 
 The current row alone contains Complete set. A successful save immediately

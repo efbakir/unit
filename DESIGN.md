@@ -54,7 +54,7 @@ typography:
     lineHeight: 1.3
     letterSpacing: "normal"
   numeric:
-    fontFamily: "ui-monospace, SFMono-Regular, monospace"
+    fontFamily: "-apple-system, system-ui, sans-serif"
     fontSize: "36px"
     fontWeight: 700
     lineHeight: 1
@@ -155,7 +155,7 @@ components:
     height: "60px"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    textColor: "{colors.actionBlue}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     padding: "16px 24px"
@@ -208,7 +208,7 @@ This system explicitly rejects the visual category of "fitness tracker" software
 - Flat by doctrine — separation through fill contrast, never shadows
 - Numerics-first hierarchy (monospaced digits at display size dominate every workout screen)
 - One Ink-black primary CTA per stress screen, full-width, 60pt tall
-- Surface area kept small: 12 colors, ~14 `AppFont` cases (native SF Pro + SF Mono), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
+- Surface area kept small: 12 colors, ~14 `AppFont` cases (native SF Pro, tabular digits for numbers), 3 radii, 8 spacing steps — and growing them requires a Gym Test justification
 
 ## 2. Colors: The Material-Shop Palette
 
@@ -249,7 +249,7 @@ The palette is named like materials in a workshop, not like UI states. There is 
 **October 19 user override:** native SF Pro, restrained letter spacing, standard-size layout priority. Existing point sizes and native Dynamic Type scaling remain. This supersedes the bundled Geist decision for the iOS app; website typography is a separate surface.
 
 **Sans:** SF Pro for body, headings, buttons, and caps labels.
-**Mono:** SF Mono for workout numerics and set-result rows.
+**Numbers:** SF Pro with tabular digits (`geistTabular`, `.monospacedDigit()`). SF Mono is retired (decision 2026-10-24): it put wide gaps around "." and "×", made row numbers look small and made them wrap.
 
 Use `AppFont`. The existing `Font.geist` / `UIFont.geist` names are compatibility helpers backed by system font factories; they no longer request bundled Geist. Bundled asset removal is separate cleanup.
 
@@ -260,10 +260,12 @@ Use `AppFont`. The existing `Font.geist` / `UIFont.geist` names are compatibilit
 - **Section header / body:** SF Pro SemiBold / Medium 17, native spacing.
 - **Caption / muted / metadata:** SF Pro Medium 15 / 13 / 11, native spacing.
 - **Overline / small label:** SF Pro Medium 13 / 11, uppercase with zero extra tracking; emphasized overline is Bold.
-- **Numeric display:** SF Mono Bold 36, neutral tracking.
+- **Numeric display:** SF Pro Bold 36, tabular digits, neutral tracking.
 - **Numeric input:** SF Pro Bold 36 with tabular digits.
 - **Product action:** SF Pro Bold 17.
-- **Performance / step indicator:** SF Mono SemiBold 15 / 14.
+- **Performance / step indicator:** SF Pro Medium 17 / 15, tabular digits.
+
+**The Row-Number Rule.** Set data (sets, reps, weight) is 17pt wherever it sits, the same size as the row name. Supporting numbers (dates, "Last time", comparisons, counts) are 15pt. Never 13 or 11pt for set data. At accessibility text sizes a row's value moves under its name instead of shrinking.
 
 ### Marketing type ramp
 
@@ -310,7 +312,7 @@ The component set is deliberately small. Every primitive lives in `Unit/UI/Desig
 - **Shape:** rounded rectangle, `AppRadius.md` (14px), iOS continuous corners, 60pt tall, full-width on stress screens.
 - **Primary** (`AppPrimaryButton`): Ink (`#0A0A0A`) background, Chalk (`#F6F6F6`) label, Label typography. One per screen on logging flows. Disabled state: Pumice background, Mist label.
 - **Secondary** (`AppSecondaryButton`): Pumice (`#E8E8E8`) background, Ink label. Tones: `.default`, `.accentSoft`, `.destructive` (text-only Signal red).
-- **Ghost** (`AppGhostButton`): No fill, no border, Ink label. Used for "Add exercise" / "Add set" triggers inside cards. The `accentSoft` tone of Secondary is **banned for "Add X" actions** — that's Ghost's job.
+- **Ghost** (`AppGhostButton`): No fill, no border, blue (`accent`) label. Every text button uses it: full width (17 bold, 60pt) for standalone actions, `layout: .inline` (15 medium, 44pt hit area) inside rows and headers. No underline, no black or gray text buttons (decision 2026-10-24). "Add X" at the end of a card's list uses `AppCardListAddRow`. The `accentSoft` tone of Secondary is **banned for "Add X" actions**.
 - **Pressed:** `ScaleButtonStyle` is the single custom pressed state: 0.96× scale and 18% opacity dim over 150ms. Reduce Motion or VoiceOver uses the fade only; disabled controls retain their paired colors. Use it on every custom tappable card, row, and button. Native toolbar, alert, toggle, picker, and menu controls keep iOS feedback. Never add a screen-local pressed treatment.
 
 ### Cards & Containers
@@ -344,11 +346,12 @@ Elements nested inside a card use `AppColor.cardRowFill` (Milk `#F5F5F5`) + `App
 
 - **`ProductTopBar`:** 64pt tall, Title typography (24px semibold rounded, tracking -0.3), title in Ash (secondary text), 16pt spacing between leading/title/trailing slots. Sizes: `.md` and `.large`.
 - **Root tab bar:** native SwiftUI `TabView` / `UITabBar` chrome. Today and Programs keep their navigation state, system selection feedback, Dynamic Type, and accessibility behavior. Do not recreate a custom tab bar.
-- **Toolbar buttons:** defer to iOS-native chrome. **`.weight()` modifiers on `ToolbarItem` buttons are banned** — they fight the system styling.
+- **Toolbar buttons:** defer to iOS-native chrome and stay black (Ink). Close is an X at the leading edge, confirm is a checkmark at the trailing edge; no "Done", "Cancel" or "Close" text (decision 2026-10-24). **`.weight()` modifiers on `ToolbarItem` buttons are banned** — they fight the system styling.
+- **Tint:** `AppScreen` tints page content blue in one place; tab content and bars stay black from `ContentView`. Do not re-tint screens.
 
 ### Signature: The Workout Command Card
 
-`WorkoutCommandCard` is the screen's center of gravity during a session. It uses `appWorkoutPanelChrome()`, displays the exercise name in Title, the working numeric (weight × reps) in `numericDisplay` (36px monospaced bold), and one Ink primary action ("Done"). An optional rest timer divides off the bottom with a 1pt divider at 32% opacity. There is no decorative chrome, no progress arc, no "next exercise" preview competing with the current action.
+`WorkoutCommandCard` is the screen's center of gravity during a session. It uses `appWorkoutPanelChrome()`, displays the exercise name in Title, the working numeric (weight × reps) in `numericDisplay` (36px bold, tabular digits), and one Ink primary action ("Done"). An optional rest timer divides off the bottom with a 1pt divider at 32% opacity. There is no decorative chrome, no progress arc, no "next exercise" preview competing with the current action.
 
 ## 6. Do's and Don'ts
 
@@ -420,10 +423,14 @@ separation on both #F5F5F5 pages and white cards. No new tokens/components.
 
 ### 21 October corrections
 
-Standard SF Pro restored at user request; SF Mono unchanged. Collapsed exercise
+Standard SF Pro restored at user request; SF Mono unchanged (retired on 24 October, see below). Collapsed exercise
 cards use 16pt inner spacing, full-width leading content and trailing completion
 marks; expired Undo no longer reserves invisible space. Shared sticky action
 chrome uses 16pt bottom spacing above native navigation.
 
 Analytics correction: simplification must retain charts and Best/Next tables.
 Keep single-point and no-recent-data chart states; simplify repeated wording only.
+
+### 24 October consistency rules
+
+SF Mono retired: every number uses SF Pro with tabular digits and set data is 17pt. One weight formatter (`WorkoutTargetFormatter.weightNumber`): the phone's decimal mark, up to 2 decimals in kg and 1 in lb. Same sets read "3 × 8 at 80 kg", mixed sets "80 kg · 8/8/7 reps", one set "80 kg × 8", bodyweight "BW + 10 kg × 8". Text buttons are blue through `AppGhostButton`. Words: sentence case for every label (names keep their capitals), caps only on tags, one word per thing ("routine", "Contact me", "Level"), error alerts close with "OK", curly apostrophes. Empty-state eyebrows are sentence-case muted labels; an empty filter result (`AppEmptyHint`) is left-aligned text with no box. Status checkmarks are black; blue stays for actions and selection. A simple destructive confirm is an alert (red button + Cancel); a confirmation dialog is only for 3 or more choices. Pushed detail screens hide the tab bar. Text uses its own token's tracking, never `AppFont.title.tracking` on other sizes. Full rules and the issue list: `docs/design/consistency-audit.md`.

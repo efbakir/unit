@@ -10,12 +10,15 @@ import Foundation
 enum AppCopy {
     enum Workout {
         static let finishShort = "Finish"
+        static let saveFailedTitle = "Couldn’t save workout"
+        static let saveFailedMessage = "Your previous data is unchanged. Try again."
+        static let saveFailedToast = "\(saveFailedTitle). \(saveFailedMessage)"
         static func completeSetNumbered(_ number: Int) -> String { "Complete set \(number)" }
-        static func lastTimeValue(_ weight: String, _ reps: Int) -> String { "Last time \(weight) × \(reps)" }
+        static func lastTimeValue(_ setText: String) -> String { "Last time · \(setText)" }
         static let noStartingTarget = "No starting target yet"
         static let saveStartingTarget = "Save starting target"
         static let markNotDone = "Mark not done"
-        static let addSet = "+ Add set"
+        static let addSet = "Add set"
         static func restIdle(_ time: String) -> String { "Rest \(time)" }
         static let restLabel = "Rest"
         /// Rest adjustment step, one source for buttons, VoiceOver and logic
@@ -28,7 +31,7 @@ enum AppCopy {
         static let restMinusLabel = "Subtract \(restStepSeconds) seconds"
         static let restPlusLabel = "Add \(restStepSeconds) seconds"
         static let restSkip = "Skip"
-        static let restFinishedInline = "Rest finished."
+        static let restFinishedInline = "Rest finished"
         static func stepDown(unitSystem: String, reps: Bool) -> String { reps ? "−1" : (unitSystem == "lb" ? "−5" : "−2.5") }
         static func stepUp(unitSystem: String, reps: Bool) -> String { reps ? "+1" : (unitSystem == "lb" ? "+5" : "+2.5") }
         static let weightField = "Weight"
@@ -250,6 +253,8 @@ enum AppCopy {
 
     enum Nav {
         static let close = "Close"
+        /// Dismiss button for alerts that only inform (Apple: "OK" only there).
+        static let ok = "OK"
         static let history = "History"
         static let exercises = "Exercises"
         /// Generic dismiss for confirmations / form sheets. Pair with `role: .cancel`.
@@ -282,7 +287,7 @@ enum AppCopy {
         /// subscription metadata checklist.
         static let termsOfServiceURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
         static let privacyPolicyURL = URL(string: "https://unitlift.app/privacy")
-        static let support = "Support"
+        static let support = "Contact me"
         static let supportURL = URL(string: "mailto:support@unitlift.app")
     }
 
@@ -307,7 +312,7 @@ enum AppCopy {
         /// an open session that has logged work. The destructive path is `discard`;
         /// the safe path is `markComplete`.
         static let staleSessionTitle = "Workout from yesterday"
-        static let staleSessionMessage = "It's still open. Save what you logged or discard it."
+        static let staleSessionMessage = "It’s still open. Save what you logged or discard it."
         /// Toast shown when a stale empty session is auto-discarded silently.
         static let staleEmptyDiscardedToast = "Discarded empty session from yesterday"
     }
@@ -444,7 +449,7 @@ enum AppCopy {
             return "In \(routineCount) \(plural). Removing it drops the exercise from all of them."
         }
         /// Message when the exercise isn't referenced by any template.
-        static let deleteUnusedMessage = "This can't be undone."
+        static let deleteUnusedMessage = "This can’t be undone."
     }
 
     /// Form-validation hints surfaced under disabled primary CTAs. Each hint
@@ -460,7 +465,7 @@ enum AppCopy {
         /// `canParse` on the program-import step — paste field is empty.
         static let onboardingImportPasteRequired = "Paste a program first."
         /// Add-day sheet — day name field is empty.
-        static let dayNameRequired = "Add a day name."
+        static let dayNameRequired = "Add a routine name."
         /// Add-exercise sheet — exercise name field is empty.
         static let exerciseNameRequired = "Add an exercise name."
     }
@@ -497,7 +502,7 @@ enum AppCopy {
         }
         static let libraryShowFewerPrograms = "Show fewer programs"
         static let libraryGoalChip = "Goal"
-        static let libraryLevelChip = "Experience"
+        static let libraryLevelChip = "Level"
         static let libraryDaysChip = "Days/week"
         static let libraryExactMatchReason = "Matches your goal, experience, and schedule."
         static let libraryGoalMatchReason = "Matches your goal and schedule."
@@ -602,7 +607,7 @@ enum AppCopy {
             "\(price). One-time purchase."
         }
         static let pendingPurchaseContext =
-            "Purchase pending approval. If it was declined, tap Restore Purchases."
+            "Purchase pending approval. If it was declined, tap Restore purchases."
 
         static let includedFeatures = [
             "Next-workout targets",

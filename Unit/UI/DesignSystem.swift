@@ -94,7 +94,7 @@ enum AppColor {
     }
 }
 
-/// Compatibility names retained for callers; faces now come from native SF Pro/SF Mono.
+/// Compatibility names retained for callers; faces come from native SF Pro.
 /// AppFont remains the single typography owner.
 extension Font {
     enum AppWeight {
@@ -107,8 +107,11 @@ extension Font {
         Font(UIFont.geist(weight, size: size, relativeTo: textStyle.uiKitStyle))
     }
 
-    static func geistMono(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        Font(UIFont.geistMono(weight, size: size, relativeTo: textStyle.uiKitStyle))
+    /// SF Pro with tabular (fixed-width) digits for numbers that change or
+    /// line up in columns. Letters, units and punctuation stay proportional,
+    /// so "82.5 kg × 8" reads like text. SF Mono retired 2026-10-24.
+    static func geistTabular(_ weight: AppWeight, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+        Font(UIFont.geistTabular(weight, size: size, relativeTo: textStyle.uiKitStyle))
     }
 }
 
@@ -137,8 +140,8 @@ extension UIFont {
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 
-    static func geistMono(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
-        let base = monospacedSystemFont(ofSize: size, weight: weight.uiKitWeight)
+    static func geistTabular(_ weight: Font.AppWeight, size: CGFloat, relativeTo textStyle: UIFont.TextStyle = .body) -> UIFont {
+        let base = monospacedDigitSystemFont(ofSize: size, weight: weight.uiKitWeight)
         return UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base)
     }
 }
@@ -158,9 +161,9 @@ extension Font.AppWeight {
 /// `.appFont(.X)` (Text) or `.font(AppFont.X.font)` + `.tracking(AppFont.X.tracking)`
 /// (other views).
 ///
-/// Native SF Pro is the default for body, headings, buttons, and small labels.
-/// SF Mono is reserved for workout numerics. Existing sizes stay stable;
-/// tracking is neutral, with restrained tightening on headings.
+/// Native SF Pro everywhere. Numbers use SF Pro with tabular digits
+/// (`geistTabular`); set data is 17pt wherever it sits (decision 2026-10-24).
+/// Tracking is neutral, with restrained tightening on headings.
 enum AppFont {
     // Body hierarchy
     case largeTitle
@@ -190,7 +193,7 @@ enum AppFont {
     case analyticsStatus
     /// 16pt medium — splash welcome eyebrow / tagline pair.
     case splashWelcome
-    /// 36pt mono bold — workout metric hero, big numerics.
+    /// 36pt bold, tabular digits — workout metric hero, big numerics.
     case numericDisplay
     /// 30pt sans bold + tabular digits — workout targets and numeric input fields
     /// (`AdjustResultSheet` weight / reps). Proportional
@@ -198,25 +201,26 @@ enum AppFont {
     /// (mono cells inflate punctuation). `.monospacedDigit()` keeps digits tabular
     /// so values still align if rendered in a column.
     case numericInput
-    /// Approved inline working-set value, SF Mono.
+    /// Approved inline working-set value (30pt bold, tabular digits).
     case setValue
     case setValueCompact
-    /// 14pt mono semibold — set step counters in `SetProgressIndicator` (numeric).
+    /// 15pt medium, tabular digits — small counters: set numbers, the
+    /// elapsed timer, the onboarding step counter.
     case stepIndicator
     /// 24pt bold — product-screen heading on `ProductTopBar`, hero copy on empty states.
     case productHeading
-    /// 17pt sans bold — primary CTA labels, top-bar text actions. **Never mono**
-    /// (mono is reserved for numerics).
+    /// 17pt sans bold — primary CTA labels and full-width text buttons.
     case productAction
-    /// 15pt mono semibold — set-result / PR rows in History (numeric).
+    /// 17pt medium, tabular digits — set data in rows (History, summary,
+    /// logged and planned sets, rest time). Same size as the row name.
     case performance
     /// 15pt system — emoji glyphs use native Apple Color Emoji fallback.
     case emojiCaption
 
     var font: Font {
         switch self {
-        case .setValue: return .geistMono(.bold, size: 30, relativeTo: .title)
-        case .setValueCompact: return .geistMono(.bold, size: 28, relativeTo: .title)
+        case .setValue: return .geistTabular(.bold, size: 30, relativeTo: .title)
+        case .setValueCompact: return .geistTabular(.bold, size: 28, relativeTo: .title)
         case .analyticsStatus: return .geist(.bold, size: 34, relativeTo: .largeTitle)
         case .largeTitle:     return .geist(.bold,     size: 22, relativeTo: .title2)
         case .title:          return .geist(.bold,     size: 20, relativeTo: .title3)
@@ -231,11 +235,11 @@ enum AppFont {
         case .splashTitle:    return .geist(.bold,     size: 56, relativeTo: .largeTitle)
         case .splashWelcome:  return .geist(.medium,   size: 16, relativeTo: .callout)
         case .productHeading: return .geist(.bold,     size: 24, relativeTo: .title2)
-        case .numericDisplay: return .geistMono(.bold,     size: 36, relativeTo: .title)
+        case .numericDisplay: return .geistTabular(.bold,  size: 36, relativeTo: .title)
         case .numericInput:   return .geist(.bold,         size: 30, relativeTo: .title).monospacedDigit()
-        case .stepIndicator:  return .geistMono(.semibold, size: 14, relativeTo: .footnote)
+        case .stepIndicator:  return .geistTabular(.medium, size: 15, relativeTo: .subheadline)
         case .productAction:  return .geist(.bold,         size: 17, relativeTo: .body)
-        case .performance:    return .geistMono(.semibold, size: 15, relativeTo: .subheadline)
+        case .performance:    return .geistTabular(.medium, size: 17, relativeTo: .body)
         case .emojiCaption:
             // Use SwiftUI's public system-font path so supported runtimes and
             // physical devices resolve composed sequences through Apple Color
@@ -1081,12 +1085,16 @@ enum AppIconSize {
 }
 
 extension Double {
-    /// One decimal at most, trailing ".0" dropped. Rounds first: pounds are
-    /// stored as converted kilograms, so 155 lb comes back as 154.99999 and an
-    /// exact whole-number test printed "155.0".
+    /// Editable weight text: up to 2 decimals (so a 61.25 kg target is not
+    /// shown as 61.3), trailing zeros dropped, "." as the mark; input fields
+    /// swap in the phone's mark. Rounds first: pounds are stored as converted
+    /// kilograms, so 155 lb comes back as 154.99999. Display text uses
+    /// `WorkoutTargetFormatter.weightNumber`.
     var weightString: String {
-        let rounded = (self * 10).rounded() / 10
-        return rounded == rounded.rounded() ? "\(Int(rounded))" : String(format: "%.1f", rounded)
+        let rounded = (self * 100).rounded() / 100
+        if rounded == rounded.rounded() { return "\(Int(rounded))" }
+        let text = String(format: "%.2f", rounded)
+        return text.hasSuffix("0") ? String(text.dropLast()) : text
     }
 }
 
@@ -1234,12 +1242,23 @@ enum AppListRowStyle {
 }
 
 struct AppListRow<Trailing: View>: View {
+    /// `.action` is a row that runs something in place (no chevron), so its
+    /// title is blue like every text button. Rows that open a screen keep a
+    /// black title and the disclosure chevron.
+    enum Tone {
+        case `default`
+        case action
+    }
+
     let title: String
     let subtitle: String?
     let leadingIcon: AppIcon?
     var style: AppListRowStyle = .tappable
     var showsDisclosure: Bool = false
+    var tone: Tone = .default
     @ViewBuilder let trailing: () -> Trailing
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(
         title: String,
@@ -1247,6 +1266,7 @@ struct AppListRow<Trailing: View>: View {
         leadingIcon: AppIcon? = nil,
         style: AppListRowStyle = .tappable,
         showsDisclosure: Bool = false,
+        tone: Tone = .default,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
@@ -1254,11 +1274,23 @@ struct AppListRow<Trailing: View>: View {
         self.leadingIcon = leadingIcon
         self.style = style
         self.showsDisclosure = showsDisclosure
+        self.tone = tone
         self.trailing = trailing
     }
 
+    private var titleColor: Color {
+        guard tone == .action else { return AppFont.body.color }
+        return isEnabled ? AppColor.accent : AppColor.textDisabled
+    }
+
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
+        // At accessibility sizes the trailing value moves under the title
+        // instead of squeezing beside it (Apple: fewer columns as text grows).
+        let stacks = dynamicTypeSize.isAccessibilitySize
+        let layout = stacks
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.xs))
+            : AnyLayout(HStackLayout(spacing: AppSpacing.sm))
+        layout {
             if let leadingIcon {
                 leadingIcon.image(size: 15, weight: .semibold)
                     .foregroundStyle(AppColor.textSecondary)
@@ -1268,7 +1300,7 @@ struct AppListRow<Trailing: View>: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(AppFont.body.font)
-                    .foregroundStyle(AppFont.body.color)
+                    .foregroundStyle(titleColor)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -1287,7 +1319,9 @@ struct AppListRow<Trailing: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
+            if !stacks {
+                Spacer(minLength: 0)
+            }
 
             trailing()
         }
@@ -1298,8 +1332,10 @@ struct AppListRow<Trailing: View>: View {
         .contentShape(Rectangle())
     }
 
+    /// Only free-standing tappable rows own the 16pt gutter. Display and
+    /// card-list rows sit in containers that already provide it.
     private var horizontalInset: CGFloat {
-        style == .cardListContent ? 0 : AppSpacing.md
+        style == .tappable ? AppSpacing.md : 0
     }
 
     private var verticalInset: CGFloat {
@@ -1919,43 +1955,54 @@ struct AppSecondaryButton: View {
     }
 }
 
-/// Text-only action (no fill). Full-width row with **centered** label and ≥44pt hit area.
-/// Use inside `NavigationLink` labels or with `AppGhostButton`.
+/// Text-only action (no fill), blue like every text button so it reads as
+/// tappable next to black body text (decision 2026-10-24). `.fullWidth` is a
+/// centered row; `.inline` hugs its text for rows and section headers. Both
+/// keep a ≥44pt hit area. Use inside `NavigationLink` labels or `Link`s too.
 struct AppGhostButtonLabel: View {
     let title: String
     var isEnabled: Bool = true
+    var layout: AppGhostButton.Layout = .fullWidth
     @Environment(\.isEnabled) private var parentIsEnabled
     private var effectiveEnabled: Bool { isEnabled && parentIsEnabled }
 
     var body: some View {
         Text(title)
-            .font(AppFont.productAction.font)
-            .foregroundStyle(effectiveEnabled ? AppColor.textPrimary : AppColor.textDisabled)
+            .font(layout == .inline ? AppFont.caption.font : AppFont.productAction.font)
+            .foregroundStyle(effectiveEnabled ? AppColor.accent : AppColor.textDisabled)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
+            .frame(maxWidth: layout == .inline ? nil : .infinity)
+            .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
     }
 }
 
 /// Text-only quiet action (no fill, no stroke) — use for "Freestyle session",
 /// "Skip", or any optional path that shouldn't compete with the primary CTA.
-/// 44pt hit area. For disclosure link labels, use `AppGhostButtonLabel` directly.
+/// `.inline` is the same action at row size: "Edit", "Undo", "No thanks".
+/// For disclosure link labels, use `AppGhostButtonLabel` directly.
 struct AppGhostButton: View {
+    enum Layout {
+        case fullWidth
+        case inline
+    }
+
     let label: String
     var isEnabled: Bool = true
+    var layout: Layout = .fullWidth
     let action: () -> Void
 
-    init(_ label: String, isEnabled: Bool = true, action: @escaping () -> Void) {
+    init(_ label: String, isEnabled: Bool = true, layout: Layout = .fullWidth, action: @escaping () -> Void) {
         self.label = label
         self.isEnabled = isEnabled
+        self.layout = layout
         self.action = action
     }
 
     var body: some View {
         Button(action: action) {
-            AppGhostButtonLabel(title: label, isEnabled: isEnabled)
-                .frame(minHeight: 60)
+            AppGhostButtonLabel(title: label, isEnabled: isEnabled, layout: layout)
+                .frame(minHeight: layout == .inline ? 44 : 60)
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(!isEnabled)
@@ -2881,8 +2928,9 @@ struct PreviewListRow: View {
                     .foregroundStyle(AppColor.textSecondary)
                 if let supportingText, !supportingText.isEmpty {
                     Text(supportingText)
-                        .font(AppFont.muted.font)
+                        .font(AppFont.caption.font)
                         .foregroundStyle(AppColor.textSecondary)
+                        .monospacedDigit()
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -3554,7 +3602,7 @@ struct AppFeatureAccessTable: View {
     private func featureRow(_ label: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             AppIcon.checkmarkFilled.image(size: AppIconSize.readiness, weight: .semibold)
-                .foregroundStyle(AppColor.accent)
+                .foregroundStyle(AppColor.textPrimary)
                 .accessibilityHidden(true)
 
             Text(label)
@@ -3708,7 +3756,7 @@ private struct AppToastPill: View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
             if event.kind == .success {
                 AppIcon.checkmark.image(size: AppIconSize.readiness, weight: .bold)
-                    .foregroundStyle(AppColor.accent)
+                    .foregroundStyle(AppColor.textPrimary)
                     .opacity(markVisible ? 1 : 0)
                     .scaleEffect(markVisible || !AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver)
                         ? 1 : AppMotion.markPopScale)
@@ -3798,8 +3846,10 @@ struct EmptyStateCard<Content: View>: View {
         Group {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 if let eyebrow {
+                    // Sentence case, like Today's "Up next": eyebrows can be
+                    // a program name the lifter typed (decision 2026-10-24).
                     Text(eyebrow)
-                        .appCapsLabel(.overline)
+                        .font(AppFont.muted.font)
                         .foregroundStyle(AppColor.textSecondary)
                 }
 
@@ -3943,14 +3993,15 @@ struct AppEmptyHint: View {
         self.message = message
     }
 
+    /// Left-aligned on the page like `EmptyStateCard` (JOI rule: no
+    /// centered boxed empty states).
     var body: some View {
         Text(message)
             .font(AppFont.caption.font)
             .foregroundStyle(AppColor.textSecondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 120)
-            .appCardStyle()
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -4199,7 +4250,7 @@ struct AppReorderDragPreview<Content: View>: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            AppIcon.reorder.image(size: 15, weight: .semibold)
+            AppIcon.reorder.image(size: AppIconSize.readiness, weight: .semibold)
                 .foregroundStyle(AppColor.textSecondary)
                 .frame(width: 44, alignment: .leading)
 
@@ -5133,8 +5184,8 @@ struct AppSetRepEditorSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .alert("Couldn't save target", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save target", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
             Text("Your changes are still here. Try saving again.")
         }
@@ -5306,7 +5357,7 @@ struct AppExercisePickerSheet: View {
                                 .foregroundStyle(AppColor.accent)
                             Text("Restore \"\(archivedExactMatch.displayName)\"")
                                 .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.textPrimary)
+                                .foregroundStyle(AppColor.accent)
                         }
                         .frame(minHeight: 44, alignment: .leading)
                     }
@@ -5322,7 +5373,7 @@ struct AppExercisePickerSheet: View {
                                 .foregroundStyle(AppColor.accent)
                             Text("Create \"\(trimmedQuery)\"")
                                 .font(AppFont.body.font)
-                                .foregroundStyle(AppColor.textPrimary)
+                                .foregroundStyle(AppColor.accent)
                         }
                         .frame(minHeight: 44, alignment: .leading)
                     }
@@ -5379,10 +5430,12 @@ struct AppExercisePickerSheet: View {
                 createAndSelect(name: trimmedQuery)
             }
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Group {
-                        Button(AppCopy.Nav.done) { dismiss() }
-                            .appToolbarTextStyle()
+                        Button { dismiss() } label: {
+                            Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
+                                .labelStyle(.iconOnly)
+                        }
                     }
                     .tint(AppColor.textPrimary)
                 }
@@ -5539,6 +5592,9 @@ struct AppScreen<Content: View>: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             content()
         }
+        // The one owner of page tint: content is blue, while bars and
+        // toolbars stay black from ContentView (decision 2026-10-24).
+        .tint(AppColor.accent)
         .padding(.horizontal, AppSpacing.md)
         // Child-owned scrolling must reach the safe-area boundary. Fixed
         // sheet/onboarding content restores its own internal padding.
@@ -5697,7 +5753,7 @@ struct AppScreen<Content: View>: View {
             if showsKeyboardDismissToolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") {
+                    Button(AppCopy.Nav.done) {
                         UIApplication.shared.sendAction(
                             #selector(UIResponder.resignFirstResponder),
                             to: nil,
@@ -5705,8 +5761,6 @@ struct AppScreen<Content: View>: View {
                             for: nil
                         )
                     }
-                    .font(AppFont.sectionHeader.font)
-                    .foregroundStyle(AppColor.accent)
                 }
             }
         }
@@ -5886,12 +5940,6 @@ extension View {
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
         }
-    }
-
-    /// Canonical style for text-label toolbar buttons (e.g. "History", "Browse").
-    /// Matches iOS-native bold top-bar actions so every screen reads the same weight.
-    func appToolbarTextStyle() -> some View {
-        self.font(AppFont.body.font.weight(.semibold))
     }
 
     /// Compatibility entry point for existing screens. SwiftUI owns scroll edges:
@@ -6702,18 +6750,17 @@ struct AppMainLiftCard: View {
         AppCard(contentInset: 0) {
             VStack(alignment: .leading, spacing: AppSpacing.smd) {
                 HStack(spacing: AppSpacing.sm) {
-                    Text(title).font(AppFont.sectionHeader.font).tracking(AppFont.title.tracking).lineLimit(2)
+                    Text(title).font(AppFont.sectionHeader.font).lineLimit(2)
                 }
                 .appNavigationDisclosure(lift?.latest != nil)
                 if let lift, let latest = lift.latest {
                     Self.metric(latest, bodyweight: lift.bodyweight, unit: unit)
                     Text("Latest · \(WorkoutTargetFormatter.analyticsDate(latest.date, now: now))")
-                        .font(AppFont.muted.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                        .font(AppFont.muted.font).foregroundStyle(AppColor.textSecondary)
                     if lift.comparison.isComparable { change(lift) }
                     AppTrendChart(data: chart, caption: lift.bodyweight ? "Most reps per week · 12 weeks" : "Best set per week · 12 weeks", unit: unit, bodyweight: lift.bodyweight)
                 } else {
-                    Text("—").font(AppFont.numericInput.font).foregroundStyle(AppColor.textSecondary)
-                    Text("No sessions yet").font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                    Text("No sessions yet").font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                     AppTrendChart(data: chart, caption: "No sets in 12 weeks")
                 }
             }
@@ -6736,20 +6783,20 @@ struct AppMainLiftCard: View {
     }
     private func change(_ lift: AnalyticsEngine.Lift) -> some View {
         Text("4-week comparison · \(WorkoutTargetFormatter.analyticsComparison(lift.comparison, unit: unit))")
-            .font(AppFont.caption.font.weight(.semibold)).monospacedDigit()
+            .font(AppFont.caption.font).monospacedDigit()
             .foregroundStyle(lift.comparison.isUp ? AppColor.textPrimary : AppColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
     @ViewBuilder private func footer(_ lift: AnalyticsEngine.Lift, best: AnalyticsEngine.Performance) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Best").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-            Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
-                .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
+            Text("\(WorkoutTargetFormatter.analyticsPerformance(best, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight)) · \(WorkoutTargetFormatter.analyticsDate(best.date, now: now))")
+                .font(AppFont.caption.font).monospacedDigit()
         }.frame(maxWidth: .infinity, alignment: .leading)
         if let target = lift.target {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Next").appFont(.muted).foregroundStyle(AppColor.textSecondary)
-                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit)).font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
+                Text(WorkoutTargetFormatter.analyticsTarget(target, unit: unit, onBodyweight: lift.exercise.isBodyweight)).font(AppFont.caption.font).monospacedDigit()
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -6867,12 +6914,9 @@ struct ExerciseLoggingCard<Content: View>: View {
             }
             .padding(.horizontal, AppSpacing.xs)
             content()
-            Button("+ Add set", action: onAddSet)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
+            // Same "add to this list" row as a routine's "Add exercise".
+            AppCardListAddRow(AppCopy.Workout.addSet, action: onAddSet)
                 .padding(.horizontal, AppSpacing.smd)
-                .buttonStyle(ScaleButtonStyle())
         }
     }
 }
@@ -6978,10 +7022,7 @@ struct LoggedSetRow: View {
             .accessibilityAction(named: "Mark not done", onMarkNotDone)
             Group {
                 if showsUndo {
-                    Button("Undo", action: onUndo)
-                        .font(AppFont.caption.font).underline()
-                        .foregroundStyle(AppColor.textPrimary)
-                        .frame(minWidth: 44, minHeight: 44)
+                    AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                 } else {
                     AppColor.clear.frame(width: 44, height: 44)
                         .accessibilityHidden(true)
@@ -7044,13 +7085,13 @@ struct ExerciseSummaryRow: View {
             HStack(spacing: AppSpacing.sm) {
                 Button(action: onSelect) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(name).font(AppFont.body.font).lineLimit(2)
+                        Text(name).font(AppFont.sectionHeader.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if !summary.isEmpty || showsPR {
                             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
                                 if !summary.isEmpty {
-                                    Text(summary).appFont(.muted).monospacedDigit()
+                                    Text(summary).appFont(.body).monospacedDigit()
                                         .foregroundStyle(AppColor.textSecondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -7063,7 +7104,7 @@ struct ExerciseSummaryRow: View {
                                     AppIcon.chart.image(size: AppIconSize.compact)
                                         .accessibilityHidden(true)
                                 }
-                                Text(detail).appFont(.muted).monospacedDigit()
+                                Text(detail).appFont(.caption).monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .foregroundStyle(detailIsSuggestion ? AppColor.textPrimary : AppColor.textSecondary)
@@ -7082,12 +7123,9 @@ struct ExerciseSummaryRow: View {
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {
                     if showsUndo {
-                    Button("Undo", action: onUndo)
-                        .font(AppFont.caption.font).underline()
-                        .foregroundStyle(AppColor.textPrimary)
-                        .frame(minWidth: 44, minHeight: 44)
+                        AppGhostButton(AppCopy.Toast.undo, layout: .inline, action: onUndo)
                     }
-                    AppIcon.checkmarkFilled.image(size: 22)
+                    AppIcon.checkmarkFilled.image(size: 20)
                         .accessibilityHidden(true)
                 }
             }

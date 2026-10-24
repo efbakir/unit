@@ -309,7 +309,7 @@ final class ProgressionContractUITests: XCTestCase {
             "Accepted complete target is not prefilled in the next workout"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time 60 × 10").exists,
+            staticText(in: app, containing: "Last time · 60 kg × 10").exists,
             "The next workout lost the prior-session evidence"
         )
         assertNoProgressionDecisionUI(in: app)
@@ -428,7 +428,7 @@ final class ProgressionContractUITests: XCTestCase {
             "Accepted US target was not prefilled"
         )
         XCTAssertTrue(
-            staticText(in: app, containing: "Last time 135 × 10").exists,
+            staticText(in: app, containing: "Last time · 135 lb × 10").exists,
             "US active workout lost previous-session evidence"
         )
         attachScreenshot(of: app, named: "store-02-one-tap-workout")
@@ -597,9 +597,9 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(targetEditor, in: app)
         tap(targetEditor, "Target editor sample")
         tap(app.buttons[AppCopy.Workout.saveChanges], "Simulate failed target save")
-        let alert = app.alerts["Couldn't save target"]
+        let alert = app.alerts["Couldn’t save target"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        tap(alert.buttons["Close"], "Close failure alert")
+        tap(alert.buttons["OK"], "Dismiss failure alert")
         XCTAssertTrue(app.staticTexts["Sample exercise"].exists, "Failure dismissed the edit draft")
         attachScreenshot(of: app, named: "15-target-draft-after-failure")
         tap(app.buttons[AppCopy.Workout.saveChanges], "Retry target save")
@@ -827,7 +827,10 @@ final class ProgressionContractUITests: XCTestCase {
         maximumSwipes: Int = 8
     ) {
         var remaining = maximumSwipes
-        while remaining > 0 && (!element.exists || !element.isHittable) {
+        // Also scroll when the element sits at the bottom edge: it can read as
+        // hittable there and then settle out of reach before the tap.
+        while remaining > 0
+            && (!element.exists || !element.isHittable || element.frame.maxY > app.frame.maxY * 0.85) {
             let shouldScrollDown = element.exists
                 && element.frame.maxY < app.frame.midY
             let startY = shouldScrollDown ? 0.34 : 0.66

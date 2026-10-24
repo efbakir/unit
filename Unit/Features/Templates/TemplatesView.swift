@@ -71,7 +71,6 @@ struct TemplatesView: View {
                     Group {
                         NavigationLink(value: ProgramLibraryDestination()) {
                             Text("Browse")
-                                .appToolbarTextStyle()
                         }
                         .accessibilityLabel("Browse program library")
                     }
@@ -112,7 +111,6 @@ struct TemplatesView: View {
                 }
                 .appBottomSheetChrome()
             }
-            .tint(AppColor.accent)
             .onAppear {
                 FreestyleSessionSupport.cleanupOrphanedTemplates(
                     modelContext: modelContext,
@@ -131,13 +129,10 @@ struct TemplatesView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             activeProgramCard(split: split, days: days)
 
-            Button {
+            AppGhostButton(AppCopy.Workout.freestyleSession) {
                 FreestyleSessionSupport.startEmptyWorkout(modelContext: modelContext, activeSplit: split)
                 appTabSelection(.today)
-            } label: {
-                AppGhostButtonLabel(title: AppCopy.Workout.freestyleSession)
             }
-            .buttonStyle(ScaleButtonStyle())
             .padding(.top, AppSpacing.xxs)
             .accessibilityLabel("Freestyle session, log without a program day")
 
@@ -232,7 +227,7 @@ struct TemplatesView: View {
 
     private func programDisplayName(for split: Split) -> String {
         let trimmed = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Untitled Program" : trimmed
+        return trimmed.isEmpty ? "Untitled program" : trimmed
     }
 
     private func orderedTemplates(for split: Split) -> [DayTemplate] {
@@ -380,19 +375,16 @@ struct EditProgramView: View {
                 .appBottomSheetChrome()
                 .presentationDetents([.medium])
         }
-        .confirmationDialog(
-            "Delete program",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert("Delete program?", isPresented: $showDeleteConfirmation) {
             Button("Delete program", role: .destructive) {
                 deleteProgram()
             }
+            Button(AppCopy.Nav.cancel, role: .cancel) { }
         } message: {
-            Text("Deletes this program and its routine days. Can't be undone.")
+            Text("Deletes this program and its routines. Can’t be undone.")
         }
-        .alert("Couldn't save program", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save program", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
             Text("Your saved program is unchanged. Try again.")
         }
@@ -480,7 +472,7 @@ struct EditProgramView: View {
             } label: {
                 Text(weekdayShort(template.scheduledWeekday) ?? "Day")
                     .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(AppColor.accent)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }

@@ -28,7 +28,7 @@ enum MuscleGroup: String, CaseIterable, Codable, Identifiable {
         case .core: return "Core"
         case .calves: return "Calves"
         case .forearms: return "Forearms"
-        case .fullBody: return "Full Body"
+        case .fullBody: return "Full body"
         }
     }
 }

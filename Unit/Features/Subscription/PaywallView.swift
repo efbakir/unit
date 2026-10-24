@@ -79,7 +79,7 @@ struct PaywallView: View {
             isPresented: errorAlertBinding,
             presenting: store.purchaseError
         ) { _ in
-            Button("OK", role: .cancel) { store.purchaseError = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.purchaseError = nil }
         } message: { error in
             Text(error)
         }
@@ -88,7 +88,7 @@ struct PaywallView: View {
             isPresented: infoAlertBinding,
             presenting: store.infoMessage
         ) { _ in
-            Button("OK", role: .cancel) { store.infoMessage = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.infoMessage = nil }
         } message: { message in
             Text(message)
         }
@@ -212,7 +212,7 @@ struct PaywallView: View {
             .padding(.top, AppSpacing.xl)
 
             if canManageActiveSubscription {
-                AppGhostButton("Manage Subscription") {
+                AppGhostButton("Manage subscription") {
                     showingManageSubscriptions = true
                 }
                 .padding(.top, AppSpacing.md)
@@ -465,7 +465,7 @@ struct PaywallView: View {
             VStack(alignment: .center, spacing: AppSpacing.md) {
                 HStack(spacing: AppSpacing.sm) {
                     AppIcon.checkmarkFilled.image(size: AppIconSize.readiness)
-                        .foregroundStyle(AppColor.accent)
+                        .foregroundStyle(AppColor.textPrimary)
                         .accessibilityHidden(true)
 
                     Text(AppCopy.Paywall.programReady)
@@ -641,7 +641,7 @@ struct PaywallView: View {
             return AppCopy.Paywall.pendingPurchaseContext
         }
         if hasNoLoadedProducts {
-            return "Subscriptions couldn't load. Try again."
+            return "Subscriptions couldn’t load. Try again."
         }
         if store.hasAttemptedProductLoad {
             return "Choose an available plan."
@@ -845,11 +845,11 @@ struct PaywallView: View {
         AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Couldn't load subscriptions")
+                    Text("Couldn’t load subscriptions")
                         .font(AppFont.sectionHeader.font)
                         .foregroundStyle(AppColor.textPrimary)
 
-                    Text("The App Store couldn't load subscriptions. Try again in a moment.")
+                    Text("The App Store couldn’t load subscriptions. Try again in a moment.")
                         .font(AppFont.body.font)
                         .foregroundStyle(AppColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -864,7 +864,7 @@ struct PaywallView: View {
 
     private var partialLoadBanner: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Some plans couldn't load.")
+            Text("Some plans couldn’t load.")
                 .font(AppFont.caption.font)
                 .foregroundStyle(AppColor.textSecondary)
             AppGhostButton("Try again") {
@@ -903,8 +903,10 @@ struct PaywallView: View {
             supportLink
             historyLink
         }
-        .font(AppFont.metadata.font)
-        .foregroundStyle(AppColor.textSecondary)
+        // Legal actions are text buttons: blue, at the muted size the
+        // 2026-08-13 decision set (decision 2026-10-24).
+        .font(AppFont.muted.font)
+        .foregroundStyle(AppColor.accent)
         .frame(maxWidth: .infinity)
     }
 
@@ -929,7 +931,8 @@ struct PaywallView: View {
         Button {
             Task { await store.restore() }
         } label: {
-            Text("Restore Purchases")
+            Text("Restore purchases")
+                .foregroundStyle(store.isLoading || store.isPurchasing ? AppColor.textDisabled : AppColor.accent)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
@@ -940,7 +943,8 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var supportLink: some View {
-        if let supportURL = AppCopy.Legal.supportURL {
+        // Same prefilled email as Settings > Contact me.
+        if let supportURL = SupportMailto.composedURL() ?? AppCopy.Legal.supportURL {
             Link(destination: supportURL) {
                 Text(AppCopy.Legal.support)
                     .frame(minHeight: 44)

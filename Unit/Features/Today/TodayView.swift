@@ -126,7 +126,6 @@ struct TodayView: View {
                     SessionDetailView(session: session, templateName: templateName, completionMoment: completionMoment)
                 }
             }
-            .tint(AppColor.accent)
             .onAppear {
                 checkStaleSession()
                 FreestyleSessionSupport.cleanupOrphanedTemplates(
@@ -218,7 +217,7 @@ struct TodayView: View {
                         Button {
                             showsRoutinePickSheet = true
                         } label: {
-                            Label("Choose today's routine", systemImage: AppIcon.list.systemName)
+                            Label("Choose today’s routine", systemImage: AppIcon.list.systemName)
                                 .labelStyle(.iconOnly)
                         }
                     }
@@ -230,7 +229,6 @@ struct TodayView: View {
                     Button(AppCopy.Nav.history) {
                         showsHistory = true
                     }
-                    .appToolbarTextStyle()
                 }
                 .tint(AppColor.textPrimary)
             }
@@ -408,7 +406,7 @@ struct TodayView: View {
         guard !modelContext.hasChanges else {
             modelContext.rollbackRestoringLoadedModels()
             AppHaptic.error.fire()
-            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            toastMessage = .init(AppCopy.Workout.saveFailedToast, kind: .error)
             return
         }
         launchSessionID = session.id
@@ -521,7 +519,7 @@ struct TodayView: View {
             modelContext.processPendingChanges()
             modelContext.rollbackRestoringLoadedModels()
             AppHaptic.error.fire()
-            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            toastMessage = .init(AppCopy.Workout.saveFailedToast, kind: .error)
             return false
         }
     }
@@ -803,10 +801,16 @@ final class TodayDashboardViewModel {
             }
 
             let setCount = max(lastSets.count, 1)
-            let displayTarget = WorkoutTargetFormatter.setRepDisplay(
-                setCount: setCount,
-                reps: representative.reps
+            // Same wording as History: "3 × 8 at 80 kg" keeps the weight.
+            let displayTarget = WorkoutTargetFormatter.completedPerformanceText(
+                weightsKg: lastSets.map(\.weight),
+                reps: lastSets.map(\.reps),
+                isBodyweight: exercise.isBodyweight
             )
+                ?? WorkoutTargetFormatter.setRepDisplay(
+                    setCount: setCount,
+                    reps: representative.reps
+                )
                 ?? "\(representative.reps)"
 
             return ExerciseTarget(
@@ -866,7 +870,7 @@ private struct TodayRoutinePickSheet: View {
 
     var body: some View {
         AppSheetScreen(
-            title: "Today's routine",
+            title: "Today’s routine",
             primaryButton: hasActiveOverride
                 ? PrimaryButtonConfig(
                     label: hasWeeklySchedule ? "Use scheduled day" : "Use the next routine",

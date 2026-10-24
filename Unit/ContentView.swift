@@ -64,7 +64,7 @@ struct ContentView: View {
         .alert("Training data unavailable", isPresented: $showsPersistenceRecoveryNotice) {
             Button("Continue temporarily", role: .cancel) { }
         } message: {
-            Text("Unit couldn't open the local training store. Your existing data was left untouched, but changes in this session won't be saved. Close the app and contact support before logging another workout.")
+            Text("Unit couldn’t open the local training store. Your existing data was left untouched, but changes in this session won’t be saved. Close the app and contact support before logging another workout.")
         }
     }
 

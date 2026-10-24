@@ -30,9 +30,7 @@ struct AnalyticsView: View {
                         if !output.mainIDs.isEmpty {
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 AppSectionHeader("Main lifts") {
-                                    Button("Edit") { showsMainLiftEditor = true }
-                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.accent)
-                                        .frame(minWidth: AppSpacing.xxl, minHeight: AppSpacing.xxl)
+                                    AppGhostButton(AppCopy.Workout.edit, layout: .inline) { showsMainLiftEditor = true }
                                         .accessibilityLabel("Edit main lifts")
                                         .accessibilityHint("Choose up to 3 main lifts.")
                                         .accessibilityIdentifier("analytics-edit-main")
@@ -77,14 +75,12 @@ struct AnalyticsView: View {
                                 AppCardList(data: output.other, id: \.self, rowVerticalInset: AppSpacing.xs) { id in
                                     if let lift = output.lifts[id], let latest = lift.latest {
                                         NavigationLink(value: id) {
-                                            HStack(spacing: AppSpacing.sm) {
-                                                AppListRow(title: lift.exercise.name, style: .cardListContent, showsDisclosure: true) {
-                                                    Text(WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit))
-                                                        .font(AppFont.caption.font).tracking(AppFont.title.tracking).monospacedDigit()
-                                                        .foregroundStyle(AppColor.textSecondary)
-                                                        .minimumScaleFactor(0.7)
-                                                }
-                                            }
+                                            AppListRow(
+                                                title: lift.exercise.name,
+                                                value: WorkoutTargetFormatter.analyticsPerformance(latest, bodyweight: lift.bodyweight, unit: unit, onBodyweight: lift.exercise.isBodyweight),
+                                                style: .cardListContent,
+                                                showsDisclosure: true
+                                            )
                                         }
                                         .buttonStyle(ScaleButtonStyle())
                                         .accessibilityIdentifier("analytics-other-\(id.uuidString)")
@@ -99,7 +95,7 @@ struct AnalyticsView: View {
                 }
             } else if initialLoadFailed {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    EmptyStateCard(title: "Couldn't load progress", message: "Try again.")
+                    EmptyStateCard(title: "Couldn’t load progress", message: "Try again.")
                     AppSecondaryButton("Retry") { revision += 1 }
                 }
             } else {
@@ -157,7 +153,7 @@ struct AnalyticsView: View {
                 AppScreen(showsNativeNavigationBar: true) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("Each lift compares its best set from the last 4 weeks with the 4 weeks before.")
-                            .font(AppFont.body.font).tracking(AppFont.title.tracking)
+                            .font(AppFont.body.font)
                         AppCardList(data: [
                             ("Up", "More weight or reps, nothing less"),
                             ("Same", "No change"),
@@ -177,12 +173,21 @@ struct AnalyticsView: View {
                                 AppListRow(title: item.0, subtitle: item.1, style: .cardListContent)
                             }
                         }
-                        Text("Warm-up sets don't count. The status changes after 3 days.")
-                            .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
+                        Text("Warm-up sets don’t count. The status changes after 3 days.")
+                            .font(AppFont.caption.font).foregroundStyle(AppColor.textSecondary)
                     }
                 }
                 .navigationTitle("How this works").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Group { Button("Done") { showsExplanation = false } }.tint(AppColor.textPrimary) } }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Group {
+                            Button { showsExplanation = false } label: {
+                                Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName).labelStyle(.iconOnly)
+                            }
+                        }
+                        .tint(AppColor.textPrimary)
+                    }
+                }
                 .appNavigationBarChrome()
             }
         }

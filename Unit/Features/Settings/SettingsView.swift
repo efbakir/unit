@@ -32,8 +32,8 @@ private enum DataRow: String, CaseIterable, Identifiable {
 private enum SubscriptionRow: String, CaseIterable, Identifiable {
     case status = "Unit Pro"
     case renewal = "Renewal"
-    case restore = "Restore Purchases"
-    case manage = "Manage Subscription"
+    case restore = "Restore purchases"
+    case manage = "Manage subscription"
 
     var id: String { rawValue }
 }
@@ -66,7 +66,7 @@ private enum LegalRow: String, CaseIterable, Identifiable {
 /// iOS version) so a "Contact support" reply lands with the diagnostic strip
 /// already attached. Cuts the round-trip where support has to ask which build
 /// the user is on. Pure dynamic — no hardcoded version strings.
-private enum SupportMailto {
+enum SupportMailto {
     static let recipient = "support@unitlift.app"
 
     static func composedURL() -> URL? {
@@ -126,7 +126,7 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if shouldShowCloseButton {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Group {
                         Button { dismiss() } label: {
                             Label(AppCopy.Nav.close, systemImage: AppIcon.close.systemName)
@@ -164,7 +164,7 @@ struct SettingsView: View {
             Text(message)
         }
         .alert("Purchases restored", isPresented: $showingRestoreSuccess) {
-            Button("OK", role: .cancel) { }
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
         .task { await store.refreshRenewalSummary() }
@@ -173,7 +173,7 @@ struct SettingsView: View {
             isPresented: infoAlertBinding,
             presenting: store.infoMessage
         ) { _ in
-            Button("OK", role: .cancel) { store.infoMessage = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.infoMessage = nil }
         } message: { message in
             Text(message)
         }
@@ -182,7 +182,7 @@ struct SettingsView: View {
             isPresented: errorAlertBinding,
             presenting: store.purchaseError
         ) { _ in
-            Button("OK", role: .cancel) { store.purchaseError = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.purchaseError = nil }
         } message: { error in
             Text(error)
         }
@@ -366,7 +366,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("settings-apple-health")
                     }
                 } else {
-                    AnonymousAnalyticsToggle()
+                    AnonymousAnalyticsToggle(style: .tappable)
                 }
             }
         }
@@ -412,7 +412,7 @@ struct SettingsView: View {
                     Button {
                         Task { await runRestore() }
                     } label: {
-                        AppListRow(title: row.rawValue) {
+                        AppListRow(title: row.rawValue, tone: .action) {
                             // Reserve the indicator's space so the row stays
                             // still when restoring begins or finishes.
                             ProgressView()
@@ -493,9 +493,10 @@ struct SettingsView: View {
             }
             .foregroundStyle(AppColor.textSecondary)
             if let mailURL = URL(string: "mailto:support@unitlift.app") {
-                Link("support@unitlift.app", destination: mailURL)
-                    .font(AppFont.caption.font)
-                    .foregroundStyle(AppColor.textPrimary)
+                Link(destination: mailURL) {
+                    AppGhostButtonLabel(title: "support@unitlift.app", layout: .inline)
+                }
+                .buttonStyle(ScaleButtonStyle())
             }
         }
         .frame(maxWidth: .infinity)
@@ -571,12 +572,16 @@ struct SettingsView: View {
 /// the paywall and Settings so the three places cannot drift. The wrapper
 /// exists only for that shared binding; the row is the canonical `AppListRow`.
 struct AnonymousAnalyticsToggle: View {
+    /// `.cardListContent` on the page (setup, paywall); `.tappable` inside
+    /// Settings' list, where rows own their inset. Same row everywhere.
+    var style: AppListRowStyle = .cardListContent
     @State private var isEnabled = UnitAnalytics.shared.isEnabled
 
     var body: some View {
         AppListRow(
             title: AppCopy.Preferences.anonymousAnalytics,
-            subtitle: AppCopy.Preferences.anonymousAnalyticsCaption
+            subtitle: AppCopy.Preferences.anonymousAnalyticsCaption,
+            style: style
         ) {
             Toggle("", isOn: $isEnabled)
                 .labelsHidden()
@@ -585,6 +590,7 @@ struct AnonymousAnalyticsToggle: View {
                 .accessibilityHint(AppCopy.Preferences.anonymousAnalyticsCaption)
                 .accessibilityIdentifier("anonymous-analytics-toggle")
         }
+        .frame(minHeight: 44)
         .onAppear {
             isEnabled = UnitAnalytics.shared.isEnabled
         }

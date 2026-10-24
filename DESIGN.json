@@ -100,7 +100,7 @@
       "body": { "displayName": "Body", "purpose": "Default reading copy. List rows, descriptions, paragraph text." },
       "label": { "displayName": "Label", "purpose": "Button labels, primary control text. Heavier than body so CTAs have authority." },
       "caption": { "displayName": "Caption", "purpose": "Secondary metadata, helper text, timer subtitles." },
-      "numeric": { "displayName": "Numeric", "purpose": "Weights, reps, rest-timer countdown. Monospaced digits so columns align at every Dynamic Type size. The workout signature." }
+      "numeric": { "displayName": "Numeric", "purpose": "Weights, reps, rest-timer countdown. SF Pro with tabular digits so columns align at every Dynamic Type size; SF Mono retired 2026-10-24. Set data is 17pt in rows." }
     },
     "shadows": [],
     "shadowsNote": "Unit is a flat system by doctrine. Cards lift off the page through fill contrast (Bond #FFFFFF on Milk #F5F5F5, a 6.25% lightness step). The Flat-By-Default Rule is non-negotiable.",
@@ -130,9 +130,9 @@
       "name": "Ghost Button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Text-only trigger for 'Add X' actions inside cards. The accentSoft Secondary tone is banned for this purpose; this is its job.",
-      "html": "<button class=\"ds-btn-ghost\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M8 3v10M3 8h10\" stroke=\"#0A0A0A\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg><span>Add exercise</span></button>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #0A0A0A; font-family: 'SF Pro Rounded', -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.25; padding: 16px 24px; min-height: 60px; border: none; border-radius: 14px; cursor: pointer; transition: opacity 0.15s ease-out; } .ds-btn-ghost:hover { opacity: 0.7; }"
+      "description": "Every text button: blue label, no fill. Full width for standalone actions, inline (15pt) inside rows and headers. 'Add X' at the end of a card list uses AppCardListAddRow.",
+      "html": "<button class=\"ds-btn-ghost\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M8 3v10M3 8h10\" stroke=\"#0068E0\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg><span>Add exercise</span></button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #0068E0; font-family: 'SF Pro Rounded', -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.25; padding: 16px 24px; min-height: 60px; border: none; border-radius: 14px; cursor: pointer; transition: opacity 0.15s ease-out; } .ds-btn-ghost:hover { opacity: 0.7; }"
     },
     {
       "name": "Card",

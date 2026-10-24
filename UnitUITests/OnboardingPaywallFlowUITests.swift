@@ -414,10 +414,10 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.switches["anonymous-analytics-toggle"].exists,
             "the paywall shows the analytics switch only while analytics is on"
         )
-        let restorePurchases = app.buttons["Restore Purchases"]
+        let restorePurchases = app.buttons["Restore purchases"]
         XCTAssertTrue(
             restorePurchases.waitForExistence(timeout: 8),
-            "Restore Purchases unreachable"
+            "Restore purchases unreachable"
         )
         XCTAssertGreaterThanOrEqual(restorePurchases.frame.height, 44)
         XCTAssertTrue(
@@ -619,7 +619,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         scrollTo(cancelHelp, in: app)
         tap(cancelHelp, "How do I cancel?")
         XCTAssertTrue(
-            staticText(in: app, containing: "Manage Subscription").waitForExistence(timeout: 5),
+            staticText(in: app, containing: "Manage subscription").waitForExistence(timeout: 5),
             "cancel steps missing"
         )
         XCTAssertTrue(
@@ -779,9 +779,9 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
         openPurchasePage(in: app)
 
-        let restore = app.buttons["Restore Purchases"]
+        let restore = app.buttons["Restore purchases"]
         scrollTo(restore, in: app)
-        tap(restore, "Restore Purchases", timeout: 20)
+        tap(restore, "Restore purchases", timeout: 20)
 
         XCTAssertTrue(
             app.tabBars.buttons["Today"].waitForExistence(timeout: 20),
@@ -876,7 +876,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             extraArguments: ["-ui-testing-product-load-fails-once"]
         )
         app.launch()
-        XCTAssertTrue(app.staticTexts["Couldn't load subscriptions"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Couldn’t load subscriptions"].waitForExistence(timeout: 20))
         XCTAssertFalse(app.buttons["Subscribe to continue"].isEnabled)
         tap(app.buttons["Try again"], "product-load retry")
         XCTAssertTrue(
@@ -893,7 +893,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         )
         app.launch()
         openPurchasePage(in: app)
-        XCTAssertTrue(app.staticTexts["Some plans couldn't load."].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Some plans couldn’t load."].waitForExistence(timeout: 20))
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
         scrollTo(monthly, in: app)
         XCTAssertTrue(monthly.exists, "missing Monthly card was hidden instead of disabled")

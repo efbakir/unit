@@ -167,7 +167,7 @@ struct SessionDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(templateName)
-                    .font(AppFont.title.font)
+                    .appFont(.productHeading)
                     .foregroundStyle(AppColor.textPrimary)
                     .lineLimit(2)
                     .truncationMode(.tail)
@@ -197,7 +197,6 @@ struct SessionDetailView: View {
                     } label: {
                         SessionExerciseSummary(exercise: exercise)
                             .appNavigationDisclosure()
-                            .padding(.vertical, AppSpacing.sm)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(ScaleButtonStyle())
@@ -376,13 +375,9 @@ struct SessionDetailView: View {
     private func recommendationEditButton(
         _ recommendation: ProgressionRecommendationRow
     ) -> some View {
-        Button(AppCopy.Workout.edit) {
+        AppGhostButton(AppCopy.Workout.edit, layout: .inline) {
             beginEditing(recommendation)
         }
-        .font(AppFont.body.font)
-        .foregroundStyle(AppColor.textSecondary)
-        .frame(minWidth: 44, minHeight: 44, alignment: .leading)
-        .buttonStyle(ScaleButtonStyle())
         .accessibilityLabel(
             "Edit next target for \(recommendation.exerciseName)"
         )
@@ -393,7 +388,6 @@ struct SessionDetailView: View {
             Text(value)
                 .appNumericValue(value: value)
                 .font(AppFont.performance.font)
-                .bold(emphasized)
                 .foregroundStyle(emphasized ? AppColor.textPrimary : AppColor.textSecondary)
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
@@ -448,7 +442,7 @@ struct SessionDetailView: View {
             TextField("", text: $editingWeightText)
                 .focused($editingTargetField, equals: "weight")
                 .keyboardType(.decimalPad)
-                .font(AppFont.performance.font)
+                .font(AppFont.numericInput.font)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .appInputFieldStyle()
@@ -468,7 +462,7 @@ struct SessionDetailView: View {
             TextField("", text: $editingRepsText)
                 .focused($editingTargetField, equals: "reps")
                 .keyboardType(.numberPad)
-                .font(AppFont.performance.font)
+                .font(AppFont.numericInput.font)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .appInputFieldStyle()
@@ -788,17 +782,13 @@ struct SessionDetailView: View {
                     open(url)
                 }
 
-                Button(AppCopy.Engagement.noThanks) {
+                AppGhostButton(AppCopy.Engagement.noThanks, layout: .inline) {
                     UnitAnalytics.shared.track(.feedbackAction(action: .dismiss))
                     withAnimation(AppMotion.allowsSpatialMotion(reduceMotion: UIAccessibility.isReduceMotionEnabled, voiceOver: UIAccessibility.isVoiceOverRunning) ? .appState : nil) {
                         showsFeedbackInvitation = false
                     }
                 }
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 44)
-                .buttonStyle(ScaleButtonStyle())
             }
         }
         .accessibilityIdentifier("feedback-invitation")

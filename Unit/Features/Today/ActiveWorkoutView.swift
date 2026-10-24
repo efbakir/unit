@@ -329,13 +329,14 @@ struct ActiveWorkoutView: View {
         // This screen intentionally keeps the native navigation surface visible.
         .toolbarBackground(AppColor.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .tint(AppColor.textPrimary)
         .appHaptic(.success, trigger: setLoggedPhase)
         .appHaptic(.success, trigger: workoutFinishedPhase)
         .appHaptic(.success, trigger: restTimer.completionCount)
         .appToast(event: $setEditHintToast)
-        .alert("Couldn't save workout", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert(AppCopy.Workout.saveFailedTitle, isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
+        } message: {
+            Text(AppCopy.Workout.saveFailedMessage)
         }
         .alert(AppCopy.Workout.cancelWorkoutTitle, isPresented: $showsCancelConfirmation) {
             Button(AppCopy.Workout.cancelWorkoutAction, role: .destructive, action: cancelWorkout)
@@ -603,8 +604,8 @@ struct ActiveWorkoutView: View {
             }
             Spacer(minLength: 0)
         }
-        .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
-        .tracking(AppFont.setValue.tracking)
+        .font(valueFont(for: id).font)
+        .tracking(valueFont(for: id).tracking)
         .monospacedDigit()
         .foregroundStyle(AppColor.textPrimary)
         .frame(minWidth: AppWorkoutMetrics.weightChipWidth, maxWidth: .infinity)
@@ -630,8 +631,8 @@ struct ActiveWorkoutView: View {
         .frame(minWidth: 0, maxWidth: .infinity)
         .keyboardType(.numberPad)
         .focused($focusedField, equals: .reps(id))
-        .font((editor?.id == id && editor?.isCurrent == false ? AppFont.performance : (isCompact ? AppFont.setValueCompact : AppFont.setValue)).font)
-        .tracking(AppFont.setValue.tracking)
+        .font(valueFont(for: id).font)
+        .tracking(valueFont(for: id).tracking)
         .monospacedDigit()
         .multilineTextAlignment(.center)
         .foregroundStyle(AppColor.textPrimary)
@@ -653,6 +654,12 @@ struct ActiveWorkoutView: View {
     }
 
     private var isCompact: Bool { listWidth > 0 && listWidth <= AppWorkoutMetrics.compactWidth }
+
+    /// Inline edits of a done row use the row size; the current set uses the
+    /// large value. Each keeps its own tracking.
+    private func valueFont(for id: String) -> AppFont {
+        editor?.id == id && editor?.isCurrent == false ? .performance : (isCompact ? .setValueCompact : .setValue)
+    }
 
     private func rowID(_ exerciseID: UUID, _ number: Int) -> String {
         InlineEditor.id(exerciseID: exerciseID, number: number)
@@ -730,17 +737,24 @@ struct ActiveWorkoutView: View {
                     .repeatTarget)
         }
     }
+    /// Same set-block wording as History and Today: "3 × 8 at 80 kg", or
+    /// "80 kg · 8/8/7 reps" when the sets differ.
     private func summary(for section: WorkoutExerciseSectionModel) -> String {
         if section.hasReachedPlannedSetGoal {
             let entries = section.entries
-            if let first = entries.first, entries.allSatisfy({ $0.weight == first.weight && $0.reps == first.reps }) {
-                return "\(entries.count) × \(valueText(weight: first.weight, reps: first.reps, exercise: section.exercise))"
-            }
-            return "\(entries.count) sets"
+            return WorkoutTargetFormatter.completedPerformanceText(
+                weightsKg: entries.map(\.weight), reps: entries.map(\.reps),
+                isBodyweight: section.exercise.isBodyweight
+            ) ?? "\(entries.count) sets"
         }
         guard let target = resolvedTarget(section, row: section.entries.count + 1),
               !needsStartingTarget(section, row: section.entries.count + 1) else { return "" }
-        return "\(section.plannedSetCount) × \(valueText(weight: target.weight, reps: target.reps, exercise: section.exercise))"
+        let count = section.plannedSetCount
+        return WorkoutTargetFormatter.completedPerformanceText(
+            weightsKg: Array(repeating: target.weight, count: count),
+            reps: Array(repeating: target.reps, count: count),
+            isBodyweight: section.exercise.isBodyweight
+        ) ?? "\(count) × \(valueText(weight: target.weight, reps: target.reps, exercise: section.exercise))"
     }
     /// "Last time" reads the workout set 1 was prefilled from: row N shows
     /// set N of it, and a set that did not exist then shows nothing.
@@ -751,11 +765,10 @@ struct ActiveWorkoutView: View {
         if !lastTime.isEmpty {
             guard lastTime.indices.contains(row - 1) else { return nil }
             let prior = lastTime[row - 1]
-            let load = displayWeight(prior.weight).weightString
-            let weight = section.exercise.isBodyweight
-                ? (prior.weight > 0 ? "\(AppCopy.Workout.bodyweightAbbrev) + \(load)" : AppCopy.Workout.bodyweightAbbrev)
-                : load
-            return AppCopy.Workout.lastTimeValue(weight, prior.reps)
+            return AppCopy.Workout.lastTimeValue(WorkoutTargetFormatter.loggingSetText(
+                weightKg: prior.weight, reps: prior.reps,
+                isBodyweight: section.exercise.isBodyweight, unitSystem: unitSystem
+            ))
         }
         return AppCopy.Workout.startingTargetLabel
     }
@@ -1840,7 +1853,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
                 return
             }
             let content = UNMutableNotificationContent()
-            content.title = "Rest finished"
+            content.title = AppCopy.Workout.restFinishedInline
             content.body = next.isEmpty ? "Start your next set." : "Next: \(next)"
             content.sound = .default
             content.interruptionLevel = .timeSensitive

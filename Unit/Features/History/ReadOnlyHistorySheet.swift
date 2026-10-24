@@ -36,7 +36,6 @@ struct ReadOnlyHistorySheet: View {
                             preview: SharePreview(AppCopy.DataTransfer.exportPreviewTitle)
                         ) {
                             Text(AppCopy.DataTransfer.exportAction)
-                                .appToolbarTextStyle()
                         }
                         .accessibilityIdentifier("read-only-history-export")
                     }

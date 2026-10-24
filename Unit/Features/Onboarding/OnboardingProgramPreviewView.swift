@@ -258,13 +258,13 @@ struct OnboardingProgramPreviewView: View {
             } label: {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(exercise.name)
-                        .font(AppFont.body.font)
+                        .font(AppFont.sectionHeader.font)
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.leading)
 
                     HStack(spacing: AppSpacing.xxs) {
                         Text(prescriptionText(for: exercise))
-                            .font(AppFont.caption.font)
+                            .font(AppFont.body.font)
                             .foregroundStyle(AppColor.textSecondary)
                             .monospacedDigit()
 
@@ -499,20 +499,10 @@ struct OnboardingProgramPreviewView: View {
 
     @ViewBuilder
     private var emptyParseState: some View {
-        VStack(spacing: AppSpacing.md) {
-            Text("Unit couldn't read your routine.")
-                .font(AppFont.title.font)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-
-            Text("Paste it again or pick a program from the library.")
-                .font(AppFont.body.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, AppSpacing.xl)
+        EmptyStateCard(
+            title: "Unit couldn’t read your routine",
+            message: "Paste it again or pick a program from the library."
+        )
     }
 }
 

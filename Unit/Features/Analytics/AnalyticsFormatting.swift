@@ -3,16 +3,22 @@ import Foundation
 extension WorkoutTargetFormatter {
     static func analyticsWeight(_ kg: Double, unit: String, locale: Locale = .current, delta: Bool = false) -> String {
         var value = unit == "lb" ? kg * 2.20462 : kg
-        let precision = unit == "lb" ? 1 : 2
         let step = unit == "lb" ? 0.1 : 0.01
         if delta && kg > 0 && (value / step).rounded() == 0 { value = step }
-        return "\(value.formatted(.number.locale(locale).grouping(.automatic).precision(.fractionLength(0...precision)))) \(unit)"
+        return "\(weightNumber(display: value, unit: unit, locale: locale)) \(unit)"
     }
-    static func analyticsPerformance(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String) -> String {
-        "\(bodyweight || value.weight == 0 ? "BW" : analyticsWeight(value.weight, unit: unit)) × \(value.reps.formatted())"
+    /// `onBodyweight` is the exercise's own bodyweight flag: added load then
+    /// reads "BW + 10 kg", the same as while logging and in History.
+    static func analyticsPerformance(_ value: AnalyticsEngine.Performance, bodyweight: Bool, unit: String, onBodyweight: Bool = false) -> String {
+        "\(analyticsLoad(value.weight, bodyweight: bodyweight, onBodyweight: onBodyweight, unit: unit)) × \(value.reps.formatted())"
     }
-    static func analyticsTarget(_ value: AnalyticsEngine.Target, unit: String) -> String {
-        "\(value.weight > 0 ? analyticsWeight(value.weight, unit: unit) : "BW") × \(value.reps.formatted())"
+    static func analyticsTarget(_ value: AnalyticsEngine.Target, unit: String, onBodyweight: Bool = false) -> String {
+        "\(analyticsLoad(value.weight, bodyweight: false, onBodyweight: onBodyweight, unit: unit)) × \(value.reps.formatted())"
+    }
+    private static func analyticsLoad(_ kg: Double, bodyweight: Bool, onBodyweight: Bool, unit: String) -> String {
+        if bodyweight || kg == 0 { return "BW" }
+        let load = analyticsWeight(kg, unit: unit)
+        return onBodyweight ? "BW + \(load)" : load
     }
     static func analyticsChange(_ state: AnalyticsEngine.Comparison, unit: String, spoken: Bool = false) -> String {
         switch state {
@@ -64,11 +70,6 @@ extension WorkoutTargetFormatter {
     }
     static func analyticsSpokenTarget(_ value: AnalyticsEngine.Target, unit: String) -> String {
         analyticsTarget(value, unit: unit).replacingOccurrences(of: "BW", with: "Bodyweight").replacingOccurrences(of: " kg", with: " kilograms").replacingOccurrences(of: " lb", with: " pounds").replacingOccurrences(of: " × ", with: " times ")
-    }
-    static func analyticsRecentSet(_ value: AnalyticsEngine.Performance, unit: String) -> String {
-        guard value.weight > 0 else { return value.reps.formatted() }
-        let number = analyticsWeight(value.weight, unit: unit).components(separatedBy: " ").dropLast().joined(separator: " ")
-        return "\(number) × \(value.reps.formatted())"
     }
 
 }
