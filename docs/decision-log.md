@@ -7,6 +7,16 @@
 
 <!-- Add new entries below this line. -->
 
+## 2026-10-24 - Insights for 2.2: muscles, sets per muscle, Apple Health
+
+Efe approved the insights plan built from the 2026-10-24 benchmarks (reports 5 and 6) with its defaults. Ships in 2.2, not 2.1.
+
+- **Muscle lookup.** Onboarding saves exercises by name only, so their muscle stayed the default Full Body and the exercise page showed "Full Body" under a pasted Bench Press. Analytics now takes the muscle from the exercise library when the saved one is that default: by name or alias, ignoring spacing, plurals, "bicep/tricep" and "DB/BB", plus 7 lookup-only aliases. Read-only, nothing is saved. Unknown stays unknown. Automatic main lifts now treat onboarding curls as isolation work.
+- **Sets per muscle.** Analytics shows "Sets per muscle · last 4 weeks" between Main lifts and Other exercises. Each completed working set counts once, for the exercise's main muscle; warm-ups don't count. A muscle trained in the last 12 weeks but not the last 4 shows 0 sets. Unknown muscles go to "Other". Plain list, no bars. This extends the approved R5 page.
+- **Apple Health.** Settings > Preferences > "Save to Apple Health", off by default; iOS asks for permission when it is turned on. Each workout finished with "Finish workout" is saved as strength training with its start and end. Not saved: workouts saved later from the unfinished-workout prompt, workouts under 1 minute or over 4 hours, and past workouts, because Unit stores no end time and App Review 5.1.3(ii) bans inaccurate Health data. Write-only and on the phone, so the privacy manifest and App Privacy answers don't change. The privacy page and the App Store description must mention Apple Health before 2.2 ships (guideline 2.5.1).
+- **Not now.** Rep records (new record metrics were deferred on 2026-10-21), a chart range beyond 12 weeks (R5 fixed 12 weeks), body weight (body composition stays outside Analytics, 2026-10-20).
+- **Undo:** `ExerciseCatalog.muscleGroup(forName:aliases:saved:)` in `AnalyticsSnapshot`, `AnalyticsEngine.Output.muscleSets`, `HealthWorkoutSync`.
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.
