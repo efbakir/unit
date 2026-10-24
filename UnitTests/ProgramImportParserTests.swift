@@ -773,6 +773,41 @@ final class ProgramImportParserTests: XCTestCase {
                       "Free-text coach notes should surface as a noisyLines warning, not drop silently")
     }
 
+    // MARK: - Benchmark 2026-10-24, setup row 2
+
+    /// Skipped lines keep their text so Review can name them.
+    func testSkippedLinesKeepTheirTextForReview() {
+        let input = """
+        Push
+        Bench Press 4x8 60kg
+        Focus on form
+        Incline Press
+        Treadmill 10min
+        """
+        let result = ProgramImportParser.parseWithWarnings(input, defaultUnit: "kg")
+        let summary = ProgramImportResult.SkipSummary(warnings: result.warnings)
+
+        XCTAssertEqual(summary.lines, ["Focus on form", "Incline Press", "Treadmill 10min"],
+                       "noise first, then cardio, each in paste order")
+        XCTAssertEqual(summary.title, "3 lines skipped")
+        XCTAssertEqual(summary.displayRows(), summary.lines)
+    }
+
+    func testSkipSummaryCapsLongPastesAndNamesCutDays() {
+        let noise = (1...12).map { "Coach note \($0)" }
+        let summary = ProgramImportResult.SkipSummary(warnings: [
+            .noisyLines(lines: noise),
+            .truncatedAtSixDays(droppedNames: ["Day 7", "Day 8"])
+        ])
+
+        XCTAssertEqual(summary.title, "12 lines and 2 days skipped")
+        let rows = summary.displayRows(limit: 10)
+        XCTAssertEqual(rows.first, "Unit keeps the first 6 days. Skipped: Day 7, Day 8.")
+        XCTAssertEqual(rows.count, 12, "day note + 10 lines + 'N more'")
+        XCTAssertEqual(rows.last, "2 more")
+        XCTAssertTrue(ProgramImportResult.SkipSummary(warnings: []).isEmpty)
+    }
+
     // MARK: - Benchmark 2026-10-24, setup row 3
 
     /// `RPE 8` written word-first used to save 8 kg and the name "Bench Press RPE".

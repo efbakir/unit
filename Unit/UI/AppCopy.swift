@@ -381,6 +381,20 @@ enum AppCopy {
         static let previewTitle = "Review program"
         static let previewSubtitle = "Check the details before saving your program."
         static let previewCTA = "Save program"
+        /// Review card for pasted lines the parser did not keep (benchmark
+        /// 2026-10-24, setup row 2). Plain "skipped", never "didn't parse".
+        static func importSkippedTitle(lines: Int, days: Int) -> String {
+            var parts: [String] = []
+            if lines > 0 { parts.append(lines == 1 ? "1 line" : "\(lines) lines") }
+            if days > 0 { parts.append(days == 1 ? "1 day" : "\(days) days") }
+            return parts.joined(separator: " and ") + " skipped"
+        }
+        static func importSkippedDays(_ names: [String]) -> String {
+            "Unit keeps the first 6 days. Skipped: \(names.joined(separator: ", "))."
+        }
+        static func importSkippedMore(_ count: Int) -> String {
+            "\(count) more"
+        }
         static let previewCTASaving = "Saving…"
     }
 

@@ -16,7 +16,7 @@
 //     to the hard paywall.
 //   - Row tap (name + sets×reps block) opens the edit sheet — no separate
 //     pencil button next to the weight field.
-//   - Paste warnings inline: banner for noisy lines + dropped conditioning;
+//   - Paste warnings inline: one closed card names each skipped line;
 //     hint on rows where the parser defaulted sets/reps (recorded flag,
 //     never value-equality against 3×8).
 //   - Empty-state fallback when parse produced zero exercises.
@@ -39,6 +39,9 @@ struct OnboardingProgramPreviewView: View {
     /// names can be edited post-paywall and we don't want state to leak.
     @State private var expandedDays: [Int: Bool] = [0: true]
     @State private var editingExercise: PreviewExerciseEditTarget?
+    /// The skipped-lines card starts closed: the count is the signal, the
+    /// lines are one tap away.
+    @State private var isSkippedExpanded = false
 
     private struct PreviewExerciseEditTarget: Identifiable {
         let dayIndex: Int
@@ -107,7 +110,7 @@ struct OnboardingProgramPreviewView: View {
         VStack(spacing: AppSpacing.md) {
             weightUnitRow
 
-            warningBanner
+            skippedLinesCard
 
             ForEach(Array(vm.dayExercises.enumerated()), id: \.offset) { dayIndex, exercises in
                 AppDisclosureCard(
@@ -386,70 +389,34 @@ struct OnboardingProgramPreviewView: View {
         )
     }
 
-    // MARK: - Warnings
+    // MARK: - Skipped lines
 
+    /// Names every pasted line the parser did not keep (benchmark 2026-10-24,
+    /// setup row 2), in the same disclosure card as the days below.
     @ViewBuilder
-    private var warningBanner: some View {
-        let noisy = noisyLinesCount
-        let conditioningLines = skippedConditioningLines
-        let droppedDays = droppedDayNames
-        if noisy > 0 || conditioningLines.isEmpty == false || droppedDays.isEmpty == false {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                if droppedDays.isEmpty == false {
-                    Text("Only the first 6 days were imported.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if noisy > 0 {
-                    Text(noisy == 1
-                         ? "1 line didn't parse."
-                         : "\(noisy) lines didn't parse.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if conditioningLines.isEmpty == false {
-                    Text(conditioningLines.count == 1
-                         ? "1 cardio line skipped."
-                         : "\(conditioningLines.count) cardio lines skipped.")
-                        .font(AppFont.caption.font)
-                        .foregroundStyle(AppColor.textSecondary)
+    private var skippedLinesCard: some View {
+        let summary = ProgramImportResult.SkipSummary(warnings: vm.importWarnings)
+        if !summary.isEmpty {
+            AppDisclosureCard(isExpanded: $isSkippedExpanded) {
+                Text(summary.title)
+                    .font(AppFont.body.font)
+                    .foregroundStyle(AppColor.textSecondary)
+            } content: {
+                VStack(spacing: 0) {
+                    AppDivider()
+                    AppDividedList(data: Array(summary.displayRows().enumerated()), id: \.offset) { row in
+                        Text(row.element)
+                            .font(AppFont.caption.font)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .lineLimit(2)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardRowChrome()
+                    }
                 }
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(AppColor.controlBackground)
-            )
+            .accessibilityIdentifier("onboarding-review-skipped")
         }
-    }
-
-    private var noisyLinesCount: Int {
-        for warning in vm.importWarnings {
-            if case .noisyLines(let count) = warning {
-                return count
-            }
-        }
-        return 0
-    }
-
-    private var droppedDayNames: [String] {
-        for warning in vm.importWarnings {
-            if case .truncatedAtSixDays(let names) = warning {
-                return names
-            }
-        }
-        return []
-    }
-
-    private var skippedConditioningLines: [String] {
-        for warning in vm.importWarnings {
-            if case .skippedConditioning(let lines) = warning {
-                return lines
-            }
-        }
-        return []
     }
 
     // MARK: - Empty state

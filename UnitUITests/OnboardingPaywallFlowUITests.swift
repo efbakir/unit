@@ -40,6 +40,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
     Push
     Bench Press 4x5 80
     Overhead Press 3x5 50
+    Rest 90s between sets
 
     Pull
     Deadlift 2x5 140
@@ -356,6 +357,15 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertTrue(
             staticText(in: app, containing: "Bench Press").waitForExistence(timeout: 5),
             "parsed exercise missing from preview"
+        )
+        // Skipped lines are named, not only counted (benchmark 2026-10-24).
+        tap(
+            button(in: app, containing: AppCopy.Onboarding.importSkippedTitle(lines: 1, days: 0)),
+            "skipped-lines card"
+        )
+        XCTAssertTrue(
+            staticText(in: app, containing: "Rest 90s between sets").waitForExistence(timeout: 5),
+            "the skipped rest line is not named on Review"
         )
         tap(app.buttons[AppCopy.Onboarding.previewCTA], "preview — save program")
 

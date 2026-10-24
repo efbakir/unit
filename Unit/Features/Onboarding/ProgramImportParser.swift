@@ -54,17 +54,60 @@ struct ProgramImportResult: Equatable {
         /// Includes the original line text so the lifter sees what dropped.
         case skippedConditioning(lines: [String])
         /// Lines that didn't classify as heading, exercise, or conditioning —
-        /// previously dropped silently as `.noise`. Surfaces the count so a
-        /// lifter who pasted free-text intro paragraphs or stray coach
-        /// commentary sees the parser didn't keep them. Limited to the count
-        /// (not the raw text) because the originals are often boilerplate the
-        /// lifter doesn't need to re-read.
-        case noisyLines(count: Int)
+        /// previously dropped silently as `.noise`. Carries the original text
+        /// so Review can name each skipped line (an exercise written without
+        /// numbers, a coach note, a rest instruction) instead of a bare count.
+        case noisyLines(lines: [String])
         /// Lines that had a recognizable exercise name but no prescription
         /// data (sets / reps / weight / duration). Previously dropped; now
         /// kept as `sets=nil, reps=nil` so the lifter can fill in-app. The
         /// warning surfaces the names so they're visible above the day list.
         case exerciseNameOnly(names: [String])
+    }
+}
+
+extension ProgramImportResult {
+    /// What Review lists in its "N lines skipped" card: every pasted line
+    /// the parser did not keep (noise first, then cardio, each in paste
+    /// order) and the day names cut by the 6-day cap.
+    struct SkipSummary: Equatable {
+        var lines: [String] = []
+        var droppedDayNames: [String] = []
+
+        var isEmpty: Bool { lines.isEmpty && droppedDayNames.isEmpty }
+
+        init(warnings: [Warning]) {
+            var noisy: [String] = []
+            var cardio: [String] = []
+            for warning in warnings {
+                switch warning {
+                case .noisyLines(let lines): noisy = lines
+                case .skippedConditioning(let lines): cardio = lines
+                case .truncatedAtSixDays(let names): droppedDayNames = names
+                case .exerciseNameOnly: break
+                }
+            }
+            lines = noisy + cardio
+        }
+
+        var title: String {
+            AppCopy.Onboarding.importSkippedTitle(lines: lines.count, days: droppedDayNames.count)
+        }
+
+        /// Rows for the expanded card: the day-cap note first, then up to
+        /// `limit` skipped lines, then "N more" so a long chat-style intro
+        /// cannot flood the screen.
+        func displayRows(limit: Int = 10) -> [String] {
+            var rows: [String] = []
+            if !droppedDayNames.isEmpty {
+                rows.append(AppCopy.Onboarding.importSkippedDays(droppedDayNames))
+            }
+            rows += lines.prefix(limit)
+            if lines.count > limit {
+                rows.append(AppCopy.Onboarding.importSkippedMore(lines.count - limit))
+            }
+            return rows
+        }
     }
 }
 
@@ -102,10 +145,10 @@ enum ProgramImportParser {
         }
 
         // Noisy-line warning — un-parseable lines that previously dropped
-        // silently. Surfaced as a count so the lifter can spot-check the
-        // original paste and re-edit if something important was missed.
-        if grouped.noisyLineCount > 0 {
-            warnings.append(.noisyLines(count: grouped.noisyLineCount))
+        // silently. Review lists their text so the lifter can see exactly
+        // what was not kept and re-edit if something important was missed.
+        if !grouped.noisyLines.isEmpty {
+            warnings.append(.noisyLines(lines: grouped.noisyLines))
         }
 
         // 6-day cap warning
@@ -432,10 +475,9 @@ enum ProgramImportParser {
     private struct GroupedResult {
         var days: [ImportedProgramDay]
         var skippedConditioning: [String]
-        /// Count of lines classified as `.noise` (un-parseable). Previously
-        /// dropped silently; now surfaced as a warning footer so the lifter
-        /// sees the parser didn't keep them.
-        var noisyLineCount: Int
+        /// Lines classified as `.noise` (un-parseable), in paste order.
+        /// Previously dropped silently; Review now lists them.
+        var noisyLines: [String]
     }
 
     private static func groupIntoDays(
@@ -447,7 +489,7 @@ enum ProgramImportParser {
         var currentDayName = "Workout 1"
         var currentExercises: [ImportedProgramExercise] = []
         var skippedConditioning: [String] = []
-        var noisyLineCount = 0
+        var noisyLines: [String] = []
 
         func flush() {
             guard !currentExercises.isEmpty else { return }
@@ -464,9 +506,9 @@ enum ProgramImportParser {
                 let line = sanitizedLines[index]
                 guard let tokenized = tokenizeExercise(line, defaultUnit: defaultUnit) else {
                     // Tokenizer dropped it (no letters survived cleanup) —
-                    // count this as a noisy line so the lifter sees it
-                    // didn't make it into the program.
-                    noisyLineCount += 1
+                    // list it so the lifter sees it didn't make it into the
+                    // program.
+                    noisyLines.append(line)
                     continue
                 }
                 if Filter.isPureConditioning(tokenized: tokenized) {
@@ -474,7 +516,7 @@ enum ProgramImportParser {
                     continue
                 }
                 if Filter.isTimingInstruction(line: line, tokenized: tokenized) {
-                    noisyLineCount += 1
+                    noisyLines.append(line)
                     continue
                 }
                 if var normalized = Normalizer.normalize(tokenized: tokenized) {
@@ -485,10 +527,10 @@ enum ProgramImportParser {
                     normalized.originalLine = line
                     currentExercises.append(normalized)
                 } else {
-                    noisyLineCount += 1
+                    noisyLines.append(line)
                 }
             case .noise:
-                noisyLineCount += 1
+                noisyLines.append(sanitizedLines[index])
             case .comment, .empty:
                 continue
             }
@@ -498,7 +540,7 @@ enum ProgramImportParser {
         return GroupedResult(
             days: days,
             skippedConditioning: skippedConditioning,
-            noisyLineCount: noisyLineCount
+            noisyLines: noisyLines
         )
     }
 
