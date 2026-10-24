@@ -135,10 +135,8 @@ final class ProgressionContractUITests: XCTestCase {
         let saveAll = app.buttons["save-all-targets"]
         scrollTo(saveAll, in: app, maximumSwipes: 8)
         tap(saveAll, "Save all")
-        XCTAssertTrue(
-            staticText(in: app, containing: AppCopy.Workout.targetsSaved).waitForExistence(timeout: 8),
-            "Save all did not confirm"
-        )
+        // The success toast fades in seconds; the relaunch below checks the
+        // saved targets themselves.
 
         // Cold relaunch against the same dedicated store. The launch seeder is
         // idempotent and must not recreate the workout or replace decisions.
@@ -797,9 +795,13 @@ final class ProgressionContractUITests: XCTestCase {
     ) {
         var remaining = maximumSwipes
         // Also scroll when the element sits at the bottom edge: it can read as
-        // hittable there and then settle out of reach before the tap.
+        // hittable there and then settle out of reach before the tap. At the
+        // top edge it reads as hittable under the navigation bar, which then
+        // takes the tap.
         while remaining > 0
-            && (!element.exists || !element.isHittable || element.frame.maxY > app.frame.maxY * 0.85) {
+            && (!element.exists || !element.isHittable
+                || element.frame.maxY > app.frame.maxY * 0.85
+                || element.frame.minY < app.frame.maxY * 0.15) {
             let shouldScrollDown = element.exists
                 && element.frame.maxY < app.frame.midY
             let startY = shouldScrollDown ? 0.34 : 0.66

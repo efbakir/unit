@@ -305,7 +305,6 @@ struct SessionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .appAnimation(.appState, value: next, reduceMotion: reduceMotion)
-        .accessibilityIdentifier("next-target-\(recommendation.exerciseName)")
     }
 
     private enum TargetChoice: Hashable, Identifiable {
