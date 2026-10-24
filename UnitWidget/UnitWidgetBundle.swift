@@ -25,7 +25,11 @@ struct RestTimerLiveActivityWidget: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
+            // A white card in the app's own colours (`WidgetColors.xcassets`
+            // mirrors AppColor; the widget can't link the design system).
             RestTimerLiveActivityView(context: context)
+                .activityBackgroundTint(.cardBackground)
+                .activitySystemActionForegroundColor(.textPrimary)
         } dynamicIsland: { context in
             RestTimerLiveActivityIsland.dynamicIsland(context: context)
         }

@@ -84,6 +84,7 @@
 		UT100000000000000000003 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = UI000000000000000000006 /* AppCopy.swift */; };
 		WE100000000000000000001 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* RestTimerLiveActivity.swift */; };
 		WE100000000000000000002 /* UnitWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* UnitWidgetBundle.swift */; };
+		WCL700000000000000000002 /* WidgetColors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = WCL700000000000000000001 /* WidgetColors.xcassets */; };
 		WE100000000000000000003 /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* RestTimerAttributes.swift */; };
 		WE100000000000000000004 /* UnitWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = WE000000000000000000001 /* UnitWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		WRMP100000000000000000001 /* WarmupGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = WRMP200000000000000000001 /* WarmupGenerator.swift */; };
@@ -184,6 +185,7 @@
 		A8A408691CFD63BC56DC55CE /* ProgramImportParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramImportParser.swift; sourceTree = "<group>"; };
 		B20000000000000000000001 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* UnitWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitWidgetBundle.swift; sourceTree = "<group>"; };
+		WCL700000000000000000001 /* WidgetColors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetColors.xcassets; sourceTree = "<group>"; };
 		B20000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B4994CEC26AC15587254F6D4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		CC000000000000000100005 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -490,6 +492,7 @@
 			children = (
 				B20000000000000000000001 /* RestTimerLiveActivity.swift */,
 				B20000000000000000000002 /* UnitWidgetBundle.swift */,
+				WCL700000000000000000001 /* WidgetColors.xcassets */,
 				B20000000000000000000003 /* Info.plist */,
 			);
 			path = UnitWidget;
@@ -742,6 +745,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				WCL700000000000000000002 /* WidgetColors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

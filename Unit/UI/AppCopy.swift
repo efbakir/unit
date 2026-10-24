@@ -216,9 +216,17 @@ enum AppCopy {
         static let swapExercise = "Swap exercise"
         static let removeAddedSet = "Remove added set"
         static let exerciseHistory = "Exercise history"
-        static let addNote = "Add note"
-        static let editNote = "Edit note"
-        static let noteTitle = "Exercise note"
+        static let notes = "Notes"
+        /// Grey tag on an exercise skipped for today; tapping the card reopens it.
+        static let skippedTag = "Skipped"
+        /// Rest bar title: the rest belongs to the exercise whose set started it.
+        static func restTitle(_ exercise: String) -> String { "\(exercise) rest" }
+        /// Finish with exercises not done: one names it, several list them.
+        static func notDoneTitle(_ names: [String]) -> String {
+            names.count == 1 ? "\(names[0]) is not done." : "\(names.joined(separator: ", ")) are not done."
+        }
+        static let finishAnyway = "Finish anyway"
+        static func goTo(_ exercise: String) -> String { "Go to \(exercise)" }
         static let notePlaceholder = "Seat 4, pin 6"
         static let noteMessage = "Shows every time you log this exercise."
         static let setRemoved = "Set removed"

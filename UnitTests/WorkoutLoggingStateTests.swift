@@ -226,6 +226,13 @@ final class WorkoutLoggingStateTests: XCTestCase {
         XCTAssertFalse(WorkoutLoggingState.isDayDone([]))
     }
 
+    func testFinishQuestionAndRestTitleNameTheExercise() {
+        XCTAssertEqual(AppCopy.Workout.notDoneTitle(["Deadlift"]), "Deadlift is not done.")
+        XCTAssertEqual(AppCopy.Workout.notDoneTitle(["Row", "Deadlift"]), "Row, Deadlift are not done.")
+        XCTAssertEqual(AppCopy.Workout.goTo("Deadlift"), "Go to Deadlift")
+        XCTAssertEqual(AppCopy.Workout.restTitle("Bench Press"), "Bench Press rest")
+    }
+
     func testZeroPreparationOnlyChangesTargetDictionary() throws {
         let schema = Schema([DayTemplate.self, WorkoutSession.self, SetEntry.self, Exercise.self])
         let container = try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, isStoredInMemoryOnly: true))

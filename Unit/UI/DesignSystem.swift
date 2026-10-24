@@ -990,6 +990,10 @@ nonisolated enum AppIcon: String, Sendable {
     case undo = "arrow.uturn.backward"
     case trash = "trash"
     case swap = "arrow.triangle.2.circlepath"
+    case note = "doc.text"
+    case noteFilled = "doc.text.fill"
+    case skip = "forward.end"
+    case bodyweight = "figure.stand"
     case search = "magnifyingglass"
     case program = "square.and.pencil"
     case todayTab = "dumbbell.fill"
@@ -4215,11 +4219,15 @@ extension AppCardList where Data.Element: Identifiable, ID == Data.Element.ID {
 struct AppCardListAddRow: View {
     private let title: String
     private let icon: AppIcon
+    private let isCentered: Bool
     private let action: () -> Void
 
-    init(_ title: String, icon: AppIcon = .addCircle, action: @escaping () -> Void) {
+    /// `centered` for an add row under a block of rows (the workout's
+    /// "Add set"); list rows keep the leading position.
+    init(_ title: String, icon: AppIcon = .addCircle, centered: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
+        self.isCentered = centered
         self.action = action
     }
 
@@ -4229,10 +4237,10 @@ struct AppCardListAddRow: View {
                 icon.image()
                 Text(title)
                     .font(AppFont.body.font)
-                Spacer(minLength: 0)
+                if !isCentered { Spacer(minLength: 0) }
             }
             .foregroundStyle(AppColor.accent)
-            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: isCentered ? .center : .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(ScaleButtonStyle())
@@ -6855,8 +6863,8 @@ struct WorkoutDayList<Content: View>: View {
 /// An exercise's editable rows share one existing card surface.
 struct ExerciseLoggingCard<Content: View>: View {
     let name: String
-    /// The lifter's own pinned note ("Seat 4, pin 6"); hidden when empty.
-    var note = ""
+    /// A saved note exists: the menu's Notes item shows a filled icon.
+    var hasNote = false
     @Binding var isBodyweight: Bool
     let onSkip: () -> Void
     let onAddSet: () -> Void
@@ -6870,37 +6878,38 @@ struct ExerciseLoggingCard<Content: View>: View {
     var body: some View {
         AppCard(contentInset: AppSpacing.sm) {
             HStack(spacing: AppSpacing.sm) {
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Group {
-                        if let onSelect {
-                            Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
-                        } else { Text(name) }
-                    }
-                    .font(AppFont.sectionHeader.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
-                    if !note.isEmpty {
-                        Text(note).appFont(.muted).foregroundStyle(AppColor.textSecondary).lineLimit(2)
-                            .accessibilityIdentifier("exercise-note")
-                    }
+                Group {
+                    if let onSelect {
+                        Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
+                    } else { Text(name) }
                 }
+                .font(AppFont.sectionHeader.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
                     Section {
                         if let onShowHistory {
-                            Button(AppCopy.Workout.exerciseHistory, action: onShowHistory)
+                            Button(AppCopy.Workout.exerciseHistory, systemImage: AppIcon.chart.systemName,
+                                   action: onShowHistory)
                         }
                         if let onSwap {
-                            Button(AppCopy.Workout.swapExercise, action: onSwap)
+                            Button(AppCopy.Workout.swapExercise, systemImage: AppIcon.swap.systemName, action: onSwap)
                         }
                         if let onEditNote {
-                            Button(note.isEmpty ? AppCopy.Workout.addNote : AppCopy.Workout.editNote, action: onEditNote)
+                            Button(AppCopy.Workout.notes,
+                                   systemImage: (hasNote ? AppIcon.noteFilled : AppIcon.note).systemName,
+                                   action: onEditNote)
                         }
-                        Toggle(AppCopy.Workout.bodyweightToggle, isOn: $isBodyweight)
+                        Toggle(isOn: $isBodyweight) {
+                            Label(AppCopy.Workout.bodyweightToggle, systemImage: AppIcon.bodyweight.systemName)
+                        }
                     }
                     Section {
                         if let onRemoveAddedSet {
-                            Button(AppCopy.Workout.removeAddedSet, role: .destructive, action: onRemoveAddedSet)
+                            Button(AppCopy.Workout.removeAddedSet, systemImage: AppIcon.minusCircle.systemName,
+                                   role: .destructive, action: onRemoveAddedSet)
                         }
-                        Button(AppCopy.Workout.skipExerciseAction, role: .destructive, action: onSkip)
+                        Button(AppCopy.Workout.skipExerciseAction, systemImage: AppIcon.skip.systemName,
+                               role: .destructive, action: onSkip)
                     }
                 } label: {
                     Label(AppCopy.Workout.exerciseOptions, systemImage: AppIcon.more.systemName)
@@ -6915,7 +6924,7 @@ struct ExerciseLoggingCard<Content: View>: View {
             .padding(.horizontal, AppSpacing.xs)
             content()
             // Same "add to this list" row as a routine's "Add exercise".
-            AppCardListAddRow(AppCopy.Workout.addSet, action: onAddSet)
+            AppCardListAddRow(AppCopy.Workout.addSet, centered: true, action: onAddSet)
                 .padding(.horizontal, AppSpacing.smd)
         }
     }
@@ -6993,6 +7002,11 @@ struct LoggedSetRow: View {
     let onUndo: () -> Void
     let onEdit: () -> Void
     let onMarkNotDone: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    /// Flips once when a just-logged row appears (its Undo is showing), so the
+    /// check pops; rows scrolled back into view later stay still.
+    @SwiftUI.State private var arrived = false
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
             Menu {
@@ -7031,6 +7045,12 @@ struct LoggedSetRow: View {
             .animation(AppMotion.transition, value: showsUndo)
             AppIcon.checkmarkFilled.image(size: 20)
                 .foregroundStyle(AppColor.textPrimary).accessibilityHidden(true)
+                .symbolEffect(.bounce, value: arrived)
+        }
+        .onAppear {
+            if showsUndo, AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver) {
+                arrived = true
+            }
         }
         .padding(.horizontal, AppSpacing.smd)
         .foregroundStyle(AppColor.textPrimary)
@@ -7072,6 +7092,8 @@ struct ExerciseSummaryRow: View {
     /// One of this exercise's sets was a personal record. The done card closes
     /// right after the last set, so a final-set PR would otherwise never show.
     var showsPR = false
+    /// Skipped for today: a grey tag says so; tapping the card reopens it.
+    var isSkipped = false
     var body: some View {
         // Match the expanded exercise header's 8pt card + 4pt title inset.
         // Each summary is its own flat card, including upcoming exercises.
@@ -7082,8 +7104,11 @@ struct ExerciseSummaryRow: View {
                         Text(name).font(AppFont.sectionHeader.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        if !summary.isEmpty || showsPR {
+                        if !summary.isEmpty || showsPR || isSkipped {
                             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                                if isSkipped {
+                                    AppTag(text: AppCopy.Workout.skippedTag, style: .muted, layout: .compactCapsule)
+                                }
                                 if !summary.isEmpty {
                                     Text(summary).appFont(.body).monospacedDigit()
                                         .foregroundStyle(AppColor.textSecondary)
@@ -7099,7 +7124,7 @@ struct ExerciseSummaryRow: View {
                 .buttonStyle(ScaleButtonStyle())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(name)
-                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary,
+                .accessibilityValue([isCompleted ? "Completed" : (isSkipped ? AppCopy.Workout.skippedTag : "Upcoming"), summary,
                                      showsPR ? AppCopy.Workout.personalRecord : ""]
                     .filter { !$0.isEmpty }.joined(separator: ", "))
                 .accessibilityHint("Opens exercise sets")
@@ -7129,6 +7154,9 @@ struct RestBar: View {
     let onDecrease: () -> Void
     let onIncrease: () -> Void
     let onSkip: () -> Void
+    /// Whose rest this is ("Bench Press rest"), so −30 / +30 read as that
+    /// exercise's own length.
+    var title: String = AppCopy.Workout.restLabel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
@@ -7141,7 +7169,7 @@ struct RestBar: View {
             Self.progressLine(progress: progress, endDate: endDate, totalDuration: totalDuration,
                               isRunning: state == .running, spatial: spatial)
             VStack(spacing: AppSpacing.sm) {
-                Self.status(timeText: timeText, state: state, spatial: spatial)
+                Self.status(timeText: timeText, state: state, spatial: spatial, title: title)
                 controls
             }
             .padding(AppSpacing.md)
@@ -7155,11 +7183,13 @@ struct RestBar: View {
 
     /// Both bottom modes use this header, so the timer never changes its type
     /// or leading/trailing anchors when the keyboard or timer state changes.
-    static func status(timeText: String, state: State, spatial: Bool) -> some View {
+    static func status(timeText: String, state: State, spatial: Bool,
+                       title: String = AppCopy.Workout.restLabel) -> some View {
         let displayTime = state == .finished ? "0:00" : timeText
         return HStack(spacing: AppSpacing.sm) {
             ZStack(alignment: .leading) {
-                Text(AppCopy.Workout.restLabel)
+                Text(title)
+                    .lineLimit(1)
                     .opacity(state == .finished ? 0 : 1)
                 Text(AppCopy.Workout.restFinishedInline)
                     .opacity(state == .finished ? 1 : 0)
@@ -7175,7 +7205,7 @@ struct RestBar: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(state == .finished ? AppCopy.Workout.restFinishedInline : AppCopy.Workout.restLabel)
+        .accessibilityLabel(state == .finished ? AppCopy.Workout.restFinishedInline : title)
         .accessibilityValue(displayTime)
         .accessibilityIdentifier("rest-duration")
     }
