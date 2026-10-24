@@ -137,7 +137,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["complete-set-1"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["workout-complete-finish"].exists)
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Skip exercise"], in: app)
+        tapMenuItem("Skip exercise", in: app)
         tap(app.alerts.buttons["Skip exercise"], in: app)
         XCTAssertTrue(app.buttons["workout-complete-finish"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["complete-set-1"].exists)
@@ -176,9 +176,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["planned-set-5"].waitForExistence(timeout: 5))
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
         // The toast's Undo lasts 4 s: tap it without the helper's extra waits.
-        let remove = app.buttons["Remove added set"]
-        XCTAssertTrue(remove.waitForExistence(timeout: 5))
-        remove.tap()
+        tapMenuItem("Remove added set", in: app)
         let undo = app.buttons["Undo"].firstMatch
         XCTAssertTrue(undo.waitForExistence(timeout: 3))
         capture(app, "added-set-removed-toast")
@@ -187,7 +185,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         // Removing again takes the added row away; the plan's own rows cannot
         // be removed this way.
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Remove added set"], in: app)
+        tapMenuItem("Remove added set", in: app)
         XCTAssertTrue(app.buttons["planned-set-5"].waitForNonExistence(timeout: 5))
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
         XCTAssertFalse(app.buttons["Remove added set"].waitForExistence(timeout: 2))
@@ -196,7 +194,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
     func testExerciseHistoryOpensFromTheWorkoutAndReturns() throws {
         let app = launch(extra: ["-logging-history"])
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Exercise history"], in: app)
+        tapMenuItem("Exercise history", in: app)
         let latest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Latest'")).firstMatch
         XCTAssertTrue(latest.waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["complete-set-1"].exists)
@@ -209,7 +207,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
     func testPinnedNoteShowsUnderTheNameAndSurvivesRelaunch() throws {
         let app = launch()
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Add note"], in: app)
+        tapMenuItem("Add note", in: app)
         let field = app.alerts.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.typeText("Seat 4")
@@ -221,7 +219,7 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Seat 4"].waitForExistence(timeout: 15))
         tap(app.buttons["exercise-menu"].firstMatch, in: app)
-        tap(app.buttons["Edit note"], in: app)
+        tapMenuItem("Edit note", in: app)
         let editField = app.alerts.textFields.firstMatch
         XCTAssertTrue(editField.waitForExistence(timeout: 5))
         editField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6))
@@ -311,6 +309,15 @@ final class ActiveWorkoutLoggingUITests: XCTestCase {
         // The interaction contract rejects a second log inside 400ms.
         // XCTest's idle wait normally exceeds it; waiting for hittability is explicit.
         _ = element.waitForNonExistence(timeout: 0.5)
+    }
+
+    /// Menu items appear with an animation; swiping (as `tap` does) would
+    /// close the menu, so wait until the item is tappable instead.
+    private func tapMenuItem(_ title: String, in app: XCUIApplication) {
+        let item = app.buttons[title]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: item)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed, "\(title) never became tappable")
+        item.tap()
     }
 
     private func capture(_ app: XCUIApplication, _ name: String) {
