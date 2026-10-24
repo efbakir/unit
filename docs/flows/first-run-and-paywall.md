@@ -4,7 +4,7 @@
 - Taps from first launch to the paywall: ready-made path 8 taps on 7 screens; paste path 6 to 7 taps on 4 screens (2 to 3 of them are the iOS paste gesture). Both start with a 2 second opener.
 - Risk 1 (was High, fixed 2026-10-23): paywall dead ends. Restore, Terms, Privacy and Support now show in every paywall state, and Restore works while a purchase is pending.
 - Risk 2 (was High, fixed 2026-10-23): App Review and trust. The button now says "Start free trial" and the line above it starts with the billed price. The "Paid plan required after setup." line was removed by founder decision (2026-10-23).
-- Risk 3 (Med, partly fixed 2026-10-23): wrong program data from setup. Fixed: comma decimals, a cut 7th day is reported, unit-free numbers are re-read when kg/lb changes. Fixed 2026-10-24: "RPE 8" and "RIR 2" are notes, not weights. Still open: junk rows cannot be deleted.
+- Risk 3 (Med, partly fixed 2026-10-23): wrong program data from setup. Fixed: comma decimals, a cut 7th day is reported, unit-free numbers are re-read when kg/lb changes. Fixed 2026-10-24: "RPE 8" and "RIR 2" are notes, not weights. Junk rows can be removed on Review, with Undo.
 
 Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup and summary fixes) (branch `claude/app-finalization-launch-34a116`), read on 2026-10-23. That commit cut setup to 3 steps (the weight-unit and weekday screens are gone). Other sessions were editing this branch while this was written, so line numbers can drift. Nothing here was run on a phone or simulator; paste edge cases were checked by running a Mac copy of ProgramImportParser.swift. Where the code does not answer a question, the text says "unclear from code".
 
@@ -184,8 +184,8 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
   - Comma decimal in a weight box ("62,5" with a German or Turkish region) -> read as 62.5 (fixed 2026-10-23) -> Low -> yes.
   - Zero typed as a weight -> ignored -> Low -> yes.
   - Pound weights with a stray decimal ("155.0") -> fixed 2026-10-23 with the shared rounding -> Low -> yes.
-  - Junk row from a paste -> can be renamed, not deleted. There is no way to add a row or rename a day here -> Med -> no. [OnboardingProgramPreviewView.swift:183](Unit/Features/Onboarding/OnboardingProgramPreviewView.swift:183)
-  - Exercise name cleared in the sheet -> that row is not saved; a day can end up with no exercises -> Low -> partial. [OnboardingViewModel.swift:426](Unit/Features/Onboarding/OnboardingViewModel.swift:426)
+  - Junk row from a paste -> "Remove exercise" in the edit sheet, then "Removed X · Undo" (2026-10-24). Removing a day's last row removes the day; the program's last row cannot be removed. Adding a row or renaming a day is still not possible -> Low -> partial. [OnboardingProgramPreviewView.swift:183](Unit/Features/Onboarding/OnboardingProgramPreviewView.swift:183)
+  - Exercise name cleared in the sheet -> that row is not saved; a day left with no exercises is not saved either (2026-10-24) -> Low -> yes. [OnboardingViewModel.swift:426](Unit/Features/Onboarding/OnboardingViewModel.swift:426)
   - Ready-made program weekdays -> dropped; every new program starts as a rotation -> Low -> yes.
   - Save fails (for example a full disk) -> "Save failed" alert. The unsaved rows stay in memory: unclear from code whether the app still moves on to the paywall, and a second try may save two copies -> Low -> partial. [OnboardingView.swift:545](Unit/Features/Onboarding/OnboardingView.swift:545), [OnboardingViewModel.swift:482](Unit/Features/Onboarding/OnboardingViewModel.swift:482)
   - App closed on Review -> rows and weights come back; paste warnings do not -> Low -> partial.

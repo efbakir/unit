@@ -20,6 +20,7 @@
 //
 
 import XCTest
+import SwiftData
 @testable import Unit
 
 @MainActor
@@ -1324,5 +1325,96 @@ final class ParserDefaultFlagTests: XCTestCase {
         XCTAssertEqual(exercises.first?.plannedSets, 4)
         XCTAssertEqual(exercises.first?.plannedReps, 8)
         XCTAssertNotEqual(exercises.first?.usedDefaultSetsReps, true)
+    }
+}
+
+// MARK: - Review: remove an exercise (benchmark 2026-10-24, setup row 4)
+
+/// Lives in this file for the same reason as `PRHistoryTests`: the UnitTests
+/// target lists source files explicitly in project.pbxproj.
+@MainActor
+final class OnboardingReviewRemovalTests: XCTestCase {
+    private func pastedProgram() -> OnboardingViewModel {
+        let vm = OnboardingViewModel()
+        vm.importMethod = .paste
+        vm.applyImportedProgram([
+            ImportedProgramDay(name: "Push", exercises: [
+                ImportedProgramExercise(name: "Bench Press", sets: 4, reps: 8, weightKg: 60),
+                ImportedProgramExercise(name: "Between Sets", sets: 1, reps: 1)
+            ]),
+            ImportedProgramDay(name: "Notes", exercises: [
+                ImportedProgramExercise(name: "Total Time", sets: 1, reps: 1)
+            ]),
+            ImportedProgramDay(name: "Pull", exercises: [
+                ImportedProgramExercise(name: "Barbell Row", sets: 4, reps: 6, weightKg: 70)
+            ])
+        ])
+        return vm
+    }
+
+    func testRemovingARowKeepsTheDayAndUndoRestoresIt() throws {
+        let vm = pastedProgram()
+        let junk = try XCTUnwrap(vm.dayExercises[0].last)
+
+        let snapshot = try XCTUnwrap(vm.removeExercise(dayIndex: 0, exerciseID: junk.id))
+
+        XCTAssertEqual(snapshot.exerciseName, "Between Sets")
+        XCTAssertFalse(snapshot.removedDay)
+        XCTAssertEqual(vm.dayExercises[0].map(\.name), ["Bench Press"])
+        XCTAssertEqual(vm.dayNames, ["Push", "Notes", "Pull"])
+
+        vm.undoRemoval(snapshot)
+        XCTAssertEqual(vm.dayExercises[0].map(\.name), ["Bench Press", "Between Sets"])
+    }
+
+    func testRemovingADaysLastRowRemovesTheDayInEveryArray() throws {
+        let vm = pastedProgram()
+        let onlyRow = try XCTUnwrap(vm.dayExercises[1].first)
+
+        let snapshot = try XCTUnwrap(vm.removeExercise(dayIndex: 1, exerciseID: onlyRow.id))
+
+        XCTAssertTrue(snapshot.removedDay)
+        XCTAssertEqual(vm.dayNames, ["Push", "Pull"])
+        XCTAssertEqual(vm.dayExercises.map { $0.map(\.name) }, [["Bench Press", "Between Sets"], ["Barbell Row"]])
+        XCTAssertEqual(vm.dayWeekdays.count, 2)
+        XCTAssertEqual(vm.dayCount, 2)
+
+        vm.undoRemoval(snapshot)
+        XCTAssertEqual(vm.dayNames, ["Push", "Notes", "Pull"])
+        XCTAssertEqual(vm.dayCount, 3)
+    }
+
+    func testTheLastRemainingExerciseCannotBeRemoved() throws {
+        let vm = OnboardingViewModel()
+        vm.applyImportedProgram([
+            ImportedProgramDay(name: "Full Body", exercises: [
+                ImportedProgramExercise(name: "Squat", sets: 3, reps: 5)
+            ])
+        ])
+        let squat = try XCTUnwrap(vm.dayExercises.first?.first)
+
+        XCTAssertFalse(vm.canRemoveExercise)
+        XCTAssertNil(vm.removeExercise(dayIndex: 0, exerciseID: squat.id))
+        XCTAssertEqual(vm.dayExercises.first?.count, 1)
+    }
+
+    /// A day emptied by renaming every row to nothing is not saved as an
+    /// empty routine.
+    func testSaveSkipsAnEmptyDay() throws {
+        let container = try ModelContainer(
+            for: Split.self,
+            Exercise.self,
+            DayTemplate.self,
+            WorkoutSession.self,
+            SetEntry.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let vm = pastedProgram()
+        vm.dayExercises[1][0].name = " "
+
+        try vm.commit(modelContext: container.mainContext)
+
+        let names = try container.mainContext.fetch(FetchDescriptor<DayTemplate>()).map(\.name)
+        XCTAssertEqual(Set(names), ["Push", "Pull"])
     }
 }

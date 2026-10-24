@@ -367,6 +367,20 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             staticText(in: app, containing: "Rest 90s between sets").waitForExistence(timeout: 5),
             "the skipped rest line is not named on Review"
         )
+        // A row can be removed from the edit sheet and brought back with Undo
+        // (benchmark 2026-10-24, setup row 4).
+        tap(app.buttons["Edit Overhead Press, sets, and reps"], "Overhead Press row")
+        tap(app.buttons[AppCopy.Onboarding.removeExercise], "Remove exercise")
+        XCTAssertTrue(
+            staticText(in: app, containing: AppCopy.Toast.removedExercise("Overhead Press")).waitForExistence(timeout: 5),
+            "removal toast missing"
+        )
+        XCTAssertFalse(app.buttons["Edit Overhead Press, sets, and reps"].exists, "removed row still shown")
+        tap(app.buttons[AppCopy.Toast.undo], "Undo removal")
+        XCTAssertTrue(
+            app.buttons["Edit Overhead Press, sets, and reps"].waitForExistence(timeout: 5),
+            "Undo did not bring the row back"
+        )
         tap(app.buttons[AppCopy.Onboarding.previewCTA], "preview — save program")
 
         // ── Paywall: loaded products, prices, legal, purchase ──

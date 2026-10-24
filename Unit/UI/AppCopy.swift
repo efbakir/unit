@@ -381,6 +381,7 @@ enum AppCopy {
         static let previewTitle = "Review program"
         static let previewSubtitle = "Check the details before saving your program."
         static let previewCTA = "Save program"
+        static let removeExercise = "Remove exercise"
         /// Review card for pasted lines the parser did not keep (benchmark
         /// 2026-10-24, setup row 2). Plain "skipped", never "didn't parse".
         static func importSkippedTitle(lines: Int, days: Int, weeks: Int = 0) -> String {

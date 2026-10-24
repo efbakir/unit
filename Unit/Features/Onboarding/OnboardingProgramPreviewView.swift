@@ -42,6 +42,15 @@ struct OnboardingProgramPreviewView: View {
     /// The skipped-lines card starts closed: the count is the signal, the
     /// lines are one tap away.
     @State private var isSkippedExpanded = false
+    @State private var toastMessage: AppToastEvent?
+    @State private var pendingUndo: PendingUndo?
+
+    /// One removal that Undo can still reverse, with the day cards' open
+    /// state from before it (a removed day shifts the index-keyed cards).
+    private struct PendingUndo {
+        let snapshot: OnboardingViewModel.RemovedExerciseSnapshot
+        let expandedDays: [Int: Bool]
+    }
 
     private struct PreviewExerciseEditTarget: Identifiable {
         let dayIndex: Int
@@ -73,6 +82,13 @@ struct OnboardingProgramPreviewView: View {
         .sheet(item: $editingExercise) { target in
             AppSheetScreen(
                 title: "Edit exercise",
+                // Pinned under the editor so it fits the medium sheet. Undo
+                // makes the removal reversible, as in the routine editor.
+                secondaryButton: vm.canRemoveExercise
+                    ? SecondaryButtonConfig(label: AppCopy.Onboarding.removeExercise) {
+                        removeExercise(target)
+                    }
+                    : nil,
                 dismissLabel: AppCopy.Nav.done,
                 onDismissAction: { editingExercise = nil },
                 usesOuterScroll: false
@@ -82,6 +98,47 @@ struct OnboardingProgramPreviewView: View {
             .presentationDetents([.medium])
             .appBottomSheetChrome()
         }
+        .appToast(event: $toastMessage)
+    }
+
+    // MARK: - Remove with Undo
+
+    /// Benchmark 2026-10-24, setup row 4: junk rows from a paste can be
+    /// removed here instead of pasting again.
+    private func removeExercise(_ target: PreviewExerciseEditTarget) {
+        let openDays = expandedDays
+        editingExercise = nil
+        guard let snapshot = vm.removeExercise(
+            dayIndex: target.dayIndex,
+            exerciseID: target.exerciseID
+        ) else { return }
+        if snapshot.removedDay {
+            expandedDays = Self.expandedDays(openDays, removing: snapshot.dayIndex)
+        }
+        pendingUndo = PendingUndo(snapshot: snapshot, expandedDays: openDays)
+        toastMessage = AppToastEvent(
+            AppCopy.Toast.removedExercise(snapshot.exerciseName),
+            action: AppToastAction(id: snapshot.id, label: AppCopy.Toast.undo) {
+                undoRemoval(snapshot.id)
+            }
+        )
+    }
+
+    private func undoRemoval(_ id: UUID) {
+        guard let pending = pendingUndo, pending.snapshot.id == id else { return }
+        vm.undoRemoval(pending.snapshot)
+        expandedDays = pending.expandedDays
+        pendingUndo = nil
+    }
+
+    /// Day cards are keyed by index, so removing a day moves every later
+    /// day's open state down by one.
+    private static func expandedDays(_ days: [Int: Bool], removing index: Int) -> [Int: Bool] {
+        var result: [Int: Bool] = [:]
+        for (key, isOpen) in days where key != index {
+            result[key > index ? key - 1 : key] = isOpen
+        }
+        return result
     }
 
     // Sticky CTA — routed through OnboardingShell's pinned bottom button (the
