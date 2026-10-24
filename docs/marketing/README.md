@@ -37,7 +37,7 @@ I pulled his top reels: **none show the app.** Each is an aspirational *identity
 
 **② In the caption — the product + funnel:**
 
-> [one-line echo of the claim]. Unit. Free on the App Store — comment **'Unit'** and I'll send the link.
+> [one-line echo of the claim]. Unit. Free to try on the App Store, subscription after setup — comment **'Unit'** and I'll send the link.
 
 Keep clips **8–15s**. The aesthetic gets the reach; the caption gets the install.
 

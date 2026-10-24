@@ -828,6 +828,151 @@ final class ProgramImporterTests: XCTestCase {
         ]
     }
 
+    func testFiveThreeOneBBBKeepsVolumeSetsThroughSummaryHistoryAndAnalytics() throws {
+        let originalActiveSplitID = UserDefaults.standard.string(
+            forKey: ActiveSplitStore.defaultsKey
+        )
+        defer {
+            if let originalActiveSplitID {
+                UserDefaults.standard.set(originalActiveSplitID, forKey: ActiveSplitStore.defaultsKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: ActiveSplitStore.defaultsKey)
+            }
+        }
+
+        let container = try ModelContainer(
+            for: Split.self,
+            Exercise.self,
+            DayTemplate.self,
+            WorkoutSession.self,
+            SetEntry.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = container.mainContext
+        let program = try XCTUnwrap(ProgramCatalog.all.first { $0.name == "5/3/1" })
+
+        let viewModel = OnboardingViewModel()
+        viewModel.applyPickedProgram(program)
+        try viewModel.commit(modelContext: context)
+
+        let templates = try context.fetch(FetchDescriptor<DayTemplate>())
+        let exercises = try context.fetch(FetchDescriptor<Exercise>())
+        for template in templates {
+            XCTAssertEqual(
+                Set(template.orderedExerciseIds).count,
+                template.orderedExerciseIds.count,
+                "\(template.name) still lists one exercise twice"
+            )
+        }
+
+        let benchDay = try XCTUnwrap(templates.first { $0.name == "Bench Day" })
+        let main = try XCTUnwrap(exercises.first { $0.displayName == "Bench Press" })
+        let volume = try XCTUnwrap(exercises.first { $0.displayName == "Bench Press · BBB @ 50%" })
+        XCTAssertNotEqual(main.id, volume.id)
+        XCTAssertEqual(benchDay.plannedSets(for: main.id), 3)
+        XCTAssertEqual(benchDay.plannedReps(for: main.id), 5)
+        XCTAssertEqual(benchDay.plannedSets(for: volume.id), 5)
+        XCTAssertEqual(benchDay.plannedReps(for: volume.id), 10)
+
+        let session = WorkoutSession(templateId: benchDay.id)
+        context.insert(session)
+        session.setEntries = (0..<3).map { index in
+            SetEntry(
+                sessionId: session.id,
+                exerciseId: main.id,
+                weight: 80,
+                reps: 5,
+                isCompleted: true,
+                setIndex: index
+            )
+        } + (0..<5).map { index in
+            SetEntry(
+                sessionId: session.id,
+                exerciseId: volume.id,
+                weight: 50,
+                reps: 10,
+                isCompleted: true,
+                setIndex: index
+            )
+        }
+        session.isCompleted = true
+        session.captureProgressionRecords(template: benchDay, exercises: exercises)
+        try context.save()
+
+        let order = exerciseOrderIndex(for: benchDay.orderedExerciseIds)
+        XCTAssertEqual(order[main.id], benchDay.orderedExerciseIds.firstIndex(of: main.id))
+        XCTAssertEqual(order[volume.id], benchDay.orderedExerciseIds.firstIndex(of: volume.id))
+        XCTAssertEqual(exerciseOrderIndex(for: [main.id, main.id, volume.id])[main.id], 0)
+
+        let analytics = AnalyticsSnapshot.make(
+            sessions: [session],
+            exercises: exercises,
+            templates: templates,
+            plannedDaysPerWeek: program.daysPerWeek
+        )
+        let logged = try XCTUnwrap(analytics.sessions.first)
+        XCTAssertEqual(logged.sets.filter { $0.exerciseID == main.id }.count, 3)
+        XCTAssertEqual(logged.sets.filter { $0.exerciseID == volume.id }.count, 5)
+
+        let history = try XCTUnwrap(
+            makeHistorySessionSnapshot(
+                for: session,
+                templateNamesByID: Dictionary.firstUniqueKeys(templates.map { ($0.id, $0.displayName) }),
+                exercisesByID: Dictionary.firstUniqueKeys(exercises.map { ($0.id, $0) }),
+                prSetEntryIDs: []
+            )
+        )
+        XCTAssertEqual(history.exercises.first { $0.id == volume.id }?.sets.count, 5)
+        XCTAssertEqual(history.templateName, "Bench Day")
+
+        let split = try XCTUnwrap(try context.fetch(FetchDescriptor<Split>()).first { $0.name == "5/3/1" })
+        XCTAssertEqual(EarlierWeekCatchup.orderedTemplates(for: split, templates: templates).count, 4)
+
+        let duplicateID = UUID()
+        let duplicateTemplate = DayTemplate(
+            name: "Duplicate",
+            orderedExerciseIds: [duplicateID, duplicateID],
+            progressionStateByExerciseId: [
+                duplicateID: ExerciseProgressionState(
+                    lowerRepBound: 5,
+                    upperRepBound: 7,
+                    weightIncrementKg: 2.5,
+                    currentAcceptedTargetWeightKg: 60,
+                    currentAcceptedTargetReps: 5,
+                    sourceWorkoutSessionID: UUID(),
+                    lastAcceptedReason: .repeatTarget
+                )
+            ]
+        )
+        let duplicateSnapshot = AnalyticsSnapshot.make(
+            sessions: [],
+            exercises: [],
+            templates: [duplicateTemplate],
+            plannedDaysPerWeek: 4
+        )
+        XCTAssertEqual(duplicateSnapshot.templates.first?.targets.count, 1)
+
+        let library = ProgramImporter.importProgram(
+            program,
+            into: context,
+            oneRMs: [.bench: 100, .squat: 140, .deadlift: 180, .ohp: 60]
+        )
+        let libraryBench = try XCTUnwrap(
+            try context.fetch(FetchDescriptor<DayTemplate>()).first {
+                $0.splitId == library.id && $0.name == "Bench Day"
+            }
+        )
+        XCTAssertEqual(libraryBench.plannedSets(for: volume.id), 5)
+        XCTAssertEqual(libraryBench.plannedReps(for: volume.id), 10)
+        XCTAssertEqual(libraryBench.plannedSets(for: main.id), 3)
+        XCTAssertEqual(libraryBench.plannedWeight(for: main.id) ?? -1, 57.5, accuracy: 0.001)
+        XCTAssertEqual(libraryBench.plannedWeight(for: volume.id) ?? -1, 45, accuracy: 0.001)
+        XCTAssertEqual(
+            Set(libraryBench.orderedExerciseIds).count,
+            libraryBench.orderedExerciseIds.count
+        )
+    }
+
 #if DEBUG
     func testCombatPowerSmokeSeedCreatesFourCompleteWeeksAndIsIdempotent() throws {
         let originalActiveSplitID = UserDefaults.standard.string(

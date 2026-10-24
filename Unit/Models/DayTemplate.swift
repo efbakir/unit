@@ -435,3 +435,15 @@ extension DayTemplate {
     }
 
 }
+
+extension Dictionary {
+    /// First value wins. `Dictionary(uniqueKeysWithValues:)` traps when a
+    /// routine lists the same exercise twice, which used to crash the summary.
+    static func firstUniqueKeys<S: Sequence>(_ pairs: S) -> [Key: Value] where S.Element == (Key, Value) {
+        var result: [Key: Value] = [:]
+        for (key, value) in pairs where result[key] == nil {
+            result[key] = value
+        }
+        return result
+    }
+}

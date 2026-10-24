@@ -733,7 +733,7 @@ final class TodayDashboardViewModel {
         templates: [DayTemplate]
     ) -> [DayTemplate] {
         let splitTemplates = templates.filter { $0.splitId == split.id }
-        let templateByID = Dictionary(uniqueKeysWithValues: splitTemplates.map { ($0.id, $0) })
+        let templateByID = Dictionary.firstUniqueKeys(splitTemplates.map { ($0.id, $0) })
         let ordered = split.orderedTemplateIds.compactMap { templateByID[$0] }
         let orderedIDs = Set(ordered.map(\.id))
         return ordered + splitTemplates.filter { !orderedIDs.contains($0.id) }
