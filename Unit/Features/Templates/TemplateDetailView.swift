@@ -46,7 +46,7 @@ struct TemplateDetailView: View {
                 if orderedExercises.isEmpty {
                     EmptyStateCard(
                         eyebrow: "Routine",
-                        title: "No exercises yet.",
+                        title: "No exercises yet",
                         message: "Add exercises so this day can appear in your workout flow.",
                         buttonLabel: AppCopy.Workout.addExercise
                     ) {
@@ -94,10 +94,10 @@ struct TemplateDetailView: View {
             }
         }
         .appToast(event: $toastMessage)
-        .alert("Couldn't save routine", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save routine", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
-            Text("Your saved routine is unchanged. Try saving again.")
+            Text("Your changes weren’t saved. Try again.")
         }
     }
 

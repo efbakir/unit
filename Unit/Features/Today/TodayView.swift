@@ -217,7 +217,7 @@ struct TodayView: View {
                         Button {
                             showsRoutinePickSheet = true
                         } label: {
-                            Label("Choose today's routine", systemImage: AppIcon.list.systemName)
+                            Label("Choose today’s routine", systemImage: AppIcon.list.systemName)
                                 .labelStyle(.iconOnly)
                         }
                     }
@@ -406,7 +406,7 @@ struct TodayView: View {
         guard !modelContext.hasChanges else {
             modelContext.rollbackRestoringLoadedModels()
             AppHaptic.error.fire()
-            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            toastMessage = .init(AppCopy.Workout.saveFailedToast, kind: .error)
             return
         }
         launchSessionID = session.id
@@ -518,7 +518,7 @@ struct TodayView: View {
             modelContext.processPendingChanges()
             modelContext.rollbackRestoringLoadedModels()
             AppHaptic.error.fire()
-            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            toastMessage = .init(AppCopy.Workout.saveFailedToast, kind: .error)
             return false
         }
     }
@@ -864,7 +864,7 @@ private struct TodayRoutinePickSheet: View {
 
     var body: some View {
         AppSheetScreen(
-            title: "Today's routine",
+            title: "Today’s routine",
             primaryButton: hasActiveOverride
                 ? PrimaryButtonConfig(
                     label: hasWeeklySchedule ? "Use scheduled day" : "Use the next routine",

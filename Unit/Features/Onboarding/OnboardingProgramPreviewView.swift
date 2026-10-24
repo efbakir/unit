@@ -402,8 +402,8 @@ struct OnboardingProgramPreviewView: View {
                 }
                 if noisy > 0 {
                     Text(noisy == 1
-                         ? "1 line didn't parse."
-                         : "\(noisy) lines didn't parse.")
+                         ? "1 line didn’t parse."
+                         : "\(noisy) lines didn’t parse.")
                         .font(AppFont.caption.font)
                         .foregroundStyle(AppColor.textSecondary)
                 }
@@ -457,7 +457,7 @@ struct OnboardingProgramPreviewView: View {
     @ViewBuilder
     private var emptyParseState: some View {
         VStack(spacing: AppSpacing.md) {
-            Text("Unit couldn't read your routine.")
+            Text("Unit couldn’t read your routine.")
                 .font(AppFont.title.font)
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)

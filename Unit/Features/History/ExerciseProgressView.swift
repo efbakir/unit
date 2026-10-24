@@ -150,7 +150,7 @@ struct ExerciseProgressView: View {
                 EmptyStateCard(title: "No workouts yet", message: "Finish a workout to see progress.")
             } else if initialLoadFailed {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    EmptyStateCard(title: "Couldn't load progress", message: "Try again.")
+                    EmptyStateCard(title: "Couldn’t load progress", message: "Try again.")
                     AppSecondaryButton("Retry") { revision += 1 }
                 }
             } else {

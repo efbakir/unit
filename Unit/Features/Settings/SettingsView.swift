@@ -27,8 +27,8 @@ private enum DataRow: String, CaseIterable, Identifiable {
 
 private enum SubscriptionRow: String, CaseIterable, Identifiable {
     case status = "Unit Pro"
-    case restore = "Restore Purchases"
-    case manage = "Manage Subscription"
+    case restore = "Restore purchases"
+    case manage = "Manage subscription"
 
     var id: String { rawValue }
 }
@@ -61,7 +61,7 @@ private enum LegalRow: String, CaseIterable, Identifiable {
 /// iOS version) so a "Contact support" reply lands with the diagnostic strip
 /// already attached. Cuts the round-trip where support has to ask which build
 /// the user is on. Pure dynamic — no hardcoded version strings.
-private enum SupportMailto {
+enum SupportMailto {
     static let recipient = "support@unitlift.app"
 
     static func composedURL() -> URL? {
@@ -129,7 +129,7 @@ struct SettingsView: View {
         .tint(AppColor.accent)
         .appToast(event: $toastMessage)
         .alert("Purchases restored", isPresented: $showingRestoreSuccess) {
-            Button("OK", role: .cancel) { }
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         }
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
         .alert(
@@ -137,7 +137,7 @@ struct SettingsView: View {
             isPresented: infoAlertBinding,
             presenting: store.infoMessage
         ) { _ in
-            Button("OK", role: .cancel) { store.infoMessage = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.infoMessage = nil }
         } message: { message in
             Text(message)
         }
@@ -146,7 +146,7 @@ struct SettingsView: View {
             isPresented: errorAlertBinding,
             presenting: store.purchaseError
         ) { _ in
-            Button("OK", role: .cancel) { store.purchaseError = nil }
+            Button(AppCopy.Nav.ok, role: .cancel) { store.purchaseError = nil }
         } message: { error in
             Text(error)
         }

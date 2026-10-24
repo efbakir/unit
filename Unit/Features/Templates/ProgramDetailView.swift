@@ -28,7 +28,7 @@ struct ProgramDetailView: View {
 
     private var displayName: String {
         let trimmed = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Untitled Program" : trimmed
+        return trimmed.isEmpty ? "Untitled program" : trimmed
     }
 
     private var isActive: Bool {
@@ -94,9 +94,9 @@ struct ProgramDetailView: View {
             if orderedTemplates.isEmpty {
                 EmptyStateCard(
                     eyebrow: "Routines",
-                    title: "No days yet.",
-                    message: "Add the first training day before using this program.",
-                    buttonLabel: "Add day"
+                    title: "No routines yet",
+                    message: "Add the first routine before using this program.",
+                    buttonLabel: "Add routine"
                 ) {
                     showingEdit = true
                 }

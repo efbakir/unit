@@ -139,15 +139,15 @@ Key: DS = `Unit/UI/DesignSystem.swift`; other paths under `Unit/Features/`. Effo
 
 | # | Issue | Where | Fix | Effort | Status |
 |---|---|---|---|---|---|
-| 29 | Title Case outliers | "Restore Purchases", "Manage Subscription", "Untitled Program", "Full Body" | sentence case | S | Planned |
-| 30 | "day" vs "routine" | `Templates/ProgramDetailView.swift:97-100`, `Templates/AddTemplateView.swift:26-39` | "routine" | S | Planned |
-| 31 | Empty titles with periods | `Templates/TemplateDetailView.swift:49`, `Templates/ProgramDetailView.swift:98` | no period | S | Planned |
-| 32 | Support named twice | Paywall "Support" vs Settings "Contact me" | "Contact me", same prefilled email | S | Planned |
-| 33 | "Experience" vs "Level" | `UI/AppCopy.swift:363` vs `Templates/ProgramLibraryView.swift:73` | "Level" | S | Planned |
-| 34 | Error alert buttons | "Close" in 7 alerts vs "OK" in 4; "Save failed" says "Try again" but only closes; "Couldn't save workout" has no message | "OK"; "Couldn't save program"; same message as the toast | S | Planned |
-| 35 | Same error, two messages | `Templates/TemplateDetailView.swift:97` vs `Templates/AddTemplateView.swift:48` | one message | S | Planned |
-| 36 | Caps on text the lifter typed | `History/HistoryView.swift:718`; `Today/TodayView.swift:697, 713` | plain text | S | Planned |
-| 37 | Straight vs curly apostrophes; "Rest finished." vs "Rest finished" | `Subscription/PaywallView.swift:563, 764`, `Today/ActiveWorkoutView.swift:304`; `UnitWidget/RestTimerLiveActivity.swift:33` | curly; one string | S | Planned |
+| 29 | Title Case outliers | "Restore Purchases", "Manage Subscription", "Untitled Program", "Full Body" | sentence case | S | Fixed (PR 5) |
+| 30 | "day" vs "routine" | `Templates/ProgramDetailView.swift:97-100`, `Templates/AddTemplateView.swift:26-39` | "routine" | S | Fixed (PR 5) |
+| 31 | Empty titles with periods | `Templates/TemplateDetailView.swift:49`, `Templates/ProgramDetailView.swift:98` | no period | S | Fixed (PR 5) |
+| 32 | Support named twice | Paywall "Support" vs Settings "Contact me" | "Contact me", same prefilled email | S | Fixed (PR 5) |
+| 33 | "Experience" vs "Level" | `UI/AppCopy.swift:363` vs `Templates/ProgramLibraryView.swift:73` | "Level" | S | Fixed (PR 5) |
+| 34 | Error alert buttons | "Close" in 7 alerts vs "OK" in 4; "Save failed" says "Try again" but only closes; "Couldn't save workout" has no message | "OK"; "Couldn't save program"; same message as the toast | S | Fixed (PR 5) |
+| 35 | Same error, two messages | `Templates/TemplateDetailView.swift:97` vs `Templates/AddTemplateView.swift:48` | one message | S | Fixed (PR 5) |
+| 36 | Caps on text the lifter typed | `History/HistoryView.swift:718`; `Today/TodayView.swift:697, 713` | plain text; `EmptyStateCard` eyebrows are now sentence-case muted labels, like Today's "Up next" | S | Fixed (PR 5) |
+| 37 | Straight vs curly apostrophes; "Rest finished." vs "Rest finished" | `Subscription/PaywallView.swift:563, 764`, `Today/ActiveWorkoutView.swift:304`; `UnitWidget/RestTimerLiveActivity.swift:33` | curly; one string | S | Fixed (PR 5) |
 
 ### PR 6 - Small leftovers
 

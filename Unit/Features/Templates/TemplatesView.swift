@@ -227,7 +227,7 @@ struct TemplatesView: View {
 
     private func programDisplayName(for split: Split) -> String {
         let trimmed = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Untitled Program" : trimmed
+        return trimmed.isEmpty ? "Untitled program" : trimmed
     }
 
     private func orderedTemplates(for split: Split) -> [DayTemplate] {
@@ -384,10 +384,10 @@ struct EditProgramView: View {
                 deleteProgram()
             }
         } message: {
-            Text("Deletes this program and its routine days. Can't be undone.")
+            Text("Deletes this program and its routines. Can’t be undone.")
         }
-        .alert("Couldn't save program", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save program", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
             Text("Your saved program is unchanged. Try again.")
         }

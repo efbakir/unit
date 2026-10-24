@@ -600,9 +600,9 @@ final class ProgressionContractUITests: XCTestCase {
         scrollTo(targetEditor, in: app)
         tap(targetEditor, "Target editor sample")
         tap(app.buttons[AppCopy.Workout.saveChanges], "Simulate failed target save")
-        let alert = app.alerts["Couldn't save target"]
+        let alert = app.alerts["Couldn’t save target"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        tap(alert.buttons["Close"], "Close failure alert")
+        tap(alert.buttons["OK"], "Dismiss failure alert")
         XCTAssertTrue(app.staticTexts["Sample exercise"].exists, "Failure dismissed the edit draft")
         attachScreenshot(of: app, named: "15-target-draft-after-failure")
         tap(app.buttons[AppCopy.Workout.saveChanges], "Retry target save")

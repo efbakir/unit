@@ -300,8 +300,10 @@ struct ActiveWorkoutView: View {
         .appHaptic(.success, trigger: workoutFinishedPhase)
         .appHaptic(.success, trigger: restTimer.completionCount)
         .appToast(event: $setEditHintToast)
-        .alert("Couldn't save workout", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert(AppCopy.Workout.saveFailedTitle, isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
+        } message: {
+            Text(AppCopy.Workout.saveFailedMessage)
         }
         .alert(AppCopy.Workout.cancelWorkoutTitle, isPresented: $showsCancelConfirmation) {
             Button(AppCopy.Workout.cancelWorkoutAction, role: .destructive, action: cancelWorkout)
@@ -1620,7 +1622,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
                 return
             }
             let content = UNMutableNotificationContent()
-            content.title = "Rest finished"
+            content.title = AppCopy.Workout.restFinishedInline
             content.body = next.map { "Next: \($0)" } ?? "Start your next set."
             content.sound = .default
             content.interruptionLevel = .timeSensitive

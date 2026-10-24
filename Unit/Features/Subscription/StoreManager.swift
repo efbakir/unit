@@ -801,7 +801,7 @@ final class StoreManager {
         }
         if CommandLine.arguments.contains(Self.purchaseUnverifiedUITestArgument) {
             trialReminderPreferences.clearStagedPreference()
-            purchaseError = "Purchase couldn't be verified. No access was granted."
+            purchaseError = "Purchase couldn’t be verified. No access was granted."
             return
         }
 #endif
@@ -902,11 +902,11 @@ final class StoreManager {
             return
         } catch StoreKitError.networkError(_) {
             logger.error("Restore failed: network error")
-            purchaseError = "Couldn't reach the App Store. Check your connection and try again."
+            purchaseError = "Couldn’t reach the App Store. Check your connection and try again."
             UnitAnalytics.shared.track(.restoreOutcome(outcome: .failed))
         } catch {
             logger.error("Restore failed: \(error.localizedDescription)")
-            purchaseError = "Couldn't restore purchases. Try again in a moment."
+            purchaseError = "Couldn’t restore purchases. Try again in a moment."
             UnitAnalytics.shared.track(.restoreOutcome(outcome: .failed))
         }
     }

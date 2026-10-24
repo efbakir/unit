@@ -315,7 +315,7 @@ struct RecentSessionsView: View {
             // discard unrelated edits made elsewhere in the shared context.
             template.lastPerformedDate = previousLastPerformedDate
             modelContext.delete(session)
-            toastMessage = .init("Couldn't save workout. Your previous data is unchanged. Try again.", kind: .error)
+            toastMessage = .init(AppCopy.Workout.saveFailedToast, kind: .error)
         }
     }
 
@@ -715,7 +715,11 @@ private struct SessionSummaryCard: View {
         ) {
             VStack(alignment: .leading, spacing: 0) {
                 if let contextNote = snapshot.contextNote {
-                    AppTag(text: contextNote, style: .muted)
+                    // The lifter's own note: plain text, never a caps tag.
+                    Text(contextNote)
+                        .font(AppFont.caption.font)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.vertical, AppSpacing.md)
                 }

@@ -330,7 +330,7 @@ struct OnboardingView: View {
         }
         .tint(AppColor.accent)
         .environment(vm)
-        .alert("Save failed", isPresented: $commitError) {
+        .alert("Couldn’t save program", isPresented: $commitError) {
             Button(AppCopy.Nav.tryAgain, role: .cancel) { }
         } message: {
             Text("Try again in a moment.")

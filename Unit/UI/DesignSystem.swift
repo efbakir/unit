@@ -3821,8 +3821,10 @@ struct EmptyStateCard<Content: View>: View {
         Group {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 if let eyebrow {
+                    // Sentence case, like Today's "Up next": eyebrows can be
+                    // a program name the lifter typed (decision 2026-10-24).
                     Text(eyebrow)
-                        .appCapsLabel(.overline)
+                        .font(AppFont.muted.font)
                         .foregroundStyle(AppColor.textSecondary)
                 }
 
@@ -5156,8 +5158,8 @@ struct AppSetRepEditorSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .alert("Couldn't save target", isPresented: $saveFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t save target", isPresented: $saveFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
             Text("Your changes are still here. Try saving again.")
         }

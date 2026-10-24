@@ -61,8 +61,8 @@ struct ProgramLibraryDetailView: View {
         } message: {
             Text("Adds the program to your list. Missing exercises are created automatically.")
         }
-        .alert("Couldn't import program", isPresented: $importFailed) {
-            Button(AppCopy.Nav.close, role: .cancel) { }
+        .alert("Couldn’t import program", isPresented: $importFailed) {
+            Button(AppCopy.Nav.ok, role: .cancel) { }
         } message: {
             Text("Your saved programs are unchanged. Try again.")
         }

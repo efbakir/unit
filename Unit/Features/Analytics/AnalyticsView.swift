@@ -76,7 +76,7 @@ struct AnalyticsView: View {
                 }
             } else if initialLoadFailed {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    EmptyStateCard(title: "Couldn't load progress", message: "Try again.")
+                    EmptyStateCard(title: "Couldn’t load progress", message: "Try again.")
                     AppSecondaryButton("Retry") { revision += 1 }
                 }
             } else {
@@ -154,7 +154,7 @@ struct AnalyticsView: View {
                                 AppListRow(title: item.0, subtitle: item.1, style: .cardListContent)
                             }
                         }
-                        Text("Warm-up sets don't count. The status changes after 3 days.")
+                        Text("Warm-up sets don’t count. The status changes after 3 days.")
                             .font(AppFont.caption.font).tracking(AppFont.title.tracking).foregroundStyle(AppColor.textSecondary)
                     }
                 }

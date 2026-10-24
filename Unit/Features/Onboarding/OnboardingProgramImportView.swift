@@ -117,7 +117,7 @@ struct OnboardingProgramImportView: View {
                 .presentationDetents([.medium, .large])
                 .appBottomSheetChrome()
         }
-        .alert("Couldn't read that program", isPresented: Binding(
+        .alert("Couldn’t read that program", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
@@ -151,7 +151,7 @@ struct OnboardingProgramImportView: View {
             defaultUnit: vm.unitSystem
         )
         guard !result.days.isEmpty else {
-            errorMessage = "Couldn't find sets and reps. Write each exercise like \"Bench press 3x8 60\", with each day's name on its own line above."
+            errorMessage = "Couldn’t find sets and reps. Write each exercise like \"Bench press 3x8 60\", with each day’s name on its own line above."
             parseErrorTrigger &+= 1
             return
         }
