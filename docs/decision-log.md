@@ -22,6 +22,29 @@ Efe tested the merged build on his phone and sent 11 notes; plan approved (anima
 - **Rest bar names the rest:** "Bench Press rest", so −30 / +30 read as that exercise's length.
 - **White Live Activity** in the app's colours: `UnitWidget/WidgetColors.xcassets` mirrors AppColor (card white, ink, secondary, control grey, accent) because the widget can't link the design system. Light and dark values match the colors chat's final AppColor (textSecondary #68686D / #98989F).
 
+## 2026-10-24 - Summary Direction A: one choice per card, saved with "Save all"
+
+Efe chose Direction A from the external review (`report.md`, "Hero target + one choice control").
+
+- **Card:** small grey "Last: 3 × 9 at 107 kg", then the next target large and bold with a chip ("+1 rep", "+2.5 kg", "Same"), the reason under it, then one control: `+1 rep | Keep 3 × 9 | Change…`. "Change…" opens the "Edit next target" sheet. The status label, the inline Edit and the separate "Keep previous target" button are gone.
+- **Save model:** Finish still saves every suggestion, so doing nothing keeps the 2026-10-24 behavior. A choice on the summary is only selected; it saves on "Save all" or when the screen goes away, so nothing is lost. Supersedes the instant save of "Keep previous target".
+- **Header:** "2 targets go up · 2 stay the same" with one "Save all". The Finish confetti and the save burst play inside the header text only, never over cards or actions.
+- **Reasons:** "Every set hit 9. Add one rep.", "Some sets unfinished. Target stays.", "Set 2: 10 of 12 reps. Target stays.", "You chose to keep it. Suggested was …", "You changed it. Suggested was …". An edited target never sits under "Target stays."
+- **Navigation:** the workout name is the native title, and "Edit workout" moves into the "···" menu. No forced opaque bar (Oct 19 SwiftUI-defaults rule).
+- **Accessibility sizes:** the three segments become one "Change…" button; its sheet lists "Suggested · +1 rep", "Keep previous target" and the weight and reps fields.
+- **Not changed here:** card edge contrast and button colors (consistency chat's tokens).
+
+## 2026-10-24 - Founder feedback: post-workout summary and done card
+
+Efe tested the merged build on his phone and called the summary "the most important part, but still very problematic". He approved these in the progression-loop session.
+
+- **Done card:** shows only this workout (name, logged sets, PR tag, check). The "Next time" line is gone. Supersedes the exercise-done suggestion of 2026-10-23 and the done-card wording of the earlier 2026-10-24 entry. The `progressionPreviewShown` event no longer fires.
+- **Summary layout:** one "Next time" card with saved targets, one "No automatic target" card, then the logged exercises. Each row is compact: name small and grey, the next target large and darkest, a short tag ("+2.5 kg", "+1 rep", "Kept", "Edited").
+- **One action model:** tapping a row opens one sheet with Previous target, Logged, the reason, editable weight and reps, and one shortcut ("Use previous" or "Use suggested"). The inline "Keep previous target", "Use suggested target", "Edit" and "Save for next workout" buttons are gone.
+- **Long names:** in the logged list a long name wraps on the left; the PR tag and numbers stay on the right.
+- **Kept:** confetti, automatic saving at Finish, the stall line naming the short set.
+- **Colors and PR tag size:** tokens only (textPrimary for the target, textSecondary for the rest); the consistency chat owns tag size.
+
 ## 2026-10-24 - Founder override: next targets apply at Finish
 
 Efe chose this in the progression-loop session, after benchmark 4 (`docs/research/2026-10-24-benchmarks/4-exercise-done-summary.md`) and persona panel round 2.
@@ -35,6 +58,16 @@ Efe chose this in the progression-loop session, after benchmark 4 (`docs/researc
 - **Copy:** the website FAQ and compare pages, the App Review notes (`docs/app-store-copy.md`), CLAUDE.md, PRODUCT.md principle 2, goals, scope, compass and flow docs now say targets are saved at Finish. Build 96 (the 2.1 submission) was cut before this change, so it ships in the next build, and the App Review note goes into App Store Connect with that build. The frozen listing lines stay true and unchanged.
 - **Not changed:** lifts pasted with fixed reps ("3x8") still have no rule, so they never move up by themselves.
 - **Undo:** remove the `applySuggestedTargets` calls in `ActiveWorkoutView.finishWorkout` and `TodayView.saveStaleSession`; the summary then falls back to "Save for next workout".
+
+## 2026-10-24 - Paywall opens with a review, then the trial timeline
+
+- **Decision:** No title. The page opens with the real 5-star App Store review in a card, then the program the person just built ("Your program is ready", name, days), then the trial timeline, then the plans. Weekly and Yearly show first; Monthly and Lifetime open in place under "View all plans".
+- **Why the program card:** It is what the person gets for the price, made from their own answers, so it says the "content or services" Apple asks for better than a generic line.
+- **Why:** Founder call after a benchmark of 14 paywalls (Buddy, Mesh, FotMob, Liven, AllTrails and others; report from 2026-10-24). 62% of paywalls show two plans (Adapty 2026). Blinkist's timeline test: +23% trial starts.
+- **App Review 3.1.2:** The billed price stays the largest price: "$29.99/year" in the plan card, in the Day 7 step and in the line above the button. The badge stays smaller.
+- **Open:** "Save 80%" without "vs weekly" is a medium consumer-law risk now that Monthly is hidden (benchmark report). Founder kept the short badge.
+- **Supersedes:** The headline half of the "Paywall price" line in the App Review fixes entry below.
+- **Undo:** `PaywallView.primaryTiers`, `PaywallView.reviewHeader`.
 
 ## 2026-10-24 - Yearly badge back to "Save 80%"
 

@@ -15,6 +15,12 @@ enum WorkoutTargetFormatter {
         "\(loadText(weightKg: weightKg, isBodyweight: isBodyweight, unitSystem: unitSystem)) × \(reps)"
     }
 
+    /// A change between two targets (`+2.5 kg`, `−5 lb`), for the summary chip.
+    static func signedWeightChangeText(weightKg: Double, unitSystem: String) -> String {
+        let sign = weightKg < 0 ? "−" : "+"
+        return "\(sign)\(weightNumber(kg: abs(weightKg), unit: unitSystem)) \(unitSystem)"
+    }
+
     /// Positive weight step in the same number style (`+2.5 kg`, `+5 lb`).
     static func loggingIncrementText(weightKg: Double, unitSystem: String) -> String {
         "+\(weightNumber(kg: weightKg, unit: unitSystem)) \(unitSystem)"

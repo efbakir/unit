@@ -5,8 +5,9 @@
 //  Corrections to a finished workout. PR tags, Analytics, the exercise page
 //  and "Last time" read the saved sets, so they follow on their own. What
 //  this file keeps right are the two stored copies: the workout's "Next time"
-//  evidence and the routine's last-done date. A next target the lifter saved
-//  never changes here (PRODUCT.md, principle 2).
+//  evidence and the routine's last-done date. A next target the lifter chose
+//  (Keep previous target, Edit) never changes here; one Finish saved by
+//  itself follows the corrected sets (decision 2026-10-24).
 //
 
 import Foundation
@@ -42,6 +43,8 @@ extension WorkoutSession {
     }
 
     /// Rewrites one exercise's "Next time" record after its logged sets changed:
+    /// - a target Finish saved and nobody changed, on the routine's newest
+    ///   workout, is calculated again and saved again;
     /// - a saved decision keeps its target and shows the corrected sets;
     /// - an unsaved suggestion on the routine's newest workout is calculated
     ///   again from the corrected sets;
@@ -58,6 +61,23 @@ extension WorkoutSession {
         guard let record = progressionRecord(for: exerciseID) else { return false }
         let corrected = completedProgressionSets(for: exerciseID)
 
+        if let template, isCompleted,
+           let rolledBack = autoSavedTargetRolledBack(record, template: template, sessions: sessions) {
+            guard corrected != record.completedSets else { return false }
+            template.setProgressionState(rolledBack, for: exerciseID)
+            template.setPlannedReps(rolledBack.currentAcceptedTargetReps, for: exerciseID)
+            template.setPlannedWeight(rolledBack.currentAcceptedTargetWeightKg, for: exerciseID)
+            setProgressionRecord(nil, for: exerciseID)
+            captureProgressionRecords(template: template, exercises: exercises, onlyExerciseIDs: [exerciseID])
+            if let recaptured = progressionRecord(for: exerciseID),
+               let target = recaptured.suggestedTarget,
+               let reason = recaptured.recommendationReason {
+                saveProgressionDecision(target, action: .usedSuggestion, reason: reason,
+                                        for: exerciseID, template: template)
+            }
+            return true
+        }
+
         if record.acceptedTarget != nil {
             guard corrected != record.completedSets else { return false }
             setProgressionRecord(record.replacingCompletedSets(corrected), for: exerciseID)
@@ -73,6 +93,35 @@ extension WorkoutSession {
             )
         }
         return true
+    }
+
+    /// A target Finish saved and nobody changed (2026-10-24) follows an edit
+    /// of the routine's newest workout. Returns the routine state as it was
+    /// before Finish, so capture can run again; nil when the lifter decided
+    /// (Keep previous target, Edit) or a later workout moved the target on.
+    @MainActor
+    private func autoSavedTargetRolledBack(
+        _ record: SessionProgressionRecord,
+        template: DayTemplate,
+        sessions: [WorkoutSession]
+    ) -> ExerciseProgressionState? {
+        guard record.decisionAction == .usedSuggestion,
+              let saved = record.acceptedTarget, saved == record.suggestedTarget,
+              let previous = record.previousTarget,
+              let state = template.progressionState(for: record.exerciseID),
+              state.sourceWorkoutSessionID == id, state.acceptedTarget == saved,
+              !hasNewerCompletedWorkout(for: record.exerciseID, in: sessions) else { return nil }
+        // The source before Finish is not stored; without one the previous
+        // weight still seeds "Previous target" but no longer prefills.
+        return ExerciseProgressionState(
+            lowerRepBound: state.lowerRepBound,
+            upperRepBound: state.upperRepBound,
+            weightIncrementKg: state.weightIncrementKg,
+            currentAcceptedTargetWeightKg: previous.weightKg,
+            currentAcceptedTargetReps: previous.reps,
+            sourceWorkoutSessionID: nil,
+            lastAcceptedReason: nil
+        )
     }
 }
 
@@ -180,8 +229,12 @@ enum PastWorkoutEditor {
             removing: session,
             sessions: context.sessions
         )
+        let sessionID = session.id
         context.modelContext.delete(session)
-        return save(context)
+        guard save(context) else { return false }
+        // Its Apple Health copy goes too; nothing happens when Health is off.
+        HealthWorkoutSync.removeWorkout(sessionID: sessionID)
+        return true
     }
 
     private static func save(_ context: Context) -> Bool {

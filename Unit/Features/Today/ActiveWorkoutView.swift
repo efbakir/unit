@@ -57,7 +57,6 @@ struct ActiveWorkoutView: View {
     @State private var guardActive = false
     @State private var saveFailed = false
     @State private var didTrackWorkoutStart = false
-    @State private var trackedPreviewExerciseIDs: Set<UUID> = []
     /// Rest-alert problems (notifications off) are reported once per workout.
     /// Every set restarts the timer, so repeating it would cover the logging
     /// row after each set.
@@ -547,14 +546,12 @@ struct ActiveWorkoutView: View {
     }
 
     private func exerciseSummary(_ section: WorkoutExerciseSectionModel) -> some View {
-        let suggestion = progressionSuggestion(for: section)
+        // Only this workout here; next time lives on the summary (2026-10-24).
         return ExerciseSummaryRow(
             name: section.exercise.displayName, summary: summary(for: section),
             isCompleted: section.hasReachedPlannedSetGoal,
             showsUndo: showsInlineUndo(for: section.id),
             onUndo: undoLastLog, onSelect: { jump(to: section.id) },
-            detail: suggestion?.text,
-            detailIsSuggestion: suggestion?.outcome != .unsupported,
             showsPR: section.entries.contains { livePRIDs.contains($0.id) },
             isSkipped: skippedExerciseIDs.contains(section.id) && !section.hasReachedPlannedSetGoal
         )
@@ -737,52 +734,6 @@ struct ActiveWorkoutView: View {
     }
     private func valueText(weight: Double, reps: Int, exercise: Exercise) -> String {
         WorkoutTargetFormatter.loggingSetText(weightKg: weight, reps: reps, isBodyweight: exercise.isBodyweight, unitSystem: unitSystem)
-    }
-    /// The exercise-done preview: the same double-progression result the
-    /// finish summary will show, as soon as the planned sets are done.
-    /// Read-only; Finish saves this target, and the summary offers "Keep
-    /// previous target" and "Edit".
-    private func progressionSuggestion(for section: WorkoutExerciseSectionModel)
-        -> (text: String, outcome: AnalyticsProgressionOutcome)? {
-        guard section.hasReachedPlannedSetGoal, let template,
-              let evaluation = session.progressionEvaluation(
-                  for: section.id, template: template, isBodyweight: section.exercise.isBodyweight
-              ) else { return nil }
-        let recommendation: DoubleProgressionRecommendation
-        switch evaluation {
-        case .recommendation(let value):
-            recommendation = value
-        case .unavailable(let reason):
-            // Say why a progression exercise got no suggestion, so "the rule
-            // said no" never looks like "progression is off".
-            let explanation: String? = switch reason {
-            case .mixedWorkingSetWeights: AppCopy.Workout.mixedWeightsUnavailable
-            case .unsupportedBodyweightOnly: AppCopy.Workout.bodyweightUnavailable
-            case .invalidWeightIncrement: AppCopy.Workout.invalidIncrementUnavailable
-            default: nil
-            }
-            return explanation.map { (AppCopy.Workout.exerciseDoneNoSuggestion($0), .unsupported) }
-        }
-        // Same-sets wording as Today and History: "3 × 8 at 62.5 kg".
-        let setCount = max(1, template.plannedSets(for: section.id) ?? section.plannedSetCount)
-        let target = WorkoutTargetFormatter.completedPerformanceText(
-            weightsKg: Array(repeating: recommendation.target.weightKg, count: setCount),
-            reps: Array(repeating: recommendation.target.reps, count: setCount),
-            isBodyweight: section.exercise.isBodyweight
-        ) ?? valueText(weight: recommendation.target.weightKg, reps: recommendation.target.reps,
-                       exercise: section.exercise)
-        switch recommendation.reason {
-        case .allSetsReachedTop:
-            let increment = template.progressionState(for: section.id)?.weightIncrementKg ?? 0
-            return (AppCopy.Workout.exerciseDoneSuggestion(target, change:
-                WorkoutTargetFormatter.loggingIncrementText(weightKg: increment, unitSystem: unitSystem)),
-                .addWeight)
-        case .addARep:
-            return (AppCopy.Workout.exerciseDoneSuggestion(target, change: AppCopy.Workout.suggestionAddOneRep), .addRep)
-        case .repeatTarget:
-            return (AppCopy.Workout.exerciseDoneSuggestion(target, change: AppCopy.Workout.suggestionSameTarget),
-                    .repeatTarget)
-        }
     }
     /// Same set-block wording as History and Today: "3 × 8 at 80 kg", or
     /// "80 kg · 8/8/7 reps" when the sets differ.
@@ -1000,21 +951,13 @@ struct ActiveWorkoutView: View {
                 selectedExerciseID = WorkoutLoggingState.nextUnfinishedExerciseID(
                     in: exerciseStates, after: exercise.id, skipped: skippedExerciseIDs)
                 if let selectedExerciseID {
-                    // Keep the finished card (check + next-time suggestion) on screen
+                    // Keep the finished card (check + logged sets) on screen
                     // when the next exercise sits right below it.
                     let followsDirectly = orderedExerciseIDs.firstIndex(of: selectedExerciseID)
                         == orderedExerciseIDs.firstIndex(of: exercise.id).map { $0 + 1 }
                     scrollPosition.scrollTo(id: (followsDirectly ? exercise.id : selectedExerciseID).uuidString,
                                             anchor: .top)
                 }
-            }
-        }
-        var suggestionAnnouncement = ""
-        if let section = sectionModels.first(where: { $0.id == exercise.id }),
-           let suggestion = progressionSuggestion(for: section) {
-            suggestionAnnouncement = " \(exercise.displayName) done. \(suggestion.text)."
-            if trackedPreviewExerciseIDs.insert(exercise.id).inserted {
-                UnitAnalytics.shared.track(.progressionPreviewShown(outcome: suggestion.outcome))
             }
         }
         if !editedRows.contains(rowID(exercise.id, number)) { noKeyboardSetCount += 1 }
@@ -1026,7 +969,7 @@ struct ActiveWorkoutView: View {
         setLoggedPhase &+= 1
         if isDayDone { restTimer.stop() }
         else { startRestTimer(sourceEntryID: entry.id, exerciseID: exercise.id) }
-        AccessibilityNotification.Announcement("Set \(number) logged.\(prAnnouncement)\(suggestionAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(restTimer.label) : "")").post()
+        AccessibilityNotification.Announcement("Set \(number) logged.\(prAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(restTimer.label) : "")").post()
     }
     private func releaseLoggingGuard() async {
         guard logging.lastLogAt != nil else { return }

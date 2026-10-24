@@ -394,18 +394,23 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.staticTexts[AppCopy.Paywall.programReady].waitForExistence(timeout: 20),
             "paywall header missing after commit"
         )
-        let trialHeadline = app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
-        let standardHeadline = app.staticTexts[AppCopy.Paywall.standardHeadline]
+        let trialTimeline = app.staticTexts[AppCopy.Paywall.trialTimelineTitle]
+        let standardTimeline = app.staticTexts[AppCopy.Paywall.timelineTitle]
         XCTAssertTrue(
-            trialHeadline.waitForExistence(timeout: 20)
-                || standardHeadline.waitForExistence(timeout: 5),
-            "no valid paywall headline appeared"
+            trialTimeline.waitForExistence(timeout: 20)
+                || standardTimeline.waitForExistence(timeout: 5),
+            "no valid paywall timeline appeared"
         )
         openPurchasePage(in: app)
         XCTAssertTrue(
             staticText(in: app, containing: "$2.99/").waitForExistence(timeout: 20),
             "weekly price did not load from StoreKitTest"
         )
+        XCTAssertFalse(
+            descendant(in: app, identifier: "paywall-plan-com.unit.monthly").exists,
+            "Monthly showed before View all plans"
+        )
+        showAllPlans(in: app)
         XCTAssertTrue(staticText(in: app, containing: "$4.99/month").exists, "monthly price missing")
         XCTAssertTrue(staticText(in: app, containing: "$29.99/year").exists, "yearly price missing")
 
@@ -545,7 +550,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
+            app.staticTexts[AppCopy.Paywall.trialTimelineTitle]
                 .waitForExistence(timeout: 20),
             "eligible trial headline missing"
         )
@@ -593,6 +598,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
 
         XCTAssertFalse(app.buttons["paywall-plan-picker-toggle"].exists)
         XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.weekly").exists)
+        showAllPlans(in: app)
         XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.monthly").exists)
         XCTAssertTrue(descendant(in: app, identifier: "paywall-plan-com.unit.annual").exists)
         XCTAssertFalse(staticText(in: app, containing: "Or pay once").exists)
@@ -653,7 +659,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         scrollTo(weekly, in: app)
         tap(weekly, "Weekly plan")
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.standardHeadline].waitForExistence(timeout: 5),
+            app.staticTexts[AppCopy.Paywall.timelineTitle].waitForExistence(timeout: 5),
             "Weekly selection retained trial framing"
         )
         XCTAssertFalse(
@@ -694,7 +700,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.standardHeadline]
+            app.staticTexts[AppCopy.Paywall.timelineTitle]
                 .waitForExistence(timeout: 20),
             "ineligible paywall headline missing"
         )
@@ -722,7 +728,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         openPurchasePage(in: app)
         let trialCTA = button(in: app, containing: AppCopy.Paywall.startFreeTrial)
         tap(trialCTA, "trial CTA", timeout: 20)
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].exists)
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialTimelineTitle].exists)
         XCTAssertTrue(trialCTA.isEnabled, "cancelled purchase did not reset the CTA")
 
         app.terminate()
@@ -736,7 +742,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         tap(button(in: app, containing: AppCopy.Paywall.startFreeTrial), "unverified trial CTA", timeout: 20)
         XCTAssertTrue(app.alerts["Something went wrong"].waitForExistence(timeout: 5))
         tap(app.alerts["Something went wrong"].buttons["OK"], "dismiss verification error")
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].exists)
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialTimelineTitle].exists)
         XCTAssertFalse(app.tabBars.buttons["Today"].exists)
     }
 
@@ -854,7 +860,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.tabBars.buttons["Today"].waitForExistence(timeout: 10),
             "cached verified entitlement did not open Today offline"
         )
-        XCTAssertFalse(app.staticTexts[AppCopy.Paywall.standardHeadline].exists)
+        XCTAssertFalse(app.staticTexts[AppCopy.Paywall.timelineTitle].exists)
         attachScreenshot(named: "07-successful-purchase-today", app: app)
 
         tap(app.tabBars.buttons["Programs"], "Programs tab after purchase")
@@ -880,7 +886,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Subscribe to continue"].isEnabled)
         tap(app.buttons["Try again"], "product-load retry")
         XCTAssertTrue(
-            app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")]
+            app.staticTexts[AppCopy.Paywall.trialTimelineTitle]
                 .waitForExistence(timeout: 20),
             "product retry did not recover"
         )
@@ -894,6 +900,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
         app.launch()
         openPurchasePage(in: app)
         XCTAssertTrue(app.staticTexts["Some plans couldn’t load."].waitForExistence(timeout: 20))
+        showAllPlans(in: app)
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
         scrollTo(monthly, in: app)
         XCTAssertTrue(monthly.exists, "missing Monthly card was hidden instead of disabled")
@@ -914,7 +921,7 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             app.windows.firstMatch.frame.width > 390,
             "Compact-layout check: run on the iPhone SE (or Unit Logging Compact) destination."
         )
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialTimelineTitle].waitForExistence(timeout: 20))
         openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         positionFeatureTableForScreenshot(in: app, requiresLastRow: true)
@@ -930,12 +937,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
             ]
         )
         app.launch()
-        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year")].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts[AppCopy.Paywall.trialTimelineTitle].waitForExistence(timeout: 20))
         openPurchasePage(in: app)
         assertFeatureTableFits(in: app)
         positionFeatureTableForScreenshot(in: app, requiresLastRow: false)
         attachScreenshot(named: "06-feature-table-accessibility-medium", app: app)
 
+        showAllPlans(in: app)
         let monthly = descendant(in: app, identifier: "paywall-plan-com.unit.monthly")
         scrollTo(monthly, in: app)
         XCTAssertTrue(monthly.exists)
@@ -998,6 +1006,13 @@ final class OnboardingPaywallFlowUITests: XCTestCase {
                 .waitForExistence(timeout: 20),
             "single-page plan selector did not load"
         )
+    }
+
+    /// Monthly and Lifetime open in place behind "View all plans".
+    private func showAllPlans(in app: XCUIApplication) {
+        let viewAll = descendant(in: app, identifier: "paywall-view-all-plans")
+        scrollTo(viewAll, in: app)
+        tap(viewAll, "View all plans")
     }
 
     private func descendant(

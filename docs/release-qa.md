@@ -143,8 +143,9 @@ a **Pro Max**, at default Dynamic Type and one AX size:
 - [ ] Paywall shows **Weekly / Monthly / Yearly** with real prices ($2.99/week, $4.99/month,
       $29.99/year — ladder authority: `docs/pricing.md`). An eligible new customer defaults to
       Yearly and sees the verified seven-day offer only on products StoreKit marks eligible
-      (Yearly `com.unit.annual` has the 1-week free offer). The trial headline includes the
-      post-trial price (`$29.99/year after 7 days free`). The yearly badge reads **Save 80%**.
+      (Yearly `com.unit.annual` has the 1-week free offer). The page opens with the 5-star
+      review, then the trial timeline (Day 7 says `Renews at $29.99/year unless cancelled`). Only Weekly and
+      Yearly show until **View all plans** is tapped. The line above the button reads `$29.99/year after 7 days free`. The yearly badge reads **Save 80%**.
       An ineligible customer defaults to Weekly and sees no trial claims. Lifetime ($44.99) appears
       only if returned by StoreKit.
 - [ ] No clipped tier card; no CTA below the fold (CTA is pinned, body scrolls). The legal footer

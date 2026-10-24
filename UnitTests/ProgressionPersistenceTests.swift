@@ -904,23 +904,26 @@ final class ProgressionPersistenceTests: XCTestCase {
             )
             return AppCopy.Workout.stallReason(shortSets: record.shortSets, targetReps: 8)
         }
-        XCTAssertEqual(reason([8, 8, 8, 5]), "Keep this target.", "An extra set never counts")
-        XCTAssertEqual(reason([8, 8, 6]), "Set 3: 6 of 8 reps. Keep this target.")
-        XCTAssertEqual(reason([8, 7, 6]), "Sets 2 and 3: under 8 reps. Keep this target.")
-        XCTAssertEqual(reason([7, 7, 6]), "Sets 1, 2 and 3: under 8 reps. Keep this target.")
+        XCTAssertEqual(reason([8, 8, 8, 5]), "Target stays.", "An extra set never counts")
+        XCTAssertEqual(reason([8, 8, 6]), "Set 3: 6 of 8 reps. Target stays.")
+        XCTAssertEqual(reason([8, 7, 6]), "Sets 2 and 3: under 8 reps. Target stays.")
+        XCTAssertEqual(reason([7, 7, 6]), "Sets 1, 2 and 3: under 8 reps. Target stays.")
     }
 
-    func testDoneCardLineUsesTheSameSetWording() {
-        let previousUnit = UserDefaults.standard.string(forKey: "unitSystem")
-        UserDefaults.standard.set("kg", forKey: "unitSystem")
-        defer { UserDefaults.standard.set(previousUnit, forKey: "unitSystem") }
-        let target = WorkoutTargetFormatter.completedPerformanceText(
-            weightsKg: [62.5, 62.5, 62.5], reps: [8, 8, 8], isBodyweight: false
+    func testSheetSaveReadsAsSuggestionPreviousOrEdit() {
+        let record = SessionProgressionRecord(
+            exerciseID: UUID(), exerciseName: "Bench Press", isBodyweight: false,
+            configuredSetCount: 3, lowerRepBound: 8, upperRepBound: 10, weightIncrementKg: 2.5,
+            previousTarget: DoubleProgressionTarget(weightKg: 60, reps: 10),
+            completedSets: (0..<3).map { _ in CompletedProgressionSet(weightKg: 60, reps: 10) },
+            suggestedTarget: DoubleProgressionTarget(weightKg: 62.5, reps: 8),
+            recommendationReason: .allSetsReachedTop, unavailableReason: nil
         )
-        XCTAssertEqual(
-            AppCopy.Workout.exerciseDoneSuggestion(target ?? "", change: "+2.5 kg"),
-            "Next time: 3 × 8 at 62.5 kg · +2.5 kg"
-        )
+        XCTAssertEqual(record.decisionAction(saving: .init(weightKg: 62.5, reps: 8)), .usedSuggestion)
+        // 137.8 lb typed back from pounds still means the suggestion.
+        XCTAssertEqual(record.decisionAction(saving: .init(weightKg: 137.8 / 2.20462, reps: 8)), .usedSuggestion)
+        XCTAssertEqual(record.decisionAction(saving: .init(weightKg: 60, reps: 10)), .repeatedPreviousTarget)
+        XCTAssertEqual(record.decisionAction(saving: .init(weightKg: 61.25, reps: 9)), .edited)
     }
 
     func testSessionCapturesTypedUnavailableOutcome() throws {

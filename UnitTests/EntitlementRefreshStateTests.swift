@@ -278,13 +278,12 @@ final class StorePlanPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.trial?.dayCount, 7)
     }
 
-    func testTrialHeadlineLeadsWithTheBilledAmount() {
-        XCTAssertEqual(
-            AppCopy.Paywall.trialHeadline(duration: "7 days", billedPrice: "$29.99/year"),
-            "$29.99/year after 7 days free"
+    func testTrialContextLeadsWithTheBilledAmount() {
+        XCTAssertTrue(
+            AppCopy.Paywall.trialPurchaseContext(duration: "7 days", billedPrice: "$29.99/year")
+                .hasPrefix("$29.99/year after 7 days free")
         )
         XCTAssertEqual(AppCopy.Paywall.annualSavings(percent: 80), "Save 80%")
-        XCTAssertFalse(AppCopy.Paywall.standardHeadline.localizedCaseInsensitiveContains("free"))
     }
 
     func testEligibleYearlyShowsConfiguredFreeTrial() {
