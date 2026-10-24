@@ -23,16 +23,22 @@ struct ActiveWorkoutView: View {
     @Query(sort: \Exercise.displayName) private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \DayTemplate.name) private var templates: [DayTemplate]
-    @AppStorage("restDurationSeconds") private var restDurationSeconds = 120
     @AppStorage("unitSystem") private var unitSystem = "kg"
     @AppStorage("unit.preparedSetTargets") private var preparedSetTargetsData = Data()
     @SceneStorage("unit.loggingInputDrafts") private var inputDraftsData = Data()
     @State private var viewModel = ActiveWorkoutViewModel()
-    @State private var restTimer = RestTimerManager()
+    /// The app's one rest timer, shared with the Lock Screen buttons.
+    @State private var restTimer = RestTimerManager.shared
     @State private var logging = WorkoutLoggingState()
     @State private var selectedExerciseID: UUID?
     @State private var expandedCompletedID: UUID?
-    @State private var customSetCounts: [UUID: Int] = [:]
+    /// Sets in this workout that were a personal record when logged.
+    @State private var livePRIDs: Set<UUID> = []
+    @State private var swapTarget: Exercise?
+    @State private var historyExercise: Exercise?
+    @State private var noteExercise: Exercise?
+    @State private var showsNoteEditor = false
+    @State private var noteDraft = ""
     @State private var showsCancelConfirmation = false
     @State private var showsSkipExerciseConfirmation = false
     @State private var showsFinishConfirmation = false
@@ -104,9 +110,33 @@ struct ActiveWorkoutView: View {
     private var workoutNavigationTitle: String {
         (template?.name ?? "Workout").truncatedForNavigationTitle(maxGlyphCount: 34)
     }
+    /// This workout's own order, swaps, added exercises and set counts. Saved
+    /// with the session, so a relaunch keeps them; the routine never changes.
+    private var sessionPlan: WorkoutLoggingState.SessionPlan {
+        get { WorkoutLoggingState.plan(from: exerciseOrderData, sessionID: session.id) }
+        nonmutating set { exerciseOrderData = WorkoutLoggingState.encode(newValue) }
+    }
+    /// Set count picked for an added or freestyle exercise.
+    private var customSetCounts: [UUID: Int] {
+        get { sessionPlan.setCounts }
+        nonmutating set { sessionPlan.setCounts = newValue }
+    }
+    /// Rows added with "+ Add set", counted apart so only those can be removed.
+    private var addedSetCounts: [UUID: Int] {
+        get { sessionPlan.addedSets }
+        nonmutating set { sessionPlan.addedSets = newValue }
+    }
+    /// The last unfinished exercise, once skipped, stays closed for this workout.
+    private var skippedExerciseIDs: Set<UUID> {
+        get { sessionPlan.skipped }
+        nonmutating set { sessionPlan.skipped = newValue }
+    }
     private var orderedExerciseIDs: [UUID] {
-        WorkoutLoggingState.orderedExerciseIDs(templateIDs: template?.orderedExerciseIds ?? [],
-            sessionID: session.id, saved: exerciseOrderData)
+        WorkoutLoggingState.orderedExerciseIDs(templateIDs: template?.orderedExerciseIds ?? [], plan: sessionPlan)
+    }
+    /// A swapped-in exercise keeps the routine exercise's sets and reps.
+    private func planSourceID(for exerciseID: UUID) -> UUID {
+        WorkoutLoggingState.planSourceID(for: exerciseID, in: sessionPlan)
     }
     private var orderedExercises: [Exercise] {
         orderedExerciseIDs.compactMap { id in exercises.first { $0.id == id } }
@@ -119,7 +149,7 @@ struct ActiveWorkoutView: View {
                 prefill: viewModel.prefillSet(
                     for: exercise.id, currentSession: session, sessions: sessions,
                     acceptedProgressionTarget: template?.progressionState(for: exercise.id)?.acceptedTarget,
-                    plannedReps: template?.plannedReps(for: exercise.id),
+                    plannedReps: template?.plannedReps(for: planSourceID(for: exercise.id)),
                     plannedWeightKg: template?.plannedWeight(for: exercise.id)
                 ), plannedSetCount: plannedSetCount(for: exercise.id)
             )
@@ -136,26 +166,102 @@ struct ActiveWorkoutView: View {
         }
     }
     private var currentExerciseID: UUID? {
-        WorkoutLoggingState.currentExerciseID(in: exerciseStates, selectedID: selectedExerciseID)
+        WorkoutLoggingState.currentExerciseID(in: exerciseStates, selectedID: selectedExerciseID,
+                                              skipped: skippedExerciseIDs)
     }
     private var currentSection: WorkoutExerciseSectionModel? {
         sectionModels.first { $0.id == currentExerciseID }
     }
-    private var isWorkoutComplete: Bool {
-        !exerciseStates.isEmpty && exerciseStates.allSatisfy(\.isComplete)
+    private var isDayDone: Bool {
+        WorkoutLoggingState.isDayDone(exerciseStates, skipped: skippedExerciseIDs)
     }
     private var hasLoggedSets: Bool { session.setEntries.contains { $0.isValidCompletedWorkingSet } }
-    private var upNextText: String? {
-        WorkoutLoggingState.upNextText(exercises: exerciseStates, currentExerciseID: currentExerciseID)
+    private var upNext: WorkoutLoggingState.UpNext? {
+        WorkoutLoggingState.upNext(exercises: exerciseStates, currentExerciseID: currentExerciseID,
+                                   skipped: skippedExerciseIDs)
     }
+    /// "Set 2 · 135 lb × 10" for the Lock Screen and rest alert; only the set
+    /// number when that row has no starting target yet.
+    private var upNextDetail: String? {
+        guard let upNext else { return nil }
+        let value = sectionModels.first(where: { $0.id == upNext.exerciseID }).flatMap { section -> String? in
+            guard !needsStartingTarget(section, row: upNext.setNumber),
+                  let target = resolvedTarget(section, row: upNext.setNumber) else { return nil }
+            return valueText(weight: target.weight, reps: target.reps, exercise: section.exercise)
+        }
+        return AppCopy.Workout.upNextDetail(setNumber: upNext.setNumber, value: value)
+    }
+    private var restUpNext: [String?] { [upNext?.name, upNextDetail] }
     private var preparedTargets: WorkoutLoggingState.Targets {
         WorkoutLoggingState.decodeTargets(preparedSetTargetsData)
     }
+    /// Changes when a set is logged, edited or removed, the only times PRs can change.
+    private var loggedSetFingerprint: [String] {
+        session.setEntries.map { "\($0.id)|\($0.weight)|\($0.reps)|\($0.isCompleted)" }
+    }
+    /// The rest the current exercise's next set starts (its own, else the default).
     private var defaultRestText: String {
-        String(format: "%d:%02d", restDurationSeconds / 60, restDurationSeconds % 60)
+        RestTimerManager.clockText(restTimer.restSeconds(for: currentExerciseID))
     }
 
     var body: some View {
+        // Split in two so the compiler can type-check each chain in time.
+        workoutScreen
+        .alert(AppCopy.Workout.noteTitle, isPresented: $showsNoteEditor, presenting: noteExercise) { exercise in
+            TextField(AppCopy.Workout.notePlaceholder, text: $noteDraft)
+            Button(AppCopy.Nav.save) { saveNote(for: exercise) }
+            Button(AppCopy.Nav.cancel, role: .cancel) { }
+        } message: { _ in
+            Text(AppCopy.Workout.noteMessage)
+        }
+        .navigationDestination(item: $historyExercise) { exercise in
+            ExerciseProgressView(exerciseId: exercise.id, exerciseName: exercise.displayName,
+                                 isBodyweight: exercise.isBodyweight, sessions: sessions, templates: templates)
+                // Other tabs stay out of reach until the workout ends.
+                .toolbar(.hidden, for: .tabBar)
+        }
+        .sheet(isPresented: $showsAddExercise) {
+            AppExercisePickerSheet(existingIds: Set(orderedExerciseIDs), onSelect: addExerciseToWorkout)
+        }
+        .sheet(item: $swapTarget) { exercise in
+            AppExercisePickerSheet(title: AppCopy.Workout.swapExercise, existingIds: Set(orderedExerciseIDs)) {
+                swap(exercise, with: $0)
+            }
+        }
+        .sheet(item: $pendingExerciseForSetup) { exercise in
+            SetCountPickerSheet(exerciseName: exercise.displayName) { customSetCounts[exercise.id] = $0 }
+                .presentationDetents([.medium])
+                .appBottomSheetChrome()
+        }
+        .onAppear(perform: restoreWorkout)
+        .onChange(of: loggedSetFingerprint, initial: true) { _, _ in
+            livePRIDs = PRHistory.prSetEntryIDs(inOpen: session, history: sessions)
+        }
+        .onChange(of: restUpNext) { _, _ in refreshRestUpNext() }
+        .onChange(of: restTimer.notificationIssue) { _, message in
+            guard let message, !didReportRestAlertIssue else { return }
+            didReportRestAlertIssue = true
+            setEditHintToast = .init(message, kind: .information)
+        }
+        .onChange(of: restTimer.completionCount) { _, _ in
+            AccessibilityNotification.Announcement(AppCopy.Workout.restFinishedInline).post()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { restTimer.resumeFromBackground() }
+        }
+        .onChange(of: focusedField) { old, new in
+            handleFocusChange(from: old, to: new)
+        }
+        .task(id: logging.lastLogAt) { await releaseLoggingGuard() }
+        .task(id: logging.undo?.entryID) {
+            guard logging.undo != nil else { return }
+            do { try await Task.sleep(for: .seconds(WorkoutLoggingState.undoDuration)) } catch { return }
+            logging.invalidateUndo()
+        }
+    }
+
+    /// The screen with its toolbar, haptics and alerts.
+    private var workoutScreen: some View {
         AppScreen(showsNativeNavigationBar: true, usesOuterScroll: false) {
             ScrollView {
                 WorkoutDayList {
@@ -171,7 +277,7 @@ struct ActiveWorkoutView: View {
                                 onMove: moveExercise))
                             .id(section.id.uuidString)
                     }
-                    if isFreestyleSession && !sectionModels.isEmpty { addExerciseButton }
+                    if !sectionModels.isEmpty { addExerciseButton }
                     if sectionModels.isEmpty { addExercisePrompt }
                 }
                 // Child-owned scrolling keeps its breathing room inside the
@@ -191,77 +297,7 @@ struct ActiveWorkoutView: View {
             }
             .coordinateSpace(name: "workout-list")
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let focusedField {
-                VStack(spacing: 0) {
-                    RestBar.progressLine(progress: restTimer.totalDuration > 0
-                        ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
-                        endDate: restTimer.endDate, totalDuration: TimeInterval(restTimer.totalDuration),
-                        isRunning: restTimer.isRunning,
-                        spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
-                    VStack(spacing: AppSpacing.sm) {
-                        RestBar.status(timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
-                            state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
-                            spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
-                        if let editor, editor.isCurrent, let section = currentSection,
-                           section.id == editor.exerciseID {
-                            AppPrimaryButton(
-                                needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
-                                isEnabled: canCommitEditor && !guardActive
-                            ) {
-                                if needsStartingTarget(section, row: editor.number) {
-                                    saveStartingTarget(section: section, number: editor.number)
-                                } else {
-                                    completeSuggestedSet(section: section, number: editor.number)
-                                }
-                            }
-                            .accessibilityIdentifier("keyboard-current-action")
-                        }
-                        HStack(spacing: AppSpacing.sm) {
-                            keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                                stepInput(direction: -1)
-                            }
-                            keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
-                                stepInput(direction: 1)
-                            }
-                            keyboardButton(focusedField.isReps ? AppCopy.Workout.weightField : AppCopy.Workout.repsLabel) {
-                                self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
-                            }
-                            .accessibilityLabel(focusedField.isReps ? AppCopy.Workout.editWeight : AppCopy.Workout.editReps)
-                            keyboardButton(AppCopy.Nav.done, action: finishEditing)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .padding(AppSpacing.md)
-                }
-                .background(AppColor.background.ignoresSafeArea(edges: .bottom))
-                .overlay(alignment: .top) { AppDivider() }
-            } else if isWorkoutComplete {
-                // Every planned set is logged: rest is over, and the summary
-                // (where next targets are accepted) is one tap away. The small
-                // toolbar Finish alone was easy to miss.
-                AppPrimaryButton(AppCopy.Workout.finishWorkout, isEnabled: !guardActive, action: requestFinish)
-                    .accessibilityIdentifier("workout-complete-finish")
-                    .padding(AppSpacing.md)
-                    .background(AppColor.background.ignoresSafeArea(edges: .bottom))
-                    .overlay(alignment: .top) { AppDivider() }
-                    .transition(AppBlurTransition().animation(.appReveal))
-            } else {
-                RestBar(
-                    timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
-                    state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
-                    progress: restTimer.totalDuration > 0
-                        ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
-                    endDate: restTimer.endDate,
-                    totalDuration: TimeInterval(restTimer.totalDuration),
-                    canDecrease: restTimer.secondsRemaining > 15,
-                    onDecrease: { adjustRestTimer(by: -AppCopy.Workout.restStepSeconds) },
-                    onIncrease: { adjustRestTimer(by: AppCopy.Workout.restStepSeconds) },
-                    onSkip: skipRest
-                )
-                .dynamicTypeSize(...DynamicTypeSize.accessibility3)
-            }
-        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -356,35 +392,80 @@ struct ActiveWorkoutView: View {
                 renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
             ))
         }
-        .sheet(isPresented: $showsAddExercise) {
-            AppExercisePickerSheet(existingIds: Set(template?.orderedExerciseIds ?? []), onSelect: addExerciseToWorkout)
-        }
-        .sheet(item: $pendingExerciseForSetup) { exercise in
-            SetCountPickerSheet(exerciseName: exercise.displayName) { customSetCounts[exercise.id] = $0 }
-                .presentationDetents([.medium])
-                .appBottomSheetChrome()
-        }
-        .onAppear(perform: restoreWorkout)
-        .onChange(of: upNextText) { _, next in restTimer.updateUpNext(next) }
-        .onChange(of: restTimer.notificationIssue) { _, message in
-            guard let message, !didReportRestAlertIssue else { return }
-            didReportRestAlertIssue = true
-            setEditHintToast = .init(message, kind: .information)
-        }
-        .onChange(of: restTimer.completionCount) { _, _ in
-            AccessibilityNotification.Announcement(AppCopy.Workout.restFinishedInline).post()
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { restTimer.resumeFromBackground() }
-        }
-        .onChange(of: focusedField) { old, new in
-            handleFocusChange(from: old, to: new)
-        }
-        .task(id: logging.lastLogAt) { await releaseLoggingGuard() }
-        .task(id: logging.undo?.entryID) {
-            guard logging.undo != nil else { return }
-            do { try await Task.sleep(for: .seconds(WorkoutLoggingState.undoDuration)) } catch { return }
-            logging.invalidateUndo()
+    }
+
+    /// Fixed bottom chrome: the keyboard bar while typing, Finish once the day
+    /// is done, otherwise the rest bar. Kept out of `body` so it type-checks fast.
+    @ViewBuilder
+    private var bottomBar: some View {
+        if let focusedField {
+            VStack(spacing: 0) {
+                RestBar.progressLine(progress: restTimer.totalDuration > 0
+                    ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
+                    endDate: restTimer.endDate, totalDuration: TimeInterval(restTimer.totalDuration),
+                    isRunning: restTimer.isRunning,
+                    spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
+                VStack(spacing: AppSpacing.sm) {
+                    RestBar.status(timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
+                        state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
+                        spatial: AppMotion.allowsSpatialMotion(reduceMotion: reduceMotion, voiceOver: voiceOver))
+                    if let editor, editor.isCurrent, let section = currentSection,
+                       section.id == editor.exerciseID {
+                        AppPrimaryButton(
+                            needsStartingTarget(section, row: editor.number) ? AppCopy.Workout.saveTarget : AppCopy.Workout.completeSetNumbered(editor.number),
+                            isEnabled: canCommitEditor && !guardActive
+                        ) {
+                            if needsStartingTarget(section, row: editor.number) {
+                                saveStartingTarget(section: section, number: editor.number)
+                            } else {
+                                completeSuggestedSet(section: section, number: editor.number)
+                            }
+                        }
+                        .accessibilityIdentifier("keyboard-current-action")
+                    }
+                    HStack(spacing: AppSpacing.sm) {
+                        keyboardButton(AppCopy.Workout.stepDown(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: -1)
+                        }
+                        keyboardButton(AppCopy.Workout.stepUp(unitSystem: unitSystem, reps: focusedField.isReps)) {
+                            stepInput(direction: 1)
+                        }
+                        keyboardButton(focusedField.isReps ? AppCopy.Workout.weightField : AppCopy.Workout.repsLabel) {
+                            self.focusedField = focusedField.isReps ? .weight(focusedField.rowID) : .reps(focusedField.rowID)
+                        }
+                        .accessibilityLabel(focusedField.isReps ? AppCopy.Workout.editWeight : AppCopy.Workout.editReps)
+                        keyboardButton(AppCopy.Nav.done, action: finishEditing)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(AppSpacing.md)
+            }
+            .background(AppColor.background.ignoresSafeArea(edges: .bottom))
+            .overlay(alignment: .top) { AppDivider() }
+        } else if isDayDone && hasLoggedSets {
+            // Every planned set is logged (or the rest was skipped): rest is
+            // over, and the summary (where next targets are accepted) is one
+            // tap away. The small toolbar Finish alone was easy to miss.
+            AppPrimaryButton(AppCopy.Workout.finishWorkout, isEnabled: !guardActive, action: requestFinish)
+                .accessibilityIdentifier("workout-complete-finish")
+                .padding(AppSpacing.md)
+                .background(AppColor.background.ignoresSafeArea(edges: .bottom))
+                .overlay(alignment: .top) { AppDivider() }
+                .transition(AppBlurTransition().animation(.appReveal))
+        } else {
+            RestBar(
+                timeText: restTimer.secondsRemaining > 0 ? restTimer.label : defaultRestText,
+                state: restTimer.isFinished ? .finished : (restTimer.isRunning ? .running : .idle),
+                progress: restTimer.totalDuration > 0
+                    ? Double(restTimer.secondsRemaining) / Double(restTimer.totalDuration) : 0,
+                endDate: restTimer.endDate,
+                totalDuration: TimeInterval(restTimer.totalDuration),
+                canDecrease: restTimer.secondsRemaining > 15,
+                onDecrease: { adjustRestTimer(by: -AppCopy.Workout.restStepSeconds) },
+                onIncrease: { adjustRestTimer(by: AppCopy.Workout.restStepSeconds) },
+                onSkip: skipRest
+            )
+            .dynamicTypeSize(...DynamicTypeSize.accessibility3)
         }
     }
 
@@ -394,10 +475,15 @@ struct ActiveWorkoutView: View {
         if isCurrent || expandedCompletedID == section.id {
             ExerciseLoggingCard(
                 name: section.exercise.displayName,
+                note: section.exercise.notes,
                 isBodyweight: Binding(get: { section.exercise.isBodyweight }, set: { setBodyweight($0, exercise: section.exercise) }),
                 onSkip: { jump(to: section.id); showsSkipExerciseConfirmation = true },
                 onAddSet: { addSet(to: section) },
-                onSelect: isCurrent ? nil : { jump(to: section.id) }
+                onSelect: isCurrent ? nil : { jump(to: section.id) },
+                onShowHistory: { showHistory(of: section.exercise) },
+                onSwap: section.entries.isEmpty ? { swapExercise(section.exercise) } : nil,
+                onEditNote: { editNote(of: section.exercise) },
+                onRemoveAddedSet: canRemoveAddedSet(section) ? { removeAddedSet(from: section) } : nil
             ) {
                 ForEach(WorkoutLoggingState.rows(for: state(for: section), isCurrent: isCurrent)) { row in
                     loggingRow(row, section: section)
@@ -421,7 +507,8 @@ struct ActiveWorkoutView: View {
             showsUndo: showsInlineUndo(for: section.id),
             onUndo: undoLastLog, onSelect: { jump(to: section.id) },
             detail: suggestion?.text,
-            detailIsSuggestion: suggestion?.outcome != .unsupported
+            detailIsSuggestion: suggestion?.outcome != .unsupported,
+            showsPR: section.entries.contains { livePRIDs.contains($0.id) }
         )
         .allowsHitTesting(!guardActive)
     }
@@ -433,6 +520,7 @@ struct ActiveWorkoutView: View {
            let entry = section.entries.first(where: { $0.id == entryID }), editor?.id != id {
             LoggedSetRow(
                 number: row.number, value: valueText(weight: entry.weight, reps: entry.reps, exercise: section.exercise),
+                isPR: livePRIDs.contains(entry.id),
                 showsUndo: logging.availableUndo(at: Date())?.entryID == entry.id,
                 onUndo: undoLastLog,
                 onEdit: { if beginEditing(section: section, row: row) { focusedField = .weight(id) } },
@@ -848,7 +936,8 @@ struct ActiveWorkoutView: View {
             guardActive = true
             expandedCompletedID = nil
             if currentEntries(for: exercise.id).count >= plannedSetCount(for: exercise.id) {
-                selectedExerciseID = WorkoutLoggingState.nextUnfinishedExerciseID(in: exerciseStates, after: exercise.id)
+                selectedExerciseID = WorkoutLoggingState.nextUnfinishedExerciseID(
+                    in: exerciseStates, after: exercise.id, skipped: skippedExerciseIDs)
                 if let selectedExerciseID {
                     // Keep the finished card (check + next-time suggestion) on screen
                     // when the next exercise sits right below it.
@@ -868,10 +957,13 @@ struct ActiveWorkoutView: View {
             }
         }
         if !editedRows.contains(rowID(exercise.id, number)) { noKeyboardSetCount += 1 }
+        // The tag is the only PR cue: no banner, sound or second haptic.
+        let isPR = PRHistory.prSetEntryIDs(inOpen: session, history: sessions).contains(entry.id)
+        let prAnnouncement = isPR ? " \(AppCopy.Workout.personalRecord)." : ""
         setLoggedPhase &+= 1
-        if isWorkoutComplete { restTimer.stop() }
-        else { startRestTimer(sourceEntryID: entry.id) }
-        AccessibilityNotification.Announcement("Set \(number) logged.\(suggestionAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(defaultRestText) : "")").post()
+        if isDayDone { restTimer.stop() }
+        else { startRestTimer(sourceEntryID: entry.id, exerciseID: exercise.id) }
+        AccessibilityNotification.Announcement("Set \(number) logged.\(prAnnouncement)\(suggestionAnnouncement) \(restTimer.isRunning ? AppCopy.Workout.restIdle(restTimer.label) : "")").post()
     }
     private func releaseLoggingGuard() async {
         guard logging.lastLogAt != nil else { return }
@@ -904,7 +996,7 @@ struct ActiveWorkoutView: View {
         entry.weight = weight; entry.reps = reps; entry.note = note
         guard saveWorkoutChanges() else { return false }
         logging.invalidateUndo()
-        restTimer.updateUpNext(upNextText)
+        refreshRestUpNext()
         return true
     }
     private func deleteSet(_ entry: SetEntry, exercise: Exercise) -> Bool {
@@ -916,7 +1008,7 @@ struct ActiveWorkoutView: View {
         removedSet = snapshot
         selectedExerciseID = exercise.id
         handleRemovedEntry(snapshot.id)
-        setEditHintToast = .init("Set removed", action: .init(id: snapshot.id, label: AppCopy.Toast.undo) {
+        setEditHintToast = .init(AppCopy.Workout.setRemoved, action: .init(id: snapshot.id, label: AppCopy.Toast.undo) {
             undoRemovedSet(snapshotID: snapshot.id)
         })
         AppHaptic.warning.fire()
@@ -928,22 +1020,23 @@ struct ActiveWorkoutView: View {
         modelContext.insert(snapshot.restore(in: session))
         guard saveWorkoutChanges() else { return }
         removedSet = nil
-        restTimer.updateUpNext(upNextText)
+        refreshRestUpNext()
         AppHaptic.tap.fire()
     }
     private func handleRemovedEntry(_ entryID: UUID) {
         if WorkoutLoggingState.shouldStopRest(removing: entryID, sourceEntryID: restTimer.sourceEntryID) {
             restTimer.stop()
-        } else { restTimer.updateUpNext(upNextText) }
+        } else { refreshRestUpNext() }
     }
-    private func startRestTimer(sourceEntryID: UUID) {
-        restTimer.start(totalSeconds: max(15, restDurationSeconds), upNext: upNextText, sourceEntryID: sourceEntryID)
+    /// Rest after a set belongs to that set's exercise.
+    private func startRestTimer(sourceEntryID: UUID, exerciseID: UUID) {
+        restTimer.start(totalSeconds: restTimer.restSeconds(for: exerciseID), upNext: upNext?.name,
+                        upNextDetail: upNextDetail, sourceEntryID: sourceEntryID, sourceExerciseID: exerciseID)
     }
-    private func adjustRestTimer(by delta: Int) {
-        guard restTimer.isRunning, delta > 0 || restTimer.secondsRemaining > 15 else { return }
-        restTimer.adjust(by: delta, minimumSeconds: 15)
-        restDurationSeconds = max(15, restTimer.totalDuration)
+    private func refreshRestUpNext() {
+        restTimer.updateUpNext(upNext?.name, detail: upNextDetail)
     }
+    private func adjustRestTimer(by delta: Int) { restTimer.adjustAndRemember(by: delta) }
     private func skipRest() { logging.invalidateUndo(); restTimer.stop() }
     private func jump(to id: UUID) {
         guard !guardActive, commitEditor() else { return }
@@ -955,14 +1048,31 @@ struct ActiveWorkoutView: View {
         }
         focusedField = nil
         logging.invalidateUndo()
+        skippedExerciseIDs.remove(id)
         selectedExerciseID = id
         expandedCompletedID = sectionModels.first(where: { $0.id == id })?.hasReachedPlannedSetGoal == true ? id : nil
-        restTimer.updateUpNext(upNextText)
+        refreshRestUpNext()
     }
     private func skipExercise() {
-        guard let currentExerciseID,
-              let next = WorkoutLoggingState.nextUnfinishedExerciseID(in: exerciseStates, after: currentExerciseID) else { return }
-        jump(to: next)
+        guard let currentExerciseID else { return }
+        if let next = WorkoutLoggingState.nextUnfinishedExerciseID(
+            in: exerciseStates, after: currentExerciseID, skipped: skippedExerciseIDs) {
+            jump(to: next)
+            return
+        }
+        // Nothing unfinished comes after the last exercise, so skipping it ends
+        // the day: its card closes and Finish takes the rest bar's place.
+        guard !guardActive, commitEditor() else { return }
+        if editor?.isSetup == true {
+            retainInputDraft()
+            editor = nil
+        }
+        focusedField = nil
+        logging.invalidateUndo()
+        skippedExerciseIDs.insert(currentExerciseID)
+        selectedExerciseID = nil
+        expandedCompletedID = nil
+        restTimer.stop()
     }
     private func addSet(to section: WorkoutExerciseSectionModel) {
         guard !guardActive, commitEditor() else { return }
@@ -972,10 +1082,63 @@ struct ActiveWorkoutView: View {
         }
         focusedField = nil
         logging.invalidateUndo()
-        customSetCounts[section.id] = max(section.entries.count, section.plannedSetCount) + 1
+        // Same row count as before: one more than the plan or the logged sets.
+        let base = customSetCounts[section.id] ?? basePlannedSetCount(for: section.id)
+        addedSetCounts[section.id] = max(section.entries.count, section.plannedSetCount) + 1 - base
+        skippedExerciseIDs.remove(section.id)
         selectedExerciseID = section.id
         expandedCompletedID = nil
-        restTimer.updateUpNext(upNextText)
+        refreshRestUpNext()
+    }
+    /// Only a row added with "+ Add set" that is still open can be removed.
+    private func canRemoveAddedSet(_ section: WorkoutExerciseSectionModel) -> Bool {
+        addedSetCounts[section.id, default: 0] > 0 && section.plannedSetCount > section.entries.count
+    }
+    private func removeAddedSet(from section: WorkoutExerciseSectionModel) {
+        guard !guardActive, canRemoveAddedSet(section), commitEditor() else { return }
+        focusedField = nil
+        logging.invalidateUndo()
+        let exerciseID = section.id
+        addedSetCounts[exerciseID, default: 0] -= 1
+        if addedSetCounts[exerciseID] == 0 { addedSetCounts[exerciseID] = nil }
+        if section.entries.count >= plannedSetCount(for: exerciseID) {
+            // The removed row was the last open one, so the exercise is done.
+            selectedExerciseID = WorkoutLoggingState.nextUnfinishedExerciseID(
+                in: exerciseStates, after: exerciseID, skipped: skippedExerciseIDs)
+            expandedCompletedID = nil
+            if isDayDone { restTimer.stop() }
+        }
+        refreshRestUpNext()
+        setEditHintToast = .init(AppCopy.Workout.setRemoved, action: .init(id: UUID(), label: AppCopy.Toast.undo) {
+            addedSetCounts[exerciseID, default: 0] += 1
+            skippedExerciseIDs.remove(exerciseID)
+            selectedExerciseID = exerciseID
+            refreshRestUpNext()
+        })
+        AppHaptic.warning.fire()
+    }
+    private func swapExercise(_ exercise: Exercise) {
+        guard commitEditor() else { return }
+        focusedField = nil
+        swapTarget = exercise
+    }
+    private func showHistory(of exercise: Exercise) {
+        guard commitEditor() else { return }
+        focusedField = nil
+        historyExercise = exercise
+    }
+    private func editNote(of exercise: Exercise) {
+        guard commitEditor() else { return }
+        focusedField = nil
+        noteDraft = exercise.notes
+        noteExercise = exercise
+        showsNoteEditor = true
+    }
+    private func saveNote(for exercise: Exercise) {
+        let note = noteDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard note != exercise.notes else { return }
+        exercise.notes = note
+        _ = saveWorkoutChanges()
     }
     private func setBodyweight(_ isBodyweight: Bool, exercise: Exercise) {
         logging.invalidateUndo()
@@ -1050,8 +1213,8 @@ struct ActiveWorkoutView: View {
         guard !guardActive else { return }
         // Keep the active set/editor on its UUID while neighboring exercises move.
         selectedExerciseID = currentExerciseID
-        exerciseOrderData = WorkoutLoggingState.encodeExerciseOrder(ids, sessionID: session.id)
-        restTimer.updateUpNext(upNextText)
+        sessionPlan.exerciseIDs = ids
+        refreshRestUpNext()
     }
 
     private func moveExercise(_ sourceID: UUID, _ targetID: UUID) -> Bool {
@@ -1073,14 +1236,27 @@ struct ActiveWorkoutView: View {
             buttonLabel: AppCopy.Workout.addExercise) { showsAddExercise = true }
     }
     private func addExerciseToWorkout(_ exercise: Exercise) {
-        guard let template else { return }
-        var ids = template.orderedExerciseIds
-        guard !ids.contains(exercise.id) else { return }
-        ids.append(exercise.id)
-        template.orderedExerciseIds = ids
-        guard saveWorkoutChanges() else { return }
+        guard let template, !orderedExerciseIDs.contains(exercise.id) else { return }
+        if isFreestyleSession {
+            // The hidden Freestyle routine is this workout's own list.
+            template.orderedExerciseIds.append(exercise.id)
+            guard saveWorkoutChanges() else { return }
+        } else {
+            // A routine workout adds for today only; the routine is unchanged.
+            sessionPlan.additions.append(exercise.id)
+        }
         selectedExerciseID = exercise.id
         pendingExerciseForSetup = exercise
+    }
+    /// Swap uses the lifter's own exercise list (no suggestions) and only
+    /// before the first set; the new exercise keeps the planned sets and reps.
+    private func swap(_ old: Exercise, with new: Exercise) {
+        guard currentEntries(for: old.id).isEmpty else { return }
+        sessionPlan = WorkoutLoggingState.swapping(old.id, with: new.id, in: sessionPlan)
+        logging.invalidateUndo()
+        selectedExerciseID = new.id
+        expandedCompletedID = nil
+        refreshRestUpNext()
     }
     private func cancelWorkout() {
         template?.restoreLastPerformedDate(removing: session, sessions: sessions)
@@ -1091,13 +1267,14 @@ struct ActiveWorkoutView: View {
         restTimer.stop()
     }
     private func plannedSetCount(for exerciseID: UUID) -> Int {
-        if let custom = customSetCounts[exerciseID] {
-            return custom
-        }
+        (customSetCounts[exerciseID] ?? basePlannedSetCount(for: exerciseID)) + addedSetCounts[exerciseID, default: 0]
+    }
+
+    private func basePlannedSetCount(for exerciseID: UUID) -> Int {
         // The user's explicit routine plan is authoritative. History only
         // fills gaps for legacy/freestyle routines without a stored plan; an
         // early-finished session must not permanently shrink the next workout.
-        if let templatePlan = template?.plannedSets(for: exerciseID), templatePlan > 0 {
+        if let templatePlan = template?.plannedSets(for: planSourceID(for: exerciseID)), templatePlan > 0 {
             return templatePlan
         }
         if let latestTemplateCount = latestCompletedSetCount(for: exerciseID, matchingTemplate: true) {
@@ -1336,6 +1513,8 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     var sourceEntryID: UUID? {
         didSet { defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey) }
     }
+    /// The exercise whose set started this rest; −30 / +30 save to it.
+    private(set) var sourceExerciseID: UUID?
     private(set) var notificationIssue: String?
     private(set) var totalDuration = 0
     private(set) var endDate: Date?
@@ -1350,11 +1529,17 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     private var activity: Activity<RestTimerAttributes>?
     private var startDate: Date?
     private var upNext: String?
+    private var upNextDetail: String?
 
     private nonisolated static let notificationPrefix = "unit.restTimer.finished."
     private static let notificationIDKey = "unit.restTimer.notificationID"
     private static let upNextKey = "unit.restTimer.upNext"
+    private static let upNextDetailKey = "unit.restTimer.upNextDetail"
     private static let sourceEntryIDKey = "unit.restTimer.sourceEntryID"
+    private static let sourceExerciseIDKey = "unit.restTimer.sourceExerciseID"
+    /// Global default rest (120 s at first), used by exercises without their own.
+    private static let defaultRestKey = "restDurationSeconds"
+    private static let restByExerciseKey = "unit.restSecondsByExercise"
     private static let finishedAtKey = "unit.restTimer.finishedAt"
     private static let endDateKey = "unit.restTimer.endDate"
     private static let totalDurationKey = "unit.restTimer.totalDuration"
@@ -1362,6 +1547,10 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
 
     // Keep deallocation nonisolated for the existing back-deployment shim.
     nonisolated deinit {}
+
+    /// One timer for the workout screen and the Lock Screen intents, so a
+    /// button on either side changes the same rest.
+    static let shared = RestTimerManager()
 
     override convenience init() {
 #if DEBUG
@@ -1402,15 +1591,44 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         notification.request.identifier.hasPrefix(Self.notificationPrefix) ? [.banner, .sound] : []
     }
 
-    var label: String {
-        String(format: "%d:%02d", secondsRemaining / 60, secondsRemaining % 60)
+    var label: String { Self.clockText(secondsRemaining) }
+
+    static func clockText(_ seconds: Int) -> String {
+        Duration.seconds(max(0, seconds)).formatted(.time(pattern: .minuteSecond))
     }
 
-    func start(totalSeconds: Int, upNext: String? = nil, sourceEntryID: UUID? = nil) {
+    /// The rest a set of this exercise starts: the length last set for it with
+    /// −30 / +30, else the global default. Never under 15 s.
+    func restSeconds(for exerciseID: UUID?) -> Int {
+        let saved = exerciseID.flatMap { restByExercise[$0.uuidString] }
+        let fallback = defaults.object(forKey: Self.defaultRestKey) as? Int ?? 120
+        return max(15, saved ?? fallback)
+    }
+
+    /// −30 / +30 from the rest bar or the Lock Screen. The new length is kept
+    /// for the exercise whose set started this rest (2026-10-24; it used to
+    /// change every later rest).
+    func adjustAndRemember(by delta: Int) {
+        if isRunning { resumeFromBackground() }
+        guard isRunning, delta > 0 || secondsRemaining > 15 else { return }
+        adjust(by: delta, minimumSeconds: 15)
+        guard let sourceExerciseID else { return }
+        var saved = restByExercise
+        saved[sourceExerciseID.uuidString] = max(15, totalDuration)
+        defaults.set(saved, forKey: Self.restByExerciseKey)
+    }
+
+    private var restByExercise: [String: Int] {
+        defaults.dictionary(forKey: Self.restByExerciseKey) as? [String: Int] ?? [:]
+    }
+
+    func start(totalSeconds: Int, upNext: String? = nil, upNextDetail: String? = nil,
+               sourceEntryID: UUID? = nil, sourceExerciseID: UUID? = nil) {
         task?.cancel()
         task = nil
         finishedAt = nil
         self.sourceEntryID = sourceEntryID
+        self.sourceExerciseID = sourceExerciseID
         notificationIssue = nil
         totalDuration = max(15, totalSeconds)
         secondsRemaining = totalDuration
@@ -1418,6 +1636,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         startDate = start
         endDate = start.addingTimeInterval(TimeInterval(totalDuration))
         self.upNext = upNext
+        self.upNextDetail = upNextDetail
         isRunning = true
         persistState()
         scheduleCompletionNotification()
@@ -1484,9 +1703,10 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// A plan edit changes only the notification/activity text, never the deadline.
-    func updateUpNext(_ text: String?) {
-        guard upNext != text else { return }
+    func updateUpNext(_ text: String?, detail: String? = nil) {
+        guard upNext != text || upNextDetail != detail else { return }
         upNext = text
+        upNextDetail = detail
         guard isRunning else { return }
         resumeFromBackground()
         guard isRunning else { return }
@@ -1507,7 +1727,9 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         startDate = nil
         finishedAt = nil
         sourceEntryID = nil
+        sourceExerciseID = nil
         upNext = nil
+        upNextDetail = nil
         notificationIssue = nil
         clearPersistedState()
         endActivity()
@@ -1521,6 +1743,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         endDate = nil
         startDate = nil
         upNext = nil
+        upNextDetail = nil
         finishedAt = deadline
         completionCount += 1
         persistState()
@@ -1536,11 +1759,13 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
 
     private func restoreFromPersistedState() {
         sourceEntryID = defaults.string(forKey: Self.sourceEntryIDKey).flatMap(UUID.init(uuidString:))
+        sourceExerciseID = defaults.string(forKey: Self.sourceExerciseIDKey).flatMap(UUID.init(uuidString:))
         finishedAt = defaults.object(forKey: Self.finishedAtKey) as? Date
         var recoveredEnd = defaults.object(forKey: Self.endDateKey) as? Date
         var recoveredTotal = defaults.integer(forKey: Self.totalDurationKey)
         var recoveredStart: Date?
         var recoveredUpNext = defaults.string(forKey: Self.upNextKey)
+        var recoveredUpNextDetail = defaults.string(forKey: Self.upNextDetailKey)
 
         if usesLiveActivities, let liveActivity = Activity<RestTimerAttributes>.activities.first {
             let state = liveActivity.content.state
@@ -1550,6 +1775,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
             }
             recoveredStart = state.startDate
             recoveredUpNext = recoveredUpNext ?? state.upNext
+            recoveredUpNextDetail = recoveredUpNextDetail ?? state.upNextDetail
             activity = liveActivity
         }
 
@@ -1562,6 +1788,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         endDate = end
         startDate = recoveredStart ?? end.addingTimeInterval(-TimeInterval(max(15, recoveredTotal)))
         upNext = recoveredUpNext
+        upNextDetail = recoveredUpNextDetail
         secondsRemaining = max(0, Int(ceil(end.timeIntervalSince(now()))))
         totalDuration = max(secondsRemaining, recoveredTotal)
         isRunning = true
@@ -1577,12 +1804,15 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         defaults.set(endDate, forKey: Self.endDateKey)
         defaults.set(totalDuration, forKey: Self.totalDurationKey)
         defaults.set(upNext, forKey: Self.upNextKey)
+        defaults.set(upNextDetail, forKey: Self.upNextDetailKey)
         defaults.set(finishedAt, forKey: Self.finishedAtKey)
         defaults.set(sourceEntryID?.uuidString, forKey: Self.sourceEntryIDKey)
+        defaults.set(sourceExerciseID?.uuidString, forKey: Self.sourceExerciseIDKey)
     }
 
     private func clearPersistedState() {
-        for key in [Self.endDateKey, Self.totalDurationKey, Self.upNextKey, Self.finishedAtKey, Self.sourceEntryIDKey] {
+        for key in [Self.endDateKey, Self.totalDurationKey, Self.upNextKey, Self.upNextDetailKey,
+                    Self.finishedAtKey, Self.sourceEntryIDKey, Self.sourceExerciseIDKey] {
             defaults.removeObject(forKey: key)
         }
     }
@@ -1592,7 +1822,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
         guard let deadline = endDate, isRunning, deadline > now() else { return }
         if usesLiveActivities { enableForegroundAlerts() }
         let identifier = Self.notificationPrefix + UUID().uuidString
-        let next = upNext
+        let next = [upNext, upNextDetail].compactMap { $0 }.joined(separator: " · ")
         defaults.set(identifier, forKey: Self.notificationIDKey)
         notificationTask = Task { [weak self] in
             guard let self else { return }
@@ -1609,7 +1839,7 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
             }
             let content = UNMutableNotificationContent()
             content.title = "Rest finished"
-            content.body = next.map { "Next: \($0)" } ?? "Start your next set."
+            content.body = next.isEmpty ? "Start your next set." : "Next: \(next)"
             content.sound = .default
             content.interruptionLevel = .timeSensitive
             let request = UNNotificationRequest(
@@ -1660,7 +1890,8 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     private func startActivity() {
         guard usesLiveActivities, let endDate, let startDate else { return }
         let content = ActivityContent(
-            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate, upNext: upNext),
+            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate,
+                                                    upNext: upNext, upNextDetail: upNextDetail),
             staleDate: endDate,
             relevanceScore: 100
         )
@@ -1670,7 +1901,8 @@ final class RestTimerManager: NSObject, UNUserNotificationCenterDelegate {
     private func updateActivity() {
         guard usesLiveActivities, let endDate, let startDate else { return }
         let content = ActivityContent(
-            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate, upNext: upNext),
+            state: RestTimerAttributes.ContentState(startDate: startDate, endDate: endDate,
+                                                    upNext: upNext, upNextDetail: upNextDetail),
             staleDate: endDate,
             relevanceScore: 100
         )

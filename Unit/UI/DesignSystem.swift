@@ -2057,6 +2057,14 @@ private struct AppFloatingPillShadow: ViewModifier {
     }
 }
 
+/// Ink "PR" chip: History rows, the workout summary, and logged sets during a
+/// workout. One owner so every personal record reads the same.
+@ViewBuilder
+func historyPRTag() -> some View {
+    AppTag(text: AppCopy.Workout.prTag, style: .ink, layout: .compactCapsule)
+        .accessibilityLabel(AppCopy.Workout.personalRecord)
+}
+
 /// Static status/label pill — "Completed", "Up next", "Missed", "Day 3 of 5".
 /// Use `.success` / `.warning` / `.error` for status; `.muted` / `.default` for
 /// neutral labels; `.accent` to emphasize. For toggle-able filter pills, use
@@ -6799,32 +6807,62 @@ struct WorkoutDayList<Content: View>: View {
 /// An exercise's editable rows share one existing card surface.
 struct ExerciseLoggingCard<Content: View>: View {
     let name: String
+    /// The lifter's own pinned note ("Seat 4, pin 6"); hidden when empty.
+    var note = ""
     @Binding var isBodyweight: Bool
     let onSkip: () -> Void
     let onAddSet: () -> Void
     var onSelect: (() -> Void)? = nil
+    /// Optional menu actions; nil hides the item.
+    var onShowHistory: (() -> Void)? = nil
+    var onSwap: (() -> Void)? = nil
+    var onEditNote: (() -> Void)? = nil
+    var onRemoveAddedSet: (() -> Void)? = nil
     @ViewBuilder let content: () -> Content
     var body: some View {
         AppCard(contentInset: AppSpacing.sm) {
             HStack(spacing: AppSpacing.sm) {
-                Group {
-                    if let onSelect {
-                        Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
-                    } else { Text(name) }
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Group {
+                        if let onSelect {
+                            Button(name, action: onSelect).buttonStyle(ScaleButtonStyle())
+                        } else { Text(name) }
+                    }
+                    .font(AppFont.sectionHeader.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
+                    if !note.isEmpty {
+                        Text(note).appFont(.muted).foregroundStyle(AppColor.textSecondary).lineLimit(2)
+                            .accessibilityIdentifier("exercise-note")
+                    }
                 }
-                .font(AppFont.sectionHeader.font).foregroundStyle(AppColor.textPrimary).lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Menu {
-                    Toggle("Bodyweight", isOn: $isBodyweight)
-                    Button("Skip exercise", role: .destructive, action: onSkip)
+                    Section {
+                        if let onShowHistory {
+                            Button(AppCopy.Workout.exerciseHistory, action: onShowHistory)
+                        }
+                        if let onSwap {
+                            Button(AppCopy.Workout.swapExercise, action: onSwap)
+                        }
+                        if let onEditNote {
+                            Button(note.isEmpty ? AppCopy.Workout.addNote : AppCopy.Workout.editNote, action: onEditNote)
+                        }
+                        Toggle(AppCopy.Workout.bodyweightToggle, isOn: $isBodyweight)
+                    }
+                    Section {
+                        if let onRemoveAddedSet {
+                            Button(AppCopy.Workout.removeAddedSet, role: .destructive, action: onRemoveAddedSet)
+                        }
+                        Button(AppCopy.Workout.skipExerciseAction, role: .destructive, action: onSkip)
+                    }
                 } label: {
-                    Label("Edit", systemImage: AppIcon.more.systemName)
+                    Label(AppCopy.Workout.exerciseOptions, systemImage: AppIcon.more.systemName)
                         .labelStyle(.iconOnly)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .tint(AppColor.textPrimary)
+                .accessibilityIdentifier("exercise-menu")
             }
             .padding(.horizontal, AppSpacing.xs)
             content()
@@ -6904,6 +6942,8 @@ struct CurrentSetRow<Value: View>: View {
 struct LoggedSetRow: View {
     let number: Int
     let value: String
+    /// A personal record at the moment it was logged (same rule as History).
+    var isPR = false
     let showsUndo: Bool
     let onUndo: () -> Void
     let onEdit: () -> Void
@@ -6918,15 +6958,21 @@ struct LoggedSetRow: View {
                     Text("\(number)").appFont(.stepIndicator)
                         .foregroundStyle(AppColor.textTertiary)
                         .frame(width: AppWorkoutMetrics.indexWidth, alignment: .leading)
-                    Text(value).appFont(.performance).monospacedDigit()
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // The tag sits beside the value; the Undo slot and check
+                    // after the menu keep their positions.
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(value).appFont(.performance).monospacedDigit()
+                        if isPR { historyPRTag() }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(minHeight: AppWorkoutMetrics.rowHeight)
                 .contentShape(Rectangle())
             }
             .tint(AppColor.textPrimary)
             .accessibilityIdentifier("logged-set-\(number)")
-            .accessibilityLabel("Set \(number), \(value), done")
+            .accessibilityLabel(isPR ? "Set \(number), \(value), \(AppCopy.Workout.personalRecord), done"
+                                     : "Set \(number), \(value), done")
             .accessibilityAction(named: "Edit", onEdit)
             .accessibilityAction(named: "Mark not done", onMarkNotDone)
             Group {
@@ -6987,6 +7033,9 @@ struct ExerciseSummaryRow: View {
     var detail: String? = nil
     /// False for an explanation (no suggestion): muted, without the trend icon.
     var detailIsSuggestion = true
+    /// One of this exercise's sets was a personal record. The done card closes
+    /// right after the last set, so a final-set PR would otherwise never show.
+    var showsPR = false
     var body: some View {
         // Match the expanded exercise header's 8pt card + 4pt title inset.
         // Each summary is its own flat card, including upcoming exercises.
@@ -6997,10 +7046,15 @@ struct ExerciseSummaryRow: View {
                         Text(name).font(AppFont.body.font).lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        if !summary.isEmpty {
-                            Text(summary).appFont(.muted).monospacedDigit()
-                                .foregroundStyle(AppColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                        if !summary.isEmpty || showsPR {
+                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                                if !summary.isEmpty {
+                                    Text(summary).appFont(.muted).monospacedDigit()
+                                        .foregroundStyle(AppColor.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                if showsPR { historyPRTag() }
+                            }
                         }
                         if let detail, !detail.isEmpty {
                             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
@@ -7021,7 +7075,8 @@ struct ExerciseSummaryRow: View {
                 .buttonStyle(ScaleButtonStyle())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(name)
-                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary, detail ?? ""]
+                .accessibilityValue([isCompleted ? "Completed" : "Upcoming", summary,
+                                     showsPR ? AppCopy.Workout.personalRecord : "", detail ?? ""]
                     .filter { !$0.isEmpty }.joined(separator: ", "))
                 .accessibilityHint("Opens exercise sets")
                 if isCompleted {

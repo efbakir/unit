@@ -10,6 +10,7 @@ import Foundation
 
 #if os(iOS)
 import ActivityKit
+import AppIntents
 
 /// Attributes for the rest timer Live Activity.
 /// Include this file in both Unit and UnitWidgetExtension targets so the same type is used.
@@ -20,6 +21,10 @@ import ActivityKit
 /// reads the attributes (and their `ContentState`) off the main actor, so the
 /// conformance must be nonisolated & Sendable. Pure data — always safe.
 public nonisolated struct RestTimerAttributes: ActivityAttributes {
+    /// Rest step for the in-app rest bar and the Lock Screen buttons, one source
+    /// for labels, VoiceOver and the timer (30 seconds since 2026-10-23).
+    public static let stepSeconds = 30
+
     public struct ContentState: Codable, Hashable, Sendable {
         /// When the rest period started. Together with `endDate`, this gives SwiftUI
         /// the complete interval for a system-driven countdown that continues while
@@ -27,14 +32,19 @@ public nonisolated struct RestTimerAttributes: ActivityAttributes {
         public var startDate: Date
         /// When the rest period ends.
         public var endDate: Date
-        /// Next exercise and set (including remaining sets of the current exercise).
-        /// The host supplies plain text, or nil when no set remains.
+        /// Name of the next exercise (the current one while it has sets left),
+        /// or nil when no set remains. Activities started before 2026-10-24
+        /// hold "Name · Set N" here and no detail.
         public var upNext: String?
+        /// The next set's line, e.g. "Set 2 · 135 lb × 10". Optional, so an
+        /// activity that is running when the app updates still decodes.
+        public var upNextDetail: String?
 
-        public init(startDate: Date, endDate: Date, upNext: String? = nil) {
+        public init(startDate: Date, endDate: Date, upNext: String? = nil, upNextDetail: String? = nil) {
             self.startDate = startDate
             self.endDate = endDate
             self.upNext = upNext
+            self.upNextDetail = upNextDetail
         }
     }
 
@@ -44,6 +54,58 @@ public nonisolated struct RestTimerAttributes: ActivityAttributes {
     public init(kind: String = "rest") {
         self.kind = kind
     }
+}
+
+/// Lock Screen and Dynamic Island rest buttons. A `LiveActivityIntent` runs in
+/// the app's process, which owns the rest timer; the widget only draws the
+/// button. On a locked phone iOS asks for Face ID before it runs.
+/// No parameters: a property-wrapped parameter can't be stored in a
+/// `nonisolated` type here, and each button needs only its fixed step.
+nonisolated struct AddRestIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Add rest"
+    static let isDiscoverable = false
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        RestTimerIntentHandler.adjust?(RestTimerAttributes.stepSeconds)
+        return .result()
+    }
+}
+
+nonisolated struct SubtractRestIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Subtract rest"
+    static let isDiscoverable = false
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        RestTimerIntentHandler.adjust?(-RestTimerAttributes.stepSeconds)
+        return .result()
+    }
+}
+
+nonisolated struct SkipRestIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Skip rest"
+    static let isDiscoverable = false
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        RestTimerIntentHandler.skip?()
+        return .result()
+    }
+}
+
+/// The app sets these at launch so both intents act on its one rest timer.
+/// They stay nil in the widget process, which never runs the intents.
+@MainActor
+enum RestTimerIntentHandler {
+    static var adjust: ((Int) -> Void)?
+    static var skip: (() -> Void)?
 }
 
 /// `Activity<Attributes>` is an ActivityKit reference type whose methods

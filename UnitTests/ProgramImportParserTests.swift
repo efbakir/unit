@@ -1284,6 +1284,43 @@ final class PRHistoryTests: XCTestCase {
         ]
         XCTAssertTrue(PRHistory.prSetEntryIDs(in: sessions).isEmpty)
     }
+
+    // MARK: Open workout (live PR tag)
+
+    /// Finished workouts set the bests; an equal set is not a PR, a heavier
+    /// one is, and a later lighter set is not.
+    func testOpenWorkout_FlagsOnlySetsThatBeatTheBestSoFar() {
+        let bench = UUID()
+        let finished = makeSession(daysAgo: 3, entries: [entry(bench, weight: 100, reps: 8)])
+        let same = entry(bench, weight: 100, reps: 8, setIndex: 0)
+        let heavier = entry(bench, weight: 102.5, reps: 8, setIndex: 1)
+        let backOff = entry(bench, weight: 102.5, reps: 6, setIndex: 2)
+        let open = makeSession(daysAgo: 0, isCompleted: false, entries: [same, heavier, backOff])
+        XCTAssertEqual(PRHistory.prSetEntryIDs(inOpen: open, history: [finished, open]), [heavier.id])
+    }
+
+    /// No history: the first set is the baseline and warm-ups never count.
+    func testOpenWorkout_FirstEverLogIsBaselineAndWarmupsAreIgnored() {
+        let bench = UUID()
+        let warmup = entry(bench, weight: 140, reps: 1, setIndex: 0, isWarmup: true)
+        let first = entry(bench, weight: 100, reps: 8, setIndex: 1)
+        let second = entry(bench, weight: 105, reps: 8, setIndex: 2)
+        let open = makeSession(daysAgo: 0, isCompleted: false, entries: [warmup, first, second])
+        XCTAssertEqual(PRHistory.prSetEntryIDs(inOpen: open, history: [open]), [second.id])
+    }
+
+    /// The live tag and History agree once the workout is finished.
+    func testOpenWorkout_MatchesHistoryAfterFinish() {
+        let bench = UUID()
+        let finished = makeSession(daysAgo: 3, entries: [entry(bench, weight: 100, reps: 8)])
+        let moreReps = entry(bench, weight: 100, reps: 9, setIndex: 0)
+        let repeatSet = entry(bench, weight: 100, reps: 9, setIndex: 1)
+        let open = makeSession(daysAgo: 0, isCompleted: false, entries: [moreReps, repeatSet])
+        let live = PRHistory.prSetEntryIDs(inOpen: open, history: [finished, open])
+        XCTAssertEqual(live, [moreReps.id])
+        open.isCompleted = true
+        XCTAssertEqual(PRHistory.prSetEntryIDs(in: [finished, open]), live)
+    }
 }
 
 // MARK: - Parser-default sets/reps flag

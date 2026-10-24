@@ -47,6 +47,31 @@ Efe chose this in the progression-loop session, after benchmark 4 (`docs/researc
 - **Supersedes:** The 2026-08-05 "on by default with a Settings opt-out" and the "Default stays on" line of the App Review fixes entry below.
 - **Undo:** `UnitAnalytics.isEnabled` (missing key), `PaywallView.showsAnalyticsToggle`.
 
+## 2026-10-24 — Lock Screen rest buttons (PR C)
+
+- **What changed (founder override of Final B §2 and §10, "keep the Live Activity display-only"):** the rest Live Activity on the Lock Screen and in the expanded Dynamic Island has −30 / +30 / Skip, the same steps as the in-app rest bar. A step saves to that exercise's rest, as in the app.
+- **How:** three `LiveActivityIntent`s (no parameters) run in the app's process and drive the app's one rest timer (`RestTimerManager.shared`; each workout screen used to create its own). They are hidden from Shortcuts. iOS runs them only after Face ID unlocks the phone; developers report up to 1 to 2 s before the Live Activity redraws.
+- **Not in this change:** "Complete set" from the Lock Screen. It needs one Live Activity for the whole workout and a shared "log this exact set" path; planned after the founder tests these buttons on a phone.
+- **Undo:** remove `RestTimerLiveActivityControls` from `RestTimerLiveActivity.swift`.
+
+## 2026-10-24 — Rest per exercise; swap and add exercise for one workout (PR B)
+
+- **Rest per exercise (founder override of Final B §2 and §9).** −30 / +30 during a rest now save the new length for the exercise whose set started that rest; next time that exercise rests that long. Exercises without their own length use the global default (`restDurationSeconds`, 120 s at first), which no longer moves. No new control: the idle rest bar shows the current exercise's length. Steps stay ±30 (2026-10-23). Stored in settings storage (`unit.restSecondsByExercise`), no schema change. Undo: start rest from `restDurationSeconds` again in `RestTimerManager.restSeconds(for:)`.
+- **Swap exercise, this workout only.** "..." -> "Swap exercise" (before the first set) opens the lifter's own exercise list (search, create), with no suggestions (`CLAUDE.md` §3). The new exercise takes the same place and keeps the planned sets and reps; its weight comes from its own history. No "Update program?" question; the routine never changes.
+- **Add exercise in routine workouts.** The "Add exercise" button at the end of the list, with "How many sets?", now also works in routine workouts, for this workout only. Freestyle keeps writing its hidden routine.
+- **Session plan is saved.** Order, swaps, added exercises, set counts, rows added with "+ Add set" and the skipped last exercise are saved per workout (`unit.activeWorkoutExerciseOrder`, old data still decodes), so a relaunch keeps them. Before, added rows and the skip were lost.
+- **Known gap:** the summary still lists a swapped-out routine exercise as "Some sets are unfinished", like a skipped one (progression chat's code).
+
+## 2026-10-24 — Logging fixes from the benchmarks (PR A)
+
+Efe approved the logging and Lock Screen plan from the 2026-10-24 benchmarks (`docs/research/2026-10-24-benchmarks/`, reports 3, 5 and 6). This entry covers the small changes; rest per exercise, swap and Lock Screen buttons get their own entries.
+
+- **Skip on the last exercise works.** Confirming "Skip exercise" on the last unfinished exercise used to do nothing. Now its card closes for this workout, rest stops, and "Finish workout" takes the rest bar's place. Tapping the card reopens it. With no set logged at all, X stays the only exit.
+- **PR tag during the workout is back.** The Final B rebuild (2026-10-20) dropped the in-workout PR moment that `docs/goals.md` promises for 2.1. A logged set that beats the best so far shows the same ink "PR" tag as History, and so does the closed done card. Same rule as History (decision 2026-06-11). No banner, sound or extra haptic.
+- **Next set's numbers on the Lock Screen and rest alert.** "Up next" shows the exercise name and a second line, "Set 2 · 135 lb × 10". The rest alert says "Next: Bench Press · Set 2 · 135 lb × 10". Running Live Activities from older builds still decode.
+- **Card menu.** "Exercise history" opens the exercise page and back returns to the same set. "Add note" pins one line under the name (`Exercise.notes`, no schema change), shown in every workout. "Remove added set" undoes "+ Add set" while that row is open, with the same 4-second Undo toast. The menu's VoiceOver name is "Exercise options".
+- **Not done, with reasons:** rest steps stay ±30 (2026-10-23); no warm-up sets (2026-07-13, 2026-04-30); no drop or failure tags (schema change); no RPE; "Complete set" stays in the row (Final B).
+
 ## 2026-10-24 — App Review fixes before the next 2.1 upload
 
 - **5/3/1 volume blocks stay separate.** A day that lists the same lift twice (main work, then BBB) now saves the second block under its own exercise, named with its note (`Bench Press · BBB @ 50%`). Summary, history, and analytics no longer build a dictionary that traps on a repeated exercise id.

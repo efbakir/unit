@@ -19,7 +19,9 @@ enum AppCopy {
         static func restIdle(_ time: String) -> String { "Rest \(time)" }
         static let restLabel = "Rest"
         /// Rest adjustment step, one source for buttons, VoiceOver and logic
-        /// (30 seconds since 2026-10-23; was 20).
+        /// (30 seconds since 2026-10-23; was 20). The Lock Screen buttons use
+        /// `RestTimerAttributes.stepSeconds`; a unit test keeps the two equal
+        /// (this file is also built into the UI tests, which lack that type).
         static let restStepSeconds = 30
         static let restMinus = "−\(restStepSeconds)"
         static let restPlus = "+\(restStepSeconds)"
@@ -181,6 +183,23 @@ enum AppCopy {
         /// so cancel/destructive read symmetrically with `cancelWorkout`.
         static let skipExerciseTitle = "Skip exercise?"
         static let skipExerciseAction = "Skip exercise"
+
+        // MARK: - Exercise card menu (2026-10-24 benchmarks)
+        /// VoiceOver name of the card's ⋯ menu; it holds more than editing.
+        static let exerciseOptions = "Exercise options"
+        static let swapExercise = "Swap exercise"
+        static let removeAddedSet = "Remove added set"
+        static let exerciseHistory = "Exercise history"
+        static let addNote = "Add note"
+        static let editNote = "Edit note"
+        static let noteTitle = "Exercise note"
+        static let notePlaceholder = "Seat 4, pin 6"
+        static let noteMessage = "Shows every time you log this exercise."
+        static let setRemoved = "Set removed"
+        /// Lock Screen and rest-alert line under the next exercise's name.
+        static func upNextDetail(setNumber: Int, value: String?) -> String {
+            value.map { "Set \(setNumber) · \($0)" } ?? "Set \(setNumber)"
+        }
 
         /// Save-and-end-session alert. Non-destructive but irreversible without
         /// undo, so the message previews the side effect.

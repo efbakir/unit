@@ -3,26 +3,92 @@ import Foundation
 /// Value-only decisions for the active workout. Persistence and timer effects
 /// stay with their existing owners; the clock is always supplied by the caller.
 struct WorkoutLoggingState {
-    private struct SessionExerciseOrder: Codable {
+    /// This workout's own changes to its routine: order, swapped and added
+    /// exercises, set counts and the skipped last exercise. Saved per session,
+    /// so a relaunch keeps them; the routine itself never changes. Older saved
+    /// data (order only) still decodes.
+    struct SessionPlan: Codable, Equatable {
         let sessionID: UUID
-        let exerciseIDs: [UUID]
+        var exerciseIDs: [UUID] = []
+        /// Routine exercise -> the exercise done instead, this workout only.
+        var swaps: [UUID: UUID] = [:]
+        /// Exercises added to this workout only, in the order they were added.
+        var additions: [UUID] = []
+        /// Set count picked for an added or freestyle exercise.
+        var setCounts: [UUID: Int] = [:]
+        /// Rows added with "+ Add set".
+        var addedSets: [UUID: Int] = [:]
+        var skipped: Set<UUID> = []
+
+        init(sessionID: UUID, exerciseIDs: [UUID] = []) {
+            self.sessionID = sessionID
+            self.exerciseIDs = exerciseIDs
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case sessionID, exerciseIDs, swaps, additions, setCounts, addedSets, skipped
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            sessionID = try container.decode(UUID.self, forKey: .sessionID)
+            exerciseIDs = try container.decodeIfPresent([UUID].self, forKey: .exerciseIDs) ?? []
+            swaps = try container.decodeIfPresent([UUID: UUID].self, forKey: .swaps) ?? [:]
+            additions = try container.decodeIfPresent([UUID].self, forKey: .additions) ?? []
+            setCounts = try container.decodeIfPresent([UUID: Int].self, forKey: .setCounts) ?? [:]
+            addedSets = try container.decodeIfPresent([UUID: Int].self, forKey: .addedSets) ?? [:]
+            skipped = try container.decodeIfPresent(Set<UUID>.self, forKey: .skipped) ?? []
+        }
+    }
+
+    static func plan(from saved: Data, sessionID: UUID) -> SessionPlan {
+        guard let plan = try? JSONDecoder().decode(SessionPlan.self, from: saved),
+              plan.sessionID == sessionID else { return SessionPlan(sessionID: sessionID) }
+        return plan
+    }
+
+    static func encode(_ plan: SessionPlan) -> Data {
+        (try? JSONEncoder().encode(plan)) ?? Data()
+    }
+
+    /// Routine order with this workout's swaps applied, then added exercises.
+    static func orderedExerciseIDs(templateIDs: [UUID], plan: SessionPlan) -> [UUID] {
+        let workoutIDs = templateIDs.map { plan.swaps[$0] ?? $0 } + plan.additions
+        let valid = Set(workoutIDs)
+        var seen = Set<UUID>()
+        return (plan.exerciseIDs.map { plan.swaps[$0] ?? $0 } + workoutIDs)
+            .filter { valid.contains($0) && seen.insert($0).inserted }
     }
 
     static func orderedExerciseIDs(templateIDs: [UUID], sessionID: UUID, saved: Data) -> [UUID] {
-        let source: [UUID]
-        if let order = try? JSONDecoder().decode(SessionExerciseOrder.self, from: saved),
-           order.sessionID == sessionID {
-            source = order.exerciseIDs + templateIDs
-        } else {
-            source = templateIDs
-        }
-        let valid = Set(templateIDs)
-        var seen = Set<UUID>()
-        return source.filter { valid.contains($0) && seen.insert($0).inserted }
+        orderedExerciseIDs(templateIDs: templateIDs, plan: plan(from: saved, sessionID: sessionID))
     }
 
     static func encodeExerciseOrder(_ ids: [UUID], sessionID: UUID) -> Data {
-        (try? JSONEncoder().encode(SessionExerciseOrder(sessionID: sessionID, exerciseIDs: ids))) ?? Data()
+        encode(SessionPlan(sessionID: sessionID, exerciseIDs: ids))
+    }
+
+    /// The routine exercise whose planned sets and reps a swapped-in exercise uses.
+    static func planSourceID(for exerciseID: UUID, in plan: SessionPlan) -> UUID {
+        plan.swaps.first(where: { $0.value == exerciseID })?.key ?? exerciseID
+    }
+
+    /// Puts `new` where `old` sits in this workout. A swap back to the
+    /// routine's own exercise removes the swap. Counts move with it.
+    static func swapping(_ old: UUID, with new: UUID, in plan: SessionPlan) -> SessionPlan {
+        guard old != new else { return plan }
+        var result = plan
+        if let index = result.additions.firstIndex(of: old) {
+            result.additions[index] = new
+        } else {
+            let original = planSourceID(for: old, in: plan)
+            result.swaps[original] = new == original ? nil : new
+        }
+        result.exerciseIDs = result.exerciseIDs.map { $0 == old ? new : $0 }
+        result.setCounts[new] = result.setCounts.removeValue(forKey: old)
+        result.addedSets[new] = result.addedSets.removeValue(forKey: old)
+        result.skipped.remove(old)
+        return result
     }
 
     struct Entry: Equatable {
@@ -117,26 +183,49 @@ struct WorkoutLoggingState {
         }
     }
 
-    static func currentExerciseID(in exercises: [ExerciseState], selectedID: UUID? = nil) -> UUID? {
-        if let selectedID, exercises.contains(where: { $0.id == selectedID }) { return selectedID }
-        return exercises.first(where: { !$0.isComplete })?.id
+    /// `skipped` holds exercises skipped for the rest of this workout. Only the
+    /// last unfinished exercise is ever skipped this way; earlier skips just
+    /// move on and come back later.
+    static func currentExerciseID(in exercises: [ExerciseState], selectedID: UUID? = nil,
+                                  skipped: Set<UUID> = []) -> UUID? {
+        if let selectedID, !skipped.contains(selectedID),
+           exercises.contains(where: { $0.id == selectedID }) { return selectedID }
+        return exercises.first(where: { !$0.isComplete && !skipped.contains($0.id) })?.id
     }
 
-    static func nextUnfinishedExerciseID(in exercises: [ExerciseState], after id: UUID) -> UUID? {
+    static func nextUnfinishedExerciseID(in exercises: [ExerciseState], after id: UUID,
+                                         skipped: Set<UUID> = []) -> UUID? {
+        let isOpen = { (exercise: ExerciseState) in !exercise.isComplete && !skipped.contains(exercise.id) }
         guard let index = exercises.firstIndex(where: { $0.id == id }) else {
-            return exercises.first(where: { !$0.isComplete })?.id
+            return exercises.first(where: isOpen)?.id
         }
-        return exercises.dropFirst(index + 1).first(where: { !$0.isComplete })?.id
-            ?? exercises.prefix(index).first(where: { !$0.isComplete })?.id
+        return exercises.dropFirst(index + 1).first(where: isOpen)?.id
+            ?? exercises.prefix(index).first(where: isOpen)?.id
     }
 
-    static func upNextText(exercises: [ExerciseState], currentExerciseID: UUID?) -> String? {
+    /// Every exercise is logged or skipped: the day is over and Finish replaces rest.
+    static func isDayDone(_ exercises: [ExerciseState], skipped: Set<UUID> = []) -> Bool {
+        !exercises.isEmpty && exercises.allSatisfy { $0.isComplete || skipped.contains($0.id) }
+    }
+
+    /// The set the lifter does next: the current exercise's next row, or the
+    /// next unfinished exercise's first open row. Nil when the day is done.
+    struct UpNext: Equatable {
+        let exerciseID: UUID
+        let name: String
+        let setNumber: Int
+    }
+
+    static func upNext(exercises: [ExerciseState], currentExerciseID: UUID?,
+                       skipped: Set<UUID> = []) -> UpNext? {
         guard let id = currentExerciseID,
               let current = exercises.first(where: { $0.id == id }) else { return nil }
-        if !current.isComplete { return "\(current.name) · Set \(current.logged.count + 1)" }
-        guard let nextID = nextUnfinishedExerciseID(in: exercises, after: id),
+        if !current.isComplete {
+            return UpNext(exerciseID: current.id, name: current.name, setNumber: current.logged.count + 1)
+        }
+        guard let nextID = nextUnfinishedExerciseID(in: exercises, after: id, skipped: skipped),
               let next = exercises.first(where: { $0.id == nextID }) else { return nil }
-        return "\(next.name) · Set \(next.logged.count + 1)"
+        return UpNext(exerciseID: next.id, name: next.name, setNumber: next.logged.count + 1)
     }
 
     static func shouldStopRest(removing entryID: UUID, sourceEntryID: UUID?) -> Bool {

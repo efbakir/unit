@@ -39,6 +39,9 @@ struct UnitApp: App {
         let start = ContinuousClock.now
         self.sharedModelContainer = Self.makeSharedModelContainer()
         UnitAnalytics.shared.configure()
+        // Lock Screen rest buttons run in this process and drive the same timer.
+        RestTimerIntentHandler.adjust = { RestTimerManager.shared.adjustAndRemember(by: $0) }
+        RestTimerIntentHandler.skip = { RestTimerManager.shared.stop() }
 #if DEBUG
         if CommandLine.arguments.contains(Self.uiTestingArgument), CommandLine.arguments.contains("-ui-testing-analytics-r5") {
             do { try ProgressionContractUITestSeeder.seedAnalytics(in: sharedModelContainer.mainContext) }
@@ -528,6 +531,18 @@ extension StartingTargetUITestSeeder {
            let bench = exercises.first(where: { $0.id == benchID }) {
             bench.isBodyweight = true
             template.setPlannedWeight(0, for: benchID)
+        }
+        if CommandLine.arguments.contains("-logging-history") {
+            // One finished Bench Press workout (3 × 8 at 55 kg) to beat.
+            let finished = WorkoutSession(date: Date().addingTimeInterval(-2 * 86_400),
+                                          templateId: template.id, isCompleted: true)
+            context.insert(finished)
+            for index in 0..<3 {
+                let set = SetEntry(sessionId: finished.id, exerciseId: benchID, weight: 55, reps: 8,
+                                   isCompleted: true, setIndex: index)
+                set.session = finished
+                context.insert(set)
+            }
         }
         UserDefaults.standard.set(CommandLine.arguments.contains("-logging-lb") ? "lb" : "kg", forKey: "unitSystem")
         UserDefaults.standard.set(120, forKey: "restDurationSeconds")

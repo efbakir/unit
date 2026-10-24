@@ -70,6 +70,94 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertEqual(defaults.object(forKey: "unit.restTimer.endDate") as? Date, deadline)
     }
 
+    func testNextSetLineReachesTheAlertSurvivesRelaunchAndClearsOnStop() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let timer = timer(defaults, notifications, now: { now })
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: 120, upNext: "Bench Press", upNextDetail: "Set 2 · 135 lb × 10")
+        }
+        XCTAssertEqual(notifications.requests.last?.content.body, "Next: Bench Press · Set 2 · 135 lb × 10")
+        XCTAssertEqual(defaults.string(forKey: "unit.restTimer.upNextDetail"), "Set 2 · 135 lb × 10")
+        await notifications.waitForRequest { timer.updateUpNext("Bench Press", detail: "Set 2 · 140 lb × 10") }
+        XCTAssertEqual(notifications.requests.last?.content.body, "Next: Bench Press · Set 2 · 140 lb × 10")
+        // A relaunched timer restores the line: repeating it schedules nothing new.
+        let restored = self.timer(defaults, notifications, now: { now })
+        // A reschedule cancels the old request synchronously, so an unchanged
+        // cancel list proves nothing was rescheduled.
+        let cancelled = notifications.cancelled.count
+        restored.updateUpNext("Bench Press", detail: "Set 2 · 140 lb × 10")
+        XCTAssertEqual(notifications.cancelled.count, cancelled)
+        restored.stop()
+        timer.stop()
+        XCTAssertNil(defaults.object(forKey: "unit.restTimer.upNextDetail"))
+    }
+
+    func testRestLengthIsRememberedPerExerciseAndTheDefaultStays() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let squat = UUID(), curl = UUID()
+        let timer = timer(defaults, notifications, now: { now })
+        defer { timer.stop() }
+        XCTAssertEqual(timer.restSeconds(for: squat), 120, "no saved default means 120 s")
+        defaults.set(90, forKey: "restDurationSeconds")
+        XCTAssertEqual(timer.restSeconds(for: squat), 90)
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: timer.restSeconds(for: squat), sourceExerciseID: squat)
+        }
+        let step = AppCopy.Workout.restStepSeconds
+        await notifications.waitForRequest { timer.adjustAndRemember(by: step) }
+        XCTAssertEqual(timer.restSeconds(for: squat), 90 + step)
+        XCTAssertEqual(timer.restSeconds(for: curl), 90, "other exercises keep the default")
+        XCTAssertEqual(defaults.integer(forKey: "restDurationSeconds"), 90, "the default no longer moves")
+        await notifications.waitForRequest {
+            timer.start(totalSeconds: timer.restSeconds(for: curl), sourceExerciseID: curl)
+        }
+        await notifications.waitForRequest { timer.adjustAndRemember(by: -500) }
+        XCTAssertEqual(timer.restSeconds(for: curl), 15, "never under 15 s")
+        // The source exercise survives a relaunch, so a later step saves to it.
+        let restored = self.timer(defaults, notifications, now: { now })
+        XCTAssertEqual(restored.sourceExerciseID, curl)
+        restored.stop()
+        XCTAssertNil(defaults.object(forKey: "unit.restTimer.sourceExerciseID"))
+        XCTAssertEqual(RestTimerManager.clockText(150), "2:30")
+        XCTAssertEqual(RestTimerManager.clockText(15), "0:15")
+    }
+
+    func testLockScreenIntentsDriveTheTimerAndSaveRestPerExercise() async throws {
+        let defaults = defaults()
+        let notifications = Notifications()
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let timer = timer(defaults, notifications, now: { now })
+        let squat = UUID()
+        let appAdjust = RestTimerIntentHandler.adjust, appSkip = RestTimerIntentHandler.skip
+        defer {
+            RestTimerIntentHandler.adjust = appAdjust
+            RestTimerIntentHandler.skip = appSkip
+            timer.stop()
+        }
+        RestTimerIntentHandler.adjust = { timer.adjustAndRemember(by: $0) }
+        RestTimerIntentHandler.skip = { timer.stop() }
+        await notifications.waitForRequest { timer.start(totalSeconds: 120, sourceExerciseID: squat) }
+        let step = RestTimerAttributes.stepSeconds
+        XCTAssertEqual(AppCopy.Workout.restStepSeconds, step)
+        await notifications.waitForRequest {
+            Task { _ = try? await AddRestIntent().perform() }
+        }
+        XCTAssertEqual(timer.totalDuration, 120 + step)
+        XCTAssertEqual(timer.restSeconds(for: squat), 120 + step)
+        await notifications.waitForRequest {
+            Task { _ = try? await SubtractRestIntent().perform() }
+        }
+        XCTAssertEqual(timer.totalDuration, 120)
+        XCTAssertEqual(timer.restSeconds(for: squat), 120)
+        _ = try await SkipRestIntent().perform()
+        XCTAssertFalse(timer.isRunning)
+        XCTAssertEqual(timer.completionCount, 0, "Skip never counts as a finished rest")
+    }
+
     func testRestStepAdjustmentsKeepElapsedTimeAndMinimum() async throws {
         let defaults = defaults()
         let notifications = Notifications()
@@ -113,7 +201,7 @@ final class RestTimerManagerTests: XCTestCase {
         XCTAssertNil(timer.sourceEntryID)
         XCTAssertNil(timer.endDate)
         XCTAssertTrue(notifications.cancelled.contains(identifier))
-        for key in ["endDate", "totalDuration", "upNext", "sourceEntryID", "finishedAt", "notificationID"] {
+        for key in ["endDate", "totalDuration", "upNext", "upNextDetail", "sourceEntryID", "finishedAt", "notificationID"] {
             XCTAssertNil(defaults.object(forKey: "unit.restTimer.\(key)"))
         }
     }
