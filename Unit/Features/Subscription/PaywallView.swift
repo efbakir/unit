@@ -108,15 +108,20 @@ struct PaywallView: View {
     @ViewBuilder
     private var purchaseContent: some View {
         if selectedPresentation != nil {
-            // Founder layout 2026-10-24: a real review, then how billing
-            // works, then the plans. No headline; the billed price stays the
-            // largest price on screen (plan card + line above the CTA).
+            // Founder layout 2026-10-24: a real review, the program the
+            // person just built, how billing works, then the plans. No
+            // headline; the billed price stays the largest price on screen
+            // (plan card + line above the CTA).
             VStack(alignment: .leading, spacing: 0) {
                 reviewHeader
                     .appScreenEnter(index: 0, staged: true)
 
-                purchaseTimelineSection
+                programSummaryCard
                     .appScreenEnter(index: 1, staged: true)
+                    .padding(.top, AppSpacing.md)
+
+                purchaseTimelineSection
+                    .appScreenEnter(index: 2, staged: true)
                     .padding(.top, AppSpacing.xl)
 
                 if selectedTrial != nil {
@@ -132,9 +137,6 @@ struct PaywallView: View {
                     partialLoadBanner
                         .padding(.top, AppSpacing.md)
                 }
-
-                programSummaryCard
-                    .padding(.top, AppSpacing.xxl)
 
                 includedFeaturesSection
                     .appReveal(id: "paywall.features")
@@ -238,15 +240,6 @@ struct PaywallView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
-
-            // What the subscription gives (Apple's sign-up screen rule);
-            // the review alone does not say it.
-            Text(paywallSupportingCopy)
-                .font(AppFont.caption.font)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("paywall-supporting-copy")
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, AppSpacing.md)
@@ -418,10 +411,6 @@ struct PaywallView: View {
                 )
             }
         )
-    }
-
-    private var paywallSupportingCopy: String {
-        AppCopy.Paywall.supportingCopy(for: setupContext?.matchProfile?.goal.rawValue)
     }
 
     private var programSummaryCard: some View {

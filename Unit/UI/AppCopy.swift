@@ -397,18 +397,6 @@ enum AppCopy {
             "Save \(percent)%"
         }
         static let viewAllPlans = "View all plans"
-        static func supportingCopy(for goal: String?) -> String {
-            switch goal {
-            case "strength":
-                return "Build strength with a program chosen for your goal and schedule."
-            case "hypertrophy":
-                return "Build muscle with a program chosen for your goal and schedule."
-            case "mixed":
-                return "Build strength and muscle with a program chosen for your goal and schedule."
-            default:
-                return "Turn your program into steady progress, one workout at a time."
-            }
-        }
         static let programReady = "Your program is ready"
         static let programFallbackTitle = "Your program"
         static func programDayCount(_ count: Int) -> String {

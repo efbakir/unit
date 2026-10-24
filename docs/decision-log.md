@@ -9,7 +9,8 @@
 
 ## 2026-10-24 - Paywall opens with a review, then the trial timeline
 
-- **Decision:** No title. The page opens with the real 5-star App Store review and one line on what Unit gives, then the trial timeline, then the plans. Weekly and Yearly show first; Monthly and Lifetime open in place under "View all plans". The program card moves below the plans.
+- **Decision:** No title. The page opens with the real 5-star App Store review in a card, then the program the person just built ("Your program is ready", name, days), then the trial timeline, then the plans. Weekly and Yearly show first; Monthly and Lifetime open in place under "View all plans".
+- **Why the program card:** It is what the person gets for the price, made from their own answers, so it says the "content or services" Apple asks for better than a generic line.
 - **Why:** Founder call after a benchmark of 14 paywalls (Buddy, Mesh, FotMob, Liven, AllTrails and others; report from 2026-10-24). 62% of paywalls show two plans (Adapty 2026). Blinkist's timeline test: +23% trial starts.
 - **App Review 3.1.2:** The billed price stays the largest price: "$29.99/year" in the plan card, in the Day 7 step and in the line above the button. The badge stays smaller.
 - **Open:** "Save 80%" without "vs weekly" is a medium consumer-law risk now that Monthly is hidden (benchmark report). Founder kept the short badge.

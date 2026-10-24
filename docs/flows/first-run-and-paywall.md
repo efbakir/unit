@@ -196,9 +196,9 @@ Source: code at commit `499ecaf`, updated for commit `75fceb0` (paywall, setup a
 - **Entry**: A program is saved and Apple says there is no active plan. There is no close button. [ContentView.swift:52](Unit/ContentView.swift:52)
 - **Steps**:
   - Paywall opens -> plans and trial eligibility load from Apple; a spinner shows meanwhile. [PaywallView.swift:45](Unit/Features/Subscription/PaywallView.swift:45), [StoreManager.swift:683](Unit/Features/Subscription/StoreManager.swift:683)
-  - Order (founder layout 2026-10-24): review, timeline, reminder card, plans, program card, features. No title.
-  - Review -> 5 stars, one real App Store review ("The gym tracker app I've been looking for for years."), "App Store review", then one line on what Unit gives that follows the goal answer (or a neutral line for paste).
-  - Program card (below the plans) -> "Your program is ready", the program name (or "3-day program"), and "Get stronger · New · 3 days/week" or the day names.
+  - Order (founder layout 2026-10-24): review, program card, timeline, reminder card, plans, features. No title.
+  - Review card -> 5 stars, one real App Store review ("The gym tracker app I've been looking for for years."), "App Store review".
+  - Program card (right under the review) -> "Your program is ready", the program name (or "3-day program"), and "Get stronger · New · 3 days/week" or the day names.
   - "Choose your plan" -> Weekly and Yearly show first. "View all plans" opens Monthly, and Lifetime when Apple returns it, in place. If a hidden plan is the selected one, every plan shows. All prices come from Apple. Only the selected card shows its detail line ("7 days free · then $4.99/month" or "Auto-renews monthly · $1.15/week"). Yearly carries "Save N%", compared with 52 weeks of Weekly ("Save 80%" at US prices). [PaywallView.swift:569](Unit/Features/Subscription/PaywallView.swift:569), [PaywallView.swift:598](Unit/Features/Subscription/PaywallView.swift:598), [PaywallView.swift:638](Unit/Features/Subscription/PaywallView.swift:638), [PaywallView.swift:687](Unit/Features/Subscription/PaywallView.swift:687)
   - Default plan:
     - Eligible for the free trial -> Yearly (founder decision 2026-10-23). A 50/50 Yearly-vs-Monthly test is built but off. [StoreManager.swift:739](Unit/Features/Subscription/StoreManager.swift:739), [StoreManager.swift:1118](Unit/Features/Subscription/StoreManager.swift:1118)
