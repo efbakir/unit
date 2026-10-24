@@ -183,6 +183,31 @@ final class PastWorkoutEditingTests: XCTestCase {
         XCTAssertEqual(try storeContext.fetchCount(FetchDescriptor<WorkoutSession>()), 1)
     }
 
+    func testDeletingAWorkoutRemovesItsAppleHealthCopyOnlyAfterTheSave() async throws {
+        let health = FakeHealthWorkoutStore(allowsAccess: true)
+        let previous = HealthWorkoutSync.store
+        HealthWorkoutSync.store = health
+        defer { HealthWorkoutSync.store = previous }
+        _ = await health.requestAccess()
+
+        let storeContainer = try makeOnDiskContainer()
+        let storeContext = storeContainer.mainContext
+        let fixture = try makeRoutine(in: storeContext)
+        let workout = try finishedWorkout(fixture, daysAgo: 0, sets: [(60, 8), (60, 8), (60, 8)], in: storeContext)
+        try await health.save(sessionID: workout.id, interval: DateInterval(start: workout.date, duration: 1800))
+
+        var failing = editor(fixture, in: storeContext)
+        failing.save = { _ in throw Failure.disk }
+        XCTAssertFalse(PastWorkoutEditor.deleteWorkout(workout, failing))
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertEqual(health.savedSessionIDs, [workout.id], "A failed delete keeps the Health copy")
+
+        let workoutID = workout.id
+        XCTAssertTrue(PastWorkoutEditor.deleteWorkout(workout, editor(fixture, in: storeContext)))
+        for _ in 0..<50 where !health.savedSessionIDs.isEmpty { await Task.yield() }
+        XCTAssertFalse(health.savedSessionIDs.contains(workoutID))
+    }
+
     // MARK: - Helpers
 
     private struct Routine {
