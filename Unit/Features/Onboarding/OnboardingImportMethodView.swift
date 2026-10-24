@@ -43,6 +43,9 @@ struct OnboardingImportMethodView: View {
                 ) {
                     onSelect(.library)
                 }
+
+                AnonymousAnalyticsToggle()
+                    .padding(.top, AppSpacing.sm)
             }
         }
     }

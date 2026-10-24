@@ -575,10 +575,10 @@ final class StoreManager {
     /// Non-error notice shown via the same `.alert` channel — e.g.
     /// "No purchases to restore." after a benign restore call.
     var infoMessage: String?
-    /// Introductory-offer eligibility is a subscription-group property. Keep
-    /// the answer separate from offer metadata so eligibility alone can never
-    /// create trial copy.
-    private(set) var introOfferEligibilityByGroupID: [String: Bool] = [:]
+    /// Eligibility is stored per product. Trial copy also requires that
+    /// product's own free introductory offer, so a group-level "yes" cannot
+    /// put free-trial wording on Weekly or on a product with no offer.
+    private(set) var introOfferEligibilityByProductID: [String: Bool] = [:]
     private(set) var hasCheckedIntroOfferEligibility = false
     private(set) var planSelection = PaywallPlanSelectionState()
     private(set) var purchaseAttempt = PurchaseAttemptState()
@@ -661,12 +661,7 @@ final class StoreManager {
 
     func presentation(for tier: Tier) -> StorePlanPresentation? {
         guard let product = product(for: tier) else { return nil }
-        let eligible: Bool
-        if let groupID = product.subscription?.subscriptionGroupID {
-            eligible = introOfferEligibilityByGroupID[groupID] == true
-        } else {
-            eligible = false
-        }
+        let eligible = introOfferEligibilityByProductID[product.id] == true
         return StorePlanPresentation.resolve(
             snapshot: StoreProductSnapshot(product: product),
             isEligibleForIntroOffer: eligible
@@ -715,24 +710,25 @@ final class StoreManager {
     }
 
     private func loadIntroOfferEligibility(for loadedProducts: [Product]) async {
-        let groupIDs = Set(loadedProducts.compactMap { $0.subscription?.subscriptionGroupID })
         var resolved: [String: Bool] = [:]
-        for groupID in groupIDs {
+        for product in loadedProducts {
 #if DEBUG
             if CommandLine.arguments.contains(Self.introEligibleUITestArgument) {
-                resolved[groupID] = true
+                resolved[product.id] = true
                 continue
             }
             if CommandLine.arguments.contains(Self.introIneligibleUITestArgument) {
-                resolved[groupID] = false
+                resolved[product.id] = false
                 continue
             }
 #endif
-            resolved[groupID] = await Product.SubscriptionInfo.isEligibleForIntroOffer(
-                for: groupID
-            )
+            if let subscription = product.subscription {
+                resolved[product.id] = await subscription.isEligibleForIntroOffer
+            } else {
+                resolved[product.id] = false
+            }
         }
-        introOfferEligibilityByGroupID = resolved
+        introOfferEligibilityByProductID = resolved
         hasCheckedIntroOfferEligibility = true
     }
 

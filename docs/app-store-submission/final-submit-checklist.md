@@ -6,12 +6,14 @@
 >
 > History: **October 19 development checkpoint:** The connected phone started on 2.1 (65); this isolated release branch targets **2.1 (68), development-only and unreserved**. Public lookup still reports 2.0. Live App Store Connect build numbers could not be read, so do not upload or attach 68 until the highest uploaded number is checked. The August status and build-67 checklist below are historical, not current release proof. See `docs/handoffs/2026-10-19-unit-motion-release.md` for this pass and its evidence.
 
-# Final submit checklist — Unit v2.1 (build 67)
+# Final submit checklist — Unit v2.1 (build 95)
 
 > The ASC handoff package. Copy fields are paste-exact; the introductory offers require the founder actions in §4 before submission.
 > Updated 2026-08-04 for the progression-guided v2.1 release. Companions: `docs/pricing.md` (pricing truth) and `docs/release-qa.md` (device gauntlet).
 
-**ASC status — 2026-08-10:** The iOS 2.1 draft exists in **Prepare for Submission**. The canonical English app name, subtitle, promotional text, description, What's New, keywords, and reviewer notes are saved. App Privacy and the 4+ age rating are published. Monthly and Yearly each have an ongoing one-week Free introductory offer across all 175 storefronts. No build is attached; build 66 must remain unattached. The new screenshots, build 67 upload/attachment, StoreKit sandbox checks, and physical-device gauntlet are still pending. The Media Manager requires a separate Apple sign-in before the screenshots can be replaced.
+**ASC status — 2026-10-23:** Version 2.1 has build 95 attached and is not submitted. Release type is manual. Source is `claude/app-finalization-launch-34a116` at tag `v2.1-build95`. `CURRENT_PROJECT_VERSION` is still 95. The next upload is build 96, bumped when that archive is cut, not in the review-fix diff. Yearly is the trial-eligible default. Weekly is the default when StoreKit reports no introductory-offer eligibility. The purchase button is **Start free trial** on an eligible Yearly plan, not "Continue with Weekly".
+
+**History — 2026-08-10:** The draft then had no build attached. Monthly and Yearly each had a one-week Free introductory offer. Build 66 was to stay unattached. That note is not the current archive instruction.
 
 ---
 
@@ -21,7 +23,7 @@
 - **No permanent free tier.** Unit remains a hard paywall after onboarding. Weekly and Lifetime have no introductory offer.
 - **Paid access shows at the paywall, not before setup.** The founder removed the onboarding line on 2026-10-23 (supersedes 2026-08-05). The App Store description states the subscription, and the paywall shows every plan and price before purchase.
 - **No fake prices.** Every visible in-app price is StoreKit-derived. ASC product config is the only place prices exist.
-- **Do not select build 66.** Its source/archive provenance cannot be established. Build 67 replaces it and must be archived from the clean tagged commit below.
+- **Do not select build 66 or build 67.** Build 95 is the attached build. The next archive is 96 from this release branch, after `CURRENT_PROJECT_VERSION` is bumped.
 - **The app UI is English-only.** Do not claim or imply localization anywhere. Localized *metadata* is a separate, optional step (§8).
 - **Product IDs are immutable.** If any ASC screen asks you to create a product, you are on the wrong screen.
 
@@ -30,8 +32,8 @@
 | Field | Value | Verified |
 |---|---|---|
 | Marketing version | **2.1** | `MARKETING_VERSION = 2.1` in all 8 pbxproj configs |
-| Build | **67** | `CURRENT_PROJECT_VERSION = 67` in all 8 pbxproj configs |
-| Archive source | tagged `main` | clean tree, local `main` equals `origin/main`, tag `v2.1-build67` points at the archived commit |
+| Build | **95** | `CURRENT_PROJECT_VERSION = 95` in all 8 pbxproj configs. Bump to 96 only when cutting the next archive. |
+| Archive source | `claude/app-finalization-launch-34a116` | tag `v2.1-build95` is the attached build. Do not archive from `main`. |
 
 ## 2. App name
 
@@ -44,8 +46,8 @@ Group: reference name `unit-pro`, display name `Unit Pro`.
 | Product | Product ID | Type | Price (USD base) |
 |---|---|---|---|
 | Weekly — **ineligible default** | `com.unit.weekly` | Auto-renewable, 1 week | **$2.99** |
-| Monthly — **eligible default** | `com.unit.monthly` | Auto-renewable, 1 month | **$4.99** |
-| Yearly | `com.unit.annual` | Auto-renewable, 1 year | **$29.99** |
+| Monthly | `com.unit.monthly` | Auto-renewable, 1 month | **$4.99** |
+| Yearly — **eligible default** | `com.unit.annual` | Auto-renewable, 1 year | **$29.99** |
 | Lifetime (optional) | `com.unit.lifetime` | Non-consumable | **$44.99** |
 
 - [ ] Confirm Weekly reads **$2.99** in ASC (the 2026-07-02 change). If it reads $4.99, fix before anything else.
@@ -92,7 +94,7 @@ The description's paid-purchase paragraph and the two legal URLs are Guideline 3
 - [ ] Features → Subscriptions → `unit-pro` group exists with the 3 auto-renewables (§3 IDs and prices exact) and the §4 offers.
 - [ ] Each product has an English display name + description and a **review screenshot** (one capture of `PaywallView` covers all).
 - [ ] App Store tab → version 2.1 → In-App Purchases and Subscriptions → **attach Weekly, Monthly, Yearly** (+ Lifetime if configured).
-- [ ] Build 67 attached to the version. Build 66 remains unattached.
+- [x] Build 95 is attached to version 2.1. Builds 66 and 67 stay unattached. The next upload is build 96.
 
 ## 9. Localization
 
@@ -119,10 +121,10 @@ The description's paid-purchase paragraph and the two legal URLs are Guideline 3
 - [ ] StoreKit sandbox QA — every step in `docs/pricing.md` §StoreKit sandbox verification checklist, on this exact build, with sandbox Apple IDs.
 - [ ] Apple's purchase sheet confirms the seven-day free period and correct renewal price for Monthly and Yearly; do not infer this from the in-app paywall alone.
 - [ ] `docs/release-qa.md` gauntlet run on device.
-- [ ] Xcode Settings shows **Version 2.1 (67)**.
-- [ ] `git status --short` is empty and local `main` equals `origin/main`.
-- [ ] Tag `v2.1-build67` points at the exact commit being archived.
-- [ ] Archive from clean tagged `main` only.
+- [ ] Xcode Settings shows **Version 2.1 (95)** until the next archive bumps it to 96.
+- [ ] `git status --short` is empty on `claude/app-finalization-launch-34a116` (or the review-fix branch cut from it).
+- [ ] Tag `v2.1-build95` points at the commit already attached. Tag the next archive `v2.1-build96` only after the build number bump.
+- [ ] Archive from that release branch. Do not archive from `main`.
 - [ ] Marketing-site pricing and privacy copy matches the hard paywall, conditional seven-day offer, and anonymous-analytics disclosure in this build.
 
 Scope remains frozen for 2.1: no additional ASO keywords, social features, coaching, Apple Watch expansion, or broader discovery work.

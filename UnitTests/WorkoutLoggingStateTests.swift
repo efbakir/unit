@@ -33,6 +33,19 @@ final class WorkoutLoggingStateTests: XCTestCase {
         }
     }
 
+    func testUnsavedOrderDropsDuplicateTemplateIDs() {
+        let bench = UUID()
+        let row = UUID()
+        XCTAssertEqual(
+            WorkoutLoggingState.orderedExerciseIDs(
+                templateIDs: [bench, bench, row],
+                sessionID: UUID(),
+                saved: Data()
+            ),
+            [bench, row]
+        )
+    }
+
     func testSavedOrderDropsDeletedAndDuplicateIDsAndAppendsNewExercises() {
         let first = UUID(), second = UUID(), added = UUID(), deleted = UUID(), sessionID = UUID()
         let saved = WorkoutLoggingState.encodeExerciseOrder([second, deleted, second, first], sessionID: sessionID)
